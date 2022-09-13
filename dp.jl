@@ -1,4 +1,4 @@
-using Pandas, PyCall
+using PyCall, ASE, ACSF
 
 """
 usual main caller
@@ -11,13 +11,14 @@ function main()
     # test load pickle from python
     math = pyimport("math")
     println(math.sin(math.pi / 4)) # returns ≈ 1/√2 = 0.70710678...
+
+    py"""
+    import numpy as np
+    
+    def sinpi(x):
+        return np.sin(np.pi * x)
+    """
+    py"sinpi"(1)
 end
 
 main()
-py"""
-import numpy as np
-
-def sinpi(x):
-    return np.sin(np.pi * x)
-"""
-py"sinpi"(1)
