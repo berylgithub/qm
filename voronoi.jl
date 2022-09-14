@@ -1,4 +1,4 @@
-using Plots, Statistics, LaTeXStrings, LinearAlgebra
+using Plots, Statistics, LaTeXStrings, LinearAlgebra, Distributions
 
 """
 dummy distance between two coordinates, should use "Mahalanobis distance" later
@@ -9,6 +9,7 @@ end
 
 """
 eldar's clustering algo by farthest minimal distance
+***currently only ("default", "default") works***
 params:
     - coords: matrix of data (or coords), Matrix{Float64}(n_dim, n_data)
     - M: total number of cluster centers, Int.
@@ -50,26 +51,45 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
     ref_point = coords[:, selected_id]
     push!(center_ids, selected_id)
 
+    # init useful vectors:
+    min_dist = Vector{Float64}(undef, data_size) # init vector containing min distances
+    #sums_dist = zeros(data_size) # contains the sums or squaresums of distances
+
     ## To find k_x s.t. x > 1, for m ∈ M:
     for m ∈ 1:M-1
         ## Find largest distance:
         ### compute list of distances from mean:
         for i ∈ 1:data_size
-            distances[i, m] = f_distance(ref_point, coords[:, i])
+            distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+            #sums_dist[i] += distances[i, m] # compute and store the sum of distances
         end
+        println("k = ",m)
+        #display(distances)
+        #println(sums_dist)
         ### mode here!:
+        #max_indices = nothing
         if mode == "fmd"
-            max_indices = findall(mean_distances .== maximum(mean_distances))
+            ### min of column:        
+            for i ∈ 1:data_size
+                min_dist[i] = minimum(distances[i, 1:m])
+            end
+            ### sort distances descending:
+            sorted_ids = sortperm(min_dist, rev=true)
+            ### eliminate all indices which are already chosen:
+            chosen_ids = Vector{Int64}()
+            for id ∈ sorted_ids
+                if centers[id] == 0
+                    push!(chosen_ids, id)
+                end
+            end
+            #......... 
         end
         ### break_ties here!:
-        if break_ties == "fsd"
-            break
-        end
 
         ### special case of both ("default", "default"), which is the default params:
         if mode == "default" && break_ties == "default"
             ### take the column minimum for each row:
-            min_dist = Vector{Float64}(undef, data_size)
+            #min_dist = Vector{Float64}(undef, data_size)
             for i ∈ 1:data_size
                 min_dist[i] = minimum(distances[i, 1:m])
             end
@@ -101,7 +121,7 @@ function main()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
     # ∀ requested M, do the algorithm:
-    for M ∈ [10]
+    for M ∈ indices_M
         #M = 10 # number of centers
         # fixed coords, ∈ (fingerprint length, data length):
         coords = Matrix{Float64}(undef, 2, 70) # a list of 2d coord arrays for testing
@@ -114,7 +134,11 @@ function main()
                 counter += 1
             end
         end
-        
+        # perturb points:
+        perturb_val = .2
+        perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
+        coords .+= perturb
+
         # generate cluster centers:
         center_ids, mean_point = eldar_cluster(coords, M)
         
@@ -129,6 +153,7 @@ function main()
             annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.5, L"$k_{%$i}$")
         end
         display(s)
+        #savefig(s, "clusterplot/fmd_ei_$M")
     end
 end
 
