@@ -27,7 +27,7 @@ outputs:
     - mean_point: the coordinate of the mean point, Vector{Float64}(n_dim)
     - center_ids: containing the sorted (by order of selection) IDs of the centers, Vector{Float64}(M)
 """
-function eldar_cluster(coords, M, mode="default", break_ties="default")
+function eldar_cluster(coords, M; mode="default", break_ties="default")
     data_size = size(coords)[2] # compute once
     # Eldar's [*cite*] sampling algo, default ver: break ties by earliest index:
     # later move all of the matrices and vectors alloc outside:
@@ -42,7 +42,7 @@ function eldar_cluster(coords, M, mode="default", break_ties="default")
     for i ∈ 1:data_size
         mean_distances[i] = f_distance(ref_point, coords[:, i])
     end
-    ### get point with max distance from mean:
+    ### get point with max distance from mean ("default", "default"), no differences for initial center:
     _, selected_id = findmax(mean_distances)
     centers[selected_id] = 1
 
@@ -57,22 +57,35 @@ function eldar_cluster(coords, M, mode="default", break_ties="default")
         for i ∈ 1:data_size
             distances[i, m] = f_distance(ref_point, coords[:, i])
         end
-        ### take the column minimum for each row:
-        min_dist = Vector{Float64}(undef, data_size)
-        for i ∈ 1:data_size
-            min_dist[i] = minimum(distances[i, 1:m])
+        ### mode here!:
+        if mode == "fmd"
+            max_indices = findall(mean_distances .== maximum(mean_distances))
         end
-        ### sort distances descending, why sort? to avoid multiple identical centers, (NaN, inf) doesnt work:
-        sorted_idx = sortperm(min_dist, rev=true)
-        ### check if center is already counted:
-        selected_id = 0
-        for id ∈ sorted_idx
-            if centers[id] == 0
-                centers[id] = 1
-                selected_id = id
-                break 
+        ### break_ties here!:
+        if break_ties == "fsd"
+            break
+        end
+
+        ### special case of both ("default", "default"), which is the default params:
+        if mode == "default" && break_ties == "default"
+            ### take the column minimum for each row:
+            min_dist = Vector{Float64}(undef, data_size)
+            for i ∈ 1:data_size
+                min_dist[i] = minimum(distances[i, 1:m])
+            end
+            ### sort distances descending, why sort? to avoid multiple identical centers, (NaN, inf) doesnt work:
+            sorted_idx = sortperm(min_dist, rev=true)
+            ### check if center is already counted:
+            selected_id = 0
+            for id ∈ sorted_idx
+                if centers[id] == 0
+                    centers[id] = 1
+                    selected_id = id
+                    break 
+                end
             end
         end
+
         ### reassign ref point by the new center:
         ref_point = coords[:, selected_id]
         push!(center_ids, selected_id)
@@ -88,7 +101,7 @@ function main()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
     # ∀ requested M, do the algorithm:
-    for M ∈ indices_M
+    for M ∈ [10]
         #M = 10 # number of centers
         # fixed coords, ∈ (fingerprint length, data length):
         coords = Matrix{Float64}(undef, 2, 70) # a list of 2d coord arrays for testing
@@ -105,9 +118,6 @@ function main()
         # generate cluster centers:
         center_ids, mean_point = eldar_cluster(coords, M)
         
-        println(center_ids)
-        println(length(center_ids))
-        display(mean_point)
         # plot the points:
         s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
         # mean point:
