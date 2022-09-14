@@ -8,25 +8,29 @@ function f_distance(x1, x2)
 end
 
 """
-tempoorary main container
+eldar's clustering algo by farthest minimal distance
+params:
+    - coords: matrix of data (or coords), Matrix{Float64}(n_dim, n_data)
+    - M: total number of cluster centers, Int.
+    - mode: defines the algorithm used to generate the cluster: 
+        - "default" is farthest minimal distance
+        - "fmd" farthest minimal distance
+        - "fsd" farthest sum of distances
+        - "fssd" farthest sum of squared distances
+        String 
+    - break_ties: defines how the algorithm behave in the face of multiple points fulfilling the "mode" param:
+        - "default" break ties with the earliest point index
+        - "fsd"
+        - "fmd"
+        String
+outputs:
+    - mean_point: the coordinate of the mean point, Vector{Float64}(n_dim)
+    - center_ids: containing the sorted (by order of selection) IDs of the centers, Vector{Float64}(M)
 """
-function main()
-    # inputs:
-    M = 10 # number of centers
-    # fixed coords, ∈ (fingerprint length, data length):
-    coords = Matrix{Float64}(undef, 2, 100) # a list of 2d coord arrays for testing
-    # fill fixed coords:
-    counter = 1
-    for i ∈ 1.:10. 
-        for j ∈ 1.:10.
-            coords[1, counter] = i # dim1 
-            coords[2, counter] = j # dim2
-            counter += 1
-        end
-    end
+function eldar_cluster(coords, M, mode="default", break_ties="default")
     data_size = size(coords)[2] # compute once
-
-    # Eldar's [*cite*] sampling algo:
+    # Eldar's [*cite*] sampling algo, default ver: break ties by earliest index:
+    # later move all of the matrices and vectors alloc outside:
     centers = zeros(Int64, data_size) # 1 if it is a center
     center_ids = Vector{Int64}() # sorted center id
     #centers[[1,3,4]] .= 1 # dum
@@ -75,19 +79,47 @@ function main()
         println(m, " ", ref_point)
         println()
     end
-    
-    println(center_ids)
-    # plot the points:
-    s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
-    # mean point:
-    scatter!([mean_point[1,1], coords[1, centers[1]]], [mean_point[2,1], coords[2, centers[1]]], color="red")
-    annotate!([mean_point[1,1]], [mean_point[2,1]].+0.5, L"$\bar w$")
-    # centers:
-    scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
-    for i ∈ 1:length(center_ids)
-        annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.5, L"$k_{%$i}$")
+    return center_ids, mean_point
+end
+"""
+tempoorary main container
+"""
+function main()
+    # inputs:
+    indices_M = convert(Vector{Int64}, range(10,50,5))
+    # ∀ requested M, do the algorithm:
+    for M ∈ indices_M
+        #M = 10 # number of centers
+        # fixed coords, ∈ (fingerprint length, data length):
+        coords = Matrix{Float64}(undef, 2, 70) # a list of 2d coord arrays for testing
+        # fill fixed coords:
+        counter = 1
+        for i ∈ 1.:7. 
+            for j ∈ 1.:10.
+                coords[1, counter] = i # dim1 
+                coords[2, counter] = j # dim2
+                counter += 1
+            end
+        end
+        
+        # generate cluster centers:
+        center_ids, mean_point = eldar_cluster(coords, M)
+        
+        println(center_ids)
+        println(length(center_ids))
+        display(mean_point)
+        # plot the points:
+        s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
+        # mean point:
+        scatter!([mean_point[1]], [mean_point[2]], color="red")
+        annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
+        # centers:
+        scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
+        for i ∈ eachindex(center_ids)
+            annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.5, L"$k_{%$i}$")
+        end
+        display(s)
     end
-    display(s)
 end
 
 main()
