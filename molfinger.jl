@@ -1,4 +1,4 @@
-using ASE, ACSF, LinearAlgebra
+using PyCall, ASE, ACSF, LinearAlgebra
 
 function test_ASE()
     at = bulk("Si")
@@ -8,6 +8,20 @@ function test_ASE()
     out = acsf(at)
     display(out)
 end
+
+function test_pycall()
+    math = pyimport("math")
+    println(math.sin(math.pi / 4)) # returns ≈ 1/√2 = 0.70710678...
+
+    py"""
+    import numpy as np
+    
+    def sinpi(x):
+        return np.sin(np.pi * x)
+    """
+    py"sinpi"(1)
+end
+
 
 function test_julip()
     # problem parameters 
@@ -50,6 +64,5 @@ function test_julip()
     display(desc ≈ desc1)
 end
 
-#test_ASE()
 
-test_julip()
+test_pycall()
