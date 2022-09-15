@@ -1,5 +1,5 @@
 
-using DelimitedFiles, DataStructures, HDF5, JLD
+using DelimitedFiles, DataStructures, HDF5, JLD, BenchmarkTools
 
 
 """
@@ -30,17 +30,9 @@ end
 """
 usual main caller
 """
-function main()
+function data_transformer()
     # read gdb file:
-    # loop all data here:
-    fd = readdlm("data/qm9/dsgdb9nsd_022908.xyz", '\t', String, '\n')
-    n_atom = parse(Int64, fd[1,1])
-    atoms = fd[3:3+n_atom-1, 1]
-    energy = parse(Float64, fd[2, 13])
-    coords = parse.(Float64, fd[3:3+n_atom-1, 2:4])
-    formula = generate_mol_formula(atoms)
-    println(fd[1,1])
-    # using JLD || use HDF5 (later when performance is critical!!):
+    # using JLD || use HDF5 (later when performance is critical!!) || or even JuliaDB!!
 
     list_data = []
     list_error_file = []
@@ -48,6 +40,7 @@ function main()
     display(files)
     dir = "data/qm9/"
     count = 0
+    # loop all data here:
     for f ∈ files
         if f[1] == '.' # skip anomalies
             continue
@@ -84,4 +77,21 @@ function main()
     println(load("data/qm9_error_files.jld")["data"])
 end
 
-main()
+function test_hdf5()
+    
+end
+
+
+"""
+select data subset randomly, for faster prototyping
+"""
+function rand_select()
+    # take 1000 data:
+    num_subset = 1000
+    dataset = load("data/qm9_dataset.jld")["data"]
+    lendata = length(dataset)
+    indices = rand(1:lendata, num_subset)
+    selected_data = dataset[indices]
+    save("data/qm9_dataset_$num_subset.jld", "data", selected_data)
+    println(length(load("data/qm9_dataset_$num_subset.jld")["data"]))
+end
