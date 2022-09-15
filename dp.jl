@@ -1,5 +1,5 @@
 
-using DelimitedFiles, DataStructures
+using DelimitedFiles, DataStructures, HDF5, JLD
 
 
 """
@@ -38,12 +38,8 @@ function main()
     energy = parse(Float64, fd[2, 13])
     coords = parse.(Float64, fd[3:3+n_atom-1, 2:4])
     formula = generate_mol_formula(atoms)
-    println(n_atom)
-    println(formula)
-    data = Dict("")
-    display(coords)
-    println(energy)
-
+    data = Dict("n_atom" => n_atom, "formula" => formula, "atoms" => atoms, 
+                "energy" => energy, "coordinates" => coords)
     
 
 end
