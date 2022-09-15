@@ -1,4 +1,4 @@
-using PyCall, ASE, ACSF, LinearAlgebra
+using PyCall, ASE, ACSF, LinearAlgebra, JLD
 
 function test_ASE()
     at = bulk("Si")
@@ -65,4 +65,15 @@ function test_julip()
 end
 
 
-test_pycall()
+function extract_descriptor()
+    num_subset = 1000
+    data = load("data/qm9_dataset_$num_subset.jld")["data"] # load subdataset
+    for d ∈ data
+        break
+    end
+    
+    atom = Atoms() # compute descriptor as it is (for testing) length of vector: 29*51 atleast
+    # 
+end
+
+extract_descriptor()
