@@ -95,3 +95,23 @@ function rand_select()
     save("data/qm9_dataset_$num_subset.jld", "data", selected_data)
     println(length(load("data/qm9_dataset_$num_subset.jld")["data"]))
 end
+
+"""
+to accomodate unnecessary cell boundary in ASE package (library), by taking the maximum coord possible
+"""
+function get_max_cellbound()
+    t = @elapsed begin
+        dataset = load("data/qm9_dataset.jld")["data"]
+    end
+    println("elapsed ", t)
+    max_coor = -Inf
+    for d ∈ dataset
+        max_c = maximum(d["coordinates"])
+        if max_c > max_coor
+            max_coor = max_c
+        end
+    end
+    println(max_coor)
+end
+
+get_max_cellbound()
