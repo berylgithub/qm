@@ -1,4 +1,4 @@
-using PyCall, ASE, ACSF, LinearAlgebra, JLD
+using PyCall, ASE, ACSF, LinearAlgebra, JLD, Statistics, Distributions
 
 function test_ASE()
     at = bulk("Si")
@@ -44,13 +44,19 @@ function test_julip()
                 [0., 0., 0.], 
                 [1., 1.], 
                 [1., 8., 1.], 
-                diagm([2.0, 2.0, 1.0]), 
+                diagm([10.0, 10.0, 10.0]), 
                 (false, false, false))
-    at1 = Atoms([[1., 0., 0.], [0., 0., 0.], [√2, √2, √2]], 
+    #coor = rand(Uniform(0., 20.), (3, 5))
+    coor = transpose([1. 0. 0.; 0. 0. 0.; √2 √2 √2])
+    display(coor)
+    #coor = [coor[:, i] for i ∈ 1:size(coor)[2]]
+    cellbounds = diagm([30., 30., 30.])
+    display(cellbounds)
+    at1 = Atoms(coor, 
                 [0., 0., 0.], 
                 [1., 1.], 
                 [8., 8., 8.], 
-                diagm([10.0, 2.0, 1.0]), 
+                cellbounds, 
                 (false, false, false))
     display(at)
     #set_cell!(at, diagm([2.0*N, 2.0*N, 1.0]))
@@ -61,19 +67,38 @@ function test_julip()
     display(desc)
     display(desc1)
     display(size(desc[1]))
-    display(desc ≈ desc1)
+    #display(desc ≈ desc1)
 end
 
 
 function extract_descriptor()
+    max_coor = 30. # is actually 12. from the dataset, just to add more safer boundary
+    cellbounds = diagm([max_coor, max_coor, max_coor])
     num_subset = 1000
-    data = load("data/qm9_dataset_$num_subset.jld")["data"] # load subdataset
-    for d ∈ data
-        break
+    dataset = load("data/qm9_dataset_$num_subset.jld")["data"] # load subdataset
+    list_data = []
+    counter = 1
+    t = @elapsed begin
+        for d ∈ dataset
+            coord = transpose(d["coordinates"])
+            at = Atoms(coord,
+                    [0., 0., 0.], 
+                    [1., 1.], 
+                    [8., 8., 8.], 
+                    cellbounds, 
+                    (false, false, false)
+                    )
+            desc = acsf(at)
+            push!(list_data, desc)
+            println("counter = ", counter)
+            counter += 1
+        end
     end
-    
-    atom = Atoms() # compute descriptor as it is (for testing) length of vector: 29*51 atleast
-    # 
+    println("time ",t)
+    save("data/qm9_desc_acsf_$num_subset.jld", "data", list_data)
+    display(length(load("data/qm9_desc_acsf_$num_subset.jld")["data"]))
 end
 
 extract_descriptor()
+
+test_julip()
