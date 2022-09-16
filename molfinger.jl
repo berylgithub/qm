@@ -90,15 +90,23 @@ function extract_descriptor()
                     )
             desc = acsf(at)
             push!(list_data, desc)
-            println("counter = ", counter)
+            println("datacounter = ", counter)
             counter += 1
         end
     end
-    println("time ",t)
+    println("elapsed ",t)
     save("data/qm9_desc_acsf_$num_subset.jld", "data", list_data)
     display(length(load("data/qm9_desc_acsf_$num_subset.jld")["data"]))
 end
 
-extract_descriptor()
+function test_desc()
+    t = @elapsed begin
+        desc = load("data/qm9_desc_acsf_1000.jld")["data"]
+    end
+    for de ∈ desc
+        println(length(de))
+    end
+    println("elapsed = ",t)
+end
 
-test_julip()
+test_desc()
