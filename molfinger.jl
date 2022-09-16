@@ -123,5 +123,3 @@ function transform_desc_to_matrix()
     save("data/qm9_matrix_$num_subset.jld", "data", A)
     display(load("data/qm9_matrix_$num_subset.jld")["data"])
 end
-
-transform_desc_to_matrix()
