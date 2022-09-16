@@ -75,7 +75,8 @@ function extract_descriptor()
     max_coor = 30. # is actually 12. from the dataset, just to add more safer boundary
     cellbounds = diagm([max_coor, max_coor, max_coor])
     num_subset = 1000
-    dataset = load("data/qm9_dataset_$num_subset.jld")["data"] # load subdataset
+    #dataset = load("data/qm9_dataset_$num_subset.jld")["data"] # load subdataset
+    dataset = load("data/qm9_dataset.jld")["data"]
     list_data = []
     counter = 1
     t = @elapsed begin
@@ -95,8 +96,10 @@ function extract_descriptor()
         end
     end
     println("elapsed ",t)
-    save("data/qm9_desc_acsf_$num_subset.jld", "data", list_data)
-    display(length(load("data/qm9_desc_acsf_$num_subset.jld")["data"]))
+    #save("data/qm9_desc_acsf_$num_subset.jld", "data", list_data)
+    #display(length(load("data/qm9_desc_acsf_$num_subset.jld")["data"]))
+    save("data/qm9_desc_acsf.jld", "data", list_data)
+    display(length(load("data/qm9_desc_acsf.jld")["data"]))
 end
 
 """
