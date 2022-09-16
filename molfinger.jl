@@ -99,14 +99,26 @@ function extract_descriptor()
     display(length(load("data/qm9_desc_acsf_$num_subset.jld")["data"]))
 end
 
-function test_desc()
+"""
+transforms the descriptors to fingerprint matrix
+"""
+function transform_desc_to_matrix()
+    num_subset = 1000
+    desc = load("data/qm9_desc_acsf_$num_subset.jld")["data"]
+    n_data = length(desc)
+    finger_length = 1479 # 29*51
+    A = zeros(n_data, finger_length) # data matrix
     t = @elapsed begin
-        desc = load("data/qm9_desc_acsf_1000.jld")["data"]
-    end
-    for de ∈ desc
-        println(length(de))
+        for i ∈ 1:n_data
+            n_atom = length(desc[i])
+            for j ∈ 1:n_atom
+                A[i, (j-1)*51 + 1:j*51] = desc[i][j]
+            end
+        end
     end
     println("elapsed = ",t)
+    save("data/qm9_matrix_$num_subset.jld", "data", A)
+    display(load("data/qm9_matrix_$num_subset.jld")["data"])
 end
 
-test_desc()
+transform_desc_to_matrix()
