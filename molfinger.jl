@@ -1,4 +1,4 @@
-using PyCall, ASE, ACSF, LinearAlgebra, JLD, Statistics, Distributions, DelimitedFiles
+using PyCall, ASE, ACSF, LinearAlgebra, JLD, Statistics, Distributions, DelimitedFiles, Printf
 
 function test_ASE()
     at = bulk("Si")
