@@ -51,51 +51,23 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
     ref_point = coords[:, selected_id]
     push!(center_ids, selected_id)
 
-    # init useful vectors:
-    min_dist = Vector{Float64}(undef, data_size) # init vector containing min distances
-    #sums_dist = zeros(data_size) # contains the sums or squaresums of distances
-
-    ## To find k_x s.t. x > 1, for m ∈ M:
-    for m ∈ 1:M-1
-        ## Find largest distance:
-        ### compute list of distances from mean:
-        for i ∈ 1:data_size
-            distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
-            #sums_dist[i] += distances[i, m] # compute and store the sum of distances
-        end
-        println("k = ",m)
-        #display(distances)
-        #println(sums_dist)
-        ### mode here!:
-        #max_indices = nothing
-        if mode == "fmd"
+    # farthest minimum distance mode:
+    if mode == "fmd"
+        # init useful vector:
+        min_dist = Vector{Float64}(undef, data_size) # init vector containing min distances
+        for m ∈ 1:M-1  ## To find k_x s.t. x > 1, for m ∈ M:
+            ## Find largest distance:
+            println("k = ",m)
+            ### compute list of distances from mean:
+            for i ∈ 1:data_size
+                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+            end
             ### min of column:        
             for i ∈ 1:data_size
                 min_dist[i] = minimum(distances[i, 1:m])
             end
             ### sort distances descending:
-            sorted_ids = sortperm(min_dist, rev=true)
-            ### eliminate all indices which are already chosen:
-            chosen_ids = Vector{Int64}()
-            for id ∈ sorted_ids
-                if centers[id] == 0
-                    push!(chosen_ids, id)
-                end
-            end
-            #......... 
-        end
-        ### break_ties here!:
-
-        ### special case of both ("default", "default"), which is the default params:
-        if mode == "default" && break_ties == "default"
-            ### take the column minimum for each row:
-            #min_dist = Vector{Float64}(undef, data_size)
-            for i ∈ 1:data_size
-                min_dist[i] = minimum(distances[i, 1:m])
-            end
-            ### sort distances descending, why sort? to avoid multiple identical centers, (NaN, inf) doesnt work:
             sorted_idx = sortperm(min_dist, rev=true)
-            ### check if center is already counted:
             selected_id = 0
             for id ∈ sorted_idx
                 if centers[id] == 0
@@ -104,13 +76,38 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
                     break 
                 end
             end
+            ### reassign ref point by the new center:
+            ref_point = coords[:, selected_id]
+            push!(center_ids, selected_id)
+            println(m, " ", ref_point)
+            println()
         end
-
-        ### reassign ref point by the new center:
-        ref_point = coords[:, selected_id]
-        push!(center_ids, selected_id)
-        println(m, " ", ref_point)
-        println()
+    # farthest sums of distance mode:
+    elseif mode == "fsd"
+        sums_dist = zeros(data_size) # contains the sums or squaresums of distances
+        for m ∈ 1:M-1
+            println("k = ",m)
+            ### compute list of distances from mean:
+            for i ∈ 1:data_size
+                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+                sums_dist[i] += distances[i, m] # compute and store the sum of distances
+            end
+            ### sort sd descending (same way as md):
+            sorted_idx = sortperm(sums_dist, rev=true)
+            selected_id = 0
+            for id ∈ sorted_idx
+                if centers[id] == 0
+                    centers[id] = 1
+                    selected_id = id
+                    break 
+                end
+            end
+            ### reassign ref point by the new center:
+            ref_point = coords[:, selected_id]
+            push!(center_ids, selected_id)
+            println(m, " ", ref_point)
+            println()
+        end
     end
     return center_ids, mean_point
 end
@@ -121,7 +118,7 @@ function main()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
     # ∀ requested M, do the algorithm:
-    for M ∈ indices_M
+    for M ∈ [20]
         #M = 10 # number of centers
         # fixed coords, ∈ (fingerprint length, data length):
         coords = Matrix{Float64}(undef, 2, 70) # a list of 2d coord arrays for testing
@@ -139,21 +136,22 @@ function main()
         perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
         coords .+= perturb
 
-        # generate cluster centers:
-        center_ids, mean_point = eldar_cluster(coords, M)
-        
-        # plot the points:
-        s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
-        # mean point:
-        scatter!([mean_point[1]], [mean_point[2]], color="red")
-        annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
-        # centers:
-        scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
-        for i ∈ eachindex(center_ids)
-            annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.5, L"$k_{%$i}$")
+        for md ∈ ["fmd", "fsd"] 
+            center_ids, mean_point = eldar_cluster(coords, M, mode=md) # generate cluster centers
+            # plot the points:
+            s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
+            # mean point:
+            scatter!([mean_point[1]], [mean_point[2]], color="red")
+            annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
+            # centers:
+            scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
+            for i ∈ eachindex(center_ids)
+                annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.5, L"$k_{%$i}$")
+            end
+            display(s)
+            #savefig(s, "clusterplot/fmd_ei_$M")
         end
-        display(s)
-        #savefig(s, "clusterplot/fmd_ei_$M")
+        
     end
 end
 
