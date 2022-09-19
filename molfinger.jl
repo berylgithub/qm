@@ -70,18 +70,27 @@ function test_julip()
     #display(desc ≈ desc1)
 end
 
-
 function extract_descriptor()
     max_coor = 30. # is actually 12. from the dataset, just to add more safer boundary
     cellbounds = diagm([max_coor, max_coor, max_coor])
-    num_subset = 1000
-    #dataset = load("data/qm9_dataset_$num_subset.jld")["data"] # load subdataset
-    dataset = load("data/qm9_dataset.jld")["data"]
-    list_data = []
+    n_finger = 1479 # 29*51
+    tdata = @elapsed begin
+        dataset = load("data/qm9_dataset.jld")["data"]
+    end
+    n_data = length(dataset)
+    A = zeros(n_data, n_finger) 
     counter = 1
-    t = @elapsed begin
+    #limiter = 100 # for prototyping
+    tcomp = @elapsed begin
         for d ∈ dataset
+            # LIMITER for prototyping:
+            #= if counter == limiter
+                break
+            end =#
+            # extract data from datasetbinary:
             coord = transpose(d["coordinates"])
+            n_atom = d["n_atom"]
+            # compute descriptor:
             at = Atoms(coord,
                     [0., 0., 0.], 
                     [1., 1.], 
@@ -90,16 +99,21 @@ function extract_descriptor()
                     (false, false, false)
                     )
             desc = acsf(at)
-            push!(list_data, desc)
+            # fill data matrix:
+            for j ∈ 1:n_atom
+                A[counter, (j-1)*51 + 1:j*51] = desc[j]
+            end
             println("datacounter = ", counter)
             counter += 1
         end
     end
-    println("elapsed ",t)
     #save("data/qm9_desc_acsf_$num_subset.jld", "data", list_data)
     #display(length(load("data/qm9_desc_acsf_$num_subset.jld")["data"]))
-    save("data/qm9_desc_acsf.jld", "data", list_data)
-    display(length(load("data/qm9_desc_acsf.jld")["data"]))
+    save("data/qm9_matrix.jld", "data", A)
+    A = load("data/qm9_matrix.jld")["data"]
+    display(A)
+    println("time to load data: ",tdata)
+    println("computing time: ",tcomp)
 end
 
 """
@@ -149,4 +163,4 @@ function transform_to_ascii()
     end
 end
 
-transform_to_ascii()
+extract_descriptor()

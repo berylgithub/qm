@@ -41,7 +41,6 @@ function data_transformer()
     list_data = []
     list_error_file = []
     files = readdir("data/qm9/")
-    display(files)
     dir = "data/qm9/"
     count = 0
     # loop all data here:
@@ -53,11 +52,13 @@ function data_transformer()
             break
         end =#
         #println(f)
-        println(f)
+        id = f[11:16]
+        println(id)
         fd = readdlm(dir*f,  '\t', String, '\n')
         n_atom = parse(Int64, fd[1,1])
         atoms = fd[3:3+n_atom-1, 1]
         energy = parse(Float64, fd[2, 13])
+        coords = nothing
         try
             coords = parse.(Float64, fd[3:3+n_atom-1, 2:4])    
         catch e
@@ -68,7 +69,7 @@ function data_transformer()
             end
         end
         formula = generate_mol_formula(atoms)
-        data = Dict("n_atom" => n_atom, "formula" => formula, "atoms" => atoms, 
+        data = Dict("id" => id, "n_atom" => n_atom, "formula" => formula, "atoms" => atoms, 
                 "energy" => energy, "coordinates" => coords)
         push!(list_data, data)
         count += 1
@@ -114,4 +115,13 @@ function get_max_cellbound()
     println(max_coor)
 end
 
-get_max_cellbound()
+
+function timeload()
+    # took 2 minutes
+    t = @elapsed begin
+        load("data/qm9_dataset.jld")["data"][1]
+    end
+    println(t)
+end
+
+timeload()
