@@ -162,5 +162,3 @@ function transform_to_ascii()
         end
     end
 end
-
-extract_descriptor()
