@@ -57,7 +57,6 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
         min_dist = Vector{Float64}(undef, data_size) # init vector containing min distances
         for m ∈ 1:M-1  ## To find k_x s.t. x > 1, for m ∈ M:
             ## Find largest distance:
-            println("k = ",m)
             ### compute list of distances from mean:
             for i ∈ 1:data_size
                 distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
@@ -86,11 +85,35 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
     elseif mode == "fsd"
         sums_dist = zeros(data_size) # contains the sums or squaresums of distances
         for m ∈ 1:M-1
-            println("k = ",m)
             ### compute list of distances from mean:
             for i ∈ 1:data_size
                 distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
                 sums_dist[i] += distances[i, m] # compute and store the sum of distances
+            end
+            ### sort sd descending (same way as md):
+            sorted_idx = sortperm(sums_dist, rev=true)
+            selected_id = 0
+            for id ∈ sorted_idx
+                if centers[id] == 0
+                    centers[id] = 1
+                    selected_id = id
+                    break 
+                end
+            end
+            ### reassign ref point by the new center:
+            ref_point = coords[:, selected_id]
+            push!(center_ids, selected_id)
+            println(m, " ", ref_point)
+            println()
+        end
+    # farthest squared sums of distance mode:
+    elseif mode == "fssd"
+        sums_dist = zeros(data_size) # contains the sums or squaresums of distances
+        for m ∈ 1:M-1
+            ### compute list of distances from mean:
+            for i ∈ 1:data_size
+                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+                sums_dist[i] += distances[i, m]^2 # compute and store the SQUARED sum of distances
             end
             ### sort sd descending (same way as md):
             sorted_idx = sortperm(sums_dist, rev=true)
@@ -136,7 +159,7 @@ function main()
         perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
         coords .+= perturb
 
-        for md ∈ ["fmd", "fsd"] 
+        for md ∈ ["fmd", "fsd", "fssd"] 
             center_ids, mean_point = eldar_cluster(coords, M, mode=md) # generate cluster centers
             # plot the points:
             s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
@@ -149,9 +172,8 @@ function main()
                 annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.5, L"$k_{%$i}$")
             end
             display(s)
-            #savefig(s, "clusterplot/fmd_ei_$M")
+            savefig(s, "clusterplot/$md"*"_$M.png")
         end
-        
     end
 end
 
