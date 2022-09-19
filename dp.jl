@@ -123,5 +123,3 @@ function timeload()
     end
     println(t)
 end
-
-timeload()
