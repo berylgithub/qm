@@ -82,36 +82,52 @@ function extract_descriptor()
     counter = 1
     #limiter = 100 # for prototyping
     tcomp = @elapsed begin
-        for d ∈ dataset
-            # LIMITER for prototyping:
-            #= if counter == limiter
-                break
-            end =#
-            # extract data from datasetbinary:
-            coord = transpose(d["coordinates"])
-            n_atom = d["n_atom"]
-            # compute descriptor:
-            at = Atoms(coord,
-                    [0., 0., 0.], 
-                    [1., 1.], 
-                    [8., 8., 8.], 
-                    cellbounds, 
-                    (false, false, false)
-                    )
-            desc = acsf(at)
-            # fill data matrix:
-            for j ∈ 1:n_atom
-                A[counter, (j-1)*51 + 1:j*51] = desc[j]
+        open("data/ACSF.txt","w") do io
+            for d ∈ dataset
+                # LIMITER for prototyping:
+                #= if counter == limiter
+                    break
+                end =#
+                # extract data from datasetbinary:
+                coord = transpose(d["coordinates"])
+                n_atom = d["n_atom"]
+                # compute descriptor:
+                at = Atoms(coord,
+                        [0., 0., 0.], 
+                        [1., 1.], 
+                        [8., 8., 8.], 
+                        cellbounds, 
+                        (false, false, false)
+                        )
+                desc = acsf(at)
+                # fill data matrix:
+                for j ∈ 1:n_atom
+                    A[counter, (j-1)*51 + 1:j*51] = desc[j]
+                end
+                # print file to txt here:
+                ct = 1
+                str = ""
+                for c ∈ 1:n_finger
+                    s = lstrip(@sprintf "%16.8e" A[counter, c])
+                    if ct != n_finger
+                        str *= s*"  " 
+                    else
+                        str *= s
+                    end
+                    ct += 1
+                end
+                print(io, str*"\n")
+                
+                println("datacounter = ", counter)
+                counter += 1
             end
-            println("datacounter = ", counter)
-            counter += 1
         end
     end
     #save("data/qm9_desc_acsf_$num_subset.jld", "data", list_data)
     #display(length(load("data/qm9_desc_acsf_$num_subset.jld")["data"]))
-    save("data/qm9_matrix.jld", "data", A)
-    A = load("data/qm9_matrix.jld")["data"]
-    display(A)
+    #save("data/qm9_matrix.jld", "data", A)
+    #A = load("data/qm9_matrix.jld")["data"]
+    #display(A)
     println("time to load data: ",tdata)
     println("computing time: ",tcomp)
 end
