@@ -3,7 +3,7 @@
 """
 
 
-using DelimitedFiles, DataStructures, HDF5, JLD, BenchmarkTools
+using DelimitedFiles, DataStructures, HDF5, JLD, BenchmarkTools, Printf
 
 
 """
@@ -79,10 +79,6 @@ function data_transformer()
     println("total data errors ", length(list_error_file))
     println("errors: ")
     println(load("data/qm9_error_files.jld")["data"])
-end
-
-function test_hdf5()
-    
 end
 
 

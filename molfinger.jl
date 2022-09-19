@@ -1,4 +1,4 @@
-using PyCall, ASE, ACSF, LinearAlgebra, JLD, Statistics, Distributions
+using PyCall, ASE, ACSF, LinearAlgebra, JLD, Statistics, Distributions, DelimitedFiles
 
 function test_ASE()
     at = bulk("Si")
@@ -110,7 +110,7 @@ function transform_desc_to_matrix()
     desc = load("data/qm9_desc_acsf_$num_subset.jld")["data"]
     n_data = length(desc)
     finger_length = 1479 # 29*51
-    A = zeros(n_data, finger_length) # data matrix
+    A = zeros(n_data, finger_length) # data matrix; n_data = num_subset
     t = @elapsed begin
         for i ∈ 1:n_data
             n_atom = length(desc[i])
@@ -123,3 +123,30 @@ function transform_desc_to_matrix()
     save("data/qm9_matrix_$num_subset.jld", "data", A)
     display(load("data/qm9_matrix_$num_subset.jld")["data"])
 end
+
+
+function transform_to_ascii()
+    A = load("data/qm9_matrix_1000.jld")["data"]
+    m = (s->(@sprintf "%16.8e" s)).(A)
+    m = lstrip.(m)
+    display(m)
+    rows, cols = size(m)
+    #writedlm("data/matsub.txt", m, "\t", quotes=false) # this works i think
+    open("data/matsub.txt","w") do io
+        for r ∈ 1:rows
+            str = ""
+            count = 1
+            for c ∈ 1:cols
+                if count != cols
+                    str *= m[r,c]*"  " 
+                else
+                    str *= m[r,c]
+                end
+                count += 1
+            end
+            print(io, str*"\n")
+        end
+    end
+end
+
+transform_to_ascii()
