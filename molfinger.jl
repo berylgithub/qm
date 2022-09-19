@@ -117,7 +117,7 @@ function extract_descriptor()
 end
 
 """
-transforms the descriptors to fingerprint matrix
+transforms the descriptors to fingerprint matrix, usually not needed, as the output of the descriptor extractor is already in matrix
 """
 function transform_desc_to_matrix()
     num_subset = 1000
@@ -140,13 +140,13 @@ end
 
 
 function transform_to_ascii()
-    A = load("data/qm9_matrix_1000.jld")["data"]
+    A = load("data/qm9_matrix.jld")["data"]
     m = (s->(@sprintf "%16.8e" s)).(A)
     m = lstrip.(m)
     display(m)
     rows, cols = size(m)
     #writedlm("data/matsub.txt", m, "\t", quotes=false) # this works i think
-    open("data/matsub.txt","w") do io
+    open("data/ACSF.txt","w") do io
         for r ∈ 1:rows
             str = ""
             count = 1
