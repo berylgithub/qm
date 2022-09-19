@@ -117,7 +117,7 @@ end
 
 
 function timeload()
-    # took 2 minutes
+    # took 2 minutes to load 130k data
     t = @elapsed begin
         load("data/qm9_dataset.jld")["data"][1]
     end
