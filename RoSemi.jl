@@ -1,4 +1,3 @@
 """
-placeholder for the (R)o(S)em(I) model constructor
+placeholder for the (R)o(S)em(I) constructor
 """
-
