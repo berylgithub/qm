@@ -70,19 +70,25 @@ function test_julip()
     #display(desc ≈ desc1)
 end
 
-function extract_descriptor()
+"""
+THE MAIN DEFAULT mode function to compute the descriptor given a structured Dict dataset/base.
+Default mode means the vector output is stacked until the length is 1479 (29*51)
+params:
+    - filenames
+"""
+function extract_ACSF()
     max_coor = 30. # is actually 12. from the dataset, just to add more safer boundary
     cellbounds = diagm([max_coor, max_coor, max_coor])
     n_finger = 1479 # 29*51
     tdata = @elapsed begin
-        dataset = load("data/qm9_dataset.jld")["data"]
+        dataset = load("data/qm9_dataset_1000.jld")["data"]
     end
     n_data = length(dataset)
     A = zeros(n_data, n_finger) 
     counter = 1
     #limiter = 100 # for prototyping
     tcomp = @elapsed begin
-        open("data/ACSF.txt","w") do io
+        open("data/ACSF_1000.txt","w") do io
             for d ∈ dataset
                 # LIMITER for prototyping:
                 #= if counter == limiter
@@ -117,20 +123,78 @@ function extract_descriptor()
                     ct += 1
                 end
                 print(io, str*"\n")
-                
                 println("datacounter = ", counter)
                 counter += 1
             end
         end
     end
-    #save("data/qm9_desc_acsf_$num_subset.jld", "data", list_data)
-    #display(length(load("data/qm9_desc_acsf_$num_subset.jld")["data"]))
-    #save("data/qm9_matrix.jld", "data", A)
-    #A = load("data/qm9_matrix.jld")["data"]
-    #display(A)
+    #save("data/qm9_desc_acsf_1000.jld", "data", list_data)
+    #display(load("data/qm9_desc_acsf_1000.jld")["data"])
+    save("data/qm9_matrix_1000.jld", "data", A)
+    A = load("data/qm9_matrix_1000.jld")["data"]
+    display(A)
     println("time to load data: ",tdata)
     println("computing time: ",tcomp)
 end
+
+
+"""
+descriptor symmetrizer (or fingerprint computer), by taking for example: the sum, sum(square), mult(i ≢ j) of descriptors; the analogy of a^2 + b^2 + ab.
+mult not yet available
+params:
+    - desc, vector of vectors or Matrix, Float64
+    - n_atom
+    - len_desc, length of the vector of a descriptor
+returns:
+    - finger, Vector{Float64}
+"""
+function desc_symm!(finger, desc, n_atom, len_desc)
+    # if desc is vector of vectors:
+    for i ∈ 1:n_atom
+        finger[1:len_desc] .+= desc[i] # sum 
+        finger[len_desc+1:2*len_desc] .+= (desc[i].^2) # sum(square)
+        # mult
+    end 
+end
+
+
+"""
+extracts the ACSF descriptor, however instead of being stacked, the vectors are: summed, summed(squared), and multiplied(i ≢ j);
+params:
+    - filenames
+"""
+function extract_ACSF_sum()
+    max_coor = 30. # is actually 12. from the dataset, just to add more safer boundary
+    n_finger = 102 # 51 for sum, 51 for sum(squared)
+    cellbounds = diagm([max_coor, max_coor, max_coor])
+    tdata = @elapsed begin
+        dataset = load("data/qm9_dataset_1000.jld")["data"]
+    end
+    n_data = length(dataset)
+    A = zeros(n_data, n_finger)
+    finger = zeros(n_finger) # preallocated vector
+    tcomp = @elapsed begin # start timer
+        open("data/ACSF_sum_1000.txt", "w") do io # open file
+            for i ∈ 1:n_data # loop dataset
+                # generate atom datastructure:
+                coord = transpose(dataset[i]["coordinates"])
+                n_atom = dataset[i]["n_atom"]
+                # compute descriptor:
+                at = Atoms(coord,
+                        [0., 0., 0.], 
+                        [1., 1.], 
+                        [8., 8., 8.], 
+                        cellbounds, 
+                        (false, false, false)
+                        )
+                desc = acsf(at)
+                # compute fingerprint:
+                
+            end
+        end
+    end
+end
+
 
 """
 transforms the descriptors to fingerprint matrix, usually not needed, as the output of the descriptor extractor is already in matrix
