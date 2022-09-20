@@ -131,7 +131,33 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             println(m, " ", ref_point)
             println()
         end
+    # minimal sums of inverse distances mode:
+    elseif mode == "msid"
+        sums_dist = zeros(data_size) # contains the sums or squaresums of distances
+        for m ∈ 1:M-1
+            ### compute list of distances from mean:
+            for i ∈ 1:data_size
+                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+                sums_dist[i] += 1/distances[i, m] # compute and store the sum of inverse distances
+            end
+            ### sort sd vector ascending, since we're taking the minimal:
+            sorted_idx = sortperm(sums_dist)
+            selected_id = 0
+            for id ∈ sorted_idx
+                if centers[id] == 0
+                    centers[id] = 1
+                    selected_id = id
+                    break 
+                end
+            end
+            ### reassign ref point by the new center:
+            ref_point = coords[:, selected_id]
+            push!(center_ids, selected_id)
+            println(m, " ", ref_point)
+            println()
+        end
     end
+
     return center_ids, mean_point
 end
 """
@@ -141,7 +167,7 @@ function main()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
     # ∀ requested M, do the algorithm:
-    for M ∈ [20]
+    for M ∈ [30]
         #M = 10 # number of centers
         # fixed coords, ∈ (fingerprint length, data length):
         coords = Matrix{Float64}(undef, 2, 70) # a list of 2d coord arrays for testing
@@ -159,7 +185,7 @@ function main()
         perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
         coords .+= perturb
 
-        for md ∈ ["fmd", "fsd", "fssd"] 
+        for md ∈ ["fmd", "fsd", "fssd", "msid"] 
             center_ids, mean_point = eldar_cluster(coords, M, mode=md) # generate cluster centers
             # plot the points:
             s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
@@ -167,9 +193,9 @@ function main()
             scatter!([mean_point[1]], [mean_point[2]], color="red")
             annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
             # centers:
-            scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
+            #scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
             for i ∈ eachindex(center_ids)
-                annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.5, L"$k_{%$i}$")
+                annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.35, L"$%$i$")
             end
             display(s)
             savefig(s, "clusterplot/$md"*"_$M.png")
