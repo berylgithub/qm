@@ -83,7 +83,7 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
         end
     # farthest sums of distance mode:
     elseif mode == "fsd"
-        sums_dist = zeros(data_size) # contains the sums or squaresums of distances
+        sums_dist = zeros(data_size) # contains the sums of any funcs of distances
         for m ∈ 1:M-1
             ### compute list of distances from mean:
             for i ∈ 1:data_size
@@ -108,7 +108,7 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
         end
     # farthest squared sums of distance mode:
     elseif mode == "fssd"
-        sums_dist = zeros(data_size) # contains the sums or squaresums of distances
+        sums_dist = zeros(data_size) # contains the sums of any funcs of distances
         for m ∈ 1:M-1
             ### compute list of distances from mean:
             for i ∈ 1:data_size
@@ -133,7 +133,7 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
         end
     # minimal sums of inverse distances mode:
     elseif mode == "msid"
-        sums_dist = zeros(data_size) # contains the sums or squaresums of distances
+        sums_dist = zeros(data_size) # contains the sums of any funcs of distances
         for m ∈ 1:M-1
             ### compute list of distances from mean:
             for i ∈ 1:data_size
@@ -156,8 +156,32 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             println(m, " ", ref_point)
             println()
         end
+    # minimal sums of inverse SQUARED distance:
+    elseif mode == "msisd"
+        sums_dist = zeros(data_size) # contains the sums of any funcs of distances
+        for m ∈ 1:M-1
+            ### compute list of distances from mean:
+            for i ∈ 1:data_size
+                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+                sums_dist[i] += 1/(distances[i, m])^2 # compute and store the sum of som functions
+            end
+            ### sort sd vector ascending, since we're taking the minimal:
+            sorted_idx = sortperm(sums_dist)
+            selected_id = 0
+            for id ∈ sorted_idx
+                if centers[id] == 0
+                    centers[id] = 1
+                    selected_id = id
+                    break 
+                end
+            end
+            ### reassign ref point by the new center:
+            ref_point = coords[:, selected_id]
+            push!(center_ids, selected_id)
+            println(m, " ", ref_point)
+            println()
+        end
     end
-
     return center_ids, mean_point
 end
 """
@@ -181,11 +205,11 @@ function main()
             end
         end
         # perturb points:
-        perturb_val = .2
+        perturb_val = .1
         perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
         coords .+= perturb
 
-        for md ∈ ["fmd", "fsd", "fssd", "msid"] 
+        for md ∈ ["msid", "msisd"] 
             center_ids, mean_point = eldar_cluster(coords, M, mode=md) # generate cluster centers
             # plot the points:
             s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
