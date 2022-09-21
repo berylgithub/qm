@@ -10,16 +10,25 @@ end
 
 """
 computes the average of the fingerprints: dw := ∑ᴺᵥ (wᵥ - w₀)/N   
-params (matrices are column major!!):
-    - w_matrix, matrix containing the molecular features, ∈ Float64, size = (N x len_finger)
+params (matrices are always column major!!):
+    - w_matrix, matrix containing the molecular features, ∈ Float64, size = (len_finger, N-1)
+    - idx, the index of the wanted molecule (w0)
+    - N, number of data
+intermediate:
+    - dif, wν-w0, Matrix{Float64}(len_finger, N)
+output:
+    - dw, zeros size = (len_finger)
 """
-function dw_finger!(s, w_matrix, idx, N)
+function dw_finger!(dw, dif, w_matrix, idx, N)
     for i ∈ union(1:idx-1, idx+1:N) # all except the w0 index itself, since w0 - w0 = 0
-        dif = w_matrix[:, idx] .- w_matrix[:, i]
-        s .+= dif
+        dif[:,i] = w_matrix[:, idx] .- w_matrix[:, i]
+        dw .+= dif[:, i]
     end
-    s = s ./ N
+    dw ./= N
 end
+
+
+
 
 
 """
