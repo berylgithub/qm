@@ -7,6 +7,21 @@ function f_distance(x1, x2)
     return norm(x1 - x2) 
 end
 
+
+"""
+computes the average of the fingerprints: dw := ∑ᴺᵥ (wᵥ - w₀)/N   
+params (matrices are column major!!):
+    - w_matrix, matrix containing the molecular features, ∈ Float64, size = (N x len_finger)
+"""
+function dw_finger!(s, w_matrix, idx, N)
+    for i ∈ union(1:idx-1, idx+1:N) # all except the w0 index itself, since w0 - w0 = 0
+        dif = w_matrix[:, idx] .- w_matrix[:, i]
+        s .+= dif
+    end
+    s = s ./ N
+end
+
+
 """
 eldar's clustering algo by farthest minimal distance
 ***currently only ("default", "default") works***
@@ -226,5 +241,3 @@ function main()
         end
     end
 end
-
-main()
