@@ -22,7 +22,7 @@ function Sdw_finger!(S, dw, dif, w_matrix, idx, N)
     dw ./= N
 
     # S := 
-    for i ∈ 1:N
+    for i ∈ union(1:idx-1, idx+1:N)
         display(dif[:,i]*dif[:,i]')
         S .+= dif[:,i]*dif[:,i]'
     end
@@ -38,7 +38,7 @@ function testsdw()
     dif = zeros(len_finger, N)
     # inputs:
     wmat = [1 2 3; 1 2 3]
-    idx = 3
+    idx = 2
     # func:
     Sdw_finger!(S,dw, dif, wmat, idx, N)
     display(dif)
