@@ -165,6 +165,7 @@ params:
 """
 function extract_ACSF_sum()
     max_coor = 30. # is actually 12. from the dataset, just to add more safer boundary
+    len_desc = 51 
     n_finger = 102 # 51 for sum, 51 for sum(squared)
     cellbounds = diagm([max_coor, max_coor, max_coor])
     tdata = @elapsed begin
@@ -174,25 +175,30 @@ function extract_ACSF_sum()
     A = zeros(n_data, n_finger)
     finger = zeros(n_finger) # preallocated vector
     tcomp = @elapsed begin # start timer
-        open("data/ACSF_sum_1000.txt", "w") do io # open file
-            for i ∈ 1:n_data # loop dataset
-                # generate atom datastructure:
-                coord = transpose(dataset[i]["coordinates"])
-                n_atom = dataset[i]["n_atom"]
-                # compute descriptor:
-                at = Atoms(coord,
-                        [0., 0., 0.], 
-                        [1., 1.], 
-                        [8., 8., 8.], 
-                        cellbounds, 
-                        (false, false, false)
-                        )
-                desc = acsf(at)
-                # compute fingerprint:
-                
-            end
+        for i ∈ 1:n_data # loop dataset
+            # generate atom datastructure:
+            coord = transpose(dataset[i]["coordinates"])
+            n_atom = dataset[i]["n_atom"]
+            # compute descriptor:
+            at = Atoms(coord,
+                    [0., 0., 0.], 
+                    [1., 1.], 
+                    [8., 8., 8.], 
+                    cellbounds, 
+                    (false, false, false)
+                    )
+            desc = acsf(at)
+            # compute fingerprint:
+            desc_symm!(finger, desc, n_atom, len_desc)
+            A[i, :] = finger
+            finger .= 0. # reset vector
+            # save to file?:
         end
     end
+    println("data time = ",tdata)
+    println("comp time = ",tcomp)
+    save("data/ACSF_1000_symm.jld", "data", A)
+    load("data/ACSF_1000_symm.jld")["data"]
 end
 
 
