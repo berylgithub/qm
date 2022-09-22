@@ -318,6 +318,11 @@ function test()
                 counter += 1
             end
         end
+
+        #= len_finger = 3
+        n_data = 70
+        coords = rand(len_finger, n_data) # test 3-dimensional data =#
+
         # perturb points:
         perturb_val = .1
         perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
@@ -339,7 +344,8 @@ function test()
             for md ∈ ["fmd"] 
                 center_ids, mean_point = eldar_cluster(coords, M, 
                                             wbar=ws[i], B=Bs[i], distance=ds[i], mode=md) # generate cluster centers
-                # plot the points:
+                #display(center_ids)
+                                            # plot the points:
                 s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
                 # mean point:
                 scatter!([mean_point[1]], [mean_point[2]], color="red")
@@ -347,7 +353,7 @@ function test()
                 # centers:
                 #scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
                 for i ∈ eachindex(center_ids)
-                    annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.4, L"$%$i$")
+                    annotate!([coords[1, center_ids[i]]].-.2, [coords[2, center_ids[i]]].+0.4, L"$%$i$")
                 end
                 display(s)
                 #savefig(s, "clusterplot/$md"*"_$M.png")
