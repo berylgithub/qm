@@ -24,7 +24,7 @@ eldar's clustering algo by farthest minimal distance
 params:
     - coords: matrix of data (or coords), Matrix{Float64}(n_dim, n_data)
     - M: total number of cluster centers, Int.
-    - purpose: this is specific for molecular computation, by default it shouldnt be changed.
+    - distance: this is specific for molecular computation, by default it shouldnt be changed.
         - "default" = uses 2norm distance
         - "mahalanobis" = uses Mahalanobis distance with mean <- wbar, and additional B linear transformer matrix
     - mode: defines the algorithm used to generate the cluster: 
@@ -42,7 +42,7 @@ outputs:
     - mean_point: the coordinate of the mean point, Vector{Float64}(n_dim)
     - center_ids: containing the sorted (by order of selection) IDs of the centers, Vector{Float64}(M)
 """
-function eldar_cluster(coords, M; wbar = nothing, B = nothing, purpose="default", mode="default", break_ties="default")
+function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default", mode="default", break_ties="default")
     data_size = size(coords)[2] # compute once
     # Eldar's [*cite*] sampling algo, default ver: break ties by earliest index:
     # later move all of the matrices and vectors alloc outside:
@@ -53,15 +53,23 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, purpose="default"
     distances = Matrix{Float64}(undef, data_size, M) # distances from k_x, init matrix oncew
     ## Start from mean of all points:
     mean_point = nothing
-    if purpose == "default"
+    if distance == "default"
         mean_point = vec(mean(coords, dims=2)) # mean over the data for each fingerprint
-    elseif purpose == "molecule" # specialized for molecule
+    elseif distance == "mahalanobis" # specialized for molecule
         mean_point = wbar
     end
     ref_point = mean_point # init with mean, then k_x next iter
-    for i ∈ 1:data_size
-        mean_distances[i] = f_distance(ref_point, coords[:, i])
+    ## compute the distances of all points to the reference point
+    if distance == "default"
+        for i ∈ 1:data_size
+            mean_distances[i] = f_distance(ref_point, coords[:, i])
+        end
+    elseif distance == "mahalanobis"
+        for i ∈ 1:data_size
+            mean_distances[i] = f_distance(B, ref_point, coords[:, i])
+        end
     end
+    
     ### get point with max distance from mean ("default", "default"), no differences for initial center:
     _, selected_id = findmax(mean_distances)
     centers[selected_id] = 1
@@ -71,7 +79,7 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, purpose="default"
     push!(center_ids, selected_id)
 
     # SELECT MODE
-    if purpose == "default" # DEFAULT:
+    if distance == "default" # DEFAULT:
         # farthest minimum distance mode:
         if mode == "fmd"
             # init useful vector:
@@ -203,7 +211,7 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, purpose="default"
                 println() =#
             end
         end
-    elseif purpose == "mahalanobis" # MOLECULE:
+    elseif distance == "mahalanobis" # MOLECULE:
         # farthest minimum distance mode:
         if mode == "fmd"
             # init useful vector:
@@ -298,7 +306,9 @@ function test()
     for M ∈ [30]
         #M = 10 # number of centers
         # fixed coords, ∈ (fingerprint length, data length):
-        coords = Matrix{Float64}(undef, 2, 70) # a list of 2d coord arrays for testing
+        len_finger = 2
+        n_data = 70
+        coords = Matrix{Float64}(undef, len_finger, n_data) # a list of 2d coord arrays for testing
         # fill fixed coords:
         counter = 1
         for i ∈ 1.:7. 
@@ -312,23 +322,36 @@ function test()
         perturb_val = .1
         perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
         coords .+= perturb
+        
+        # compute B:
+        wbar, C = mean_cov(coords, 1, n_data, len_finger)
+        B = compute_B(C)
+        display(wbar)
+        display(B)
+
+        # init params:
+        ws = [nothing, wbar]
+        Bs = [nothing, B]
+        ds = ["default", "mahalanobis"]
 
         # test with Mahalanobis distance:
-        #for p ∈ ["default", "molecule"]
-        for md ∈ ["fmd"] 
-            center_ids, mean_point = eldar_cluster(coords, M, mode=md) # generate cluster centers
-            # plot the points:
-            s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
-            # mean point:
-            scatter!([mean_point[1]], [mean_point[2]], color="red")
-            annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
-            # centers:
-            #scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
-            for i ∈ eachindex(center_ids)
-                annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.4, L"$%$i$")
+        for i ∈ eachindex(ds)
+            for md ∈ ["fmd"] 
+                center_ids, mean_point = eldar_cluster(coords, M, 
+                                            wbar=ws[i], B=Bs[i], distance=ds[i], mode=md) # generate cluster centers
+                # plot the points:
+                s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
+                # mean point:
+                scatter!([mean_point[1]], [mean_point[2]], color="red")
+                annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
+                # centers:
+                #scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
+                for i ∈ eachindex(center_ids)
+                    annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.4, L"$%$i$")
+                end
+                display(s)
+                #savefig(s, "clusterplot/$md"*"_$M.png")
             end
-            display(s)
-            #savefig(s, "clusterplot/$md"*"_$M.png")
         end
     end
 end
