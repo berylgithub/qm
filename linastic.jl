@@ -53,7 +53,12 @@ function compute_B(C)
     # eigendecomposition:
     e = eigen(C)
     #display(e)
-    v = e.values.^(-.5) # take the "inverse sqrt" of the eigenvalue vector
+    # round near zeros to zero, numerical stability:
+    v = e.values
+    bounds = [-1e-10, 1e-10]
+    b = bounds[1] .< v .< bounds[2]
+    v[b] .= 0.
+    v = v.^(-.5) # take the "inverse sqrt" of the eigenvalue vector
     Q = e.vectors
     # eigenvalue regularizer:
     dmax = 1e4*minimum(v) # take the multiple minimum of the diagonal
