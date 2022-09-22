@@ -324,7 +324,7 @@ function test()
         coords .+= perturb
         
         # compute B:
-        wbar, C = mean_cov(coords, 1, n_data, len_finger)
+        wbar, C = mean_cov(coords, 35, n_data, len_finger)
         B = compute_B(C)
         display(wbar)
         display(B)
