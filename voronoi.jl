@@ -7,6 +7,16 @@ function f_distance(x1, x2)
     return norm(x1 - x2) 
 end
 
+"""
+overloader for Mahalanobis distance
+params:
+    - B, matrix computed from the diagonal*Qᵀ
+    - w, variable vector of fingerprint, 
+    - wk, the fingerprint which the distance wants to be computed to, similar(w)
+"""
+function f_distance(B, w, wk)
+    return norm(B*(w-wk), 2)
+end
 
 
 
@@ -105,9 +115,9 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             end
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
+            #= push!(center_ids, selected_id)
             println(m, " ", ref_point)
-            println()
+            println() =#
         end
     # farthest squared sums of distance mode:
     elseif mode == "fssd"
@@ -130,9 +140,9 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             end
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
+            #= push!(center_ids, selected_id)
             println(m, " ", ref_point)
-            println()
+            println() =#
         end
     # minimal sums of inverse distances mode:
     elseif mode == "msid"
@@ -155,9 +165,9 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             end
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
+            #= push!(center_ids, selected_id)
             println(m, " ", ref_point)
-            println()
+            println() =#
         end
     # minimal sums of inverse SQUARED distance:
     elseif mode == "msisd"
@@ -180,9 +190,9 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             end
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
+            #= push!(center_ids, selected_id)
             println(m, " ", ref_point)
-            println()
+            println() =#
         end
     end
     return center_ids, mean_point
