@@ -1,5 +1,5 @@
 using Plots, Statistics, LaTeXStrings, LinearAlgebra, Distributions
-
+include("RoSemi.jl")
 """
 dummy distance between two coordinates, should use "Mahalanobis distance" later
 """
@@ -18,14 +18,15 @@ function f_distance(B, w, wk)
     return norm(B*(w-wk), 2)
 end
 
-
-
 """
 eldar's clustering algo by farthest minimal distance
 ***currently only ("default", "default") works***
 params:
     - coords: matrix of data (or coords), Matrix{Float64}(n_dim, n_data)
     - M: total number of cluster centers, Int.
+    - purpose: this is specific for molecular computation, by default it shouldnt be changed.
+        - "default" = uses 2norm distance
+        - "mahalanobis" = uses Mahalanobis distance with mean <- wbar, and additional B linear transformer matrix
     - mode: defines the algorithm used to generate the cluster: 
         - "default" is farthest minimal distance
         - "fmd" farthest minimal distance
@@ -41,7 +42,7 @@ outputs:
     - mean_point: the coordinate of the mean point, Vector{Float64}(n_dim)
     - center_ids: containing the sorted (by order of selection) IDs of the centers, Vector{Float64}(M)
 """
-function eldar_cluster(coords, M; mode="default", break_ties="default")
+function eldar_cluster(coords, M; wbar = nothing, B = nothing, purpose="default", mode="default", break_ties="default")
     data_size = size(coords)[2] # compute once
     # Eldar's [*cite*] sampling algo, default ver: break ties by earliest index:
     # later move all of the matrices and vectors alloc outside:
@@ -51,7 +52,12 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
     mean_distances = Vector{Float64}(undef, data_size) # distances from mean point
     distances = Matrix{Float64}(undef, data_size, M) # distances from k_x, init matrix oncew
     ## Start from mean of all points:
-    mean_point = vec(mean(coords, dims=2)) # mean over the data for each fingerprint
+    mean_point = nothing
+    if purpose == "default"
+        mean_point = vec(mean(coords, dims=2)) # mean over the data for each fingerprint
+    elseif purpose == "molecule" # specialized for molecule
+        mean_point = wbar
+    end
     ref_point = mean_point # init with mean, then k_x next iter
     for i ∈ 1:data_size
         mean_distances[i] = f_distance(ref_point, coords[:, i])
@@ -64,135 +70,220 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
     ref_point = coords[:, selected_id]
     push!(center_ids, selected_id)
 
-    # farthest minimum distance mode:
-    if mode == "fmd"
-        # init useful vector:
-        min_dist = Vector{Float64}(undef, data_size) # init vector containing min distances
-        for m ∈ 1:M-1  ## To find k_x s.t. x > 1, for m ∈ M:
-            ## Find largest distance:
-            ### compute list of distances from mean:
-            for i ∈ 1:data_size
-                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
-            end
-            ### min of column:        
-            for i ∈ 1:data_size
-                min_dist[i] = minimum(distances[i, 1:m])
-            end
-            ### sort distances descending:
-            sorted_idx = sortperm(min_dist, rev=true)
-            selected_id = 0
-            for id ∈ sorted_idx
-                if centers[id] == 0
-                    centers[id] = 1
-                    selected_id = id
-                    break 
+    # SELECT MODE
+    if purpose == "default" # DEFAULT:
+        # farthest minimum distance mode:
+        if mode == "fmd"
+            # init useful vector:
+            min_dist = Vector{Float64}(undef, data_size) # init vector containing min distances
+            for m ∈ 1:M-1  ## To find k_x s.t. x > 1, for m ∈ M:
+                ## Find largest distance:
+                ### compute list of distances from mean:
+                for i ∈ 1:data_size
+                    distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
                 end
+                ### min of column:        
+                for i ∈ 1:data_size
+                    min_dist[i] = minimum(distances[i, 1:m])
+                end
+                ### sort distances descending:
+                sorted_idx = sortperm(min_dist, rev=true)
+                selected_id = 0
+                for id ∈ sorted_idx
+                    if centers[id] == 0
+                        centers[id] = 1
+                        selected_id = id
+                        break 
+                    end
+                end
+                ### reassign ref point by the new center:
+                ref_point = coords[:, selected_id]
+                push!(center_ids, selected_id)
+                #= println(m, " ", ref_point)
+                println() =#
             end
-            ### reassign ref point by the new center:
-            ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
-            #= println(m, " ", ref_point)
-            println() =#
+        # farthest sums of distance mode:
+        elseif mode == "fsd"
+            sums_dist = zeros(data_size) # contains the sums of any funcs of distances
+            for m ∈ 1:M-1
+                ### compute list of distances from mean:
+                for i ∈ 1:data_size
+                    distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+                    sums_dist[i] += distances[i, m] # compute and store the sum of distances
+                end
+                ### sort sd descending (same way as md):
+                sorted_idx = sortperm(sums_dist, rev=true)
+                selected_id = 0
+                for id ∈ sorted_idx
+                    if centers[id] == 0
+                        centers[id] = 1
+                        selected_id = id
+                        break 
+                    end
+                end
+                ### reassign ref point by the new center:
+                ref_point = coords[:, selected_id]
+                push!(center_ids, selected_id)
+                #= println(m, " ", ref_point)
+                println() =#
+            end
+        # farthest squared sums of distance mode:
+        elseif mode == "fssd"
+            sums_dist = zeros(data_size) # contains the sums of any funcs of distances
+            for m ∈ 1:M-1
+                ### compute list of distances from mean:
+                for i ∈ 1:data_size
+                    distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+                    sums_dist[i] += distances[i, m]^2 # compute and store the SQUARED sum of distances
+                end
+                ### sort sd descending (same way as md):
+                sorted_idx = sortperm(sums_dist, rev=true)
+                selected_id = 0
+                for id ∈ sorted_idx
+                    if centers[id] == 0
+                        centers[id] = 1
+                        selected_id = id
+                        break 
+                    end
+                end
+                ### reassign ref point by the new center:
+                ref_point = coords[:, selected_id]
+                push!(center_ids, selected_id)
+                #= println(m, " ", ref_point)
+                println() =#
+            end
+        # minimal sums of inverse distances mode:
+        elseif mode == "msid"
+            sums_dist = zeros(data_size) # contains the sums of any funcs of distances
+            for m ∈ 1:M-1
+                ### compute list of distances from mean:
+                for i ∈ 1:data_size
+                    distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+                    sums_dist[i] += 1/distances[i, m] # compute and store the sum of inverse distances
+                end
+                ### sort sd vector ascending, since we're taking the minimal:
+                sorted_idx = sortperm(sums_dist)
+                selected_id = 0
+                for id ∈ sorted_idx
+                    if centers[id] == 0
+                        centers[id] = 1
+                        selected_id = id
+                        break 
+                    end
+                end
+                ### reassign ref point by the new center:
+                ref_point = coords[:, selected_id]
+                push!(center_ids, selected_id)
+                #= println(m, " ", ref_point)
+                println() =#
+            end
+        # minimal sums of inverse SQUARED distance:
+        elseif mode == "msisd"
+            sums_dist = zeros(data_size) # contains the sums of any funcs of distances
+            for m ∈ 1:M-1
+                ### compute list of distances from mean:
+                for i ∈ 1:data_size
+                    distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
+                    sums_dist[i] += 1/(distances[i, m])^2 # compute and store the sum of som functions
+                end
+                ### sort sd vector ascending, since we're taking the minimal:
+                sorted_idx = sortperm(sums_dist)
+                selected_id = 0
+                for id ∈ sorted_idx
+                    if centers[id] == 0
+                        centers[id] = 1
+                        selected_id = id
+                        break 
+                    end
+                end
+                ### reassign ref point by the new center:
+                ref_point = coords[:, selected_id]
+                push!(center_ids, selected_id)
+                #= println(m, " ", ref_point)
+                println() =#
+            end
         end
-    # farthest sums of distance mode:
-    elseif mode == "fsd"
-        sums_dist = zeros(data_size) # contains the sums of any funcs of distances
-        for m ∈ 1:M-1
-            ### compute list of distances from mean:
-            for i ∈ 1:data_size
-                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
-                sums_dist[i] += distances[i, m] # compute and store the sum of distances
-            end
-            ### sort sd descending (same way as md):
-            sorted_idx = sortperm(sums_dist, rev=true)
-            selected_id = 0
-            for id ∈ sorted_idx
-                if centers[id] == 0
-                    centers[id] = 1
-                    selected_id = id
-                    break 
+    elseif purpose == "mahalanobis" # MOLECULE:
+        # farthest minimum distance mode:
+        if mode == "fmd"
+            # init useful vector:
+            min_dist = Vector{Float64}(undef, data_size) # init vector containing min distances
+            for m ∈ 1:M-1  ## To find k_x s.t. x > 1, for m ∈ M:
+                ## Find largest distance:
+                ### compute list of distances from mean:
+                for i ∈ 1:data_size
+                    distances[i, m] = f_distance(B, ref_point, coords[:, i]) #compute distances
                 end
-            end
-            ### reassign ref point by the new center:
-            ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
-            #= println(m, " ", ref_point)
-            println() =#
-        end
-    # farthest squared sums of distance mode:
-    elseif mode == "fssd"
-        sums_dist = zeros(data_size) # contains the sums of any funcs of distances
-        for m ∈ 1:M-1
-            ### compute list of distances from mean:
-            for i ∈ 1:data_size
-                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
-                sums_dist[i] += distances[i, m]^2 # compute and store the SQUARED sum of distances
-            end
-            ### sort sd descending (same way as md):
-            sorted_idx = sortperm(sums_dist, rev=true)
-            selected_id = 0
-            for id ∈ sorted_idx
-                if centers[id] == 0
-                    centers[id] = 1
-                    selected_id = id
-                    break 
+                ### min of column:        
+                for i ∈ 1:data_size
+                    min_dist[i] = minimum(distances[i, 1:m])
                 end
-            end
-            ### reassign ref point by the new center:
-            ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
-            #= println(m, " ", ref_point)
-            println() =#
-        end
-    # minimal sums of inverse distances mode:
-    elseif mode == "msid"
-        sums_dist = zeros(data_size) # contains the sums of any funcs of distances
-        for m ∈ 1:M-1
-            ### compute list of distances from mean:
-            for i ∈ 1:data_size
-                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
-                sums_dist[i] += 1/distances[i, m] # compute and store the sum of inverse distances
-            end
-            ### sort sd vector ascending, since we're taking the minimal:
-            sorted_idx = sortperm(sums_dist)
-            selected_id = 0
-            for id ∈ sorted_idx
-                if centers[id] == 0
-                    centers[id] = 1
-                    selected_id = id
-                    break 
+                ### sort distances descending:
+                sorted_idx = sortperm(min_dist, rev=true)
+                selected_id = 0
+                for id ∈ sorted_idx
+                    if centers[id] == 0
+                        centers[id] = 1
+                        selected_id = id
+                        break 
+                    end
                 end
+                ### reassign ref point by the new center:
+                ref_point = coords[:, selected_id]
+                push!(center_ids, selected_id)
+                #= println(m, " ", ref_point)
+                println() =#
             end
-            ### reassign ref point by the new center:
-            ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
-            #= println(m, " ", ref_point)
-            println() =#
-        end
-    # minimal sums of inverse SQUARED distance:
-    elseif mode == "msisd"
-        sums_dist = zeros(data_size) # contains the sums of any funcs of distances
-        for m ∈ 1:M-1
-            ### compute list of distances from mean:
-            for i ∈ 1:data_size
-                distances[i, m] = f_distance(ref_point, coords[:, i]) #compute distances
-                sums_dist[i] += 1/(distances[i, m])^2 # compute and store the sum of som functions
-            end
-            ### sort sd vector ascending, since we're taking the minimal:
-            sorted_idx = sortperm(sums_dist)
-            selected_id = 0
-            for id ∈ sorted_idx
-                if centers[id] == 0
-                    centers[id] = 1
-                    selected_id = id
-                    break 
+        # minimal sums of inverse distances mode:
+        elseif mode == "msid"
+            sums_dist = zeros(data_size) # contains the sums of any funcs of distances
+            for m ∈ 1:M-1
+                ### compute list of distances from mean:
+                for i ∈ 1:data_size
+                    distances[i, m] = f_distance(B, ref_point, coords[:, i]) #compute distances
+                    sums_dist[i] += 1/distances[i, m] # compute and store the sum of inverse distances
                 end
+                ### sort sd vector ascending, since we're taking the minimal:
+                sorted_idx = sortperm(sums_dist)
+                selected_id = 0
+                for id ∈ sorted_idx
+                    if centers[id] == 0
+                        centers[id] = 1
+                        selected_id = id
+                        break 
+                    end
+                end
+                ### reassign ref point by the new center:
+                ref_point = coords[:, selected_id]
+                push!(center_ids, selected_id)
+                #= println(m, " ", ref_point)
+                println() =#
             end
-            ### reassign ref point by the new center:
-            ref_point = coords[:, selected_id]
-            push!(center_ids, selected_id)
-            #= println(m, " ", ref_point)
-            println() =#
+        # minimal sums of inverse SQUARED distance:
+        elseif mode == "msisd"
+            sums_dist = zeros(data_size) # contains the sums of any funcs of distances
+            for m ∈ 1:M-1
+                ### compute list of distances from mean:
+                for i ∈ 1:data_size
+                    distances[i, m] = f_distance(B, ref_point, coords[:, i]) #compute distances
+                    sums_dist[i] += 1/(distances[i, m])^2 # compute and store the sum of som functions
+                end
+                ### sort sd vector ascending, since we're taking the minimal:
+                sorted_idx = sortperm(sums_dist)
+                selected_id = 0
+                for id ∈ sorted_idx
+                    if centers[id] == 0
+                        centers[id] = 1
+                        selected_id = id
+                        break 
+                    end
+                end
+                ### reassign ref point by the new center:
+                ref_point = coords[:, selected_id]
+                push!(center_ids, selected_id)
+                #= println(m, " ", ref_point)
+                println() =#
+            end
         end
     end
     return center_ids, mean_point
@@ -200,7 +291,7 @@ end
 """
 tempoorary main container
 """
-function main()
+function test()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
     # ∀ requested M, do the algorithm:
@@ -222,7 +313,9 @@ function main()
         perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
         coords .+= perturb
 
-        for md ∈ ["msid", "msisd"] 
+        # test with Mahalanobis distance:
+        #for p ∈ ["default", "molecule"]
+        for md ∈ ["fmd"] 
             center_ids, mean_point = eldar_cluster(coords, M, mode=md) # generate cluster centers
             # plot the points:
             s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
