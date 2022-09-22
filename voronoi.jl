@@ -91,8 +91,8 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
             push!(center_ids, selected_id)
-            println(m, " ", ref_point)
-            println()
+            #= println(m, " ", ref_point)
+            println() =#
         end
     # farthest sums of distance mode:
     elseif mode == "fsd"
@@ -115,8 +115,8 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             end
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
-            #= push!(center_ids, selected_id)
-            println(m, " ", ref_point)
+            push!(center_ids, selected_id)
+            #= println(m, " ", ref_point)
             println() =#
         end
     # farthest squared sums of distance mode:
@@ -140,8 +140,8 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             end
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
-            #= push!(center_ids, selected_id)
-            println(m, " ", ref_point)
+            push!(center_ids, selected_id)
+            #= println(m, " ", ref_point)
             println() =#
         end
     # minimal sums of inverse distances mode:
@@ -165,8 +165,8 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             end
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
-            #= push!(center_ids, selected_id)
-            println(m, " ", ref_point)
+            push!(center_ids, selected_id)
+            #= println(m, " ", ref_point)
             println() =#
         end
     # minimal sums of inverse SQUARED distance:
@@ -190,8 +190,8 @@ function eldar_cluster(coords, M; mode="default", break_ties="default")
             end
             ### reassign ref point by the new center:
             ref_point = coords[:, selected_id]
-            #= push!(center_ids, selected_id)
-            println(m, " ", ref_point)
+            push!(center_ids, selected_id)
+            #= println(m, " ", ref_point)
             println() =#
         end
     end
@@ -232,10 +232,10 @@ function main()
             # centers:
             #scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
             for i ∈ eachindex(center_ids)
-                annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.35, L"$%$i$")
+                annotate!([coords[1, center_ids[i]]], [coords[2, center_ids[i]]].+0.4, L"$%$i$")
             end
             display(s)
-            savefig(s, "clusterplot/$md"*"_$M.png")
+            #savefig(s, "clusterplot/$md"*"_$M.png")
         end
     end
 end
