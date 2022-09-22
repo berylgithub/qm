@@ -52,14 +52,14 @@ outputs:
 function compute_B(C)
     # eigendecomposition:
     e = eigen(C)
-    display(e)
+    #display(e)
     v = e.values.^(-.5) # take the "inverse sqrt" of the eigenvalue vector
     Q = e.vectors
     # eigenvalue regularizer:
     dmax = 1e4*minimum(v) # take the multiple minimum of the diagonal
-    display(v)
+    #display(v)
     v = min.(dmax, v)
-    display(v)
+    #display(v)
     D = diagm(v)
     # compute B:
     return D*Q' # B = D*Qᵀ
