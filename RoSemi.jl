@@ -16,7 +16,7 @@ function test()
     println(N, " ", L)
     M = 100 # number of selected data
     # compute mean and cov:
-    idx = 1 # the ith data point of the dataset
+    idx = 200 # the ith data point of the dataset, can be arbitrary technically
     wbar, C = mean_cov(A, idx, N, L)
     B = compute_B(C)
     display(wbar)
