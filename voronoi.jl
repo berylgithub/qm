@@ -1,5 +1,5 @@
 using Plots, Statistics, LaTeXStrings, LinearAlgebra, Distributions
-include("RoSemi.jl")
+include("linastic.jl")
 """
 dummy distance between two coordinates, should use "Mahalanobis distance" later
 """
