@@ -27,14 +27,16 @@ function bspline(x)
 end
 
 function test_spline()
-    M = 3
+    M = 6
     n_data = Integer(1e3)
     x = reshape(collect(LinRange(-1., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
     S = Matrix{Float64}(undef, n_data, M+1)
     for i ∈ 0:M
         S[:, i+1] = bspline(M.*x .- i)
     end
-    plot(vec(x), S)
+    display(x)
+    display(S)
+    plot(vec(x), S, xlims = (-1., 2.), ylims = (-1., 1.))
 end
 
 function test_cluster()
