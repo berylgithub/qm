@@ -27,16 +27,19 @@ function bspline(x)
 end
 
 function test_spline()
-    M = 6
-    n_data = Integer(1e3)
+    M = 2
+    n_data = Integer(1e2)
     x = reshape(collect(LinRange(-1., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
-    S = Matrix{Float64}(undef, n_data, M+1)
+    S = zeros(n_data, M+3)
     for i ∈ 0:M
-        S[:, i+1] = bspline(M.*x .- i)
+        S[:, i+2] = bspline(M.*x .- i) # should be M+3 features, but it seems the fist and last col is zeros
     end
+    # set negatives to zeros:
+    idx = S .< 0.
+    S[idx] .= 0.
     display(x)
     display(S)
-    plot(vec(x), S, xlims = (-1., 2.), ylims = (-1., 1.))
+    plot(vec(x), S, xlims = (-1., 2.), ylims = (-.1, 1.))
 end
 
 function test_cluster()
