@@ -26,20 +26,54 @@ function bspline(x)
     return s
 end
 
+function bspline2(z)
+    m, n = size(z)
+    display([m, n])
+    β = sparse(zeros(n))
+    z = abs.(z)
+    ind = (z .< 1)
+    z1 = z[ind]
+    β[ind] = 1 .+ 0.75*z1.^2 .*(z1 .- 2)
+    ind = (.~ind) .&& (β .< 2)
+    z1 = z[ind]
+    β[ind] = 0.25*(2 .- z1).^3
+    return β
+end
+
+"""
+VECTOR ONLY !!, for testing
+"""
+function bspline3(x)
+    m, n = size(x)
+    β = sparse(zeros(n))
+    for i ∈ 1:n
+        z = abs(x[i])
+        if z < 1
+            β[i] = 1 + .75*x[i]^2 * (z - 2)
+        elseif 1 ≤ z < 2
+            β[i] = 0.25 * (2 - z)^3
+        end
+    end
+    return β
+    
+end
+
+
 function test_spline()
     M = 4
     n_data = Integer(100)
     x = reshape(collect(LinRange(0., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
     S = zeros(n_data, M+3)
     for i ∈ 1:M+3
-        S[:, i] = bspline(M*x.+2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
+        S[:, i] = bspline2(M*x .+ 2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
     end
     # set negatives to zeros:
     #idx = S .< 0.
     #S[idx] .= 0.
     display(x)
     display(S)
-    plot(vec(x), S, xlims = (-.5, 1.5), ylims = (-.1, 1.))
+    plot(vec(x), S)
+    #, xlims = (-.5, 1.5), ylims = (-.1, 1.)
 end
 
 function test_cluster()
