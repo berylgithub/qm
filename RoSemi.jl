@@ -9,49 +9,39 @@ placeholder for the (Ro)bust (S)h(e)pard (m)odel for (i)nterpolation constructor
 
 
 """
+The Bspline works for matrices
+
 bspline constructor (mimic of matlab ver by prof. Neumaier)
 params:
-    - x, feature matrix (ndata x nfeature)
+    - z, feature matrix (ndata, nfeature)
 """
-function bspline(x)
-    m, n = size(x)
-    s = sparse(zeros(m, n))
-    x = abs.(x)
-    ind = x .< 1
-    x1 = x[ind]
-    s[ind] = 1 .+ .75*x1.^2 .*(x1 .- 2)
-    ind = (s .< 2) .&& (.~ind)
-    x1 = x[ind]
-    s[ind] = .25*(2 .- x1).^3
-    return s
-end
-
-function bspline2(z)
+function bspline(z)
     m, n = size(z)
-    display([m, n])
-    β = sparse(zeros(n))
+    β = sparse(zeros(m, n))
     z = abs.(z)
     ind = (z .< 1)
     z1 = z[ind]
     β[ind] = 1 .+ 0.75*z1.^2 .*(z1 .- 2)
-    ind = (.~ind) .&& (β .< 2)
+    ind = (.!ind) .&& (z .< 2)
     z1 = z[ind]
     β[ind] = 0.25*(2 .- z1).^3
     return β
 end
 
 """
-VECTOR ONLY !!, for testing
+verbose version
 """
-function bspline3(x)
-    m, n = size(x)
-    β = sparse(zeros(n))
-    for i ∈ 1:n
-        z = abs(x[i])
-        if z < 1
-            β[i] = 1 + .75*x[i]^2 * (z - 2)
-        elseif 1 ≤ z < 2
-            β[i] = 0.25 * (2 - z)^3
+function bspline2(x)
+    m, n = size(x) # fingerprint x data
+    β = sparse(zeros(m, n))
+    for j ∈ 1:n 
+        for i ∈ 1:m
+            z = abs(x[i,j])
+            if z < 1
+                β[i,j] = 1 + .75*x[i,j]^2 * (z - 2)
+            elseif 1 ≤ z < 2
+                β[i,j] = 0.25 * (2 - z)^3
+            end
         end
     end
     return β
@@ -60,20 +50,28 @@ end
 
 
 function test_spline()
-    M = 4
+    M = 5
+    n_finger = 2
     n_data = Integer(100)
-    x = reshape(collect(LinRange(0., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
+#=     x = reshape(collect(LinRange(0., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
     S = zeros(n_data, M+3)
     for i ∈ 1:M+3
         S[:, i] = bspline2(M*x .+ 2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
     end
-    # set negatives to zeros:
-    #idx = S .< 0.
-    #S[idx] .= 0.
     display(x)
     display(S)
     plot(vec(x), S)
-    #, xlims = (-.5, 1.5), ylims = (-.1, 1.)
+    #, xlims = (-.5, 1.5), ylims = (-.1, 1.) =#
+    x = [collect(LinRange(0., 1., 100)) collect(LinRange(0., 1., 100)) .+ 1]
+    x = transpose(x)
+    S = zeros(n_finger, n_data, M+3)
+    for i ∈ 1:M+3
+        S[:, :, i] = bspline(M .* x .+ 2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
+    end
+    display(S)
+    for i ∈ 1:n_finger
+        display(plot(vec(x[i,:]), S[i, :, :]))
+    end
 end
 
 function test_cluster()
