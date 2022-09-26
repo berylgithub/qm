@@ -1,4 +1,4 @@
-using JLD, SparseArrays
+using JLD, SparseArrays, Distributions, Statistics
 
 include("voronoi.jl")
 include("linastic.jl")
@@ -27,7 +27,7 @@ function bspline(x)
 end
 
 function test_spline()
-    M = 2
+    M = 5
     n_data = Integer(1e2)
     x = reshape(collect(LinRange(-1., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
     S = zeros(n_data, M+3)
@@ -60,4 +60,31 @@ function test_cluster()
     center_ids, mean_point = eldar_cluster(A, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd") # generate cluster centers
     display(mean_point)
     display(center_ids)
+end
+
+function test_input_spline()
+    # one dimensional normaliztion test:
+    fhat = rand(Uniform(1., 10.), 10) # data vector size = (N)
+    display(fhat)
+    println("t = 1")
+    supf = maximum(fhat)
+    inff = minimum(fhat)
+    b = (supf + inff)/2
+    P = 1 / (supf - b)
+    u = P*(fhat .- b)
+    display(u)
+
+    # dim t > 1:
+    println("t > 1")
+    fhat = rand(Uniform(1., 10.), (2, 10))
+    display(fhat)
+    supf = maximum(fhat, dims=2)
+    inff = minimum(fhat, dims=2)
+    b = (supf .+ inff) ./ 2
+    display(b)
+    P = diagm(vec(1 ./ (supf .- b)))
+    u = P*(fhat .- b)
+    display(u)
+
+
 end
