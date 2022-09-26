@@ -27,19 +27,19 @@ function bspline(x)
 end
 
 function test_spline()
-    M = 5
-    n_data = Integer(1e2)
-    x = reshape(collect(LinRange(-1., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
+    M = 4
+    n_data = Integer(100)
+    x = reshape(collect(LinRange(0., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
     S = zeros(n_data, M+3)
-    for i ∈ 0:M
-        S[:, i+2] = bspline(M.*x .- i) # should be M+3 features, but it seems the fist and last col is zeros
+    for i ∈ 1:M+3
+        S[:, i] = bspline(M*x.+2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
     end
     # set negatives to zeros:
-    idx = S .< 0.
-    S[idx] .= 0.
+    #idx = S .< 0.
+    #S[idx] .= 0.
     display(x)
     display(S)
-    plot(vec(x), S, xlims = (-1., 2.), ylims = (-.1, 1.))
+    plot(vec(x), S, xlims = (-.5, 1.5), ylims = (-.1, 1.))
 end
 
 function test_cluster()
@@ -62,7 +62,7 @@ function test_cluster()
     display(center_ids)
 end
 
-function test_input_spline()
+function test_normalization()
     # one dimensional normaliztion test:
     fhat = rand(Uniform(1., 10.), 10) # data vector size = (N)
     display(fhat)
@@ -85,6 +85,4 @@ function test_input_spline()
     P = diagm(vec(1 ./ (supf .- b)))
     u = P*(fhat .- b)
     display(u)
-
-
 end
