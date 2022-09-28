@@ -1,0 +1,160 @@
+\documentclass[12pt]{article}
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+\usepackage[a4paper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+% Useful packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+%macros
+\newcommand{\defeq}[2]{\stackrel{\mathclap{\normalfont\mbox{#1}}}{#2}}
+\def\D{\displaystyle}
+\def\att{                    % mark at the margin
+        \marginpar[ \hspace*{\fill} \raisebox{-0.2em}{\rule{2mm}{1.2em}} ]
+        {\raisebox{-0.2em}{\rule{2mm}{1.2em}} }
+        }
+\def\at#1{[*** \att #1 ***]}  % text needing attention
+\def\spc{\hspace*{0.5cm}}
+
+\title{RoSeMI: Robust Shepard model for interpolation}
+%\author{Beryl Ramadhian Aribowo}
+
+\begin{document}
+\maketitle
+The generalized Shepard model has the form of 
+\begin{equation}
+    \label{eq:shepard}
+    V_K(w):=R_K(w)/S_K(w) ~~~ \text{ for } w \in \mathbb{R}^m \setminus \{w_k\mid k\in K \},
+\end{equation}
+where
+\begin{equation}
+    R_K(w):=\sum_{k\in K} \frac{V_k(w)}{D_k(w)},~~~
+    S_K(w):=\sum_{k\in K} \frac{1}{D_k(w)},
+\end{equation}
+and
+\begin{equation}
+    \label{eq:vk}
+    V_k(w) = E_k + \sum_l \theta_{kl} \phi_{kl}(w).
+\end{equation}
+By (\ref{eq:vk}), (\ref{eq:shepard}) can be expanded into
+\begin{equation}
+    \label{eq:vk_expand}
+    V_K(w) := \sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w). 
+\end{equation}
+The quality of the prediction accuracy is measured by the \textbf{mean absolute deviation}
+\begin{equation}
+    \text{MAD}_K(w) := \frac{1}{|K|}\sum_{j\in K}|\Delta_{jK}(w)|
+\end{equation}
+and the \textbf{root mean square deviation}
+\begin{equation}
+    \text{RMSD}_K(w) := \sqrt{\frac{1}{|K|}\sum_{j\in K}\Delta_{jK}(w)^2},
+\end{equation}
+where
+\begin{equation}
+    \label{eq:delta}
+    \begin{split}
+        \Delta_{jK}(w)&:=\D\frac{V_K(w)-V_j(w)}{D_j(w)S_K(w)-1} \\
+        &\defeq{(\refeq{eq:vk_expand})}{=} \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
+    \end{split}
+\end{equation}
+and $l=1,2,...L$.
+
+A good prediction model is reflected by small MAD or RMSD, hence a minimization routine is required. In order to solve the minimzation problem, a linear sysem or least squares formulation is needed. For example, if the RMSD is chosen as the objective function then the problem formulation would be
+\begin{equation}
+    \label{eq:min}
+    \min_{\theta} \text{ RMSD}_K(w) = \min_{\theta} \sqrt{\frac{1}{|K|} \left\| A(w)\theta - b(w)\right\|_2^2}
+\end{equation}
+where $A$ is the data matrix, $\theta$ is the coefficient vector, and $b$ is the target vector.
+With regards to (\ref{eq:min}), (\ref{eq:delta}) can be rewritten into matrix form
+\begin{equation}
+    \label{eq:delta_matrix}
+    \begin{split}
+        &\Delta_{jK}(w) := \\
+        &\frac{
+            \begin{bmatrix}
+                \frac{1}{D_1(w)} & \frac{\phi_{1, 1}(w)}{D_1(w)} & \frac{\phi_{1,2}(w)}{D_1(w)} & \dots & \frac{\phi_{1,l}(w)}{D_1(w)} & \dots & \frac{\phi_{2,1}(w)}{D_2(w)} & \dots & \frac{\phi_{k,l}(w)}{D_k(w)} & \dots \\
+                \vdots & \vdots & \vdots & & \vdots & & \vdots & & \vdots &\\
+                \frac{1}{D_1(w)} & \frac{\phi_{1, 1}(w)}{D_1(w)} & \frac{\phi_{1,2}(w)}{D_1(w)} & \dots & \frac{\phi_{1,l}(w)}{D_1(w)} & \dots & \frac{\phi_{2,1}(w)}{D_2(w)} & \dots & \frac{\phi_{k,l}(w)}{D_k(w)} & \dots
+            \end{bmatrix}
+            \begin{bmatrix}
+                E_1 \\
+                \theta_{1,1} \\
+                \theta_{1,2} \\
+                \vdots \\
+                E_2 \\
+                \theta_{2,1} \\
+                \theta_{2,2} \\
+                \vdots \\
+                E_k \\
+                \theta_{k,l} \\
+                \vdots \\
+            \end{bmatrix}
+        }{S_K(w)}
+        -
+        \begin{bmatrix}
+            E_1 + \sum_l \theta_{1,l} \phi_{1,l}(w) \\
+            E_2 + \sum_l \theta_{2,l} \phi_{2,l}(w) \\
+            \vdots \\
+            E_j + \sum_l \theta_{j,l} \phi_{j,l}(w) \\
+            \vdots
+        \end{bmatrix}
+        ,
+    \end{split}
+\end{equation}
+where for each row $j$ the final energy value will be scaled by $D_j(w)S_K(w)-1$. For all $w_v, v = 1,2...|N|$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeats for each $w_v$, hence
+\begin{equation}
+    \label{eq:A_matrix}
+    \begin{split}
+        &A\theta - b = \\
+        &\frac{
+            \begin{bmatrix}
+                \frac{1}{D_1(w_1)} & \frac{\phi_{1, 1}(w_1)}{D_1(w_1)} &  & \dots & \frac{\phi_{1,l}(w_1)}{D_1(w_1)} & \dots & \frac{\phi_{2,1}(w_1)}{D_2(w_1)} & \dots & \frac{\phi_{k,l}(w_1)}{D_k(w_1)} & \dots \\
+                \vdots & \vdots & \vdots & & \vdots & & \vdots & & \vdots &\\
+                \frac{1}{D_1(w_1)} & \frac{\phi_{1, 1}(w_1)}{D_1(w_1)} &  & \dots & \frac{\phi_{1,l}(w_1)}{D_1(w_1)} & \dots & \frac{\phi_{2,1}(w_1)}{D_2(w_1)} & \dots & \frac{\phi_{k,l}(w_1)}{D_k(w_1)} & \dots \\
+                \frac{1}{D_1(w_2)} & \frac{\phi_{1, 1}(w_2)}{D_1(w_2)} &  & \dots & \frac{\phi_{1,l}(w_2)}{D_1(w_2)} & \dots & \frac{\phi_{2,1}(w_2)}{D_2(w_2)} & \dots & \frac{\phi_{k,l}(w_2)}{D_k(w_2)} & \dots \\
+                \vdots & \vdots & \vdots & & \vdots & & \vdots & & \vdots &\\
+                \frac{1}{D_1(w_v)} & \frac{\phi_{1, 1}(w_v)}{D_1(w_v)} &  & \dots & \frac{\phi_{1,l}(w_v)}{D_1(w_v)} & \dots & \frac{\phi_{2,1}(w_v)}{D_2(w_v)} & \dots & \frac{\phi_{k,l}(w_v)}{D_k(w_v)} & \dots \\
+                \vdots & \vdots & \vdots & & \vdots & & \vdots & & \vdots &
+            \end{bmatrix}
+            \begin{bmatrix}
+                E_1 \\
+                \theta_{1,1} \\
+                \theta_{1,2} \\
+                \vdots \\
+                E_2 \\
+                \theta_{2,1} \\
+                \theta_{2,2} \\
+                \vdots \\
+                E_k \\
+                \theta_{k,l} \\
+                \vdots \\
+            \end{bmatrix}
+        }{S_K(w)}
+        - 
+        \begin{bmatrix}
+            E_1 + \sum_l \theta_{1,l} \phi_{1,l}(w_1) \\
+            \vdots \\
+            E_j + \sum_l \theta_{j,l} \phi_{j,l}(w_1) \\
+            \vdots \\
+            E_1 + \sum_l \theta_{1,l} \phi_{1,l}(w_v) \\
+            \vdots \\
+            E_j + \sum_l \theta_{j,l} \phi_{j,l}(w_v) \\
+            \vdots \\
+        \end{bmatrix}
+        .
+    \end{split}
+\end{equation}
+\end{document}
