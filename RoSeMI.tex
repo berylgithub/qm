@@ -80,8 +80,9 @@ Let us simplify the expressions
         \alpha_j &:= D_jS_K-1.
     \end{split}
 \end{equation*}
-By continuing from the last line of (\refeq{eq:delta}) in a simplified expression, then (\refeq{eq:delta}) can be expanded into
+By continuing from the last line of (\refeq{eq:delta}) in a simplified expression, then (\refeq{eq:delta}) can be re-arranged into
 \begin{equation}
+    \label{eq:delta_split}
     \begin{split}
         \Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}\right)}{\alpha_j}, \\
         &= \sum_k \frac{E_k}{D_kS_K\alpha_j} + \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-D_kS_K)}{D_kS_K\alpha_j}}_{\text{if }k=j} +  \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l}}{D_kS_K\alpha_j}}_{\text{if }k \neq j} - \frac{E_j}{\alpha_j}.\\
@@ -116,43 +117,42 @@ A good prediction model is reflected by small MAD or RMSD, hence a minimization 
     \end{split}
 \end{equation}
 where $A$ is the data matrix, $\theta$ is the coefficient vector, and $b$ is the target vector.
-With regards to (\ref{eq:min}), (\ref{eq:delta}) can be rewritten into matrix form
+With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into linear system form
 \begin{equation}
     \label{eq:delta_matrix}
     \begin{split}
         &\Delta_{jK}(w) := \\
-        &\frac{
-            \begin{bmatrix}
-                \frac{1}{D_1(w)} & \frac{\phi_{1, 1}(w)}{D_1(w)} & \frac{\phi_{1,2}(w)}{D_1(w)} & \dots & \frac{\phi_{1,l}(w)}{D_1(w)} & \dots & \frac{\phi_{2,1}(w)}{D_2(w)} & \dots & \frac{\phi_{k,l}(w)}{D_k(w)} & \dots \\
-                \vdots & \vdots & \vdots & & \vdots & & \vdots & & \vdots &\\
-                \frac{1}{D_1(w)} & \frac{\phi_{1, 1}(w)}{D_1(w)} & \frac{\phi_{1,2}(w)}{D_1(w)} & \dots & \frac{\phi_{1,l}(w)}{D_1(w)} & \dots & \frac{\phi_{2,1}(w)}{D_2(w)} & \dots & \frac{\phi_{k,l}(w)}{D_k(w)} & \dots
-            \end{bmatrix}
-            \begin{bmatrix}
-                E_1 \\
-                \theta_{1,1} \\
-                \theta_{1,2} \\
-                \vdots \\
-                E_2 \\
-                \theta_{2,1} \\
-                \theta_{2,2} \\
-                \vdots \\
-                E_k \\
-                \theta_{k,l} \\
-                \vdots \\
-            \end{bmatrix}
-        }{S_K(w)}
-        -
+        &\begin{bmatrix}
+            \frac{\phi_{1,1}(1-D_1S_K)}{D_1S_K\alpha_1} & \frac{\phi_{1,2}(1-D_1S_K)}{D_1S_K\alpha_1} & \dots & \frac{\phi_{2,1}}{D_2S_K} & \frac{\phi_{2,2}}{D_2S_K} & \dots & \frac{\phi_{k,l}}{D_kS_K} & \dots \\
+            \frac{\phi_{1,1}}{D_1S_K} & \frac{\phi_{1,2}}{D_1S_K} & \dots & \frac{\phi_{2,1}(1-D_2S_K)}{D_2S_K\alpha_2} & \frac{\phi_{2,2}(1-D_2S_K)}{D_2S_K\alpha_1} & \dots & \vdots & \dots\\
+            %\vdots & \vdots & & & & \ddots & & \\
+            \frac{\phi_{1,1}}{D_1S_K} & \dots & \frac{\phi_{k,l}}{D_kS_K} & \dots & \dots & \dots & \frac{\phi_{j,l}(1-D_jS_K)}{D_jS_K\alpha_j} & \dots\\
+            \vdots & \vdots & \vdots & \dots & \dots & \dots & \dots &\ddots
+        \end{bmatrix}
         \begin{bmatrix}
-            E_1 + \sum_l \theta_{1,l} \phi_{1,l}(w) \\
-            E_2 + \sum_l \theta_{2,l} \phi_{2,l}(w) \\
+            \theta_{1,1} \\
+            \theta_{1,2} \\
             \vdots \\
-            E_j + \sum_l \theta_{j,l} \phi_{j,l}(w) \\
+            \theta_{2,1} \\
+            \theta_{2,2} \\
+            \vdots \\
+            \theta_{k,l} \\
+            \vdots \\
+        \end{bmatrix}\\
+        &-
+        \begin{bmatrix}
+            E_1/\alpha_1 \\
+            E_2/\alpha_2 \\
+            \vdots \\
+            E_j/\alpha_j \\
             \vdots
         \end{bmatrix}
-        ,
+        .
     \end{split}
 \end{equation}
-where for each row $j$ the final energy value will be scaled by $D_j(w)S_K(w)-1$. For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeat for each $w_v$, hence
+
+\iffalse
+For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeat for each $w_v$, hence
 \begin{equation}
     \label{eq:A_matrix}
     \begin{split}
@@ -195,7 +195,9 @@ where for each row $j$ the final energy value will be scaled by $D_j(w)S_K(w)-1$
         .
     \end{split}
 \end{equation}
+\fi
 
+\iffalse
 ========= some comments========== \\
 $b$ must of course be independent of $\theta$.
 
@@ -231,4 +233,6 @@ and
 Add the two and simplify, taking out common factors.
 
 Similarly, you extract the terms without theta's by setting all $\theta$'s to zero
+\fi
+
 \end{document}
