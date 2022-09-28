@@ -67,15 +67,53 @@ where
     \label{eq:delta}
     \begin{split}
         \Delta_{jK}(w)&:=\D\frac{V_K(w)-V_j(w)}{D_j(w)S_K(w)-1} \\
-        &\defeq{(\refeq{eq:vk_expand})}{=} \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
+        &\defeq{(\refeq{eq:vk},\refeq{eq:vk_expand})}{=} \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
     \end{split}
 \end{equation}
 and $l=1,2,...L$.
+Let us simplify the expressions
+\begin{equation*}
+    \begin{split}
+        D_k &:= D_k(w), \\
+        S_K &:= S_K(w), \\
+        \phi_{k,l} &:= \phi_{k,l}(w),\\
+        \alpha_j &:= D_jS_K-1.
+    \end{split}
+\end{equation*}
+By continuing from the last line of (\refeq{eq:delta}) in a simplified expression, then (\refeq{eq:delta}) can be expanded into
+\begin{equation}
+    \begin{split}
+        \Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}\right)}{\alpha_j}, \\
+        &= \sum_k \frac{E_k}{D_kS_K\alpha_j} + \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-D_kS_K)}{D_kS_K\alpha_j}}_{\text{if }k=j} +  \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l}}{D_kS_K\alpha_j}}_{\text{if }k \neq j} - \frac{E_j}{\alpha_j}.\\
+    \end{split}
+\end{equation}
+\iffalse
+In order to see the general pattern of (\refeq{eq:delta}), let us see a simple example with $j = 1$, $|K| = 2$, and $L = 2$; and using simplified expressions by omitting the arguments
+\begin{equation*}
+    \begin{split}
+        D_k &:= D_k(w), \\
+        S_K &:= S_K(w), \\
+        \phi_{k,l} &:= \phi_{k,l}(w),
+    \end{split}
+\end{equation*}
+hence
+\begin{equation}
+    \begin{split}
+        \Delta_{1,K}(w)&:= \frac{\D \frac{ E_1 + \theta_{1,1}\phi_{1,1} + \theta_{1,2}\phi_{1,2}}{D_1S_K} + \frac{E_2 + \theta_{2,1}\phi_{2,1} + \theta_{2,2}\phi_{2,2}}{D_2S_K} - (E_1 + \theta_{1,1}\phi_{1,1} + \theta_{1,2}\phi_{1,2})}{D_1S_K-1} \\
+        &= \D \frac{ E_1 + \theta_{1,1}\phi_{1,1} + \theta_{1,2}\phi_{1,2}}{D_1S_K(D_1S_K-1)} + \frac{E_2 + \theta_{2,1}\phi_{2,1} + \theta_{2,2}\phi_{2,2}}{D_2S_K(D_1S_K-1)} - \frac{(E_1 + \theta_{1,1}\phi_{1,1} + \theta_{1,2}\phi_{1,2})}{D_1S_K-1} \\
+        &= \dots
+    \end{split}
+\end{equation}
+\fi
 
 A good prediction model is reflected by small MAD or RMSD, hence a minimization routine is required. In order to solve the minimzation problem, a linear sysem or least squares formulation is needed. For example, if the RMSD is chosen as the objective function then the problem formulation would be
 \begin{equation}
     \label{eq:min}
-    \min_{\theta} \text{ RMSD}_K(w) = \min_{\theta} \sqrt{\frac{1}{|K|} \left\| A(w)\theta - b(w)\right\|_2^2}
+    \begin{split}
+        %\min_{\theta} \text{ RMSD}_K(w) = \min_{\theta} \sqrt{\frac{1}{|K|} \left\| A(w)\theta - b(w)\right\|_2^2} \\
+        \min |K| \sum_m \text{RMSD}_K(w_m)^2 &= \min \sum_m \sum_j \Delta_{jK}(w_m)^2 \\
+        &= \min \sum_m \left\| A(w_m)\theta - b(w_m)\right\|_2^2
+    \end{split}
 \end{equation}
 where $A$ is the data matrix, $\theta$ is the coefficient vector, and $b$ is the target vector.
 With regards to (\ref{eq:min}), (\ref{eq:delta}) can be rewritten into matrix form
@@ -114,7 +152,7 @@ With regards to (\ref{eq:min}), (\ref{eq:delta}) can be rewritten into matrix fo
         ,
     \end{split}
 \end{equation}
-where for each row $j$ the final energy value will be scaled by $D_j(w)S_K(w)-1$. For all $w_v, v = 1,2...|N|$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeat for each $w_v$, hence
+where for each row $j$ the final energy value will be scaled by $D_j(w)S_K(w)-1$. For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeat for each $w_v$, hence
 \begin{equation}
     \label{eq:A_matrix}
     \begin{split}
@@ -157,4 +195,40 @@ where for each row $j$ the final energy value will be scaled by $D_j(w)S_K(w)-1$
         .
     \end{split}
 \end{equation}
+
+========= some comments========== \\
+$b$ must of course be independent of $\theta$.
+
+In (8) there is no argument $w$; instead you need to minimize the expression
+\begin{equation}
+    |K| \sum_m RMSD_K(w_m)^2,
+\end{equation}
+where $m$ labels the molecules. To find the linear system you need to write the right hand side of (7) as
+\begin{equation}
+    \sum_{kl} A_j(w)_{kl} \theta_{kl} -b_j(w)
+\end{equation}
+and find the expressions for $A_j(w)_{kl}$ and $b_j(w)$ by comparing the coefficients of $\theta_{kl}$ and the $\theta$-independent terms. For $A_j(w)_{kl}$ you get a sum of two terms, one involving a Kronecker delta. For $b_j(w)$ you get a sum over $k$ and an additional term.
+The least squares problem in (8) then has a matrix $A$ with rows indexed by $j,m$ and columns indexed by $k,l$, with
+\begin{equation}
+    A_{jm,kl}:=A_j(w_m)_{kl},
+\end{equation}
+and something similar for the entries of $b$.
+
+================== \\
+You just need to extract from (7) the terms containing $\theta_{kl}$, which are
+
+\begin{equation}
+    \frac{\phi_{kl}}{D_kS_K(D_jS_K-1)}
+\end{equation}
+
+
+and
+\begin{equation}
+    \frac{\delta_{jk}\phi_{kl}D_kS_K(D_jS_K-1)}{D_jS_K-1}.
+\end{equation}
+
+
+Add the two and simplify, taking out common factors.
+
+Similarly, you extract the terms without theta's by setting all $\theta$'s to zero
 \end{document}
