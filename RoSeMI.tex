@@ -85,10 +85,12 @@ By continuing from the last line of (\refeq{eq:delta}) in a simplified expressio
 \begin{equation}
     \label{eq:delta_split}
     \begin{split}
-        \Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}\right)}{\alpha_j}, \\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k)}{\gamma_k\alpha_j}}_{\text{if }k=j} +  \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l}}{\gamma_k\alpha_j}}_{\text{if }k \neq j} - \frac{E_j}{\alpha_j}.\\
+        \Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}\right)}{\alpha_j} \\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k)}{\gamma_k\alpha_j} +  \sum_{k,l} \frac{\delta_{jk}\theta_{k,l} \phi_{k,l}}{\gamma_k\alpha_j} - \frac{E_j}{\alpha_j}\\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k + \delta_{jk})}{\gamma_k\alpha_j} - \frac{E_j}{\alpha_j}, \\
     \end{split}
 \end{equation}
+where $\delta_{jk}$ is the Kronecker delta.
 \iffalse
 In order to see the general pattern of (\refeq{eq:delta}), let us see a simple example with $j = 1$, $|K| = 2$, and $L = 2$; and using simplified expressions by omitting the arguments
 \begin{equation*}
@@ -114,9 +116,10 @@ A good prediction model is reflected by small MAD or RMSD, hence a minimization 
     \begin{split}
         %\min_{\theta} \text{ RMSD}_K(w) = \min_{\theta} \sqrt{\frac{1}{|K|} \left\| A(w)\theta - b(w)\right\|_2^2} \\
         \min |K| \sum_m \text{RMSD}_K(w_m)^2 &= \min \sum_m \sum_j \Delta_{jK}(w_m)^2 \\
-        &= \min \sum_m \left\| A(w_m)\theta - b(w_m)\right\|_2^2
+        &= \min \sum_m \left\| A(w_m)\theta - b(w_m)\right\|_2^2.
     \end{split}
 \end{equation}
+\iffalse
 where $A$ is the data matrix, $\theta$ is the coefficient vector, and $b$ is the target vector.
 With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into linear system form
 \begin{equation}
@@ -152,7 +155,7 @@ With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into lin
     \end{split}
 \end{equation}
 
-\iffalse
+
 For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeat for each $w_v$, hence
 \begin{equation}
     \label{eq:A_matrix}
@@ -198,7 +201,7 @@ For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matr
 \end{equation}
 \fi
 
-
+\iffalse
 ========= some comments========== \\
 $b$ must of course be independent of $\theta$.
 
@@ -234,6 +237,6 @@ and
 Add the two and simplify, taking out common factors.
 
 Similarly, you extract the terms without theta's by setting all $\theta$'s to zero
-
+\fi
 
 \end{document}
