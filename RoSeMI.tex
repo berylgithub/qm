@@ -119,7 +119,7 @@ A good prediction model is reflected by small MAD or RMSD, hence a minimization 
         &= \min \sum_m \left\| A(w_m)\theta - b(w_m)\right\|_2^2.
     \end{split}
 \end{equation}
-\iffalse
+
 where $A$ is the data matrix, $\theta$ is the coefficient vector, and $b$ is the target vector.
 With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into linear system form
 \begin{equation}
@@ -127,11 +127,11 @@ With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into lin
     \begin{split}
         &\Delta_{jK}(w) := \\
         &\begin{bmatrix}
-            \frac{\phi_{1,1}(1-D_1S_K)}{D_1S_K\alpha_1} & \frac{\phi_{1,2}(1-D_1S_K)}{D_1S_K\alpha_1} & \dots & \frac{\phi_{2,1}}{D_2S_K} & \frac{\phi_{2,2}}{D_2S_K} & \dots & \frac{\phi_{k,l}}{D_kS_K} & \dots \\
-            \frac{\phi_{1,1}}{D_1S_K} & \frac{\phi_{1,2}}{D_1S_K} & \dots & \frac{\phi_{2,1}(1-D_2S_K)}{D_2S_K\alpha_2} & \frac{\phi_{2,2}(1-D_2S_K)}{D_2S_K\alpha_1} & \dots & \vdots & \dots\\
-            %\vdots & \vdots & & & & \ddots & & \\
-            \frac{\phi_{1,1}}{D_1S_K} & \dots & \frac{\phi_{k,l}}{D_kS_K} & \dots & \dots & \dots & \frac{\phi_{j,l}(1-D_jS_K)}{D_jS_K\alpha_j} & \dots\\
-            \vdots & \vdots & \vdots & \dots & \dots & \dots & \dots &\ddots
+            \frac{\phi_{1,1}(1-\gamma_1 + \delta_{1,1})}{\gamma_1\alpha_1} & \frac{\phi_{1,2}(1-\gamma_1+ \delta_{1,1})}{\gamma_1\alpha_1} & \dots & \frac{\phi_{2,1}(1-\gamma_2+ \delta_{1,2})}{\gamma_2\alpha_1} & \frac{\phi_{2,1}(1-\gamma_2+ \delta_{1,2})}{\gamma_2\alpha_1} & \dots & \frac{\phi_{k,l}(1-\gamma_k+ \delta_{j,k})}{\gamma_k\alpha_j} & \dots \\
+            \frac{\phi_{1,1}(1-\gamma_1 + \delta_{1,1})}{\gamma_1\alpha_2} & \frac{\phi_{1,2}(1-\gamma_1+ \delta_{1,1})}{\gamma_1\alpha_2} & \dots & \frac{\phi_{2,1}(1-\gamma_2+ \delta_{1,2})}{\gamma_2\alpha_2} & \frac{\phi_{2,1}(1-\gamma_2+ \delta_{1,2})}{\gamma_2\alpha_2} & \dots & \frac{\phi_{k,l}(1-\gamma_k+ \delta_{j,k})}{\gamma_k\alpha_j} & \dots \\
+            \vdots & \dots & \dots & \dots & \dots & \dots & \dots & \dots \\
+            \frac{\phi_{k,l}(1-\gamma_k+ \delta_{j,k})}{\gamma_k\alpha_j} & \dots & \dots & \dots & \dots & \dots & \dots & \dots\\
+            \vdots & \dots & \dots & \dots & \dots & \dots & \dots & \dots
         \end{bmatrix}
         \begin{bmatrix}
             \theta_{1,1} \\
@@ -155,7 +155,7 @@ With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into lin
     \end{split}
 \end{equation}
 
-
+\iffalse
 For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeat for each $w_v$, hence
 \begin{equation}
     \label{eq:A_matrix}
