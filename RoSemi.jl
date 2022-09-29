@@ -29,6 +29,13 @@ function bspline(z)
 end
 
 """
+wrapper to extract M+3 spline
+"""
+function extract_spline()
+    
+end
+
+"""
 verbose version
 """
 function bspline2(x)
@@ -81,7 +88,7 @@ function test_cluster()
     A = dataset' # transpose data (becomes column major)
     display(A)
     println(N, " ", L)
-    M = 100 # number of selected data
+    M = 10 # number of selected data
     # compute mean and cov:
     idx = 200 # the ith data point of the dataset, can be arbitrary technically
     wbar, C = mean_cov(A, idx, N, L)
@@ -117,4 +124,12 @@ function test_normalization()
     P = diagm(vec(1 ./ (supf .- b)))
     u = P*(fhat .- b)
     display(u)
+end
+
+"""
+test extract basis from data
+"""
+function test_basis_data()
+    dataset = load("data/ACSF_1000_symm.jld")["data"]
+
 end
