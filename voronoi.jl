@@ -1,4 +1,4 @@
-using Plots, Statistics, LaTeXStrings, LinearAlgebra, Distributions
+using Plots, Statistics, LaTeXStrings, LinearAlgebra, Distributions, JLD
 include("linastic.jl")
 """
 dummy distance between two coordinates, should use "Mahalanobis distance" later
@@ -17,6 +17,32 @@ params:
 function f_distance(B, w, wk)
     return norm(B*(w-wk), 2)
 end
+
+
+"""
+compute D_k(w_l) and store it in file, O(n^2) algo
+params:
+    - W, the fingerprint matrix, ∈ Float64(n_data, n_finger)
+    - B, linear transformer matrix from covariance, ∈ Float64(n_finger, n_finger)
+    - filename, String
+"""
+function mahalanobis_all(W, B, filename)
+    _, n_data = size(W)
+    D = zeros(n_data, n_data) # symmetric matrix
+    for j ∈ 1:n_data
+        for i ∈ 1:n_data
+            if i > j
+                #D[i,j] = f_distance(W[:,i],W[:,j]) ## for testing, use grid distance calculator first, change later !!
+                D[i,j] = f_distance(B,W[:,i],W[:,j])
+            elseif i < j
+                D[i,j] = D[j,i]
+            end
+        end
+    end
+    save(filename, "data", D)
+    return D
+end
+
 
 """
 eldar's clustering algo by farthest minimal distance
@@ -299,7 +325,7 @@ end
 """
 tempoorary main container
 """
-function test()
+function test_grid()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
     # ∀ requested M, do the algorithm:
