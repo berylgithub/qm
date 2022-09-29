@@ -77,6 +77,7 @@ Let us simplify the expressions
         D_k &:= D_k(w), \\
         S_K &:= S_K(w), \\
         \phi_{k,l} &:= \phi_{k,l}(w),\\
+        \gamma_k &:= D_kS_K, \\
         \alpha_j &:= D_jS_K-1.
     \end{split}
 \end{equation*}
@@ -85,7 +86,7 @@ By continuing from the last line of (\refeq{eq:delta}) in a simplified expressio
     \label{eq:delta_split}
     \begin{split}
         \Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}\right)}{\alpha_j}, \\
-        &= \sum_k \frac{E_k}{D_kS_K\alpha_j} + \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-D_kS_K)}{D_kS_K\alpha_j}}_{\text{if }k=j} +  \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l}}{D_kS_K\alpha_j}}_{\text{if }k \neq j} - \frac{E_j}{\alpha_j}.\\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k)}{\gamma_k\alpha_j}}_{\text{if }k=j} +  \underbrace{\sum_{k,l} \frac{\theta_{k,l} \phi_{k,l}}{\gamma_k\alpha_j}}_{\text{if }k \neq j} - \frac{E_j}{\alpha_j}.\\
     \end{split}
 \end{equation}
 \iffalse
@@ -197,7 +198,7 @@ For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matr
 \end{equation}
 \fi
 
-\iffalse
+
 ========= some comments========== \\
 $b$ must of course be independent of $\theta$.
 
@@ -233,6 +234,6 @@ and
 Add the two and simplify, taking out common factors.
 
 Similarly, you extract the terms without theta's by setting all $\theta$'s to zero
-\fi
+
 
 \end{document}
