@@ -90,7 +90,7 @@ function test_cluster()
     println(N, " ", L)
     M = 10 # number of selected data
     # compute mean and cov:
-    idx = 200 # the ith data point of the dataset, can be arbitrary technically
+    idx = 13 # the ith data point of the dataset, can be arbitrary technically
     wbar, C = mean_cov(A, idx, N, L)
     B = compute_B(C)
     display(wbar)
@@ -124,6 +124,29 @@ function test_normalization()
     P = diagm(vec(1 ./ (supf .- b)))
     u = P*(fhat .- b)
     display(u)
+end
+
+"""
+compute all D_k(w_l) ∀k,l
+"""
+function test_dk()
+    dataset = load("data/ACSF_1000_symm.jld")["data"]
+    N, L = size(dataset)
+    A = dataset' # transpose data (becomes column major)
+    display(A)
+    println(N, " ", L)
+    M = 10 # number of selected data
+    # compute mean and cov:
+    idx = 13 # the ith data point of the dataset, can be arbitrary technically
+    wbar, C = mean_cov(A, idx, N, L)
+    B = compute_B(C)
+    #display(wbar)
+    display(C^(-1))
+    display(B'*B)
+    dist = f_distance(B, A[:,1], A[:,2])
+    display(dist)
+
+    # compute 
 end
 
 """

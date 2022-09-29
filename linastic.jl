@@ -55,7 +55,7 @@ function compute_B(C)
     #display(e)
     # round near zeros to zero, numerical stability:
     v = e.values
-    bounds = [-1e-10, 1e-10]
+    bounds = [-1e-8, 1e-8]
     b = bounds[1] .< v .< bounds[2]
     v[b] .= 0.
     v = v.^(-.5) # take the "inverse sqrt" of the eigenvalue vector

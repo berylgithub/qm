@@ -322,9 +322,8 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default
     end
     return center_ids, mean_point
 end
-"""
-tempoorary main container
-"""
+
+
 function test_grid()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
@@ -387,3 +386,4 @@ function test_grid()
         end
     end
 end
+
