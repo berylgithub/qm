@@ -85,12 +85,25 @@ By continuing from the last line of (\refeq{eq:delta}) in a simplified expressio
 \begin{equation}
     \label{eq:delta_split}
     \begin{split}
-        \Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}\right)}{\alpha_j} \\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k)}{\gamma_k\alpha_j} +  \sum_{k,l} \frac{\delta_{jk}\theta_{k,l} \phi_{k,l}}{\gamma_k\alpha_j} - \frac{E_j}{\alpha_j}\\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k + \delta_{jk})}{\gamma_k\alpha_j} - \frac{E_j}{\alpha_j}, \\
+        \Delta_{j,K}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}\right)}{\alpha_j} \\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k)}{\gamma_k\alpha_j} +  \sum_{k,l} \frac{\delta_{j,k}\theta_{k,l} \phi_{k,l}}{\gamma_k\alpha_j} - \frac{E_j}{\alpha_j}\\
+        &= \sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k + \delta_{j,k})}{\gamma_k\alpha_j} - \left(\frac{E_j}{\alpha_j} - \sum_k\frac{E_k}{\gamma_k\alpha_j}\right),
     \end{split}
 \end{equation}
-where $\delta_{jk}$ is the Kronecker delta.
+where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
+\begin{equation}
+	\begin{split}
+		\Delta_{jK}(w_m) &= \sum_{k,l} A_{(j,m), (k,l)} \theta_{k,l} - b_{j,m}, \\
+	\end{split}	
+\end{equation}
+where
+\begin{equation}
+	\begin{split}
+		A_{(j,m), (k,l)} &= \frac{\phi_{k,l}(w_m)\times(1 - \gamma_k(w_m) + \delta_{j,k})}{\gamma_k(w_m) \times\alpha_j(w_m)},\\
+		b_{j,m} &= \frac{E_j}{\alpha_j(w_m)} - \sum_k\frac{E_k}{\gamma_k(w_m) \times \alpha_j(w_m)}.
+	\end{split}
+\end{equation}
+
 \iffalse
 In order to see the general pattern of (\refeq{eq:delta}), let us see a simple example with $j = 1$, $|K| = 2$, and $L = 2$; and using simplified expressions by omitting the arguments
 \begin{equation*}
@@ -114,13 +127,16 @@ A good prediction model is reflected by small MAD or RMSD, hence a minimization 
 \begin{equation}
     \label{eq:min}
     \begin{split}
-        %\min_{\theta} \text{ RMSD}_K(w) = \min_{\theta} \sqrt{\frac{1}{|K|} \left\| A(w)\theta - b(w)\right\|_2^2} \\
         \min |K| \sum_m \text{RMSD}_K(w_m)^2 &= \min \sum_m \sum_j \Delta_{jK}(w_m)^2 \\
-        &= \min \sum_m \left\| A(w_m)\theta - b(w_m)\right\|_2^2.
+        &= \min \sum_m \left\| A_{(:,m),(:,:)}\theta - b_{:,m}\right\|_2^2 \\
+        &= \min \|A \theta - b\|_2^2.
     \end{split}
 \end{equation}
 
-where $A$ is the data matrix, $\theta$ is the coefficient vector, and $b$ is the target vector.
+where $A$ is the data matrix with $N \times K$ row size and $K \times L$ column size, $\theta$ is the coefficient vector, and $b$ is the target vector.
+
+\iffalse
+% no longer needed:
 With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into linear system form
 \begin{equation}
     \label{eq:delta_matrix}
@@ -155,7 +171,7 @@ With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into lin
     \end{split}
 \end{equation}
 and in the end for each row $j$ the final value will be summed with the energy terms $\sum_k \frac{E_k}{\gamma_k\alpha_j}$.
-
+\fi
 
 \iffalse
 For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeat for each $w_v$, hence
