@@ -61,9 +61,20 @@ function extract_bspline(x, M)
     n_feature, n_data = size(x)
     S = zeros(n_feature, n_data, M+3)
     for i ∈ 1:M+3
-        S[:, :, i] = bspline(M .* x .+ 2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
+        S[:, :, i] = bspline(M .* x .+ 2 .- i) # should be M+3 features
     end
     return S
+end
+
+"""
+refer to RoSeMI.pdf for these quantities:
+"""
+function compute_γk()
+    
+end
+
+function compute_αj()
+    
 end
 
 
@@ -71,21 +82,8 @@ function test_spline()
     M = 5
     n_finger = 2
     n_data = Integer(100)
-#=     x = reshape(collect(LinRange(0., 1., n_data)), 1, :) # data points with just 1 feature, matrix(1, ndata)
-    S = zeros(n_data, M+3)
-    for i ∈ 1:M+3
-        S[:, i] = bspline2(M*x .+ 2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
-    end
-    display(x)
-    display(S)
-    plot(vec(x), S)
-    #, xlims = (-.5, 1.5), ylims = (-.1, 1.) =#
     x = [collect(LinRange(0., 1., 100)) collect(LinRange(0., 1., 100)) .+ 1]
     x = transpose(x)
-    #= S = zeros(n_finger, n_data, M+3)
-    for i ∈ 1:M+3
-        S[:, :, i] = bspline(M .* x .+ 2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
-    end =#
     display(x)
     S = extract_bspline(x, M)
     display(S)
