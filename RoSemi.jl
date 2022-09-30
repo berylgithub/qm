@@ -28,12 +28,7 @@ function bspline(z)
     return β
 end
 
-"""
-wrapper to extract M+3 spline
-"""
-function extract_spline()
-    
-end
+
 
 """
 verbose version
@@ -52,7 +47,23 @@ function bspline2(x)
         end
     end
     return β
-    
+end
+
+"""
+wrapper to extract M+3 or n_basis amount of splines
+params:
+    - x, matrix, ∈ Float64 (n_features, n_data) 
+    - M, number of basfunc, returns M+3 basfunc
+outputs:
+    - S, array of basfuncs, ∈ Float64 (n_feature, n_data, M+3)
+"""
+function extract_bspline(x, M)
+    n_feature, n_data = size(x)
+    S = zeros(n_feature, n_data, M+3)
+    for i ∈ 1:M+3
+        S[:, :, i] = bspline(M .* x .+ 2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
+    end
+    return S
 end
 
 
@@ -71,10 +82,12 @@ function test_spline()
     #, xlims = (-.5, 1.5), ylims = (-.1, 1.) =#
     x = [collect(LinRange(0., 1., 100)) collect(LinRange(0., 1., 100)) .+ 1]
     x = transpose(x)
-    S = zeros(n_finger, n_data, M+3)
+    #= S = zeros(n_finger, n_data, M+3)
     for i ∈ 1:M+3
         S[:, :, i] = bspline(M .* x .+ 2 .- i) # should be M+3 features, but it seems the fist and last col is zeros
-    end
+    end =#
+    display(x)
+    S = extract_bspline(x, M)
     display(S)
     for i ∈ 1:n_finger
         display(plot(vec(x[i,:]), S[i, :, :]))
