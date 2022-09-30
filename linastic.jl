@@ -70,7 +70,7 @@ function compute_B(C)
     return D*Q' # B = D*Qᵀ
 end
 
-function test_main()
+function test_cov()
     # const:
     N = 3
     len_finger = 2
@@ -83,4 +83,5 @@ function test_main()
     display(C)
     B = compute_B(C)
     display(B)
+    display(B'*B)
 end
