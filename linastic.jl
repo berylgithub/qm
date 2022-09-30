@@ -13,6 +13,13 @@ function residual(A, θ, b)
 end
 
 
+"""
+return the Least squares form (norm^2) of the residual r := Aθ - b
+"""
+function lsq(A, θ, b)
+    return norm(residual(A, θ, b))^2
+end
+
 
 """
 compute mean vector and covariance matrix

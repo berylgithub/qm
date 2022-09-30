@@ -1,4 +1,4 @@
-using LsqFit
+using LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools
 """
 contains all tests and experiments
 """
@@ -23,13 +23,24 @@ end
 
 """
 test for linear system fitting using leastsquares
+
+NOTES:
+    - for large LSes, ForwardDiff is much faster for jacobian but ReverseDiff is much faster for gradient !!
 """
-function test_lsfit()
-    ndata = 3; nfeature=5
+function test_AD()
+    ndata = Int(1e4); nfeature=Int(1e4)
+    #ndata = 3; nfeature=3
+    #A = Matrix{Float64}(LinearAlgebra.I, 3,3)
     A = rand(ndata, nfeature)
+    display(A)
     θ = rand(nfeature)
     b = ones(ndata)
-    curve_fit()
-    
+    r = residual(A, θ, b)
+    t = @elapsed begin
+        dθ = ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
+    end
+    display(dθ)
+    display(t)
+    #fit = curve_fit()
 end
 
