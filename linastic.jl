@@ -5,6 +5,14 @@ placeholder for linear algebra and statistics operations, if RoSemi is overcrowd
 """
 
 
+"""
+computes residual from data matrix A, coefficient vector θ, and target vector b
+"""
+function residual(A, θ, b)
+    return A*θ - b
+end
+
+
 
 """
 compute mean vector and covariance matrix
