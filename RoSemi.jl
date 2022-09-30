@@ -1,4 +1,4 @@
-using JLD, SparseArrays, Distributions, Statistics
+using JLD, SparseArrays, Distributions, Statistics, StatsBase
 
 include("voronoi.jl")
 include("linastic.jl")
@@ -90,7 +90,7 @@ function test_cluster()
     println(N, " ", L)
     M = 10 # number of selected data
     # compute mean and cov:
-    idx = 13 # the ith data point of the dataset, can be arbitrary technically
+    idx = 603 # the ith data point of the dataset, can be arbitrary technically
     wbar, C = mean_cov(A, idx, N, L)
     B = compute_B(C)
     display(wbar)
@@ -101,52 +101,28 @@ function test_cluster()
     display(center_ids)
 end
 
-function test_normalization()
-    # one dimensional normaliztion test:
-    fhat = rand(Uniform(1., 10.), 10) # data vector size = (N)
-    display(fhat)
-    println("t = 1")
-    supf = maximum(fhat)
-    inff = minimum(fhat)
-    b = (supf + inff)/2
-    P = 1 / (supf - b)
-    u = P*(fhat .- b)
-    display(u)
-
-    # dim t > 1:
-    println("t > 1")
-    fhat = rand(Uniform(1., 10.), (2, 10))
-    display(fhat)
-    supf = maximum(fhat, dims=2)
-    inff = minimum(fhat, dims=2)
-    b = (supf .+ inff) ./ 2
-    display(b)
-    P = diagm(vec(1 ./ (supf .- b)))
-    u = P*(fhat .- b)
-    display(u)
-end
 
 """
-compute all D_k(w_l) ∀k,l
+compute all D_k(w_l) ∀k,l, for now fix i = 603 (rozemi)
 """
-function test_dk()
+function test_all_dist()
     dataset = load("data/ACSF_1000_symm.jld")["data"]
     N, L = size(dataset)
-    A = dataset' # transpose data (becomes column major)
-    display(A)
+    W = dataset' # transpose data (becomes column major)
     println(N, " ", L)
     M = 10 # number of selected data
     # compute mean and cov:
-    idx = 13 # the ith data point of the dataset, can be arbitrary technically
-    wbar, C = mean_cov(A, idx, N, L)
+    idx = 603 # the ith data point of the dataset, can be arbitrary technically (for now fix i=603)
+    wbar, C = mean_cov(W, idx, N, L)
     B = compute_B(C)
     #display(wbar)
-    display(C^(-1))
-    display(B'*B)
-    dist = f_distance(B, A[:,1], A[:,2])
-    display(dist)
+    #dist = f_distance(B, A[:,1], A[:,2])
+    #display(dist)
 
-    # compute 
+    # compute all distances:
+    filename = "data/distances_1000_i=603.jld"
+    D = compute_distance_all(W, B, filename)
+    display(D)
 end
 
 """

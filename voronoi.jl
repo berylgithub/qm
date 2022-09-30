@@ -26,7 +26,7 @@ params:
     - B, linear transformer matrix from covariance, ∈ Float64(n_finger, n_finger)
     - filename, String
 """
-function mahalanobis_all(W, B, filename)
+function compute_distance_all(W, B, filename)
     _, n_data = size(W)
     D = zeros(n_data, n_data) # symmetric matrix
     for j ∈ 1:n_data

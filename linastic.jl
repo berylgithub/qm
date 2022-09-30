@@ -4,6 +4,8 @@ using LinearAlgebra
 placeholder for linear algebra and statistics operations, if RoSemi is overcrowded, or when the need arises
 """
 
+
+
 """
 compute mean vector and covariance matrix
 params:
