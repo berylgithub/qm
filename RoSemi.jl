@@ -73,21 +73,26 @@ refer to RoSeMI.pdf and RSI.pdf for these quantities:
 get the distance between w_l and w_k, D_k(w_l), uses precomputed matrix D with fixed i
 params:
     - D, mahalanobis distance matrix, ∈ Float64 (n_data, n_data)
-    - l, index of the selected unsupervised datapoint
+    - m, index of the selected unsupervised datapoint
     - k, index of the selected supervised datapoint
 """
-function get_Dk(D, k, l)
-    return D[k, l] # = D[l,k], same thing    
+function get_Dk(D, k, m)
+    return D[k, m] # = D[l,k], same thing    
 end
 
 """
 compute S_K := ∑1/Dₖ
 params:
     - D, mahalanobis distance matrix, ∈ Float64 (n_data, n_data)
-    - l, index of the selected unsupervised datapoint
+    - m, index of the selected unsupervised datapoint
+    - Midx, list of index of supervised datapoints, ∈ Vector{Int64}
 """
-function comp_SK(D, l)
-    return sum(D[:,l])
+function comp_SK(D, Midx, m)
+    sum = 0.
+    for i ∈ Midx
+        sum += D[i, m]
+    end
+    return sum
 end
 
 function comp_γk(Dk, SK)
