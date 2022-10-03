@@ -4,7 +4,6 @@ using LinearAlgebra
 placeholder for linear algebra and statistics operations, if RoSemi is overcrowded, or when the need arises
 """
 
-
 """
 computes residual from data matrix A, coefficient vector θ, and target vector b
 """
@@ -12,14 +11,12 @@ function residual(A, θ, b)
     return A*θ - b
 end
 
-
 """
 return the Least squares form (norm^2) of the residual r := Aθ - b
 """
 function lsq(A, θ, b)
     return norm(residual(A, θ, b))^2
 end
-
 
 """
 compute mean vector and covariance matrix
