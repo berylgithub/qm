@@ -1,6 +1,7 @@
 using LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim
 """
 contains all tests and experiments
+!!! FOR LATER: https://stackoverflow.com/questions/57950114/how-to-efficiently-initialize-huge-sparse-arrays-in-julia
 """
 
 include("voronoi.jl")
@@ -94,6 +95,7 @@ end
 compute the basis functions from normalized data and assemble A matrix:
 """
 function get_A()
+    dataset = load("data/qm9_dataset_1000.jld") # energy is from here
     W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint
     D = load("data/distances_1000_i=603.jld")["data"] # the mahalanobis distance matrix
     list_M = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
@@ -112,8 +114,62 @@ function get_A()
     row_size = N*M
     col_size = M*L
     A = spzeros(row_size, col_size) # init A
-    #ϕ = sparse(ϕ[:,:,13]) # sparse can only take matrix
-    # assemble matrix A:
+    # naive and slow: assemble matrix A's entries: # loop m index first then j index for row, l first then k for col:
+    for j ∈ 1:col_size 
+        for i ∈ 1:row_size
+            break
+            #A[i,j] = 
+        end
+    end
+
+end
+
+"""
+test assemble A with dummy data
+"""
+function test_A()
+    # data setup:
+    n_data = 5; n_feature = 3; n_basis = 2
+    D = convert(Matrix{Float64}, [0 1 2 3 4; 1 0 2 3 4; 1 2 0 3 4; 1 2 3 0 4; 1 2 3 4 0])
+    D = (D .+ D')./2
+    display(D)
+    E = convert(Vector{Float64}, vec(1:5))
+    Midx = [1,5]
+    Widx = [2,3,4] # unsupervised data index
+    bas = repeat([1.], n_feature)
+    ϕ = zeros(n_feature, n_data, n_basis)
+    for i ∈ 1:n_data
+        for j ∈ 1:n_basis
+            ϕ[:, i, j] = bas .+ 0.5*(j-1) .+ (i-1)
+        end
+    end
+    display(ϕ)
+    # flattened basis*feature:
+    ϕ = permutedims(ϕ, [1,3,2])
+    ϕ = reshape(ϕ, n_feature*n_basis, n_data)
+    display(ϕ)
+
+    # assemble A (try using sparse logic later!!):
+    M = length(Midx)
+    n_w = length(Widx) # different from n_data!!
+    n_s = n_feature*n_basis
+    rows = n_w*M
+    cols = s*M
+    A = zeros(rows, cols)
+    display(A)
+    b = zeros(rows)
+    for m ∈ 1:n_w
+        SK = comp_SK(D, Midx, m)
+        display([m, SK])
+        for j ∈ Midx
+            for k ∈ Midx
+                for l ∈ 1:n_s # from flattened feature
+                    #A[rcount, ]
+                end
+                Dk = D[k, m]
+            end
+        end
+    end
 end
 
 
