@@ -57,19 +57,6 @@ function get_all_dist()
     display(D)
 end
 
-
-"""
-compute the basis functions from normalized data and assemble A matrix:
-"""
-function main_basis()
-    W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load normalized fingerprint
-    M = 10
-    ϕ = extract_bspline(W, M) # compute basis from fingerprint ∈ (n_feature, n_data, M+3)
-    #ϕ = sparse(ϕ[:,:,13]) # sparse can only take matrix
-    # assemble matrix A:
-end
-
-
 """
 test for linear system fitting using leastsquares
 
@@ -78,10 +65,18 @@ NOTES:
 """
 function test_fit()
     #ndata = Int(1e4); nfeature=Int(1e4)
-    ndata = 3; nfeature=100
+    ndata = 3; nfeature=3
     #A = Matrix{Float64}(LinearAlgebra.I, 3,3)
-    A = rand(ndata, nfeature)
-    #display(A)
+    #A = rand(ndata, nfeature)
+    A = spzeros(ndata, nfeature) # try sparse
+    for i ∈ 1:ndata
+        for j ∈ 1:nfeature
+            if j == i
+                A[j,i] = 1.
+            end
+        end
+    end
+    display(A)
     θ = rand(nfeature)
     b = ones(ndata) .+ 10.
     r = residual(A, θ, b)
@@ -93,4 +88,34 @@ function test_fit()
     display(Optim.minimizer(res))
     display(res)
 end
+
+
+"""
+compute the basis functions from normalized data and assemble A matrix:
+"""
+function get_A()
+    W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint
+    D = load("data/distances_1000_i=603.jld")["data"] # the mahalanobis distance matrix
+    list_M = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
+
+    n_basis = 10
+    ϕ = extract_bspline(W, n_basis) # compute basis from fingerprint ∈ (n_feature, n_data, n_basis+3)
+    #display(sizeof(ϕ)) # turns out only 10mb
+    # determine size of A:
+    s_W = size(W) # n_feature x n_data
+    s_M = size(list_M) # n_sup_data
+    s_ϕ = size(ϕ) # n_feature x n_data x n_basis+3
+    N = s_W[2] # number of data (total)
+    M = s_M[1] # number of centers (supervised data)
+    L = s_ϕ[1]*s_ϕ[3] # length of feature
+    display([N, M, L])
+    row_size = N*M
+    col_size = M*L
+    A = spzeros(row_size, col_size) # init A
+    #ϕ = sparse(ϕ[:,:,13]) # sparse can only take matrix
+    # assemble matrix A:
+end
+
+
+
 
