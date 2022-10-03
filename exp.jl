@@ -154,10 +154,11 @@ function test_A()
     n_w = length(Widx) # different from n_data!!
     n_s = n_feature*n_basis
     rows = n_w*M
-    cols = s*M
+    cols = n_s*M
     A = zeros(rows, cols)
     display(A)
     b = zeros(rows)
+    rcount = 1
     for m ∈ 1:n_w
         SK = comp_SK(D, Midx, m)
         display([m, SK])
@@ -168,6 +169,7 @@ function test_A()
                 end
                 Dk = D[k, m]
             end
+            rcount += 1
         end
     end
 end
