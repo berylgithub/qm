@@ -5,3 +5,5 @@ data/
 *.out
 *.synctex.gz
 *.jld
+*.fdb_latexmk
+*.fls
