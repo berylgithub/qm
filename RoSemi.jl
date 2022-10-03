@@ -53,13 +53,20 @@ params:
     - x, matrix, ∈ Float64 (n_features, n_data) 
     - M, number of basfunc, returns M+3 basfunc
 outputs:
-    - S, array of basfuncs, ∈ Float64 (n_feature, n_data, M+3)
+    - S, array of basfuncs
+        if flatten ∈ Float64 (n_feature*(M+3), n_data)
+        else ∈ Float64 (n_feature, n_data, M+3)
 """
-function extract_bspline(x, M)
+function extract_bspline(x, M; flatten=false)
     n_feature, n_data = size(x)
-    S = zeros(n_feature, n_data, M+3)
+    n_basis = M+3
+    S = zeros(n_feature, n_data, n_basis)
     for i ∈ 1:M+3
         S[:, :, i] = bspline(M .* x .+ 2 .- i) # should be M+3 features
+    end
+    if flatten # flatten the basis
+        S = permutedims(S, [1,3,2])
+        S = reshape(S, n_feature*n_basis, n_data)
     end
     return S
 end
@@ -121,6 +128,9 @@ function test_spline()
     for i ∈ 1:n_finger
         display(plot(vec(x[i,:]), S[i, :, :]))
     end
+    # flattened feature*basis:
+    S = extract_bspline(x, M; flatten=true)
+    println(S[:,2])
 end
 
 
