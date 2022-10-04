@@ -122,21 +122,31 @@ extract both ϕ and dϕ
 function extract_bspline_df(x, M; flatten=false)
     n_feature, n_data = size(x)
     n_basis = M+3
-    S = zeros(n_feature, n_data, n_basis)
-    dϕ = zeros(n_feature, n_data, n_basis)
-    @simd for i ∈ 1:n_basis
-        @simd for j ∈ 1:n_data
-            @simd for k ∈ 1:n_feature
-                @inbounds S[k, j, i] = bspline_scalar(M*x[k, j] + 2 - i) # should be M+3 features
-                @inbounds dϕ[k, j, i] = f_dϕ(M*x[k, j] + 2 - i)
+    if flatten # flatten the basis
+        rsize = n_feature*n_basis
+        S = zeros(rsize, n_data)
+        dϕ = zeros(rsize, n_data)
+        @simd for i ∈ 1:n_data
+            rcount = 1
+            @simd for j ∈ 1:n_basis
+                @simd for k ∈ 1:n_feature
+                    @inbounds S[rcount, i] = bspline_scalar(M*x[k, i] + 2 - j)
+                    @inbounds dϕ[rcount, i] = f_dϕ(M*x[k, i] + 2 - j)
+                    rcount += 1
+                end
             end
         end
-    end
-    if flatten # flatten the basis
-        S = permutedims(S, [1,3,2])
-        S = reshape(S, n_feature*n_basis, n_data)
-        dϕ = permutedims(dϕ, [1,3,2])
-        dϕ = reshape(dϕ, n_feature*n_basis, n_data)
+    else # basis in last index of the array
+        S = zeros(n_feature, n_data, n_basis)
+        dϕ = zeros(n_feature, n_data, n_basis)
+        @simd for i ∈ 1:n_basis
+            @simd for j ∈ 1:n_data
+                @simd for k ∈ 1:n_feature
+                    @inbounds S[k, j, i] = bspline_scalar(M*x[k, j] + 2 - i) # should be M+3 features
+                    @inbounds dϕ[k, j, i] = f_dϕ(M*x[k, j] + 2 - i)
+                end
+            end
+        end
     end
     return S, dϕ
 end
@@ -203,9 +213,11 @@ function test_spline()
 
     # spline using scalar mode, see if the result is the same (and test with AD):
     S, dϕ = extract_bspline_df(x, M)
+    display(dϕ)
     for i ∈ 1:n_finger
         display(plot(vec(x[i,:]), S[i, :, :]))
         display(plot(vec(x[i,:]), dϕ[i, :, :]))
     end
-
+    S, dϕ = extract_bspline_df(x, M; flatten =true)
+    display(dϕ)
 end
