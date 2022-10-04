@@ -7,6 +7,38 @@ include("linastic.jl")
 placeholder for the (Ro)bust (S)h(e)pard (m)odel for (i)nterpolation constructor
 """
 
+
+"""
+query for
+ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
+"""
+function f_ϕ(ϕ, m, k, l)
+    
+end
+
+
+"""
+wrapper for scalar w for ϕ'(w) = dϕ(w)/dw
+"""
+function f_dϕ(x)
+    return ForwardDiff.derivative(bspline_scalar, x)
+end
+
+"""
+ϕ'(w) = dϕ(w)/dw using AD
+params:
+    - w, vector of features for a selected data, ∈ Float64 (n_feature) 
+output:
+    - y := ϕ'(w) ∈ Float64 (n_feature)
+"""
+function f_dϕ_vec(w)
+    y = similar(w)
+    for i ∈ eachindex(w)
+        y[i] = ForwardDiff.derivative(bspline_scalar, w[i])
+    end
+    return y
+end
+
 """
 The Bspline works for matrices
 
@@ -84,38 +116,29 @@ function extract_bspline(x, M; flatten=false)
     return S
 end
 
-
-
-
 """
-query for
-ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
+extract both ϕ and dϕ
 """
-function f_ϕ(ϕ, m, k, l)
-    
-end
-
-
-"""
-wrapper for scalar w for ϕ'(w) = dϕ(w)/dw
-"""
-function f_dϕ(x)
-    return ForwardDiff.derivative(bspline_scalar, x)
-end
-
-"""
-ϕ'(w) = dϕ(w)/dw using AD
-params:
-    - w, vector of features for a selected data, ∈ Float64 (n_feature) 
-output:
-    - y := ϕ'(w) ∈ Float64 (n_feature)
-"""
-function f_dϕ_vec(w)
-    y = similar(w)
-    for i ∈ eachindex(w)
-        y[i] = ForwardDiff.derivative(bspline_scalar, w[i])
+function extract_bspline_df(x, M; flatten=false)
+    n_feature, n_data = size(x)
+    n_basis = M+3
+    S = zeros(n_feature, n_data, n_basis)
+    dϕ = zeros(n_feature, n_data, n_basis)
+    @simd for i ∈ 1:n_basis
+        @simd for j ∈ 1:n_data
+            @simd for k ∈ 1:n_feature
+                @inbounds S[k, j, i] = bspline_scalar(M*x[k, j] + 2 - i) # should be M+3 features
+                @inbounds dϕ[k, j, i] = f_dϕ(M*x[k, j] + 2 - i)
+            end
+        end
     end
-    return y
+    if flatten # flatten the basis
+        S = permutedims(S, [1,3,2])
+        S = reshape(S, n_feature*n_basis, n_data)
+        dϕ = permutedims(dϕ, [1,3,2])
+        dϕ = reshape(dϕ, n_feature*n_basis, n_data)
+    end
+    return S, dϕ
 end
 
 
@@ -172,7 +195,6 @@ function test_spline()
     x = transpose(x)
     display(x)
     S = extract_bspline(x, M)
-    display(S)
     for i ∈ 1:n_finger
         display(plot(vec(x[i,:]), S[i, :, :]))
     end
@@ -180,19 +202,10 @@ function test_spline()
     #S = extract_bspline(x, M; flatten=true)
 
     # spline using scalar mode, see if the result is the same (and test with AD):
-    n_basis = M+3
-    S = zeros(n_finger, n_data, n_basis)
-    dϕ = zeros(n_finger, n_data, n_basis)
-    @simd for i ∈ 1:M+3
-        @simd for j ∈ 1:n_data
-            @simd for k ∈ 1:n_finger
-                @inbounds S[k, j, i] = bspline_scalar(M*x[k, j] + 2 - i) # should be M+3 features
-                @inbounds dϕ[k, j, i] = f_dϕ(M*x[k, j] + 2 - i)
-            end
-        end
-    end
+    S, dϕ = extract_bspline_df(x, M)
     for i ∈ 1:n_finger
         display(plot(vec(x[i,:]), S[i, :, :]))
         display(plot(vec(x[i,:]), dϕ[i, :, :]))
     end
+
 end
