@@ -143,7 +143,6 @@ function test_A()
             ϕ[:, i, j] = bas .+ 0.5*(j-1) .+ (i-1)
         end
     end
-    display(ϕ)
     # flattened basis*feature:
     ϕ = permutedims(ϕ, [1,3,2])
     ϕ = reshape(ϕ, n_feature*n_basis, n_data)
@@ -156,22 +155,33 @@ function test_A()
     rows = n_w*M
     cols = n_s*M
     A = zeros(rows, cols)
-    display(A)
     b = zeros(rows)
-    rcount = 1
-    for m ∈ 1:n_w
+    rcount = 1 #rowcount
+    for m ∈ Widx
         SK = comp_SK(D, Midx, m)
-        display([m, SK])
         for j ∈ Midx
+            ccount = 1 # colcount
+            αj = SK*D[j,m] - 1
             for k ∈ Midx
+                γk = SK*D[k, m]
+                den = γk*αj
                 for l ∈ 1:n_s # from flattened feature
-                    #A[rcount, ]
+                    num = ϕ[l, m]*(1-γk + δ(j, k))
+                    A[rcount, ccount] = num/den
+                    ccount += 1 # end of column loop
                 end
-                Dk = D[k, m]
             end
-            rcount += 1
+            rcount += 1 # end of row loop
         end
     end
+    display(A)
+    println(A)
+    # test each element:
+    m = 4; j = 5; k = 5; l = 6 
+    SK = comp_SK(D, Midx, m)
+    αj = γk = SK
+    αj = αj*D[j,m] - 1; γk *= D[k,m]
+    println(ϕ[l, m]*(1-γk + δ(j, k)) / (γk*αj))
 end
 
 
