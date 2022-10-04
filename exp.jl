@@ -174,13 +174,12 @@ function test_A()
             rcount += 1 # end of row loop
         end
     end
-    display(A)
     println(A)
     # test each element:
-    m = 4; j = 5; k = 5; l = 6 
+    m = 2; j = 1; k = 1; l = 1
     SK = comp_SK(D, Midx, m)
-    αj = γk = SK
-    αj = αj*D[j,m] - 1; γk *= D[k,m]
+    αj = SK*D[j,m] - 1; γk = SK*D[k,m]
+    println([SK, D[j,m], D[k,m], ϕ[l, m], δ(j, k)])
     println(ϕ[l, m]*(1-γk + δ(j, k)) / (γk*αj))
 end
 
