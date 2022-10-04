@@ -72,6 +72,26 @@ function extract_bspline(x, M; flatten=false)
 end
 
 """
+query for
+ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
+"""
+function f_ϕ(ϕ, m, k, l)
+    
+end
+
+"""
+????
+ϕ'(w) = dϕ(w)/dw using AD
+params:
+    - ϕw, 
+    - w, vector of features for a selected data, ∈ Float64 (n_feature) 
+"""
+function dϕ(ϕw, w)
+    
+end
+
+
+"""
 =============================
 refer to RoSeMI.pdf and RSI.pdf for these quantities:
 """

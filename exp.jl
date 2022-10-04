@@ -166,7 +166,7 @@ function test_A()
                 γk = SK*D[k, m]
                 den = γk*αj
                 for l ∈ 1:n_s # from flattened feature
-                    num = ϕ[l, m]*(1-γk + δ(j, k)) # so apparently ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one
+                    num = ϕ[l, m]*(1-γk + δ(j, k)) # so apparently ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
                     A[rcount, ccount] = num/den
                     ccount += 1 # end of column loop
                 end
