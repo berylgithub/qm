@@ -97,7 +97,7 @@ params:
 function comp_SK(D, Midx, m)
     sum = 0.
     for i ∈ Midx
-        sum += D[i, m]
+        sum += 1/D[i, m]
     end
     return sum
 end
