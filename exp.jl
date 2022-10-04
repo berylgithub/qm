@@ -146,7 +146,10 @@ function test_A()
     # flattened basis*feature:
     ϕ = permutedims(ϕ, [1,3,2])
     ϕ = reshape(ϕ, n_feature*n_basis, n_data)
+    dϕ = ϕ*(-1)
     display(ϕ)
+    display(dϕ)
+    
 
     # assemble A (try using sparse logic later!!):
     M = length(Midx)

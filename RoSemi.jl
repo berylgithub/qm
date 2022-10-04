@@ -12,8 +12,9 @@ placeholder for the (Ro)bust (S)h(e)pard (m)odel for (i)nterpolation constructor
 query for
 ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
 """
-function f_ϕ(ϕ, m, k, l)
-    
+function f_ϕ(ϕ, dϕ, W, m, k, l)
+    display([ϕ[l, m], ϕ[l, k], dϕ[l, k], W[:,m], W[:,k]])
+    #return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]
 end
 
 
@@ -119,7 +120,7 @@ end
 """
 extract both ϕ and dϕ
 """
-function extract_bspline_df(x, M; flatten=false)
+function extract_bspline_df(x, M; flatten=false, sparsemat=false)
     n_feature, n_data = size(x)
     n_basis = M+3
     if flatten # flatten the basis
@@ -136,7 +137,11 @@ function extract_bspline_df(x, M; flatten=false)
                 end
             end
         end
-    else # basis in last index of the array
+        if sparsemat
+            S = sparse(S)
+            dϕ = sparse(dϕ)
+        end
+    else # basis in last index of the array, possible for sparse matrix!!
         S = zeros(n_feature, n_data, n_basis)
         dϕ = zeros(n_feature, n_data, n_basis)
         @simd for i ∈ 1:n_basis
@@ -218,6 +223,8 @@ function test_spline()
         display(plot(vec(x[i,:]), S[i, :, :]))
         display(plot(vec(x[i,:]), dϕ[i, :, :]))
     end
-    S, dϕ = extract_bspline_df(x, M; flatten =true)
+    S, dϕ = extract_bspline_df(x, M; flatten = true, sparsemat=true)
     display(dϕ)
+    #S = sparse(S); dϕ = sparse(dϕ)
+    display([nnz(S), nnz(dϕ)])
 end
