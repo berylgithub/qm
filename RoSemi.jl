@@ -8,25 +8,6 @@ placeholder for the (Ro)bust (S)h(e)pard (m)odel for (i)nterpolation constructor
 """
 
 """
-mostly unused (although faster), verbose version
-"""
-function bspline2(x)
-    m, n = size(x) # fingerprint x data
-    β = sparse(zeros(m, n))
-    for j ∈ 1:n 
-        for i ∈ 1:m
-            z = abs(x[i,j])
-            if z < 1
-                β[i,j] = 1 + .75*x[i,j]^2 * (z - 2)
-            elseif 1 ≤ z < 2
-                β[i,j] = 0.25 * (2 - z)^3
-            end
-        end
-    end
-    return β
-end
-
-"""
 The Bspline works for matrices
 
 bspline constructor (mimic of matlab ver by prof. Neumaier)
@@ -46,6 +27,38 @@ function bspline(z)
     return β
 end
 
+"""
+mostly unused (although faster), verbose version
+"""
+function bspline2(x)
+    m, n = size(x) # fingerprint x data
+    β = sparse(zeros(m, n))
+    for j ∈ 1:n 
+        for i ∈ 1:m
+            z = abs(x[i,j])
+            if z < 1
+                β[i,j] = 1 + .75*x[i,j]^2 * (z - 2)
+            elseif 1 ≤ z < 2
+                β[i,j] = 0.25 * (2 - z)^3
+            end
+        end
+    end
+    return β
+end
+
+"""
+Bspline but assumes the input is a scalar, for efficient AD purpose
+"""
+function bspline_scalar(x)
+    β = 0.
+    z = abs(x)
+    if z < 1
+        β = 1 + .75*x^2 * (z - 2)
+    elseif 1 ≤ z < 2
+        β = .25*(2-z)^3
+    end
+    return β
+end
 
 """
 wrapper to extract M+3 or n_basis amount of splines
@@ -71,6 +84,9 @@ function extract_bspline(x, M; flatten=false)
     return S
 end
 
+
+
+
 """
 query for
 ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
@@ -79,15 +95,27 @@ function f_ϕ(ϕ, m, k, l)
     
 end
 
+
 """
-????
+wrapper for scalar w for ϕ'(w) = dϕ(w)/dw
+"""
+function f_dϕ(x)
+    return ForwardDiff.derivative(bspline_scalar, x)
+end
+
+"""
 ϕ'(w) = dϕ(w)/dw using AD
 params:
-    - ϕw, 
     - w, vector of features for a selected data, ∈ Float64 (n_feature) 
+output:
+    - y := ϕ'(w) ∈ Float64 (n_feature)
 """
-function dϕ(ϕw, w)
-    
+function f_dϕ_vec(w)
+    y = similar(w)
+    for i ∈ eachindex(w)
+        y[i] = ForwardDiff.derivative(bspline_scalar, w[i])
+    end
+    return y
 end
 
 
@@ -151,13 +179,13 @@ function test_spline()
     # flattened feature*basis:
     S = extract_bspline(x, M; flatten=true)
     println(S[:,2])
-end
+
+    # spline using scalar mode:
 
 
-"""
-test extract basis from data
-"""
-function test_basis_data()
-    dataset = load("data/ACSF_1000_symm.jld")["data"]
-
+    # test AD:
+    dϕ = map(f_dϕ, x) # dϕ/dw
+    for i ∈ 1:n_finger
+        display(plot(vec(x[i,:]), dϕ[i, :]))
+    end
 end
