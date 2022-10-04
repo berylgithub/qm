@@ -177,15 +177,22 @@ function test_spline()
         display(plot(vec(x[i,:]), S[i, :, :]))
     end
     # flattened feature*basis:
-    S = extract_bspline(x, M; flatten=true)
-    println(S[:,2])
+    #S = extract_bspline(x, M; flatten=true)
 
-    # spline using scalar mode:
-
-
-    # test AD:
-    dϕ = map(f_dϕ, x) # dϕ/dw
+    # spline using scalar mode, see if the result is the same (and test with AD):
+    n_basis = M+3
+    S = zeros(n_finger, n_data, n_basis)
+    dϕ = zeros(n_finger, n_data, n_basis)
+    @simd for i ∈ 1:M+3
+        @simd for j ∈ 1:n_data
+            @simd for k ∈ 1:n_finger
+                @inbounds S[k, j, i] = bspline_scalar(M*x[k, j] + 2 - i) # should be M+3 features
+                @inbounds dϕ[k, j, i] = f_dϕ(M*x[k, j] + 2 - i)
+            end
+        end
+    end
     for i ∈ 1:n_finger
-        display(plot(vec(x[i,:]), dϕ[i, :]))
+        display(plot(vec(x[i,:]), S[i, :, :]))
+        display(plot(vec(x[i,:]), dϕ[i, :, :]))
     end
 end
