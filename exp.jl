@@ -58,6 +58,42 @@ function get_all_dist()
     display(D)
 end
 
+
+"""
+compute the basis functions from normalized data and assemble A matrix:
+"""
+function get_A()
+    dataset = load("data/qm9_dataset_1000.jld") # energy is from here
+    W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint
+    D = load("data/distances_1000_i=603.jld")["data"] # the mahalanobis distance matrix
+    list_M = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
+
+    n_basis = 10
+    ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature, n_data, n_basis+3)
+    display(ϕ)
+    display([nnz(ϕ), nnz(dϕ)])
+    #display(sizeof(ϕ)) # turns out only 10mb
+    # determine size of A:
+    s_W = size(W) # n_feature x n_data
+    s_M = size(list_M) # n_sup_data
+    s_ϕ = size(ϕ) # n_feature x n_data x n_basis+3
+    N = s_W[2] # number of data (total)
+    M = s_M[1] # number of centers (supervised data)
+    L = s_ϕ[1]*s_ϕ[3] # length of feature
+    display([N, M, L])
+    row_size = N*M
+    col_size = M*L
+    A = spzeros(row_size, col_size) # init A
+    # naive and slow: assemble matrix A's entries: # loop m index first then j index for row, l first then k for col:
+    for j ∈ 1:col_size 
+        for i ∈ 1:row_size
+            break
+            #A[i,j] = 
+        end
+    end
+
+end
+
 """
 test for linear system fitting using leastsquares
 
@@ -91,38 +127,6 @@ function test_fit()
 end
 
 
-"""
-compute the basis functions from normalized data and assemble A matrix:
-"""
-function get_A()
-    dataset = load("data/qm9_dataset_1000.jld") # energy is from here
-    W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint
-    D = load("data/distances_1000_i=603.jld")["data"] # the mahalanobis distance matrix
-    list_M = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
-
-    n_basis = 10
-    ϕ = extract_bspline(W, n_basis) # compute basis from fingerprint ∈ (n_feature, n_data, n_basis+3)
-    #display(sizeof(ϕ)) # turns out only 10mb
-    # determine size of A:
-    s_W = size(W) # n_feature x n_data
-    s_M = size(list_M) # n_sup_data
-    s_ϕ = size(ϕ) # n_feature x n_data x n_basis+3
-    N = s_W[2] # number of data (total)
-    M = s_M[1] # number of centers (supervised data)
-    L = s_ϕ[1]*s_ϕ[3] # length of feature
-    display([N, M, L])
-    row_size = N*M
-    col_size = M*L
-    A = spzeros(row_size, col_size) # init A
-    # naive and slow: assemble matrix A's entries: # loop m index first then j index for row, l first then k for col:
-    for j ∈ 1:col_size 
-        for i ∈ 1:row_size
-            break
-            #A[i,j] = 
-        end
-    end
-
-end
 
 """
 test assemble A with dummy data
