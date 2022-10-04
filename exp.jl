@@ -184,5 +184,22 @@ function test_A()
 end
 
 
-
-
+"""
+AD test for gradient vs Jacobian for a vector argument, it appears using ForwardDiff.derivative of a function which accepts scalar is multitude faster
+"""
+function test_AD()
+    f(x) = x.^2
+    ff(x) = x^2
+    n = Int(1e4)
+    x = rand(n)
+    # jacobian:
+    ReverseDiff.jacobian(f, x)
+    # loop of gradient:
+    y = similar(x)
+    function df!(y, x)
+        for i ∈ eachindex(x)
+            y[i] = ForwardDiff.derivative(ff, x[i])
+        end
+    end
+    df!(y, x)
+end
