@@ -138,7 +138,7 @@ params:
     - m, index of selected unsup data
     - k, ... sup data 
 """
-function f_ϕ(ϕ, dϕ, W, m, k, l, b)
+function qϕ(ϕ, dϕ, W, m, k, l, b)
     display([ϕ[l, m], ϕ[l, k], dϕ[l, k], W[l,m], W[l,k]])
     return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]
 end
@@ -166,6 +166,13 @@ function f_dϕ_vec(w)
     return y
 end
 
+"""
+more "accurate" basis extractor to the formula: 
+    ϕ_l(w) := β_τ((Pw)_t), l = (τ, t), where τ is the basis index, and t is the feature index, P is a scaler matrix (for now I with size of w)
+"""
+function β_τ(Pw)
+    
+end
 
 
 """
