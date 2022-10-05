@@ -7,39 +7,6 @@ include("linastic.jl")
 placeholder for the (Ro)bust (S)h(e)pard (m)odel for (i)nterpolation constructor
 """
 
-
-"""
-query for
-ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
-"""
-function f_ϕ(ϕ, dϕ, W, m, k, l)
-    display([ϕ[l, m], ϕ[l, k], dϕ[l, k], W[:,m], W[:,k]])
-    #return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]
-end
-
-
-"""
-wrapper for scalar w for ϕ'(w) = dϕ(w)/dw
-"""
-function f_dϕ(x)
-    return ForwardDiff.derivative(bspline_scalar, x)
-end
-
-"""
-ϕ'(w) = dϕ(w)/dw using AD
-params:
-    - w, vector of features for a selected data, ∈ Float64 (n_feature) 
-output:
-    - y := ϕ'(w) ∈ Float64 (n_feature)
-"""
-function f_dϕ_vec(w)
-    y = similar(w)
-    for i ∈ eachindex(w)
-        y[i] = ForwardDiff.derivative(bspline_scalar, w[i])
-    end
-    return y
-end
-
 """
 The Bspline works for matrices
 
@@ -155,6 +122,50 @@ function extract_bspline_df(x, M; flatten=false, sparsemat=false)
     end
     return S, dϕ
 end
+
+
+
+"""
+query for
+ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
+params:
+    - l here corresponds to the feature index, if there exists B basis, hence there are M × l indices, i.e.,
+        do indexing of l for each b ∈ B
+    - b, the basis index
+    - ϕ, basis matrix, ∈ Float64(n_feature*n_basis, n_data), arranged s.t. [f1b1, f2b1, ...., fnbn]
+    - dϕ, the derivative of ϕ, idem to ϕ
+    - W, feature matrix, ∈ Float64(n_feature*n_data)
+    - m, index of selected unsup data
+    - k, ... sup data 
+"""
+function f_ϕ(ϕ, dϕ, W, m, k, l, b)
+    display([ϕ[l, m], ϕ[l, k], dϕ[l, k], W[:,m], W[:,k]])
+    #return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]
+end
+
+
+"""
+wrapper for scalar w for ϕ'(w) = dϕ(w)/dw
+"""
+function f_dϕ(x)
+    return ForwardDiff.derivative(bspline_scalar, x)
+end
+
+"""
+ϕ'(w) = dϕ(w)/dw using AD
+params:
+    - w, vector of features for a selected data, ∈ Float64 (n_feature) 
+output:
+    - y := ϕ'(w) ∈ Float64 (n_feature)
+"""
+function f_dϕ_vec(w)
+    y = similar(w)
+    for i ∈ eachindex(w)
+        y[i] = ForwardDiff.derivative(bspline_scalar, w[i])
+    end
+    return y
+end
+
 
 
 """
