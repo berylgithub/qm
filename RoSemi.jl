@@ -130,7 +130,7 @@ query for
 ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
 params:
     - l here corresponds to the feature index, if there exists B basis, hence there are M × l indices, i.e.,
-        do indexing of l for each b ∈ B
+        do indexing of l for each b ∈ B, the indexing formula should be: |l|(b-1)+l, where |l| is the feature length
     - b, the basis index
     - ϕ, basis matrix, ∈ Float64(n_feature*n_basis, n_data), arranged s.t. [f1b1, f2b1, ...., fnbn]
     - dϕ, the derivative of ϕ, idem to ϕ
@@ -139,8 +139,8 @@ params:
     - k, ... sup data 
 """
 function f_ϕ(ϕ, dϕ, W, m, k, l, b)
-    display([ϕ[l, m], ϕ[l, k], dϕ[l, k], W[:,m], W[:,k]])
-    #return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]
+    display([ϕ[l, m], ϕ[l, k], dϕ[l, k], W[l,m], W[l,k]])
+    return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]
 end
 
 
