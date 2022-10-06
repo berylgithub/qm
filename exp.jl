@@ -12,7 +12,7 @@ include("RoSemi.jl")
 """
 get the indices of the supervised datapoints M, fix w0 as i=603 for now
 """
-function get_cluster()
+function set_cluster()
     # load dataset || the datastructure is subject to change!! since the data size is huge
     dataset = load("data/ACSF_1000_symm.jld")["data"]
     N, L = size(dataset)
@@ -38,7 +38,7 @@ end
 """
 compute all D_k(w_l) ∀k,l, for now fix i = 603 (rozemi)
 """
-function get_all_dist()
+function set_all_dist()
     dataset = load("data/ACSF_1000_symm.jld")["data"]
     N, L = size(dataset)
     W = dataset' # transpose data (becomes column major)
@@ -62,7 +62,7 @@ end
 """
 compute the basis functions from normalized data and assemble A matrix:
 """
-function get_A()
+function fit_rosemi()
     dataset = load("data/qm9_dataset_1000.jld") # energy is from here
     W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint
     D = load("data/distances_1000_i=603.jld")["data"] # the mahalanobis distance matrix
@@ -94,6 +94,28 @@ function get_A()
 
 end
 
+
+
+"""
+AD test for gradient vs Jacobian for a vector argument, it appears using ForwardDiff.derivative of a function which accepts scalar is multitude faster
+"""
+function test_AD()
+    f(x) = x.^2
+    ff(x) = x^2
+    n = Int(1e4)
+    x = rand(n)
+    # jacobian:
+    ReverseDiff.jacobian(f, x)
+    # loop of gradient:
+    y = similar(x)
+    function df!(y, x)
+        for i ∈ eachindex(x)
+            y[i] = ForwardDiff.derivative(ff, x[i])
+        end
+    end
+    df!(y, x)
+end
+
 """
 test for linear system fitting using leastsquares
 
@@ -101,27 +123,28 @@ NOTES:
     - for large LSes, ForwardDiff is much faster for jacobian but ReverseDiff is much faster for gradient !!
 """
 function test_fit()
-    #ndata = Int(1e4); nfeature=Int(1e4)
-    ndata = 3; nfeature=3
+    ndata = Int(1e4); nfeature=Int(1e3)
+    #ndata = 100; nfeature=500
     #A = Matrix{Float64}(LinearAlgebra.I, 3,3)
-    #A = rand(ndata, nfeature)
-    A = spzeros(ndata, nfeature) # try sparse
+    A = rand(ndata, nfeature)
+    #= A = spzeros(ndata, nfeature) # try sparse
     for i ∈ 1:ndata
         for j ∈ 1:nfeature
             if j == i
                 A[j,i] = 1.
             end
         end
-    end
+    end =#
     display(A)
     θ = rand(nfeature)
-    b = ones(ndata) .+ 10.
+    #b = ones(ndata) .+ 10.
+    b = rand(ndata)
     r = residual(A, θ, b)
     display(r)
     function df!(g, θ)
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS())
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(), Optim.Options(show_trace=true))
     display(Optim.minimizer(res))
     display(res)
 end
@@ -145,8 +168,10 @@ function test_A()
     D = (D .+ D')./2
     display(D)
 
-    Midx = [1,2] # k and j index
-    Widx = [3,4,5] # unsupervised data index (m)
+    Midx = [1,5] # k and j index
+    Widx = [2,3,4] # unsupervised data index (m)
+    cols = length(Midx)*n_feature*n_basis # index of k,l
+    rows = length(Midx)*length(Widx) # index of j,m  
     bas = repeat([1.], n_feature)
     ϕ = zeros(n_feature, n_data, n_basis)
     for i ∈ 1:n_data
@@ -161,37 +186,7 @@ function test_A()
     display(ϕ)
     display(dϕ)
 
-    # assemble A (try using sparse logic later!!):
-    M = length(Midx)
-    n_w = length(Widx) # different from n_data!!
-    n_s = n_feature*n_basis
-    rows = n_w*M
-    cols = n_s*M
-    A = zeros(rows, cols)
-    b = zeros(rows)
-    rcount = 1 #rowcount
-    for m ∈ Widx
-        SK = comp_SK(D, Midx, m)
-        for j ∈ Midx
-            ccount = 1 # colcount
-            ∑k = 0. # for the 2nd term of b
-            αj = SK*D[j,m] - 1
-            for k ∈ Midx
-                γk = SK*D[k, m]
-                den = γk*αj
-                ∑k = ∑k + E[k]/den # E_k/(γk × αj)
-                for l ∈ 1:n_s # from flattened feature
-                    ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-                    #display(ϕkl)
-                    num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.jl for ϕ and dϕ definition # ϕ[l, m] should be qϕ(k, l, arg) later, a query function, where arg contains the required arguments such as ϕ, dϕ
-                    A[rcount, ccount] = num/den
-                    ccount += 1 # end of column loop
-                end
-            end
-            b[rcount] = E[j]/αj - ∑k # assign b vector elements
-            rcount += 1 # end of row loop
-        end
-    end
+    A, b = gen_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
     println(A)
     println(b)
     
@@ -213,25 +208,4 @@ function test_A()
     res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS())
     display(Optim.minimizer(res))
     display(res)
-end
-
-
-"""
-AD test for gradient vs Jacobian for a vector argument, it appears using ForwardDiff.derivative of a function which accepts scalar is multitude faster
-"""
-function test_AD()
-    f(x) = x.^2
-    ff(x) = x^2
-    n = Int(1e4)
-    x = rand(n)
-    # jacobian:
-    ReverseDiff.jacobian(f, x)
-    # loop of gradient:
-    y = similar(x)
-    function df!(y, x)
-        for i ∈ eachindex(x)
-            y[i] = ForwardDiff.derivative(ff, x[i])
-        end
-    end
-    df!(y, x)
 end

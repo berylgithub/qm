@@ -221,6 +221,48 @@ end
 
 
 """
+assemble A matrix and b vector for the linear system, should use sparse logic (I, J, V triplets) later!!
+params:
+    - W, data × feature matrix ()
+    ...
+"""
+function gen_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    # assemble A (try using sparse logic later!!):
+    n_m = length(Midx)
+    n_w = length(Widx) # different from n_data!! n_data := size(W)[2]
+    n_s = n_feature*n_basis
+    rows = n_w*n_m
+    cols = n_s*n_m
+    A = zeros(rows, cols) 
+    b = zeros(rows) 
+    rcount = 1 #rowcount
+    for m ∈ Widx
+        SK = comp_SK(D, Midx, m)
+        for j ∈ Midx
+            ccount = 1 # colcount
+            ∑k = 0. # for the 2nd term of b
+            αj = SK*D[j,m] - 1
+            for k ∈ Midx
+                γk = SK*D[k, m]
+                den = γk*αj
+                ∑k = ∑k + E[k]/den # E_k/(γk × αj)
+                for l ∈ 1:n_s # from flattened feature
+                    ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+                    #display(ϕkl)
+                    num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.jl for ϕ and dϕ definition # ϕ[l, m] should be qϕ(k, l, arg) later, a query function, where arg contains the required arguments such as ϕ, dϕ
+                    A[rcount, ccount] = num/den
+                    ccount += 1 # end of column loop
+                end
+            end
+            b[rcount] = E[j]/αj - ∑k # assign b vector elements
+            rcount += 1 # end of row loop
+        end
+    end
+    return A, b
+end
+
+
+"""
 ==================================
 """
 
