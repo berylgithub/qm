@@ -127,7 +127,8 @@ end
 
 """
 query for
-ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
+ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw,
+currently uses the assumption of P = I hence P*w = w, the most correct one is β':= bspline'((P*w)_t), 
 params:
     - l here corresponds to the feature index,
         used also to determine t, which is t = l % n_feature 
