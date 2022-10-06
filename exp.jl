@@ -134,10 +134,17 @@ test assemble A with dummy data
 function test_A()
     # data setup:
     n_data = 5; n_feature = 3; n_basis = 2
-    D = convert(Matrix{Float64}, [0 1 2 3 4; 1 0 2 3 4; 1 2 0 3 4; 1 2 3 0 4; 1 2 3 4 0])
+    bas = vec(1.:5.)
+    W = zeros(n_feature, n_data)
+    for i ∈ 1:n_feature
+        W[i, :] = bas .+ (0.5*(i-1))
+    end
+    E = convert(Vector{Float64}, vec(1:5)) # dummy data matrix and energy vector
+    display(W)
+    D = convert(Matrix{Float64}, [0 1 2 3 4; 1 0 2 3 4; 1 2 0 3 4; 1 2 3 0 4; 1 2 3 4 0]) # dummy distance
     D = (D .+ D')./2
     display(D)
-    E = convert(Vector{Float64}, vec(1:5))
+
     Midx = [1,5]
     Widx = [2,3,4] # unsupervised data index
     bas = repeat([1.], n_feature)
@@ -150,7 +157,7 @@ function test_A()
     # flattened basis*feature:
     ϕ = permutedims(ϕ, [1,3,2])
     ϕ = reshape(ϕ, n_feature*n_basis, n_data)
-    dϕ = ϕ*(-1)
+    dϕ = ϕ*(-1.)
     display(ϕ)
     display(dϕ)
     
@@ -173,7 +180,9 @@ function test_A()
                 γk = SK*D[k, m]
                 den = γk*αj
                 for l ∈ 1:n_s # from flattened feature
-                    num = ϕ[l, m]*(1-γk + δ(j, k)) # see RoSemi.jl for ϕ and dϕ definition # ϕ[l, m] should be qϕ(k, l, arg) later, a query function, where arg contains the required arguments such as ϕ, dϕ
+                    ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+                    display(ϕkl)
+                    num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.jl for ϕ and dϕ definition # ϕ[l, m] should be qϕ(k, l, arg) later, a query function, where arg contains the required arguments such as ϕ, dϕ
                     A[rcount, ccount] = num/den
                     ccount += 1 # end of column loop
                 end
@@ -183,11 +192,12 @@ function test_A()
     end
     println(A)
     # test each element:
-    m = 2; j = 1; k = 1; l = 1
+    m = 2; j = 1; k = 1; l = 5
+    ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     SK = comp_SK(D, Midx, m)
     αj = SK*D[j,m] - 1; γk = SK*D[k,m]
-    println([SK, D[j,m], D[k,m], ϕ[l, m], δ(j, k)])
-    println(ϕ[l, m]*(1-γk + δ(j, k)) / (γk*αj))
+    println([ϕkl, SK, D[j,m], D[k,m], ϕ[l, m], δ(j, k)])
+    println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 end
 
 

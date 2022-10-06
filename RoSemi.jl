@@ -104,7 +104,7 @@ function extract_bspline_df(x, M; flatten=false, sparsemat=false)
                 end
             end
         end
-        if sparsemat
+        if sparsemat # naive sparse, could still do smart sparse using triplets (I, J, V)
             S = sparse(S)
             dϕ = sparse(dϕ)
         end
@@ -129,18 +129,22 @@ end
 query for
 ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw
 params:
-    - l here corresponds to the feature index, if there exists B basis, hence there are M × l indices, i.e.,
-        do indexing of l for each b ∈ B, the indexing formula should be: |l|(b-1)+l, where |l| is the feature length
-    - b, the basis index
-    - ϕ, basis matrix, ∈ Float64(n_feature*n_basis, n_data), arranged s.t. [f1b1, f2b1, ...., fnbn]
+    - l here corresponds to the feature index,
+        used also to determine t, which is t = l % n_feature 
+        *** NOT NEEDED ANYMORE ***if there exists B basis, hence there are M × l indices, i.e., do indexing of l for each b ∈ B, the indexing formula should be: |l|(b-1)+l, where |l| is the feature length
+    - ϕ, basis matrix, ∈ Float64(n_s := n_feature*n_basis, n_data), arranged s.t. [f1b1, f2b1, ...., fnbn]
     - dϕ, the derivative of ϕ, idem to ϕ
-    - W, feature matrix, ∈ Float64(n_feature*n_data)
+    - W, feature matrix, ∈ Float64(n_feature, n_data)
     - m, index of selected unsup data
     - k, ... sup data 
 """
-function qϕ(ϕ, dϕ, W, m, k, l, b)
-    display([ϕ[l, m], ϕ[l, k], dϕ[l, k], W[l,m], W[l,k]])
-    return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]
+function qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+    t = l % n_feature # determine index of t, since dϕ is only non zero at t, hence the inner product is simplified
+    if l % n_feature == 0
+        t = n_feature
+    end
+    display([t, ϕ[l, m], ϕ[l, k], dϕ[l, k], W[t,m], W[t,k]])
+    return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k])
 end
 
 
@@ -170,7 +174,7 @@ end
 more "accurate" basis extractor to the formula: 
     ϕ_l(w) := β_τ((Pw)_t), l = (τ, t), where τ is the basis index, and t is the feature index, P is a scaler matrix (for now I with size of w)
 """
-function β_τ(Pw)
+function β_τ(P, w)
     
 end
 
