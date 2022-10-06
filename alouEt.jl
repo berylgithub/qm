@@ -73,22 +73,37 @@ function fit_rosemi()
     # index op:
     data_idx = 1:n_data
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
-    M = size(Midx) # n_sup_data
+    n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K
     #display(dataset)
-    display([length(data_idx), length(Midx), length(Widx)])
+    n_m = length(Midx); n_w = length(Widx)
+    display([length(data_idx), n_m, n_w])
     
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
     n_basis += 3 # by definition
     display(ϕ)
-    display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
-    display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
+    #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
+    #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     display([n_data, n_basis, n_feature])
     # assemble A and b:
-    A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    t = @elapsed begin
+        A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    end
+    println("LS assembly time: ",t)
     A = sparse(A) # only half is filled!!
     display(A)
-    display(b)
+    #display(b)
+    # test fitting !! (although the data is nonsensical (dummy))
+    cols = n_m*n_basis*n_feature # length of col
+    θ = rand(cols)
+    r = residual(A, θ, b)
+    display(r)
+    function df!(g, θ) # closure function for d(f_obj)/dθ
+        g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
+    end
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(), Optim.Options(show_trace=true))
+    display(Optim.minimizer(res))
+    display(res)
 end
 
 

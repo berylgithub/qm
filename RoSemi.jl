@@ -226,7 +226,7 @@ params:
     - W, data × feature matrix ()
     ...
 """
-function gen_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+function assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
     # assemble A (try using sparse logic later!!):
     n_m = length(Midx)
     n_w = length(Widx) # different from n_data!! n_data := size(W)[2]
@@ -249,7 +249,7 @@ function gen_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
                 for l ∈ 1:n_l # from flattened feature
                     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
                     #display(ϕkl)
-                    num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.jl for ϕ and dϕ definition # ϕ[l, m] should be qϕ(k, l, arg) later, a query function, where arg contains the required arguments such as ϕ, dϕ
+                    num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.pdf and RSI.pdf for ϕ and dϕ definition
                     A[rcount, ccount] = num/den
                     ccount += 1 # end of column loop
                 end
