@@ -60,11 +60,11 @@ end
 
 
 """
-compute the basis functions from normalized data and assemble A matrix:
+the main fitting function !!!
 """
 function fit_rosemi()
     dataset = load("data/qm9_dataset_1000.jld") # energy is from here
-    W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint
+    W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
     D = load("data/distances_1000_i=603.jld")["data"] # the mahalanobis distance matrix
     list_M = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
 
@@ -81,16 +81,6 @@ function fit_rosemi()
     M = s_M[1] # number of centers (supervised data)
     L = s_ϕ[1]*s_ϕ[3] # length of feature
     display([N, M, L])
-    row_size = N*M
-    col_size = M*L
-    A = spzeros(row_size, col_size) # init A
-    # naive and slow: assemble matrix A's entries: # loop m index first then j index for row, l first then k for col:
-    for j ∈ 1:col_size 
-        for i ∈ 1:row_size
-            break
-            #A[i,j] = 
-        end
-    end
 
 end
 

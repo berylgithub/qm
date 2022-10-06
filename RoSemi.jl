@@ -230,9 +230,9 @@ function gen_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
     # assemble A (try using sparse logic later!!):
     n_m = length(Midx)
     n_w = length(Widx) # different from n_data!! n_data := size(W)[2]
-    n_s = n_feature*n_basis
+    n_l = n_feature*n_basis
     rows = n_w*n_m
-    cols = n_s*n_m
+    cols = n_l*n_m
     A = zeros(rows, cols) 
     b = zeros(rows) 
     rcount = 1 #rowcount
@@ -246,7 +246,7 @@ function gen_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
                 γk = SK*D[k, m]
                 den = γk*αj
                 ∑k = ∑k + E[k]/den # E_k/(γk × αj)
-                for l ∈ 1:n_s # from flattened feature
+                for l ∈ 1:n_l # from flattened feature
                     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
                     #display(ϕkl)
                     num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.jl for ϕ and dϕ definition # ϕ[l, m] should be qϕ(k, l, arg) later, a query function, where arg contains the required arguments such as ϕ, dϕ
