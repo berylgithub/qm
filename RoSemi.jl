@@ -141,7 +141,7 @@ params:
 """
 function qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     t = l % n_feature # determine index of t, since dϕ is only non zero at t, hence the inner product is simplified
-    if l % n_feature == 0
+    if t == 0
         t = n_feature
     end
     #display([t, ϕ[l, m], ϕ[l, k], dϕ[l, k], W[t,m], W[t,k]])
