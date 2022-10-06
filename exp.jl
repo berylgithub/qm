@@ -145,8 +145,8 @@ function test_A()
     D = (D .+ D')./2
     display(D)
 
-    Midx = [1,5] # k and j index
-    Widx = [2,3,4] # unsupervised data index (m)
+    Midx = [1,2] # k and j index
+    Widx = [3,4,5] # unsupervised data index (m)
     bas = repeat([1.], n_feature)
     ϕ = zeros(n_feature, n_data, n_basis)
     for i ∈ 1:n_data
@@ -160,7 +160,6 @@ function test_A()
     dϕ = ϕ*(-1.)
     display(ϕ)
     display(dϕ)
-    
 
     # assemble A (try using sparse logic later!!):
     M = length(Midx)
@@ -195,6 +194,7 @@ function test_A()
     end
     println(A)
     println(b)
+    
     # test each element:
     m = 2; j = 1; k = 1; l = 1
     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
@@ -202,6 +202,17 @@ function test_A()
     αj = SK*D[j,m] - 1; γk = SK*D[k,m]
     println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
     println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
+
+    # test fitting !! (although the data is nonsensical (dummy))
+    θ = rand(cols)
+    r = residual(A, θ, b)
+    println("residual = ", r)
+    function df!(g, θ)
+        g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
+    end
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS())
+    display(Optim.minimizer(res))
+    display(res)
 end
 
 
