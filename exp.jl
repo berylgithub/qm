@@ -169,7 +169,7 @@ function test_A()
     display(D)
 
     Midx = [1,5] # k and j index
-    Widx = [2,3,4] # unsupervised data index (m)
+    data_idx = 1:n_data ; Widx = setdiff(data_idx, Midx) # unsupervised data index (m)
     cols = length(Midx)*n_feature*n_basis # index of k,l
     rows = length(Midx)*length(Widx) # index of j,m  
     bas = repeat([1.], n_feature)
