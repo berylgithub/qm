@@ -63,25 +63,32 @@ end
 the main fitting function !!!
 """
 function fit_rosemi()
-    dataset = load("data/qm9_dataset_1000.jld") # energy is from here
+    n_basis = 10 # pre-inputted number, later n_basis := n_basis+3
+    dataset = load("data/qm9_dataset_1000.jld")["data"] # energy is from here
     W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
+    s_W = size(W) # n_feature × n_data
+    n_feature = s_W[1]; n_data = s_W[2];
+    E = map(d -> d["energy"], dataset)
     D = load("data/distances_1000_i=603.jld")["data"] # the mahalanobis distance matrix
-    list_M = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
-
-    n_basis = 10
-    ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature, n_data, n_basis+3)
+    # index op:
+    data_idx = 1:n_data
+    Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
+    M = size(Midx) # n_sup_data
+    Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K
+    #display(dataset)
+    display([length(data_idx), length(Midx), length(Widx)])
+    
+    ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
+    n_basis += 3 # by definition
     display(ϕ)
-    display([nnz(ϕ), nnz(dϕ)])
-    #display(sizeof(ϕ)) # turns out only 10mb
-    # determine size of A:
-    s_W = size(W) # n_feature x n_data
-    s_M = size(list_M) # n_sup_data
-    s_ϕ = size(ϕ) # n_feature x n_data x n_basis+3
-    N = s_W[2] # number of data (total)
-    M = s_M[1] # number of centers (supervised data)
-    L = s_ϕ[1]*s_ϕ[3] # length of feature
-    display([N, M, L])
-
+    display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
+    display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
+    display([n_data, n_basis, n_feature])
+    # assemble A and b:
+    A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    A = sparse(A) # only half is filled!!
+    display(A)
+    display(b)
 end
 
 
@@ -176,7 +183,7 @@ function test_A()
     display(ϕ)
     display(dϕ)
 
-    A, b = gen_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # assemble the matrix A and vector b!!
     println(A)
     println(b)
     
