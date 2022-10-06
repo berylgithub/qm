@@ -145,8 +145,8 @@ function test_A()
     D = (D .+ D')./2
     display(D)
 
-    Midx = [1,5]
-    Widx = [2,3,4] # unsupervised data index
+    Midx = [1,5] # k and j index
+    Widx = [2,3,4] # unsupervised data index (m)
     bas = repeat([1.], n_feature)
     ϕ = zeros(n_feature, n_data, n_basis)
     for i ∈ 1:n_data
@@ -175,28 +175,32 @@ function test_A()
         SK = comp_SK(D, Midx, m)
         for j ∈ Midx
             ccount = 1 # colcount
+            ∑k = 0. # for the 2nd term of b
             αj = SK*D[j,m] - 1
             for k ∈ Midx
                 γk = SK*D[k, m]
                 den = γk*αj
+                ∑k = ∑k + E[k]/den # E_k/(γk × αj)
                 for l ∈ 1:n_s # from flattened feature
                     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-                    display(ϕkl)
+                    #display(ϕkl)
                     num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.jl for ϕ and dϕ definition # ϕ[l, m] should be qϕ(k, l, arg) later, a query function, where arg contains the required arguments such as ϕ, dϕ
                     A[rcount, ccount] = num/den
                     ccount += 1 # end of column loop
                 end
             end
+            b[rcount] = E[j]/αj - ∑k # assign b vector elements
             rcount += 1 # end of row loop
         end
     end
     println(A)
+    println(b)
     # test each element:
-    m = 2; j = 1; k = 1; l = 5
+    m = 2; j = 1; k = 1; l = 1
     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     SK = comp_SK(D, Midx, m)
     αj = SK*D[j,m] - 1; γk = SK*D[k,m]
-    println([ϕkl, SK, D[j,m], D[k,m], ϕ[l, m], δ(j, k)])
+    println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
     println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 end
 

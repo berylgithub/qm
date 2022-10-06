@@ -143,7 +143,7 @@ function qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     if l % n_feature == 0
         t = n_feature
     end
-    display([t, ϕ[l, m], ϕ[l, k], dϕ[l, k], W[t,m], W[t,k]])
+    #display([t, ϕ[l, m], ϕ[l, k], dϕ[l, k], W[t,m], W[t,k]])
     return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k])
 end
 
