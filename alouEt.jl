@@ -75,6 +75,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K
+    Widx = Widx[1:50] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -93,9 +94,11 @@ function fit_rosemi()
     A = sparse(A) # only half is filled!!
     display(A)
     #display(b)
-    # test fitting !! (although the data is nonsensical (dummy))
+
+    # fit!:
     cols = n_m*n_basis*n_feature # length of col
-    θ = rand(cols)
+    #θ = rand(cols)
+    θ = rand(Uniform(-1., 1.), cols)
     r = residual(A, θ, b)
     display(r)
     function df!(g, θ) # closure function for d(f_obj)/dθ
