@@ -61,6 +61,11 @@ end
 
 """
 the main fitting function !!!
+try:
+    - 2nd order method (+AD hessian)
+    - varying M (recomputing centers)
+    - changing column length
+    - multirestart
 """
 function fit_rosemi()
     n_basis = 10 # pre-inputted number, later n_basis := n_basis+3
@@ -75,7 +80,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K
-    Widx = Widx[1:50] # take subset for smaller matrix
+    Widx = Widx[1:20] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -104,8 +109,9 @@ function fit_rosemi()
     function df!(g, θ) # closure function for d(f_obj)/dθ
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(), Optim.Options(show_trace=true, iterations=10_000))
-    display(Optim.minimizer(res))
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(), Optim.Options(show_trace=true, iterations=1_00))
+    #display(Optim.minimizer(res))
+    display(residual(A, Optim.minimizer(res), b))
     display(res)
 end
 
