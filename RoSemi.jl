@@ -123,6 +123,30 @@ function extract_bspline_df(x, M; flatten=false, sparsemat=false)
     return S, dϕ
 end
 
+"""
+tis uses sparse logic with (I, J, V) triplets hence it will be much more efficient.
+"""
+function extract_bspline_sparse(x, M; flatten=false)
+    n_feature, n_data = size(x)
+    n_basis = M+3
+    if flatten # flatten the basis
+        rsize = n_feature*n_basis
+        S = zeros(rsize, n_data)
+        dϕ = zeros(rsize, n_data)
+        @simd for i ∈ 1:n_data
+            rcount = 1
+            @simd for j ∈ 1:n_basis
+                @simd for k ∈ 1:n_feature
+                    @inbounds S[rcount, i] = bspline_scalar(M*x[k, i] + 2 - j)
+                    @inbounds dϕ[rcount, i] = f_dϕ(M*x[k, i] + 2 - j)
+                    rcount += 1
+                end
+            end
+        end
+    end
+    #......
+end
+
 
 
 """
@@ -261,6 +285,12 @@ function assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
     return A, b
 end
 
+"""
+predict the energy of w_m by computing V_K(w_m) 
+"""
+function predict_V()
+
+end
 
 """
 ==================================
