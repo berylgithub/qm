@@ -81,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K
-    Widx = Widx[1:50] # take subset for smaller matrix
+    Widx = Widx[1:20] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -110,13 +110,13 @@ function fit_rosemi()
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
     res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=100), Optim.Options(show_trace=true, iterations=1_000))
+    θ_lsq = Optim.minimizer(res)
+    display(res)
     # linear solver:
     t = @elapsed begin
         θ_lin = A\b
     end
-    θ_lsq = Optim.minimizer(res)
-    display(res)
-    #display(residual(A, Optim.minimizer(res), b))
+    display(residual(A, Optim.minimizer(res), b))
     println("ls obj func = ", lsq(A, θ_lsq, b))
     println("lin elapsed time: ", t)
     println("lin obj func = ", lsq(A, θ_lin, b))
