@@ -61,8 +61,9 @@ end
 
 """
 the main fitting function !!!
+targets: chemical accuracy = 1 kcal/mol = 0.0015936 Ha = 0.0433641 eV.
 try:
-    - 2nd order method (+AD hessian)
+    - use fixed N = 100
     - varying M (recomputing centers)
     - changing column length
     - multirestart
@@ -80,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K
-    Widx = Widx[1:20] # take subset for smaller matrix
+    Widx = Widx[1:50] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -100,19 +101,26 @@ function fit_rosemi()
     display(A)
     #display(b)
 
-    # fit!:
+    # fit, try lsovle vs lsquares!:
     cols = n_m*n_basis*n_feature # length of col
-    #θ = rand(cols)
     θ = rand(Uniform(-1., 1.), cols)
     r = residual(A, θ, b)
     display(r)
     function df!(g, θ) # closure function for d(f_obj)/dθ
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(), Optim.Options(show_trace=true, iterations=1_00))
-    #display(Optim.minimizer(res))
-    display(residual(A, Optim.minimizer(res), b))
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=100), Optim.Options(show_trace=true, iterations=1_000))
+    # linear solver:
+    t = @elapsed begin
+        θ_lin = A\b
+    end
+    θ_lsq = Optim.minimizer(res)
     display(res)
+    #display(residual(A, Optim.minimizer(res), b))
+    println("ls obj func = ", lsq(A, θ_lsq, b))
+    println("lin elapsed time: ", t)
+    println("lin obj func = ", lsq(A, θ_lin, b))
+    println("differences of lin and LFBGS? ", norm(θ_lsq-θ_lin))
 end
 
 
@@ -229,4 +237,39 @@ function test_A()
     res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS())
     display(Optim.minimizer(res))
     display(res)
+end
+
+
+function spassign(X)
+    r = c = length(X)
+    K = Vector{Float64}(undef, 0); J = Vector{Float64}(undef, 0); V = Vector{Float64}(undef, 0) # assume unknown number of data
+    for k ∈ 1:c 
+        for j ∈ 1:r 
+            if k == j
+                push!(K, k); push!(J, j); push!(V, X[k])
+            end
+        end
+    end
+    return sparse(K, J, V)
+end
+
+function densassign(X)
+    r = c = length(X)
+    A = zeros(r, c)
+    for i ∈ 1:c
+        for j ∈ 1:r
+            if j == i
+                A[j, i] = X[j]
+            end
+        end
+    end
+    return sparse(A)
+end
+
+"""
+test sparse vs dense loop, assume diagonal matrix
+"""
+function test_sparse()
+    
+    
 end
