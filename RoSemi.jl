@@ -301,7 +301,11 @@ params:
     - W, fingerprint matrix, ∈Float64(n_feature, n_data)
     - ...
     - m, index of W in which we want to predict the energy
-    - n_l := n_basis*n_feature, length of the feature block vector, 
+    - n_l := n_basis*n_feature, length of the feature block vector,
+output:
+    - VK, scalar Float64
+notes:
+    - for m = k, this returns undefined or NaN by definition of V_K(w).
 """
 function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
     SK = comp_SK(D, Midx, m) # compute SK
@@ -313,12 +317,12 @@ function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
             ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
             θkl = θ[ccount] # since θ is in block vector of [k,l]
             ∑l = ∑l + θkl*ϕkl
-            #println([ccount, θkl, ϕkl, ∑l])
+            println([ccount, θkl, ϕkl, ∑l])
             ccount += 1
         end
         vk = E[k] + ∑l
         RK = RK + vk/D[k, m] # D is symm
-        #println([E[k], ∑l, D[k, m], RK])
+        println([E[k], ∑l, D[k, m], RK])
     end
     #println(SK)
     return RK/SK
@@ -327,9 +331,27 @@ end
 """
 compute Δ_jK(w_m). Used for MAD and RMSD. See comp_VK function, since Δ_jK(w_m) := (VK - Vj)/αj
 """
-function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
-
-
+function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, j, m, n_l, n_feature)
+    SK = comp_SK(D, Midx, m) # compute SK
+    RK = 0.
+    ccount = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
+    for k ∈ Midx
+        ∑l = 0. # right term with l index
+        for l ∈ 1:n_l # ∑θ_kl*ϕ_kl
+            # for k:
+            ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+            θkl = θ[ccount] # since θ is in block vector of [k,l]
+            ∑l = ∑l + θkl*ϕkl
+            #println([ccount, θkl, ϕkl, ∑l])
+            ccount += 1
+        end
+        vk = E[k] + ∑l
+        RK = RK + vk/D[k, m] # D is symm
+        #println([E[k], ∑l, D[k, m], RK])
+    end
+    #println(SK)
+    VK = RK/SK
+    αj = D[j, m]*SK - 1
 end
 
 """
