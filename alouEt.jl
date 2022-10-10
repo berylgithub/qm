@@ -89,6 +89,7 @@ function fit_rosemi()
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
     n_basis += 3 # by definition
     display(ϕ)
+    #println(maximum(ϕ), minimum(ϕ))
     #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     display([n_data, n_basis, n_feature])

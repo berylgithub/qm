@@ -1,4 +1,4 @@
-using JLD, SparseArrays, Distributions, Statistics, StatsBase
+using JLD, SparseArrays, Distributions, Statistics, StatsBase, ForwardDiff
 
 include("voronoi.jl")
 include("linastic.jl")
@@ -284,6 +284,17 @@ function assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
     end
     return A, b
 end
+
+"""
+assemble A matrix and b vector for the linear system, with sparse logic (I, J, V triplets)
+params:
+    - W, data × feature matrix ()
+    ...
+"""
+function assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    
+end
+
 
 """
 predict the energy of w_m by computing V_K(w_m) 
