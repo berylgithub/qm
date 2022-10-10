@@ -247,7 +247,7 @@ end
 """
 assemble A matrix and b vector for the linear system, should use sparse logic (I, J, V triplets) later!!
 params:
-    - W, data × feature matrix ()
+    - W, data × feature matrix, Float64 (n_feature, n_data)
     ...
 """
 function assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
@@ -288,7 +288,6 @@ end
 """
 assemble A matrix and b vector for the linear system, with sparse logic (I, J, V triplets)
 params:
-    - W, data × feature matrix ()
     ...
 """
 function assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
@@ -299,7 +298,10 @@ end
 """
 predict the energy of w_m by computing V_K(w_m), naive or fair(?) version, since all quantities except phi are recomputed
 params:
-    W, fingerprint matrix, ∈Float64(n_feature, n_data)
+    - W, fingerprint matrix, ∈Float64(n_feature, n_data)
+    - ...
+    - m, index of W in which we want to predict the energy
+    - n_l := n_basis*n_feature, length of the feature block vector, 
 """
 function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
     SK = comp_SK(D, Midx, m) # compute SK
@@ -311,13 +313,14 @@ function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
             ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
             θkl = θ[ccount] # since θ is in block vector of [k,l]
             ∑l = ∑l + θkl*ϕkl
-            println([ccount, θkl, ϕkl, ∑l])
+            #println([ccount, θkl, ϕkl, ∑l])
             ccount += 1
         end
         vk = E[k] + ∑l
-        println([E[k], ∑l, D[k, m]])
         RK = RK + vk/D[k, m] # D is symm
+        #println([E[k], ∑l, D[k, m], RK])
     end
+    #println(SK)
     return RK/SK
 end
 

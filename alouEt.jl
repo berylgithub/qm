@@ -221,15 +221,21 @@ function test_A()
     println(b)
     
     # test each element:
-    m = 2; j = 1; k = 1; l = 1
+    m = 1; j = 1; k = 1; l = 1
     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     SK = comp_SK(D, Midx, m)
     αj = SK*D[j,m] - 1; γk = SK*D[k,m]
     println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
     println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 
+    # test predict V_K(w_m):
+    θ = Vector{Float64}(1:cols) # dummy theta
+    display(θ)
+    n_l =n_feature*n_basis
+    VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
+    display(VK)
     # test fitting !! (although the data is nonsensical (dummy))
-    θ = rand(cols)
+#=     θ = rand(cols)
     r = residual(A, θ, b)
     println("residual = ", r)
     function df!(g, θ)
@@ -237,7 +243,7 @@ function test_A()
     end
     res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS())
     display(Optim.minimizer(res))
-    display(res)
+    display(res) =#
 end
 
 
