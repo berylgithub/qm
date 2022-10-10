@@ -328,31 +328,30 @@ function test_grid()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
     # ∀ requested M, do the algorithm:
-    for M ∈ [30]
-        #M = 10 # number of centers
-        # fixed coords, ∈ (fingerprint length, data length):
-        len_finger = 2
-        n_data = 70
-        coords = Matrix{Float64}(undef, len_finger, n_data) # a list of 2d coord arrays for testing
-        # fill fixed coords:
-        counter = 1
-        for i ∈ 1.:7. 
-            for j ∈ 1.:10.
-                coords[1, counter] = i # dim1 
-                coords[2, counter] = j # dim2
-                counter += 1
-            end
+    #M = 10 # number of centers
+    # fixed coords, ∈ (fingerprint length, data length):
+    len_finger = 2
+    n_data = 70
+    coords = Matrix{Float64}(undef, len_finger, n_data) # a list of 2d coord arrays for testing
+    # fill fixed coords:
+    counter = 1
+    for i ∈ 1.:7. 
+        for j ∈ 1.:10.
+            coords[1, counter] = i # dim1 
+            coords[2, counter] = j # dim2
+            counter += 1
         end
+    end
 
-        #= len_finger = 3
-        n_data = 70
-        coords = rand(len_finger, n_data) # test 3-dimensional data =#
+    #= len_finger = 3
+    n_data = 70
+    coords = rand(len_finger, n_data) # test 3-dimensional data =#
 
-        # perturb points:
-        perturb_val = .1
-        perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
-        coords .+= perturb
-        
+    # perturb points:
+    perturb_val = .1
+    perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
+    coords .+= perturb
+    for M ∈ [10, 70]
         # compute B:
         wbar, C = mean_cov(coords, 35, n_data, len_finger)
         B = compute_B(C)
