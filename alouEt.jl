@@ -262,7 +262,10 @@ function test_A()
     n_l =n_feature*n_basis
     VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
     display(VK)
-    comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j)
+    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+    display(ΔjK)
+    MAD_m = MAD(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
+    display(MAD_m)
     # test fitting !! (although the data is nonsensical (dummy))
 #=     θ = rand(cols)
     r = residual(A, θ, b)
@@ -274,7 +277,6 @@ function test_A()
     display(Optim.minimizer(res))
     display(res) =#
 end
-
 
 function spassign(X)
     r = c = length(X)

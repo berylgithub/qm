@@ -332,7 +332,7 @@ end
 """
 compute Δ_jK(w_m). Used for MAD and RMSD. See comp_VK function, since Δ_jK(w_m) := (VK - Vj)/αj
 """
-function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j)
+function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk = false)
     SK = comp_SK(D, Midx, m) # compute SK
     RK = 0.
     ∑l_j = 0. # for j indexer, only passed once and j ∈ K
@@ -359,8 +359,23 @@ function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j)
     VK = RK/SK
     αj = D[j, m]*SK - 1
     Vj = E[j] + ∑l_j
-    #println([VK, Vj])
-    return (VK - Vj)/αj
+    if return_vk
+        return (VK - Vj)/αj, VK
+    else
+        return (VK - Vj)/αj
+    end
+end
+
+"""
+MAD_k(w_m) := 1/|K| ∑_j∈K |ΔjK(w_m)| 
+"""
+function MAD(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
+    len = length(Midx)
+    ∑ = 0.
+    for j ∈ Midx
+        ∑ = ∑ + abs(comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j))
+    end
+    return ∑/len
 end
 
 """
