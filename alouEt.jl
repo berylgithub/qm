@@ -81,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:100] # take subset for smaller matrix
+    Widx = Widx[1:10] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -111,16 +111,16 @@ function fit_rosemi()
     function df!(g, θ) # closure function for d(f_obj)/dθ
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_0), Optim.Options(show_trace=true, iterations=1_00))
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
     θ_lsq = Optim.minimizer(res)
-    display(res)
+    println(res)
     # linear solver:
     #= t = @elapsed begin
         θ_lin = A\b
     end
     println("lin elapsed time: ", t)
     println("lin obj func = ", lsq(A, θ_lin, b)) =#
-    display(residual(A, Optim.minimizer(res), b))
+    println(maximum(residual(A, θ_lsq, b)))
     println("ls obj func = ", lsq(A, θ_lsq, b))
     #println("differences of lin and LFBGS? ", norm(θ_lsq-θ_lin))
 
@@ -129,7 +129,7 @@ function fit_rosemi()
     MAE = 0.
     for m ∈ Widx
         E_actual = E[m] # actual
-        VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
+        VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
         err = abs(VK - E_actual)
         MAE += err
         println([E_actual, VK])
@@ -138,18 +138,18 @@ function fit_rosemi()
     MAE /= length(Widx)
     println(MAE)
 
-    println("'train' acc:")
+    #= println("'train' acc:")
     MAE = 0.
     for j ∈ Midx
         E_actual = E[j] # actual
-        VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, j) # predicted
+        VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, j) # predicted
         err = abs(VK - E_actual)
         MAE += err
         println([E_actual, VK])
         println("j = ",j,", ΔE = ",err)
     end
     MAE /= length(Midx)
-    println(MAE)
+    println(MAE) =#
 end
 
 
