@@ -332,9 +332,10 @@ end
 """
 compute Δ_jK(w_m). Used for MAD and RMSD. See comp_VK function, since Δ_jK(w_m) := (VK - Vj)/αj
 """
-function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, j, m, n_l, n_feature)
+function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j)
     SK = comp_SK(D, Midx, m) # compute SK
     RK = 0.
+    ∑l_j = 0. # for j indexer, only passed once and j ∈ K
     ccount = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
     for k ∈ Midx
         ∑l = 0. # right term with l index
@@ -342,8 +343,12 @@ function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, j, m, n_l, n_feature)
             # for k:
             ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
             θkl = θ[ccount] # since θ is in block vector of [k,l]
-            ∑l = ∑l + θkl*ϕkl
-            #println([ccount, θkl, ϕkl, ∑l])
+            θϕ = θkl*ϕkl
+            ∑l = ∑l + θϕ
+            if k == j # for j terms:
+                ∑l_j = ∑l_j + θϕ
+            end
+            #println([ccount, θkl, ϕkl, ∑l, ∑l_j])
             ccount += 1
         end
         vk = E[k] + ∑l
@@ -353,6 +358,9 @@ function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, j, m, n_l, n_feature)
     #println(SK)
     VK = RK/SK
     αj = D[j, m]*SK - 1
+    Vj = E[j] + ∑l_j
+    #println([VK, Vj])
+    return (VK - Vj)/αj
 end
 
 """

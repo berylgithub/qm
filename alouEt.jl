@@ -249,7 +249,7 @@ function test_A()
     println(b)
     
     # test each element:
-    m = 2; j = 1; k = 1; l = 1
+    m = 2; j = 5; k = 1; l = 1
     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     SK = comp_SK(D, Midx, m)
     αj = SK*D[j,m] - 1; γk = SK*D[k,m]
@@ -262,6 +262,7 @@ function test_A()
     n_l =n_feature*n_basis
     VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
     display(VK)
+    comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j)
     # test fitting !! (although the data is nonsensical (dummy))
 #=     θ = rand(cols)
     r = residual(A, θ, b)
