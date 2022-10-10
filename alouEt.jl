@@ -80,14 +80,14 @@ function fit_rosemi()
     data_idx = 1:n_data
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
-    Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K
-    #Widx = Widx[1:100] # take subset for smaller matrix
+    Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
+    Widx = Widx[1:100] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
     
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
-    n_basis += 3 # by definition
+    n_basis += 3 # by definition of bspline
     display(ϕ)
     #println(maximum(ϕ), minimum(ϕ))
     #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
@@ -103,14 +103,15 @@ function fit_rosemi()
     #display(b)
 
     # fit, try lsovle vs lsquares!:
-    cols = n_m*n_basis*n_feature # length of col
+    n_l = n_basis*n_feature # length of feature*basis each k
+    cols = n_m*n_l # length of col
     θ = rand(Uniform(-1., 1.), cols)
     r = residual(A, θ, b)
     display(r)
     function df!(g, θ) # closure function for d(f_obj)/dθ
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1000), Optim.Options(show_trace=true, iterations=1_000))
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_0), Optim.Options(show_trace=true, iterations=1_00))
     θ_lsq = Optim.minimizer(res)
     display(res)
     # linear solver:
@@ -122,6 +123,33 @@ function fit_rosemi()
     display(residual(A, Optim.minimizer(res), b))
     println("ls obj func = ", lsq(A, θ_lsq, b))
     #println("differences of lin and LFBGS? ", norm(θ_lsq-θ_lin))
+
+    # ΔE:= |E_pred - E_actual|:
+    println("'test' acc:")
+    MAE = 0.
+    for m ∈ Widx
+        E_actual = E[m] # actual
+        VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
+        err = abs(VK - E_actual)
+        MAE += err
+        println([E_actual, VK])
+        println("m = ",m,", ΔE = ",err)
+    end
+    MAE /= length(Widx)
+    println(MAE)
+
+    println("'train' acc:")
+    MAE = 0.
+    for j ∈ Midx
+        E_actual = E[j] # actual
+        VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, j) # predicted
+        err = abs(VK - E_actual)
+        MAE += err
+        println([E_actual, VK])
+        println("j = ",j,", ΔE = ",err)
+    end
+    MAE /= length(Midx)
+    println(MAE)
 end
 
 
@@ -232,7 +260,7 @@ function test_A()
     θ = Vector{Float64}(1:cols) # dummy theta
     display(θ)
     n_l =n_feature*n_basis
-    VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
+    VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
     display(VK)
     # test fitting !! (although the data is nonsensical (dummy))
 #=     θ = rand(cols)

@@ -303,7 +303,7 @@ params:
     - m, index of W in which we want to predict the energy
     - n_l := n_basis*n_feature, length of the feature block vector, 
 """
-function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
+function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
     SK = comp_SK(D, Midx, m) # compute SK
     RK = 0.
     ccount = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
@@ -322,6 +322,14 @@ function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
     end
     #println(SK)
     return RK/SK
+end
+
+"""
+compute Δ_jK(w_m). Used for MAD and RMSD. See comp_VK function, since Δ_jK(w_m) := (VK - Vj)/αj
+"""
+function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
+
+
 end
 
 """
