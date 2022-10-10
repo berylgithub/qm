@@ -297,10 +297,28 @@ end
 
 
 """
-predict the energy of w_m by computing V_K(w_m) 
+predict the energy of w_m by computing V_K(w_m), naive or fair(?) version, since all quantities except phi are recomputed
+params:
+    W, fingerprint matrix, ∈Float64(n_feature, n_data)
 """
-function predict_V()
-
+function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, m, n_l, n_feature)
+    SK = comp_SK(D, Midx, m) # compute SK
+    RK = 0.
+    ccount = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
+    for k ∈ Midx
+        ∑l = 0. # right term with l index
+        for l ∈ 1:n_l # ∑θ_kl*ϕ_kl
+            ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+            θkl = θ[ccount] # since θ is in block vector of [k,l]
+            ∑l = ∑l + θkl*ϕkl
+            println([ccount, θkl, ϕkl, ∑l])
+            ccount += 1
+        end
+        vk = E[k] + ∑l
+        println([E[k], ∑l, D[k, m]])
+        RK = RK + vk/D[k, m] # D is symm
+    end
+    return RK/SK
 end
 
 """
