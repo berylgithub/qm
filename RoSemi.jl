@@ -315,14 +315,15 @@ function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
         ∑l = 0. # right term with l index
         for l ∈ 1:n_l # ∑θ_kl*ϕ_kl
             ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-            θkl = θ[ccount] # since θ is in block vector of [k,l]
+            #kl_idx = n_l*(k-1) + l # use the indexing pattern # doesnt work if the index is contiguous
+            θkl = θ[ccount] #θ[kl_idx]  # since θ is in block vector of [k,l]
             ∑l = ∑l + θkl*ϕkl
-            println([ccount, θkl, ϕkl, ∑l])
+            #println([ccount, θkl, ϕkl, ∑l])
             ccount += 1
         end
         vk = E[k] + ∑l
         RK = RK + vk/D[k, m] # D is symm
-        println([E[k], ∑l, D[k, m], RK])
+        #println([E[k], ∑l, D[k, m], RK])
     end
     #println(SK)
     return RK/SK

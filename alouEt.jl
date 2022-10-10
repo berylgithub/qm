@@ -245,11 +245,11 @@ function test_A()
     display(dϕ)
 
     A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # assemble the matrix A and vector b!!
-    println(A)
+    display(A)
     println(b)
     
     # test each element:
-    m = 1; j = 1; k = 1; l = 1
+    m = 2; j = 1; k = 1; l = 1
     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     SK = comp_SK(D, Midx, m)
     αj = SK*D[j,m] - 1; γk = SK*D[k,m]
