@@ -379,6 +379,14 @@ function MAD(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
 end
 
 """
+only from a list of ΔjK
+"""
+function MAD(ΔjKs)
+    len = length(ΔjKs)
+    return sum(abs.(ΔjKs))/len
+end
+
+"""
 ==================================
 """
 
