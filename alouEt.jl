@@ -130,7 +130,7 @@ function fit_rosemi()
     for m ∈ Widx
         E_actual = E[m] # actual
         #VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
-        ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+        ΔjK, VK = comp_ΔjK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
         println(ΔjK)
         err = abs(VK - E_actual)
         MAE += err
