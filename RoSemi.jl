@@ -319,6 +319,12 @@ function assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
                         push!(J, rcount)
                         push!(K, ccount)
                         push!(V, val)
+                    else
+                        if (rcount == rows) && (ccount == cols) # final entry trick, push zeros regardless
+                            push!(J, rcount)
+                            push!(K, ccount)
+                            push!(V, val)
+                        end
                     end
                     ccount += 1 # end of column loop
                 end

@@ -81,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:20] # take subset for smaller matrix
+    Widx = Widx[1:100] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
