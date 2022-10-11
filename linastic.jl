@@ -7,7 +7,7 @@ placeholder for linear algebra and statistics operations, if RoSemi is overcrowd
 """
 the Kronecker delta function
 """
-δ(x,y) = ==(x,y)
+δ(x,y) = Float64(==(x,y))
 
 """
 computes residual from data matrix A, coefficient vector θ, and target vector b
