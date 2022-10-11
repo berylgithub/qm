@@ -81,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:100] # take subset for smaller matrix
+    Widx = Widx[1:10] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -109,7 +109,7 @@ function fit_rosemi()
     function df!(g, θ) # closure function for d(f_obj)/dθ
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=false, iterations=1_000))
     θ_lsq = Optim.minimizer(res)
     println(res)
     # linear solver:
@@ -122,12 +122,12 @@ function fit_rosemi()
     #println("differences of lin and LFBGS? ", norm(θ_lsq-θ_lin))
 
     r = residual(A, θ_lsq, b)
-    display(r)
+    #display(r)
     # ΔE:= |E_pred - E_actual| and MAD:
     println("'test' acc:")
     MAE = 0.
     j = Midx[1]
-    for m ∈ Widx
+    #= for m ∈ Widx
         E_actual = E[m] # actual
         #VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
         ΔjK, VK = comp_ΔjK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
@@ -138,8 +138,15 @@ function fit_rosemi()
         println("m = ",m,", ΔE = ",err)
     end
     MAE /= length(Widx)
-    println(MAE)
+    println(MAE) =#
+    println([Midx, Widx])
+    i = 1; j = Midx[i]; m = Widx[i]
+    println([i, j, m])
+    println([n_l*length(Midx), size(A)[2], length(θ_lsq)])
+    ΔjK = comp_ΔjK_m(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    display([r[i], A[i,:]'*θ_lsq - b[i], ΔjK]) # the vector slicing by default is column vector in Julia!
 
+    
     # MAD_K(w):
     
 

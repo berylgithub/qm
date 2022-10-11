@@ -351,7 +351,7 @@ notes:
     - for m = k, this returns undefined or NaN by definition of V_K(w).
 """
 function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
-    SK = comp_SK(D, Midx, m) # compute SK
+    SK = comp_SK(D, Midx, m) # SK(w_m)
     RK = 0.
     ccount = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
     for k ∈ Midx
@@ -361,15 +361,25 @@ function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
             #kl_idx = n_l*(k-1) + l # use the indexing pattern # doesnt work if the index is contiguous
             θkl = θ[ccount] #θ[kl_idx]  # since θ is in block vector of [k,l]
             ∑l = ∑l + θkl*ϕkl
-            #println([ccount, θkl, ϕkl, ∑l])
+            println([ccount, θkl, ϕkl, ∑l])
             ccount += 1
         end
         vk = E[k] + ∑l
         RK = RK + vk/D[k, m] # D is symm
         #println([E[k], ∑l, D[k, m], RK])
     end
-    #println(SK)
     return RK/SK
+
+    #= vk = 0.
+    for k ∈ Midx
+        ∑l = 0.
+        for l ∈ 1:n_l 
+            ∑l = ∑l #
+            ccount += 1
+        end
+    end =#
+
+
 end
 
 """
@@ -400,7 +410,7 @@ function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk =
     end
     #println(SK)
     VK = RK/SK
-    αj = D[j, m]*SK - 1
+    αj = D[j, m]*SK - 1.
     Vj = E[j] + ∑l_j
     if return_vk
         return (VK - Vj)/αj, VK
@@ -408,6 +418,36 @@ function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk =
         return (VK - Vj)/αj
     end
 end
+
+"""
+compute Δ_jK in terms of matrix vector mult, see if this checks out
+"""
+function comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk = false)
+    SK = comp_SK(D, Midx, m)
+    αj = D[j, m]*SK - 1.
+    ccount = 1
+    ∑kl = 0. # left
+    ∑kr = 0. # right
+    for k ∈ Midx
+        γk = D[k, m]*SK
+        den = γk*αj
+        rt = E[k]/den # right term, depends on k only
+        ∑kr += rt
+        ∑l = 0.
+        for l ∈ 1:n_l            
+            # left term:
+            num = θ[ccount]*qϕ(ϕ, dϕ, W, m, k, l, n_feature)*(1 - γk + δ(j,k))
+            #lt = num/den
+            ∑l += num
+            ccount += 1
+        end
+        ∑kl = ∑kl + ∑l/den
+    end
+    b = E[j]/αj - ∑kr
+    A = ∑kl
+    return A-b
+end
+
 
 """
 MAD_k(w_m) := 1/|K| ∑_j∈K |ΔjK(w_m)| 
