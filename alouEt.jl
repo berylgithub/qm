@@ -106,8 +106,6 @@ function fit_rosemi()
     n_l = n_basis*n_feature # length of feature*basis each k
     cols = n_m*n_l # length of col
     θ = rand(Uniform(-1., 1.), cols)
-    r = residual(A, θ, b)
-    display(r)
     function df!(g, θ) # closure function for d(f_obj)/dθ
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
@@ -120,16 +118,20 @@ function fit_rosemi()
     end
     println("lin elapsed time: ", t)
     println("lin obj func = ", lsq(A, θ_lin, b)) =#
-    println(maximum(residual(A, θ_lsq, b)))
     println("ls obj func = ", lsq(A, θ_lsq, b))
     #println("differences of lin and LFBGS? ", norm(θ_lsq-θ_lin))
 
-    # ΔE:= |E_pred - E_actual|:
+    r = residual(A, θ_lsq, b)
+    display(r)
+    # ΔE:= |E_pred - E_actual| and MAD:
     println("'test' acc:")
     MAE = 0.
+    j = 1
     for m ∈ Widx
         E_actual = E[m] # actual
-        VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
+        #VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
+        ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+        println(ΔjK)
         err = abs(VK - E_actual)
         MAE += err
         println([E_actual, VK])
@@ -137,6 +139,9 @@ function fit_rosemi()
     end
     MAE /= length(Widx)
     println(MAE)
+
+    # MAD_K(w):
+    
 
     #= println("'train' acc:")
     MAE = 0.
