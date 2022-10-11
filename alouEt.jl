@@ -81,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:20] # take subset for smaller matrix
+    Widx = Widx[1:250] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -89,7 +89,6 @@ function fit_rosemi()
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
     n_basis += 3 # by definition of bspline
     display(ϕ)
-    #println(maximum(ϕ), minimum(ϕ))
     #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     display([n_data, n_basis, n_feature])
@@ -109,7 +108,7 @@ function fit_rosemi()
     function df!(g, θ) # closure function for d(f_obj)/dθ
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=false, iterations=1_000))
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
     θ_lsq = Optim.minimizer(res)
     println(res)
     # linear solver:
@@ -134,7 +133,6 @@ function fit_rosemi()
         ΔjKs[c] = ΔjK =#
         err = abs(VK - E_actual)
         MAE += err
-        #println([E_actual, VK])
         println("m = ",m,", ΔE = ",err)
         c += 1
     end
