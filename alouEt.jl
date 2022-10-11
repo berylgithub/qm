@@ -81,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:10] # take subset for smaller matrix
+    Widx = Widx[1:20] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -95,7 +95,7 @@ function fit_rosemi()
     display([n_data, n_basis, n_feature])
     # assemble A and b:
     t = @elapsed begin
-        A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+        A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
     end
     println("LS assembly time: ",t)
     A = sparse(A) # only half is filled!!
@@ -105,7 +105,7 @@ function fit_rosemi()
     # fit, try lsovle vs lsquares!:
     n_l = n_basis*n_feature # length of feature*basis each k
     cols = n_m*n_l # length of col
-    θ = rand(Uniform(-1., 1.), cols)
+    θ = rand(Uniform(-1., 1.), size(A)[2]) # should follow the size of A, since actual sparse may not reach the end of index # OLD VER: θ = rand(Uniform(-1., 1.), cols)
     function df!(g, θ) # closure function for d(f_obj)/dθ
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
@@ -118,7 +118,7 @@ function fit_rosemi()
     end
     println("lin elapsed time: ", t)
     println("lin obj func = ", lsq(A, θ_lin, b)) =#
-    println("ls obj func = ", lsq(A, θ_lsq, b))
+    #println("ls obj func = ", lsq(A, θ_lsq, b))
     #println("differences of lin and LFBGS? ", norm(θ_lsq-θ_lin))
 
     r = residual(A, θ_lsq, b)
@@ -126,7 +126,7 @@ function fit_rosemi()
     # ΔE:= |E_pred - E_actual| and MAD:
     println("'test' acc:")
     MAE = 0.
-    j = 1
+    j = Midx[1]
     for m ∈ Widx
         E_actual = E[m] # actual
         #VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
@@ -245,14 +245,17 @@ function test_A()
     # flattened basis*feature:
     ϕ = permutedims(ϕ, [1,3,2])
     ϕ = reshape(ϕ, n_feature*n_basis, n_data)
+    ϕ[1, :] .= 0.
     dϕ = ϕ*(-1.)
     display(ϕ)
     display(dϕ)
 
     A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # assemble the matrix A and vector b!!
+    println(A)
+    println(b)
+    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # sparse ver
     display(A)
     println(b)
-    
     # test each element:
     m = 2; j = 5; k = 1; l = 1
     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)

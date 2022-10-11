@@ -286,12 +286,49 @@ function assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
 end
 
 """
-assemble A matrix and b vector for the linear system, with sparse logic (I, J, V triplets)
+assemble A matrix and b vector for the linear system, with sparse logic (I, J, V triplets), dynamic vectors at first, 3x slower than static ones though
 params:
     ...
 """
 function assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
-    
+    n_m = length(Midx)
+    n_w = length(Widx) # different from n_data!! n_data := size(W)[2]
+    n_l = n_feature*n_basis
+    rows = n_w*n_m
+    cols = n_l*n_m
+    b = zeros(rows)
+    J = Vector{Int64}(undef, 0); K = Vector{Int64}(undef, 0); V = Vector{Float64}(undef, 0); # empty vectors
+    rcount = 1 #rowcount
+    for m ∈ Widx
+        SK = comp_SK(D, Midx, m)
+        for j ∈ Midx
+            ccount = 1 # colcount
+            ∑k = 0. # for the 2nd term of b
+            αj = SK*D[j,m] - 1
+            for k ∈ Midx
+                γk = SK*D[k, m]
+                den = γk*αj
+                ∑k = ∑k + E[k]/den # E_k/(γk × αj)
+                for l ∈ 1:n_l # from flattened feature
+                    ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+                    #display(ϕkl)
+                    num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.pdf and RSI.pdf for ϕ and dϕ definition
+                    val = num/den
+                    # assign the vectors:
+                    if val != 0. # check if it's nonzero then push everything
+                        push!(J, rcount)
+                        push!(K, ccount)
+                        push!(V, val)
+                    end
+                    ccount += 1 # end of column loop
+                end
+            end
+            b[rcount] = E[j]/αj - ∑k # assign b vector elements
+            rcount += 1 # end of row loop
+        end
+    end
+    A = sparse(J, K, V)
+    return A, b
 end
 
 
