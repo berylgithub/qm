@@ -124,10 +124,10 @@ function fit_rosemi()
     r = residual(A, θ_lsq, b)
     #display(r)
     # ΔE:= |E_pred - E_actual| and MAD:
-    println("'test' acc:")
     MAE = 0.
     j = Midx[1]
-    #= for m ∈ Widx
+    println("'test' acc for j = ", j, ":")
+    for m ∈ Widx
         E_actual = E[m] # actual
         #VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
         ΔjK, VK = comp_ΔjK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
@@ -138,14 +138,13 @@ function fit_rosemi()
         println("m = ",m,", ΔE = ",err)
     end
     MAE /= length(Widx)
-    println(MAE) =#
+    println(MAE)
     println([Midx, Widx])
     i = 1; j = Midx[i]; m = Widx[i]
     println([i, j, m])
-    println([n_l*length(Midx), size(A)[2], length(θ_lsq)])
-    ΔjK = comp_ΔjK_m(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-    display([r[i], A[i,:]'*θ_lsq - b[i], ΔjK]) # the vector slicing by default is column vector in Julia!
-
+    ΔjK = comp_ΔjK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    ΔjK_m = comp_ΔjK_m(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    display([r[i], A[i,:]'*θ_lsq - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia!
     
     # MAD_K(w):
     
@@ -252,45 +251,28 @@ function test_A()
     # flattened basis*feature:
     ϕ = permutedims(ϕ, [1,3,2])
     ϕ = reshape(ϕ, n_feature*n_basis, n_data)
-    ϕ[1, :] .= 0.
+    #ϕ[1, :] .= 0.
     dϕ = ϕ*(-1.)
     display(ϕ)
     display(dϕ)
 
-    A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # assemble the matrix A and vector b!!
+    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # sparse ver
     println(A)
     println(b)
-    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # sparse ver
-    display(A)
-    println(b)
     # test each element:
-    m = 2; j = 5; k = 1; l = 1
+    m = 2; j = 1; k = 1; l = 1
     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     SK = comp_SK(D, Midx, m)
     αj = SK*D[j,m] - 1; γk = SK*D[k,m]
-    println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
-    println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
+    #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
+    #println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 
     # test predict V_K(w_m):
     θ = Vector{Float64}(1:cols) # dummy theta
-    display(θ)
     n_l =n_feature*n_basis
-    VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
-    display(VK)
     ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
     display(ΔjK)
-    MAD_m = MAD(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
-    display(MAD_m)
-    # test fitting !! (although the data is nonsensical (dummy))
-#=     θ = rand(cols)
-    r = residual(A, θ, b)
-    println("residual = ", r)
-    function df!(g, θ)
-        g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
-    end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS())
-    display(Optim.minimizer(res))
-    display(res) =#
+
 end
 
 function spassign(X)

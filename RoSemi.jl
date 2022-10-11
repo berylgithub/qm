@@ -273,7 +273,7 @@ function assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
                 for l ∈ 1:n_l # from flattened feature
                     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
                     #display(ϕkl)
-                    num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.pdf and RSI.pdf for ϕ and dϕ definition
+                    num = ϕkl*(1-γk*δ(j, k)) # see RoSemi.pdf and RSI.pdf for ϕ and dϕ definition
                     A[rcount, ccount] = num/den
                     ccount += 1 # end of column loop
                 end
@@ -312,7 +312,7 @@ function assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
                 for l ∈ 1:n_l # from flattened feature
                     ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
                     #display(ϕkl)
-                    num = ϕkl*(1-γk + δ(j, k)) # see RoSemi.pdf and RSI.pdf for ϕ and dϕ definition
+                    num = ϕkl*(1-γk*δ(j, k)) # see RoSemi.pdf and RSI.pdf for ϕ and dϕ definition
                     val = num/den
                     # assign the vectors:
                     if val != 0. # check if it's nonzero then push everything
@@ -405,13 +405,14 @@ function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk =
             ccount += 1
         end
         vk = E[k] + ∑l
-        RK = RK + vk/D[k, m] # D is symm
+        RK = RK + vk/D[k, m]
         #println([E[k], ∑l, D[k, m], RK])
     end
     #println(SK)
     VK = RK/SK
     αj = D[j, m]*SK - 1.
     Vj = E[j] + ∑l_j
+    #println([VK, E[j], ∑l_j, αj])
     if return_vk
         return (VK - Vj)/αj, VK
     else
@@ -436,8 +437,7 @@ function comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk
         ∑l = 0.
         for l ∈ 1:n_l            
             # left term:
-            num = θ[ccount]*qϕ(ϕ, dϕ, W, m, k, l, n_feature)*(1 - γk + δ(j,k))
-            #lt = num/den
+            num = θ[ccount]*qϕ(ϕ, dϕ, W, m, k, l, n_feature)*(1 - γk*δ(j,k))
             ∑l += num
             ccount += 1
         end
