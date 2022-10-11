@@ -81,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:10] # take subset for smaller matrix
+    Widx = Widx[1:20] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -125,20 +125,22 @@ function fit_rosemi()
     #display(r)
     # ΔE:= |E_pred - E_actual| and MAD:
     MAE = 0.
-    j = Midx[1]
-    println("'test' acc for j = ", j, ":")
+    c = 1
+    j = 1
     for m ∈ Widx
         E_actual = E[m] # actual
-        #VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m) # predicted
-        ΔjK, VK = comp_ΔjK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
-        println(ΔjK)
+        VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m)
+        #= ΔjK, VK_δ = comp_ΔjK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+        ΔjKs[c] = ΔjK =#
         err = abs(VK - E_actual)
         MAE += err
-        println([E_actual, VK])
+        #println([E_actual, VK])
         println("m = ",m,", ΔE = ",err)
+        c += 1
     end
     MAE /= length(Widx)
-    println(MAE)
+    println("MAE = ", MAE)
+    #println(ΔjKs)
     println([Midx, Widx])
     i = 1; j = Midx[i]; m = Widx[i]
     println([i, j, m])

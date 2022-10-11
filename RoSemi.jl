@@ -361,7 +361,7 @@ function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
             #kl_idx = n_l*(k-1) + l # use the indexing pattern # doesnt work if the index is contiguous
             θkl = θ[ccount] #θ[kl_idx]  # since θ is in block vector of [k,l]
             ∑l = ∑l + θkl*ϕkl
-            println([ccount, θkl, ϕkl, ∑l])
+            #println([ccount, θkl, ϕkl, ∑l])
             ccount += 1
         end
         vk = E[k] + ∑l
@@ -369,17 +369,6 @@ function comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
         #println([E[k], ∑l, D[k, m], RK])
     end
     return RK/SK
-
-    #= vk = 0.
-    for k ∈ Midx
-        ∑l = 0.
-        for l ∈ 1:n_l 
-            ∑l = ∑l #
-            ccount += 1
-        end
-    end =#
-
-
 end
 
 """
