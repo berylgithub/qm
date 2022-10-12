@@ -1,4 +1,4 @@
-using LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf
+using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf
 """
 contains all tests and experiments
 !!! FOR LATER: https://stackoverflow.com/questions/57950114/how-to-efficiently-initialize-huge-sparse-arrays-in-julia
@@ -86,12 +86,12 @@ function fit_rosemi()
     D = load(file_distance)["data"] # the mahalanobis distance matrix
     # index op:
     data_idx = 1:n_data
-    Midx = load(file_centers)["data"] # the supervised data points' indices
-    n_m = size(Midx) # n_sup_data
-    Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
+    Midx_g = load(file_centers)["data"] # the global supervised data points' indices
+    n_m = size(Midx_g) # n_sup_data
+    Widx = setdiff(data_idx, Midx_g) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
     #Widx = Widx[1:50] # take subset for smaller matrix
     #display(dataset)
-    n_m = length(Midx); n_w = length(Widx)
+    n_m = length(Midx_g); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
     
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
@@ -101,9 +101,11 @@ function fit_rosemi()
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     
     # === start fitting loop ===:
-    loop_idx = 1:2
+    loop_idx = 1:10
+    inc_M = 10
     for i ∈ loop_idx
         println("======= LOOP i=$i =======")
+        Midx = Midx_g[1:inc_M*i]
         M = length(Midx); N = length(Widx)
         println("[M, N] = ",[M, N])
         t = @elapsed begin
@@ -168,10 +170,10 @@ function fit_rosemi()
         RMSD = obj #Optim.minimum(res)
         
         println("largest MAD is = ", MADs[sidx], ", with index = ",MADmax_idx)
-        # set a point with max MAD into the M:
-        push!(Midx, MADmax_idx)
-        filter!(!=(MADmax_idx), Widx)
         println("min K|∑RMSD(w) = ", RMSD)
+        # set a point with max MAD into the M:
+        #= push!(Midx, MADmax_idx)
+        filter!(!=(MADmax_idx), Widx) =#
         #println([Midx, Widx])
 
         #= i = 1; j = Midx[i]; m = Widx[1]
