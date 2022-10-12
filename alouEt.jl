@@ -122,7 +122,7 @@ function fit_rosemi()
     #display(r)
     # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
     MAE = 0.
-    MADs = zeros(length(Widx))
+    MADs = zeros(length(Widx)) # why use a list instead of just max? in case of multi MAD selection
     c = 1
     for m ∈ Widx
         # MAD_K(w), depends on j:
@@ -152,63 +152,6 @@ function fit_rosemi()
     ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
     display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia!
     
-    
-    
-end
-
-
-
-"""
-AD test for gradient vs Jacobian for a vector argument, it appears using ForwardDiff.derivative of a function which accepts scalar is multitude faster
-"""
-function test_AD()
-    f(x) = x.^2
-    ff(x) = x^2
-    n = Int(1e4)
-    x = rand(n)
-    # jacobian:
-    ReverseDiff.jacobian(f, x)
-    # loop of gradient:
-    y = similar(x)
-    function df!(y, x)
-        for i ∈ eachindex(x)
-            y[i] = ForwardDiff.derivative(ff, x[i])
-        end
-    end
-    df!(y, x)
-end
-
-"""
-test for linear system fitting using leastsquares
-
-NOTES:
-    - for large LSes, ForwardDiff is much faster for jacobian but ReverseDiff is much faster for gradient !!
-"""
-function test_fit()
-    ndata = Int(1e4); nfeature=Int(1e3)
-    #ndata = 100; nfeature=500
-    #A = Matrix{Float64}(LinearAlgebra.I, 3,3)
-    A = rand(ndata, nfeature)
-    #= A = spzeros(ndata, nfeature) # try sparse
-    for i ∈ 1:ndata
-        for j ∈ 1:nfeature
-            if j == i
-                A[j,i] = 1.
-            end
-        end
-    end =#
-    display(A)
-    θ = rand(nfeature)
-    #b = ones(ndata) .+ 10.
-    b = rand(ndata)
-    r = residual(A, θ, b)
-    display(r)
-    function df!(g, θ)
-        g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
-    end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(), Optim.Options(show_trace=true))
-    display(Optim.minimizer(res))
-    display(res)
 end
 
 
