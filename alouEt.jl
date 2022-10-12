@@ -1,4 +1,4 @@
-using LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim
+using LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf
 """
 contains all tests and experiments
 !!! FOR LATER: https://stackoverflow.com/questions/57950114/how-to-efficiently-initialize-huge-sparse-arrays-in-julia
@@ -94,9 +94,11 @@ function fit_rosemi()
     # assemble A and b:
     
     # === start fitting loop ===:
-    loop_idx = 1:2
+    loop_idx = 1:5
     for i ∈ loop_idx
         println("======= LOOP i=$i =======")
+        M = length(Midx); N = length(Widx)
+        println("[M, N] = ",[M, N])
         t = @elapsed begin
             A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
         end
@@ -125,6 +127,7 @@ function fit_rosemi()
 
         #r = residual(A, θ, b)
         #display(r)
+
         # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
         MAE = 0.
         MADs = zeros(length(Widx)) # why use a list instead of just max? in case of multi MAD selection
@@ -149,21 +152,30 @@ function fit_rosemi()
         sidx = sortperm(MADs)[end]
         MADmax_idx = Widx[sidx]
         # get min |K| RMSD (the obj func):
-        obj = Optim.minimum(res)
+        RMSD = Optim.minimum(res)
         
         println("largest MAD is = ", MADs[sidx], ", with index = ",MADmax_idx)
         # set a point with max MAD into the M:
         push!(Midx, MADmax_idx)
         filter!(!=(MADmax_idx), Widx)
+        println("min K|∑RMSD(w) = ", RMSD)
         println([Midx, Widx])
-        println("min K|∑RMSD(w) = ", obj)
 
         #= i = 1; j = Midx[i]; m = Widx[1]
         ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
         ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
         display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia! =#
         
-        # save MAE and 
+        # save all errors foreach iters:
+        data = [MAE, RMSD, MADs[sidx]]
+        strlist = vcat(string.([i, M, N]), [lstrip(@sprintf "%16.8e" s) for s in data])
+        open("data/result/model_errors.txt","a") do io
+            str = ""
+            for s ∈ strlist
+                str*=s*"\t"
+            end
+            print(io, str*"\n")
+        end
 
         println()
     end
