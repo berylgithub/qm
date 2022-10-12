@@ -75,9 +75,9 @@ function fit_rosemi()
     file_dataset = "data/qm9_dataset_250of1000.jld"
     file_finger = "data/ACSF_250of1000_symm_scaled.jld"
     file_distance = "data/distances_250_i=151.jld"
-    file_centers = "data/M=10_idx_250.jld"
+    file_centers = "data/M=100_idx_250.jld"
 
-    n_basis = 10 # pre-inputted number, later n_basis := n_basis+3
+    n_basis = 5 # pre-inputted number, later n_basis := n_basis+3
     dataset = load(file_dataset)["data"] # energy is from here
     W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
     s_W = size(W) # n_feature × n_data
@@ -89,7 +89,7 @@ function fit_rosemi()
     Midx = load(file_centers)["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    #Widx = Widx[1:10] # take subset for smaller matrix
+    #Widx = Widx[1:50] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -101,7 +101,7 @@ function fit_rosemi()
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     
     # === start fitting loop ===:
-    loop_idx = 1:200
+    loop_idx = 1:2
     for i ∈ loop_idx
         println("======= LOOP i=$i =======")
         M = length(Midx); N = length(Widx)
@@ -115,15 +115,16 @@ function fit_rosemi()
         display(A)
         #display(b)
 
-        # fit, try lsovle vs lsquares!:
         n_l = n_basis*n_feature # length of feature*basis each k
-        θ = rand(Uniform(-1., 1.), size(A)[2]) # should follow the size of A, since actual sparse may not reach the end of index # OLD VER: θ = rand(Uniform(-1., 1.), cols)
+
+        # fit, try lsovle vs lsquares!:
+        #= θ = rand(Uniform(-1., 1.), size(A)[2]) # should follow the size of A, since actual sparse may not reach the end of index # OLD VER: θ = rand(Uniform(-1., 1.), cols)
         function df!(g, θ) # closure function for d(f_obj)/dθ
             g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
         end
         res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
         θ = Optim.minimizer(res)
-        println(res)
+        println(res) =#
 
         #= # linear solver:
         t = @elapsed begin
@@ -132,8 +133,13 @@ function fit_rosemi()
         println("lin elapsed time: ", t)
         println("lin obj func = ", lsq(A, θ, b)) =#
 
-        #r = residual(A, θ, b)
-        #display(r)
+        # iterative linear solver (CGLS):
+        t = @elapsed begin
+            linres = Krylov.cgls(A, b, itmax=250, history=true)    
+        end
+        θ = linres[1]
+        obj = lsq(A, θ, b)
+        println("CGLS obj = ",obj, ", CGLS time = ",t)
 
         # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
         MAE = 0.
@@ -159,14 +165,14 @@ function fit_rosemi()
         sidx = sortperm(MADs)[end]
         MADmax_idx = Widx[sidx]
         # get min |K| RMSD (the obj func):
-        RMSD = Optim.minimum(res)
+        RMSD = obj #Optim.minimum(res)
         
         println("largest MAD is = ", MADs[sidx], ", with index = ",MADmax_idx)
         # set a point with max MAD into the M:
         push!(Midx, MADmax_idx)
         filter!(!=(MADmax_idx), Widx)
         println("min K|∑RMSD(w) = ", RMSD)
-        println([Midx, Widx])
+        #println([Midx, Widx])
 
         #= i = 1; j = Midx[i]; m = Widx[1]
         ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
