@@ -73,7 +73,7 @@ try:
 function fit_rosemi()
     # required files:
     file_dataset = "data/qm9_dataset_250of1000.jld"
-    file_finger = "data/ACSF_250of1000_symm_scaled.jld"
+    file_finger = "data/ACSF_col40_250of1000_symm_scaled.jld"
     file_distance = "data/distances_250_i=151.jld"
     file_centers = "data/M=100_idx_250.jld"
 
@@ -99,7 +99,7 @@ function fit_rosemi()
     #display(ϕ)
     #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
-    
+    println("[feature, basis]",[n_feature, n_basis])
     # === start fitting loop ===:
     loop_idx = 1:15
     inc_M = 10
