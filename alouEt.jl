@@ -89,7 +89,7 @@ function fit_rosemi()
     Midx = load(file_centers)["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:10] # take subset for smaller matrix
+    #Widx = Widx[1:10] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -101,7 +101,7 @@ function fit_rosemi()
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     
     # === start fitting loop ===:
-    loop_idx = 1:5
+    loop_idx = 1:200
     for i ∈ loop_idx
         println("======= LOOP i=$i =======")
         M = length(Midx); N = length(Widx)
@@ -121,7 +121,7 @@ function fit_rosemi()
         function df!(g, θ) # closure function for d(f_obj)/dθ
             g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
         end
-        res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=false, iterations=1_000))
+        res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
         θ = Optim.minimizer(res)
         println(res)
 
@@ -174,15 +174,19 @@ function fit_rosemi()
         display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia! =#
         
         # save all errors foreach iters:
+        strid = file_dataset[6:end-4]
         data = [MAE, RMSD, MADs[sidx]]
         strlist = vcat(string.([i, M, N]), [lstrip(@sprintf "%16.8e" s) for s in data])
-        open("data/result/err_"*file_dataset[6:end-4]*".txt","a") do io
+        open("data/result/err_"*strid*".txt","a") do io
             str = ""
             for s ∈ strlist
                 str*=s*"\t"
             end
             print(io, str*"\n")
         end
+        # save also the M indices and θ's to file!!:
+        data = Dict("centers"=>Midx, "theta"=>θ)
+        save("data/result/theta_center_"*strid*".jld", "data", data)
 
         println()
     end
