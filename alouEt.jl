@@ -137,7 +137,7 @@ function fit_rosemi()
 
         # iterative linear solver (CGLS):
         t = @elapsed begin
-            linres = Krylov.cgls(A, b, itmax=250, history=true)    
+            linres = Krylov.cgls(A, b, itmax=400, history=true)    
         end
         θ = linres[1]
         obj = lsq(A, θ, b)
