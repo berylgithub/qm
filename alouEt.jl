@@ -11,17 +11,20 @@ include("RoSemi.jl")
 
 """
 get the indices of the supervised datapoints M, fix w0 as i=603 for now
+params:
+    - M, number of supervised data points
+    - universe_size, the total available data, default =1000, although for complete data it should be 130k
 """
-function set_cluster()
+function set_cluster(infile, M; universe_size=1_000)
     # load dataset || the datastructure is subject to change!! since the data size is huge
-    dataset = load("data/ACSF_1000_symm.jld")["data"]
+    dataset = load(infile)["data"]
     N, L = size(dataset)
     A = dataset' # transpose data (becomes column major)
     display(A)
     println(N, " ", L)
-    M = 10 # number of selected data
     # compute mean and cov:
-    idx = 603 # the ith data point of the dataset, can be arbitrary technically
+    idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi
+    idx = Int(round(idx/universe_size*N)) # relative idx
     wbar, C = mean_cov(A, idx, N, L)
     B = compute_B(C)
     display(wbar)
@@ -38,14 +41,14 @@ end
 """
 compute all D_k(w_l) ∀k,l, for now fix i = 603 (rozemi)
 """
-function set_all_dist()
-    dataset = load("data/ACSF_1000_symm.jld")["data"]
+function set_all_dist(infile; universe_size=1_000)
+    dataset = load(infile)["data"]
     N, L = size(dataset)
     W = dataset' # transpose data (becomes column major)
     println(N, " ", L)
-    M = 10 # number of selected supervised data
     # compute mean and cov:
-    idx = 603 # the ith data point of the dataset, can be arbitrary technically (for now fix i=603)
+    idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi
+    idx = Int(round(idx/universe_size*N))
     wbar, C = mean_cov(W, idx, N, L)
     B = compute_B(C)
     #display(wbar)
@@ -53,8 +56,8 @@ function set_all_dist()
     #display(dist)
 
     # compute all distances:
-    filename = "data/distances_1000_i=603.jld"
-    D = compute_distance_all(W, B, filename)
+    filename = "data/distances_$N"*"_i=$idx.jld"
+    D = compute_distance_all(W, B, filename) # the save file is here.......... need to be changed later to avoid confusion
     display(D)
 end
 
