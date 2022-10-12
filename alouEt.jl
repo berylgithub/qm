@@ -66,22 +66,27 @@ end
 the main fitting function !!!
 targets: chemical accuracy = 1 kcal/mol = 0.0015936 Ha = 0.0433641 eV.
 try:
-    - use fixed N = 100
-    - varying M (recomputing centers)
+    - use fixed N while varying M (recomputing centers)
     - changing column length
     - multirestart
 """
 function fit_rosemi()
+    # required files:
+    file_dataset = "data/qm9_dataset_250of1000.jld"
+    file_finger = "data/ACSF_250of1000_symm_scaled.jld"
+    file_distance = "data/distances_250_i=151.jld"
+    file_centers = "data/M=10_idx_250.jld"
+
     n_basis = 10 # pre-inputted number, later n_basis := n_basis+3
-    dataset = load("data/qm9_dataset_1000.jld")["data"] # energy is from here
-    W = load("data/ACSF_1000_symm_scaled.jld")["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
+    dataset = load(file_dataset)["data"] # energy is from here
+    W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
     s_W = size(W) # n_feature × n_data
     n_feature = s_W[1]; n_data = s_W[2];
     E = map(d -> d["energy"], dataset)
-    D = load("data/distances_1000_i=603.jld")["data"] # the mahalanobis distance matrix
+    D = load(file_distance)["data"] # the mahalanobis distance matrix
     # index op:
     data_idx = 1:n_data
-    Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
+    Midx = load(file_centers)["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
     Widx = Widx[1:10] # take subset for smaller matrix
@@ -94,7 +99,6 @@ function fit_rosemi()
     #display(ϕ)
     #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
-    # assemble A and b:
     
     # === start fitting loop ===:
     loop_idx = 1:5
@@ -103,6 +107,7 @@ function fit_rosemi()
         M = length(Midx); N = length(Widx)
         println("[M, N] = ",[M, N])
         t = @elapsed begin
+            # assemble A and b:
             A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
         end
         println("LS assembly time: ",t)
@@ -112,7 +117,6 @@ function fit_rosemi()
 
         # fit, try lsovle vs lsquares!:
         n_l = n_basis*n_feature # length of feature*basis each k
-        cols = n_m*n_l # length of col
         θ = rand(Uniform(-1., 1.), size(A)[2]) # should follow the size of A, since actual sparse may not reach the end of index # OLD VER: θ = rand(Uniform(-1., 1.), cols)
         function df!(g, θ) # closure function for d(f_obj)/dθ
             g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
@@ -172,7 +176,7 @@ function fit_rosemi()
         # save all errors foreach iters:
         data = [MAE, RMSD, MADs[sidx]]
         strlist = vcat(string.([i, M, N]), [lstrip(@sprintf "%16.8e" s) for s in data])
-        open("data/result/model_errors.txt","a") do io
+        open("data/result/err_"*file_dataset[6:end-4]*".txt","a") do io
             str = ""
             for s ∈ strlist
                 str*=s*"\t"
