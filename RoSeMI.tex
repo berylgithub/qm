@@ -73,10 +73,12 @@ where
 and $l=1,2,...L$.
 Let us simplify the expressions
 \begin{equation*}
+	\label{eq:simp}
     \begin{split}
         D_k &:= D_k(w), \\
         S_K &:= S_K(w), \\
-        \phi_{k,l} &:= \phi_{k,l}(w),\\
+        \phi_{kl} &:= \phi_{kl}(w),\\
+        \psi_{kl} &:= \theta_{kl}\phi_{kl}, \\
         \gamma_k &:= D_kS_K, \\
         \alpha_j &:= D_jS_K-1.
     \end{split}
@@ -85,22 +87,23 @@ By continuing from the last line of (\refeq{eq:delta}) in a simplified expressio
 \begin{equation}
     \label{eq:delta_split}
     \begin{split}
-        \Delta_{j,K}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}\right)}{\alpha_j} \\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k)}{\gamma_k\alpha_j} +  \sum_{k,l} \frac{\delta_{j,k}\theta_{k,l} \phi_{k,l}}{\gamma_k\alpha_j} - \frac{E_j}{\alpha_j}\\
-        &= \sum_{k,l} \frac{\theta_{k,l} \phi_{k,l} (1-\gamma_k + \delta_{j,k})}{\gamma_k\alpha_j} - \left(\frac{E_j}{\alpha_j} - \sum_k\frac{E_k}{\gamma_k\alpha_j}\right),
+        \Delta_{j,K}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \psi_{jl}\right)}{\alpha_j} \\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{jl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{jk}\psi_{kl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
+        &= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \left(\frac{E_j}{\alpha_j} - \sum_k\frac{E_k}{\gamma_k\alpha_j}\right),
     \end{split}
 \end{equation}
 where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
 \begin{equation}
 	\begin{split}
-		\Delta_{jK}(w_m) &= \sum_{k,l} A_{(j,m), (k,l)} \theta_{k,l} - b_{j,m}, \\
+		\Delta_{jK}(w_m) &= \sum_{kl} A_{(jm), (kl)} \theta_{kl} - b_{jm}, \\
 	\end{split}	
 \end{equation}
 where
 \begin{equation}
 	\begin{split}
-		A_{(j,m), (k,l)} &= \frac{\phi_{k,l}(w_m)\times(1 - \gamma_k(w_m) + \delta_{j,k})}{\gamma_k(w_m) \times\alpha_j(w_m)},\\
-		b_{j,m} &= \frac{E_j}{\alpha_j(w_m)} - \sum_k\frac{E_k}{\gamma_k(w_m) \times \alpha_j(w_m)}.
+		A_{(jm), (kl)} &= \frac{\phi_{k,l}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
+		b_{jm} &= \frac{E_j}{\alpha_j(w_m)} - \sum_k\frac{E_k}{\gamma_k(w_m)  \alpha_j(w_m)}.
 	\end{split}
 \end{equation}
 
@@ -129,11 +132,26 @@ A good prediction model is reflected by small MAD or RMSD, hence a minimization 
     \begin{split}
         \min |K| \sum_m \text{RMSD}_K(w_m)^2 &= \min \sum_m \sum_j \Delta_{jK}(w_m)^2 \\
         &= \min \sum_m \left\| A_{(:,m),(:,:)}\theta - b_{:,m}\right\|_2^2 \\
-        &= \min \|A \theta - b\|_2^2.
+        f_{\text{obj}} &:= \min \|A \theta - b\|_2^2,
     \end{split}
 \end{equation}
-where $A$ is the data matrix with $N \times K$ row size and $K \times L$ column size, $\theta$ is the coefficient vector, and $b$ is the target vector.
+where $A$ is the data matrix with $MN$ row size and $ML$ column size; where $M$ is the number of data points with known energies, $N$ is the number of data points without energies, and $L$ is the number of the basis features; meanwhile $\theta$ is the coefficient vector, and $b$ is the target vector.
 
+The initial case study has the following parameters:
+\begin{equation*}
+	\begin{split}
+		M &= 10,\\
+		N &= 240,\\
+		L &= 320, \\
+		\text{row\_count} &= 2400,\\
+		\text{col\_count} &= 3200, \\
+		\text{mem\_size} &\approx 61.44 \text{ megabytes}, \\
+		\text{M\_increment} &= 10, \\
+		\text{fit\_iter} &= 15. \\
+		\text{sparsity\_rate} &\approx 0.7.
+	\end{split}
+\end{equation*}
+Hence in the final fitting-iteration, the linear system would have $15000 \times 48000$ sized data matrix $A$ with mem\_size $\approx 5.7$ gigabytes. The model is solved by using CGLS method with 400 maximum iterations. For the first two fitting-iteration this gives 5 and 20 seconds of fitting-time consecutively. 
 \iffalse
 % no longer needed:
 With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into linear system form
