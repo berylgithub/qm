@@ -101,11 +101,12 @@ function fit_rosemi()
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     
     # === start fitting loop ===:
-    loop_idx = 1:10
+    loop_idx = 1:15
     inc_M = 10
     for i ∈ loop_idx
         println("======= LOOP i=$i =======")
-        Midx = Midx_g[1:inc_M*i]
+        Midx = Midx_g[1:inc_M*i] # the supervised data
+        Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         M = length(Midx); N = length(Widx)
         println("[M, N] = ",[M, N])
         t = @elapsed begin
