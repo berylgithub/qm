@@ -94,7 +94,7 @@ function fit_rosemi()
     # assemble A and b:
     
     # === start fitting loop ===:
-    loop_idx = 1:9
+    loop_idx = 1:2
     for i ∈ loop_idx
         println("======= LOOP i=$i =======")
         t = @elapsed begin
@@ -148,17 +148,23 @@ function fit_rosemi()
         # get the highest MAD:
         sidx = sortperm(MADs)[end]
         MADmax_idx = Widx[sidx]
+        # get min |K| RMSD (the obj func):
+        obj = Optim.minimum(res)
+        
         println("largest MAD is = ", MADs[sidx], ", with index = ",MADmax_idx)
         # set a point with max MAD into the M:
         push!(Midx, MADmax_idx)
         filter!(!=(MADmax_idx), Widx)
         println([Midx, Widx])
+        println("min K|∑RMSD(w) = ", obj)
 
         #= i = 1; j = Midx[i]; m = Widx[1]
         ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
         ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
         display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia! =#
         
+        # save MAE and 
+
         println()
     end
 end
@@ -218,38 +224,4 @@ function test_A()
     ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
     display(ΔjK)
 
-end
-
-function spassign(X)
-    r = c = length(X)
-    K = Vector{Float64}(undef, 0); J = Vector{Float64}(undef, 0); V = Vector{Float64}(undef, 0) # assume unknown number of data
-    for k ∈ 1:c 
-        for j ∈ 1:r 
-            if k == j
-                push!(K, k); push!(J, j); push!(V, X[k])
-            end
-        end
-    end
-    return sparse(K, J, V)
-end
-
-function densassign(X)
-    r = c = length(X)
-    A = zeros(r, c)
-    for i ∈ 1:c
-        for j ∈ 1:r
-            if j == i
-                A[j, i] = X[j]
-            end
-        end
-    end
-    return sparse(A)
-end
-
-"""
-test sparse vs dense loop, assume diagonal matrix
-"""
-function test_sparse()
-    
-    
 end
