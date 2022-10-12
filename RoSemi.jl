@@ -401,7 +401,7 @@ function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk =
     VK = RK/SK
     αj = D[j, m]*SK - 1.
     Vj = E[j] + ∑l_j
-    #println([VK, E[j], ∑l_j, αj])
+    #println([VK, Vj, αj])
     if return_vk
         return (VK - Vj)/αj, VK
     else

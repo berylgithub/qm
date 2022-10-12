@@ -81,7 +81,7 @@ function fit_rosemi()
     Midx = load("data/M=10_idx_1000.jld")["data"] # the supervised data points' indices
     n_m = size(Midx) # n_sup_data
     Widx = setdiff(data_idx, Midx) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:250] # take subset for smaller matrix
+    Widx = Widx[1:10] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -120,31 +120,39 @@ function fit_rosemi()
 
     r = residual(A, θ, b)
     #display(r)
-    # ΔE:= |E_pred - E_actual| and MAD:
+    # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
     MAE = 0.
+    MADs = zeros(length(Widx))
     c = 1
-    j = 1
     for m ∈ Widx
-        E_actual = E[m] # actual
-        VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
-        #= ΔjK, VK_δ = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
-        ΔjKs[c] = ΔjK =#
-        err = abs(VK - E_actual)
+        # MAD_K(w), depends on j:
+        MAD = 0.; VK = 0.
+        for j ∈ Midx
+            ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+            MAD += abs(ΔjK)
+        end
+        MAD /= length(Midx)
+        MADs[c] = MAD
+        println("MAD of m=$m is ", MAD)
+        err = abs(VK - E[m])
         MAE += err
-        println("m = ",m,", ΔE = ",err)
-        c += 1
+        c += 1       
     end
     MAE /= length(Widx)
-    println("MAE = ", MAE)
-    #println(ΔjKs)
+    println("MAE of all mol w/ unknown E is ", MAE)
+
+    # get the highest MAD:
+    MADmax_idx = sortperm(MADs)[end]
+    println(MADmax_idx)
+
+
     println([Midx, Widx])
-    i = 1; j = Midx[i]; m = Widx[i]
-    println([i, j, m])
+    i = 1; j = Midx[i]; m = Widx[1]
     ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
     ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
     display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia!
     
-    # MAD_K(w):
+    
     
 end
 
