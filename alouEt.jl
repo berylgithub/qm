@@ -88,70 +88,79 @@ function fit_rosemi()
     
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
     n_basis += 3 # by definition of bspline
-    display(ϕ)
+    #display(ϕ)
     #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
-    display([n_data, n_basis, n_feature])
     # assemble A and b:
-    t = @elapsed begin
-        A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
-    end
-    println("LS assembly time: ",t)
-    A = sparse(A) # only half is filled!!
-    display(A)
-    #display(b)
-
-    # fit, try lsovle vs lsquares!:
-    n_l = n_basis*n_feature # length of feature*basis each k
-    cols = n_m*n_l # length of col
-    θ = rand(Uniform(-1., 1.), size(A)[2]) # should follow the size of A, since actual sparse may not reach the end of index # OLD VER: θ = rand(Uniform(-1., 1.), cols)
-    function df!(g, θ) # closure function for d(f_obj)/dθ
-        g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
-    end
-    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
-    θ = Optim.minimizer(res)
-    println(res)
-    #= # linear solver:
-    t = @elapsed begin
-        θ = A\b
-    end
-    println("lin elapsed time: ", t)
-    println("lin obj func = ", lsq(A, θ, b)) =#
-
-    r = residual(A, θ, b)
-    #display(r)
-    # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
-    MAE = 0.
-    MADs = zeros(length(Widx)) # why use a list instead of just max? in case of multi MAD selection
-    c = 1
-    for m ∈ Widx
-        # MAD_K(w), depends on j:
-        MAD = 0.; VK = 0.
-        for j ∈ Midx
-            ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
-            MAD += abs(ΔjK)
-        end
-        MAD /= length(Midx)
-        MADs[c] = MAD
-        println("MAD of m=$m is ", MAD)
-        err = abs(VK - E[m])
-        MAE += err
-        c += 1       
-    end
-    MAE /= length(Widx)
-    println("MAE of all mol w/ unknown E is ", MAE)
-
-    # get the highest MAD:
-    MADmax_idx = sortperm(MADs)[end]
-    println(MADmax_idx)
-
-
-    println([Midx, Widx])
-    i = 1; j = Midx[i]; m = Widx[1]
-    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-    ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-    display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia!
     
+    # === start fitting loop ===:
+    loop_idx = 1:9
+    for i ∈ loop_idx
+        println("======= LOOP i=$i =======")
+        t = @elapsed begin
+            A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+        end
+        println("LS assembly time: ",t)
+        #A = sparse(A) # only half is filled!!
+        display(A)
+        #display(b)
+
+        # fit, try lsovle vs lsquares!:
+        n_l = n_basis*n_feature # length of feature*basis each k
+        cols = n_m*n_l # length of col
+        θ = rand(Uniform(-1., 1.), size(A)[2]) # should follow the size of A, since actual sparse may not reach the end of index # OLD VER: θ = rand(Uniform(-1., 1.), cols)
+        function df!(g, θ) # closure function for d(f_obj)/dθ
+            g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
+        end
+        res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=false, iterations=1_000))
+        θ = Optim.minimizer(res)
+        println(res)
+
+        #= # linear solver:
+        t = @elapsed begin
+            θ = A\b
+        end
+        println("lin elapsed time: ", t)
+        println("lin obj func = ", lsq(A, θ, b)) =#
+
+        #r = residual(A, θ, b)
+        #display(r)
+        # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
+        MAE = 0.
+        MADs = zeros(length(Widx)) # why use a list instead of just max? in case of multi MAD selection
+        c = 1
+        for m ∈ Widx
+            # MAD_K(w), depends on j:
+            MAD = 0.; VK = 0.
+            for j ∈ Midx
+                ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+                MAD += abs(ΔjK)
+            end
+            MAD /= length(Midx)
+            MADs[c] = MAD
+            #println("MAD of m=$m is ", MAD)
+            err = abs(VK - E[m])
+            MAE += err
+            c += 1       
+        end
+        MAE /= length(Widx)
+        println("MAE of all mol w/ unknown E is ", MAE)
+        # get the highest MAD:
+        sidx = sortperm(MADs)[end]
+        MADmax_idx = Widx[sidx]
+        println("largest MAD is = ", MADs[sidx], ", with index = ",MADmax_idx)
+        # set a point with max MAD into the M:
+        push!(Midx, MADmax_idx)
+        filter!(!=(MADmax_idx), Widx)
+        println([Midx, Widx])
+
+        #= i = 1; j = Midx[i]; m = Widx[1]
+        ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+        ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+        display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia! =#
+        
+        println()
+    end
 end
 
 
