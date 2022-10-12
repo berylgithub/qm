@@ -109,18 +109,16 @@ function fit_rosemi()
         g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
     end
     res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
-    θ_lsq = Optim.minimizer(res)
+    θ = Optim.minimizer(res)
     println(res)
-    # linear solver:
-    #= t = @elapsed begin
-        θ_lin = A\b
+    #= # linear solver:
+    t = @elapsed begin
+        θ = A\b
     end
     println("lin elapsed time: ", t)
-    println("lin obj func = ", lsq(A, θ_lin, b)) =#
-    #println("ls obj func = ", lsq(A, θ_lsq, b))
-    #println("differences of lin and LFBGS? ", norm(θ_lsq-θ_lin))
+    println("lin obj func = ", lsq(A, θ, b)) =#
 
-    r = residual(A, θ_lsq, b)
+    r = residual(A, θ, b)
     #display(r)
     # ΔE:= |E_pred - E_actual| and MAD:
     MAE = 0.
@@ -128,8 +126,8 @@ function fit_rosemi()
     j = 1
     for m ∈ Widx
         E_actual = E[m] # actual
-        VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m)
-        #= ΔjK, VK_δ = comp_ΔjK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+        VK = comp_VK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m)
+        #= ΔjK, VK_δ = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
         ΔjKs[c] = ΔjK =#
         err = abs(VK - E_actual)
         MAE += err
@@ -142,25 +140,12 @@ function fit_rosemi()
     println([Midx, Widx])
     i = 1; j = Midx[i]; m = Widx[i]
     println([i, j, m])
-    ΔjK = comp_ΔjK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-    ΔjK_m = comp_ΔjK_m(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-    display([r[i], A[i,:]'*θ_lsq - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia!
+    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia!
     
     # MAD_K(w):
     
-
-    #= println("'train' acc:")
-    MAE = 0.
-    for j ∈ Midx
-        E_actual = E[j] # actual
-        VK = comp_VK(W, E, D, θ_lsq, ϕ, dϕ, Midx, n_l, n_feature, j) # predicted
-        err = abs(VK - E_actual)
-        MAE += err
-        println([E_actual, VK])
-        println("j = ",j,", ΔE = ",err)
-    end
-    MAE /= length(Midx)
-    println(MAE) =#
 end
 
 
