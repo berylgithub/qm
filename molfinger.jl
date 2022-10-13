@@ -163,13 +163,13 @@ extracts the ACSF descriptor, however instead of being stacked, the vectors are:
 params:
     - filenames
 """
-function extract_ACSF_sum()
+function extract_ACSF_sum(infile, outfile)
     max_coor = 30. # is actually 12. from the dataset, just to add more safer boundary
     len_desc = 51 
     n_finger = 102 # 51 for sum, 51 for sum(squared)
     cellbounds = diagm([max_coor, max_coor, max_coor])
     tdata = @elapsed begin
-        dataset = load("data/qm9_dataset_1000.jld")["data"]
+        dataset = load(infile)["data"]
     end
     n_data = length(dataset)
     A = zeros(n_data, n_finger)
@@ -197,8 +197,8 @@ function extract_ACSF_sum()
     end
     println("data time = ",tdata)
     println("comp time = ",tcomp)
-    save("data/ACSF_1000_symm.jld", "data", A)
-    load("data/ACSF_1000_symm.jld")["data"]
+    save(outfile, "data", A)
+    load(outfile)["data"]
 end
 
 
