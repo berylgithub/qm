@@ -34,6 +34,9 @@
 
 \begin{document}
 \maketitle
+
+
+\section{The model}
 The generalized Shepard model has the form of 
 \begin{equation}
     \label{eq:shepard}
@@ -235,6 +238,26 @@ For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matr
     \end{split}
 \end{equation}
 \fi
+
+\section{The program flow}
+Below is the rough flow of the program for fitting the QM9 dataset.
+\begin{itemize}
+    \item Compute the molecular features using ACSF (\at{cite Behler}). This would give a vector with 51 length for each atom.
+    \item For each molecule, symmetrize the features by
+        \begin{equation}
+            \begin{split}
+                F_{S_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{ji},\\
+                F_{Q_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{ji}^2, \\
+                \text{for }j &= 1,2,...51. 
+            \end{split}
+        \end{equation}
+        then by concatenating the vectors such that
+        \begin{equation}
+            F := (F_{S_1}, F_{S_2}, ..., F_{S_{51}}, F_{Q_1},F_{Q_2} ..., F_{Q_{51}}).
+        \end{equation}
+\end{itemize}
+
+
 
 \iffalse
 ========= some comments========== \\
