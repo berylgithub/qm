@@ -15,7 +15,7 @@ params:
     - M, number of supervised data points
     - universe_size, the total available data, default =1000, although for complete data it should be 130k
 """
-function set_cluster(infile, M; universe_size=1_000)
+function set_cluster(infile, strid, M; universe_size=1_000)
     # load dataset || the datastructure is subject to change!! since the data size is huge
     dataset = load(infile)["data"]
     N, L = size(dataset)
@@ -34,14 +34,14 @@ function set_cluster(infile, M; universe_size=1_000)
     display(mean_point)
     display(center_ids)
     # save center_ids:
-    save("data/M=$M"*"_idx_$N.jld", "data", center_ids)
+    save("data/"*"$strid"*"_M=$M"*"_idx_$N.jld", "data", center_ids)
 end
 
 
 """
 compute all D_k(w_l) ∀k,l, for now fix i = 603 (rozemi)
 """
-function set_all_dist(infile; universe_size=1_000)
+function set_all_dist(infile, strid; universe_size=1_000)
     dataset = load(infile)["data"]
     N, L = size(dataset)
     W = dataset' # transpose data (becomes column major)
@@ -56,7 +56,7 @@ function set_all_dist(infile; universe_size=1_000)
     #display(dist)
 
     # compute all distances:
-    filename = "data/distances_$N"*"_i=$idx.jld"
+    filename = "data/"*"$strid"*"_distances_$N"*"_i=$idx.jld"
     D = compute_distance_all(W, B, filename) # the save file is here.......... need to be changed later to avoid confusion
     display(D)
 end
@@ -143,12 +143,12 @@ try:
 """
 function fit_🌹()
     # required files:
-    file_dataset = "data/qm9_dataset_250of1000.jld"
-    file_finger = "data/ACSF_col40_250of1000_symm_scaled.jld"
-    file_distance = "data/distances_250_i=151.jld"
-    file_centers = "data/M=100_idx_250.jld"
+    file_dataset = "data/H10C6O3_dataset_250.jld"
+    file_finger = "data/H10C6O3_ACSF_col26_250_symm_scaled.jld"
+    file_distance = "data/H10C6O3_distances_250_i=151.jld"
+    file_centers = "data/H10C6O3_M=100_idx_250.jld"
 
-    n_basis = 5 # pre-inputted number, later n_basis := n_basis+3
+    n_basis = 3 # pre-inputted number, later n_basis := n_basis+3
     dataset = load(file_dataset)["data"] # energy is from here
     W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
     s_W = size(W) # n_feature × n_data
