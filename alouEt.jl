@@ -80,7 +80,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
     n_l = n_basis*n_feature # length of feature*basis each k
     # iterative linear solver (CGLS):
     t_ls = @elapsed begin
-        linres = Krylov.cgls(A, b, itmax=500, history=true)    
+        linres = Krylov.cgls(A, b, itmax=500, history=true)  # 🌸
     end
     θ = linres[1]
     obj = lsq(A, θ, b)
@@ -107,7 +107,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
     MAE /= length(Widx)
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
-    n = 10
+    n = 10 # 🌸
     sidxes = sortperm(MADs)[end-(n-1):end]
     MADmax_idxes = Widx[sidxes] # the indexes relative to Widx (global data index)
     
