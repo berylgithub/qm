@@ -160,7 +160,6 @@ function fit_🌹()
     Midx_g = load(file_centers)["data"] # the global supervised data points' indices
     n_m = size(Midx_g) # n_sup_data
     Widx = setdiff(data_idx, Midx_g) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    Widx = Widx[1:30] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx_g); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -178,16 +177,17 @@ function fit_🌹()
     for i ∈ 1:10
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
+        #Widx = Widx[1:30] # take subset for smaller matrix
         println("======= LOOP i=$i =======")
         MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
         println()
     end
     # use the info of MAD for fitting :
     for i ∈ 1:5
-        println(i,", max MAD indexes from the last loop = ", MADmax_idxes)
+        #println(i,", max MAD indexes from the last loop = ", MADmax_idxes)
         Midx = vcat(Midx, MADmax_idxes) # put the n-worst MAD as centers
         filter!(e->e ∉ MADmax_idxes, Widx) # cut the n-worst MAD from unsupervised data
-        println(Midx," ",Widx)
+        #println(Midx," ",Widx)
         MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
     end
 end
