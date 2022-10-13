@@ -10,6 +10,14 @@ the Kronecker delta function
 δ(x,y) = Float64(==(x,y))
 
 """
+determine the memory size (in megabytes) of A matrix given M, N, L
+"""
+function compmem(M, N, L)
+    return M^2*N*L*64/8e6
+end
+
+
+"""
 computes residual from data matrix A, coefficient vector θ, and target vector b
 """
 function residual(A, θ, b)
