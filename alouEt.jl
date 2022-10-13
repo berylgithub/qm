@@ -62,9 +62,9 @@ function set_all_dist(infile; universe_size=1_000)
 end
 
 """
-to avoid clutter
+to avoid clutter in main function, called within fitting iters
 """
-function fitter()
+function fitter(W, E, D, ϕ, dϕ, data_idx, Midx, Widx, n_feature, n_basis, i)
     
 end
 
@@ -120,27 +120,9 @@ function fit_rosemi()
             A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
         end
         println("LS assembly time: ",t_ab)
-        #A = sparse(A) # only half is filled!!
         display(A)
-        #display(b)
 
         n_l = n_basis*n_feature # length of feature*basis each k
-
-        # fit, try lsovle vs lsquares!:
-        #= θ = rand(Uniform(-1., 1.), size(A)[2]) # should follow the size of A, since actual sparse may not reach the end of index # OLD VER: θ = rand(Uniform(-1., 1.), cols)
-        function df!(g, θ) # closure function for d(f_obj)/dθ
-            g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
-        end
-        res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
-        θ = Optim.minimizer(res)
-        println(res) =#
-
-        #= # linear solver:
-        t = @elapsed begin
-            θ = A\b
-        end
-        println("lin elapsed time: ", t)
-        println("lin obj func = ", lsq(A, θ, b)) =#
 
         # iterative linear solver (CGLS):
         t_ls = @elapsed begin
@@ -183,11 +165,6 @@ function fit_rosemi()
         filter!(!=(MADmax_idx), Widx) =#
         #println([Midx, Widx])
 
-        #= i = 1; j = Midx[i]; m = Widx[1]
-        ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-        ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-        display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia! =#
-        
         # save all errors foreach iters:
         strid = file_dataset[6:end-4]
         data = [MAE, RMSD, MADs[sidx]]
@@ -262,4 +239,31 @@ function test_A()
     ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
     display(ΔjK)
 
+end
+
+"""
+unused stuffs but probably needed later..
+"""
+function junk()
+    # fit, try lsovle vs lsquares!:
+    #= θ = rand(Uniform(-1., 1.), size(A)[2]) # should follow the size of A, since actual sparse may not reach the end of index # OLD VER: θ = rand(Uniform(-1., 1.), cols)
+    function df!(g, θ) # closure function for d(f_obj)/dθ
+        g .= ReverseDiff.gradient(θ -> lsq(A, θ, b), θ)
+    end
+    res = optimize(θ -> lsq(A, θ, b), df!, θ, LBFGS(m=1_000), Optim.Options(show_trace=true, iterations=1_000))
+    θ = Optim.minimizer(res)
+    println(res) =#
+
+    #= # linear solver:
+    t = @elapsed begin
+        θ = A\b
+    end
+    println("lin elapsed time: ", t)
+    println("lin obj func = ", lsq(A, θ, b)) =#
+
+     #= i = 1; j = Midx[i]; m = Widx[1]
+    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    ΔjK_m = comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    display([r[i], A[i,:]'*θ - b[i], ΔjK, ΔjK_m]) # the vector slicing by default is column vector in Julia! =#
+        
 end
