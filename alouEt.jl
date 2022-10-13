@@ -62,10 +62,75 @@ function set_all_dist(infile; universe_size=1_000)
 end
 
 """
+main fitter function, assemble LS -> fit -> save to file
 to avoid clutter in main function, called within fitting iters
+
+outputs:
+    - indexes of n-maximum MAD
 """
-function fitter(W, E, D, ϕ, dϕ, data_idx, Midx, Widx, n_feature, n_basis, i)
+function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
+    M = length(Midx); N = length(Widx)
+    println("[M, N] = ",[M, N])
+    t_ab = @elapsed begin
+        # assemble A and b:
+        A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    end
+    println("LS assembly time: ",t_ab)
+    display(A)
+    n_l = n_basis*n_feature # length of feature*basis each k
+    # iterative linear solver (CGLS):
+    t_ls = @elapsed begin
+        linres = Krylov.cgls(A, b, itmax=500, history=true)    
+    end
+    θ = linres[1]
+    obj = lsq(A, θ, b)
+    println("CGLS obj = ",obj, ", CGLS time = ",t_ls)
+
+    # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
+    MAE = 0.
+    MADs = zeros(length(Widx)) # why use a list instead of just max? in case of multi MAD selection
+    c = 1
+    for m ∈ Widx
+        # MAD_K(w), depends on j:
+        MAD = 0.; VK = 0.
+        for j ∈ Midx
+            ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+            MAD += abs(ΔjK)
+        end
+        MAD /= length(Midx)
+        MADs[c] = MAD
+        #println("MAD of m=$m is ", MAD)
+        err = abs(VK - E[m])
+        MAE += err
+        c += 1       
+    end
+    MAE /= length(Widx)
+    println("MAE of all mol w/ unknown E is ", MAE)
+    # get the n-highest MAD:
+    n = 10
+    sidxes = sortperm(MADs)[end-(n-1):end]
+    MADmax_idxes = Widx[sidxes] # the indexes relative to Widx (global data index)
     
+    # get min |K| RMSD (the obj func):
+    RMSD = obj #Optim.minimum(res)
+    
+    println("largest MAD is = ", MADs[sidxes[end]], ", with index = ",MADmax_idxes)
+    println("min K|∑RMSD(w) = ", RMSD)
+
+    # save all errors foreach iters:
+    data = [MAE, RMSD, MADs[sidxes[end]]]
+    strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string.([t_ab, t_ls]))
+    open("data/result/err_"*strid*".txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+    # save also the M indices and θ's to file!!:
+    data = Dict("centers"=>Midx, "theta"=>θ)
+    save("data/result/theta_center_"*strid*".jld", "data", data)
+    return MADmax_idxes
 end
 
 """
@@ -76,7 +141,7 @@ try:
     - changing column length
     - multirestart
 """
-function fit_rosemi()
+function fit_🌹()
     # required files:
     file_dataset = "data/qm9_dataset_250of1000.jld"
     file_finger = "data/ACSF_col40_250of1000_symm_scaled.jld"
@@ -95,7 +160,7 @@ function fit_rosemi()
     Midx_g = load(file_centers)["data"] # the global supervised data points' indices
     n_m = size(Midx_g) # n_sup_data
     Widx = setdiff(data_idx, Midx_g) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    #Widx = Widx[1:50] # take subset for smaller matrix
+    Widx = Widx[1:30] # take subset for smaller matrix
     #display(dataset)
     n_m = length(Midx_g); n_w = length(Widx)
     display([length(data_idx), n_m, n_w])
@@ -106,81 +171,24 @@ function fit_rosemi()
     #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     println("[feature, basis]",[n_feature, n_basis])
+    strid = file_dataset[6:end-4] # substring until before ".", for file str identifier
     # === start fitting loop ===:
-    loop_idx = 1:10
     inc_M = 10
-    for i ∈ loop_idx
-        println("======= LOOP i=$i =======")
+    MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
+    for i ∈ 1:10
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-        M = length(Midx); N = length(Widx)
-        println("[M, N] = ",[M, N])
-        t_ab = @elapsed begin
-            # assemble A and b:
-            A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
-        end
-        println("LS assembly time: ",t_ab)
-        display(A)
-
-        n_l = n_basis*n_feature # length of feature*basis each k
-
-        # iterative linear solver (CGLS):
-        t_ls = @elapsed begin
-            linres = Krylov.cgls(A, b, itmax=400, history=true)    
-        end
-        θ = linres[1]
-        obj = lsq(A, θ, b)
-        println("CGLS obj = ",obj, ", CGLS time = ",t_ls)
-
-        # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
-        MAE = 0.
-        MADs = zeros(length(Widx)) # why use a list instead of just max? in case of multi MAD selection
-        c = 1
-        for m ∈ Widx
-            # MAD_K(w), depends on j:
-            MAD = 0.; VK = 0.
-            for j ∈ Midx
-                ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
-                MAD += abs(ΔjK)
-            end
-            MAD /= length(Midx)
-            MADs[c] = MAD
-            #println("MAD of m=$m is ", MAD)
-            err = abs(VK - E[m])
-            MAE += err
-            c += 1       
-        end
-        MAE /= length(Widx)
-        println("MAE of all mol w/ unknown E is ", MAE)
-        # get the highest MAD:
-        sidx = sortperm(MADs)[end]
-        MADmax_idx = Widx[sidx]
-        # get min |K| RMSD (the obj func):
-        RMSD = obj #Optim.minimum(res)
-        
-        println("largest MAD is = ", MADs[sidx], ", with index = ",MADmax_idx)
-        println("min K|∑RMSD(w) = ", RMSD)
-        # set a point with max MAD into the M:
-        #= push!(Midx, MADmax_idx)
-        filter!(!=(MADmax_idx), Widx) =#
-        #println([Midx, Widx])
-
-        # save all errors foreach iters:
-        strid = file_dataset[6:end-4]
-        data = [MAE, RMSD, MADs[sidx]]
-        strlist = vcat(string.([i, M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string.([t_ab, t_ls]))
-        open("data/result/err_"*strid*".txt","a") do io
-            str = ""
-            for s ∈ strlist
-                str*=s*"\t"
-            end
-            print(io, str*"\n")
-        end
-        # save also the M indices and θ's to file!!:
-        data = Dict("centers"=>Midx, "theta"=>θ)
-        save("data/result/theta_center_"*strid*".jld", "data", data)
-
+        println("======= LOOP i=$i =======")
+        MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
         println()
+    end
+    # use the info of MAD for fitting :
+    for i ∈ 1:5
+        println(i,", max MAD indexes from the last loop = ", MADmax_idxes)
+        Midx = vcat(Midx, MADmax_idxes) # put the n-worst MAD as centers
+        filter!(e->e ∉ MADmax_idxes, Widx) # cut the n-worst MAD from unsupervised data
+        println(Midx," ",Widx)
+        MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
     end
 end
 
