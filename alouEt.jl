@@ -61,6 +61,12 @@ function set_all_dist(infile; universe_size=1_000)
     display(D)
 end
 
+"""
+to avoid clutter
+"""
+function fitter()
+    
+end
 
 """
 the main fitting function !!!
@@ -101,7 +107,7 @@ function fit_rosemi()
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     println("[feature, basis]",[n_feature, n_basis])
     # === start fitting loop ===:
-    loop_idx = 1:15
+    loop_idx = 1:10
     inc_M = 10
     for i ∈ loop_idx
         println("======= LOOP i=$i =======")
@@ -109,11 +115,11 @@ function fit_rosemi()
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         M = length(Midx); N = length(Widx)
         println("[M, N] = ",[M, N])
-        t = @elapsed begin
+        t_ab = @elapsed begin
             # assemble A and b:
             A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
         end
-        println("LS assembly time: ",t)
+        println("LS assembly time: ",t_ab)
         #A = sparse(A) # only half is filled!!
         display(A)
         #display(b)
@@ -137,12 +143,12 @@ function fit_rosemi()
         println("lin obj func = ", lsq(A, θ, b)) =#
 
         # iterative linear solver (CGLS):
-        t = @elapsed begin
+        t_ls = @elapsed begin
             linres = Krylov.cgls(A, b, itmax=400, history=true)    
         end
         θ = linres[1]
         obj = lsq(A, θ, b)
-        println("CGLS obj = ",obj, ", CGLS time = ",t)
+        println("CGLS obj = ",obj, ", CGLS time = ",t_ls)
 
         # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
         MAE = 0.
@@ -185,7 +191,7 @@ function fit_rosemi()
         # save all errors foreach iters:
         strid = file_dataset[6:end-4]
         data = [MAE, RMSD, MADs[sidx]]
-        strlist = vcat(string.([i, M, N]), [lstrip(@sprintf "%16.8e" s) for s in data])
+        strlist = vcat(string.([i, M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string.([t_ab, t_ls]))
         open("data/result/err_"*strid*".txt","a") do io
             str = ""
             for s ∈ strlist
