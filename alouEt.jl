@@ -1,4 +1,4 @@
-using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf
+using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3
 """
 contains all tests and experiments
 !!! FOR LATER: https://stackoverflow.com/questions/57950114/how-to-efficiently-initialize-huge-sparse-arrays-in-julia
