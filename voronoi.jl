@@ -26,7 +26,7 @@ params:
     - B, linear transformer matrix from covariance, ∈ Float64(n_finger, n_finger)
     - filename, String
 """
-function compute_distance_all(W, B, filename)
+function compute_distance_all(W, B)
     _, n_data = size(W)
     D = zeros(n_data, n_data) # symmetric matrix
     for j ∈ 1:n_data
@@ -39,7 +39,6 @@ function compute_distance_all(W, B, filename)
             end
         end
     end
-    save(filename, "data", D)
     return D
 end
 

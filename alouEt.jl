@@ -15,7 +15,7 @@ params:
     - M, number of supervised data points
     - universe_size, the total available data, default =1000, although for complete data it should be 130k
 """
-function set_cluster(infile, strid, M; universe_size=1_000)
+function set_cluster(infile, M; universe_size=1_000)
     # load dataset || the datastructure is subject to change!! since the data size is huge
     dataset = load(infile)["data"]
     N, L = size(dataset)
@@ -23,7 +23,7 @@ function set_cluster(infile, strid, M; universe_size=1_000)
     display(A)
     println(N, " ", L)
     # compute mean and cov:
-    idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi
+    idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
     idx = Int(round(idx/universe_size*N)) # relative idx
     wbar, C = mean_cov(A, idx, N, L)
     B = compute_B(C)
@@ -33,21 +33,20 @@ function set_cluster(infile, strid, M; universe_size=1_000)
     center_ids, mean_point = eldar_cluster(A, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd") # generate cluster centers
     display(mean_point)
     display(center_ids)
-    # save center_ids:
-    save("data/"*"$strid"*"_M=$M"*"_idx_$N.jld", "data", center_ids)
+    return center_ids
 end
 
 
 """
 compute all D_k(w_l) ∀k,l, for now fix i = 603 (rozemi)
 """
-function set_all_dist(infile, strid; universe_size=1_000)
+function set_all_dist(infile; universe_size=1_000)
     dataset = load(infile)["data"]
     N, L = size(dataset)
     W = dataset' # transpose data (becomes column major)
     println(N, " ", L)
     # compute mean and cov:
-    idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi
+    idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
     idx = Int(round(idx/universe_size*N))
     wbar, C = mean_cov(W, idx, N, L)
     B = compute_B(C)
@@ -56,9 +55,40 @@ function set_all_dist(infile, strid; universe_size=1_000)
     #display(dist)
 
     # compute all distances:
-    filename = "data/"*"$strid"*"_distances_$N"*"_i=$idx.jld"
-    D = compute_distance_all(W, B, filename) # the save file is here.......... need to be changed later to avoid confusion
-    display(D)
+    D = compute_distance_all(W, B)
+    return D, idx
+end
+
+"""
+setup all the data files needed for fitting a certain molecule
+"""
+function data_setup(mol_name, n_data, n_feature; M=100, universe_size=1_000)
+    # create subfolder:
+    path = mkpath("data/$mol_name")
+    # query (get the index of data) the molecule by molecule name:
+    D = load("data/qm9_dataset.jld")["data"] # 🌸
+    len = length(D)
+    indexes = []
+    for i ∈ 1:len
+        if D[i]["formula"] == mol_name
+           push!(indexes, i) 
+        end
+    end
+    save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D[indexes])
+    # slice the global feature matrix:
+    W = load("data/ACSF_symm.jld") # 🌸
+    W = W[1:n_data, vcat(1:Int(n_feature/2), 52:51+Int(n_feature/2))] # 🌸
+    save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld", "data", W)
+    # get center indexes:
+    main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld"
+    center_ids = set_cluster(main_file, M, universe_size=universe_size)
+    save(path*"/$mol_name"*"_M=$M"*"_idx_$n_data.jld", "data", center_ids)
+    # compute all distances:
+    Dist, idx = set_all_dist(main_file, universe_size=universe_size)
+    save(path*"/$mol_name"*"_distances_$n_data"*"_i=$idx.jld", "data", Dist)
+    # scale feature for basis:
+    W = normalize_routine(main_file)
+    save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W)
 end
 
 """

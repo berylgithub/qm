@@ -1,4 +1,4 @@
-using LinearAlgebra
+using LinearAlgebra, Statistics, Distributions
 
 """
 placeholder for linear algebra and statistics operations, if RoSemi is overcrowded, or when the need arises
@@ -111,4 +111,15 @@ function test_cov()
     B = compute_B(C)
     display(B)
     display(B'*B)
+end
+
+function normalize_routine(infile)
+    W = load(infile)["data"]
+    #W = W' # 1 data = 1 column
+    display(W)
+    dt = StatsBase.fit(UnitRangeTransform, W, dims=1)
+    display(dt)
+    W = StatsBase.transform(dt, W)
+    display(W)
+    return W
 end

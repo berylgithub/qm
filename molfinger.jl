@@ -249,16 +249,7 @@ function transform_to_ascii()
     end
 end
 
-function normalize_routine(infile, outfile)
-    W = load(infile)["data"]
-    #W = W' # 1 data = 1 column
-    display(W)
-    dt = StatsBase.fit(UnitRangeTransform, W, dims=1)
-    display(dt)
-    W = StatsBase.transform(dt, W)
-    display(W)
-    save(outfile, "data", W)
-end
+
 
 """
 scale the features to [0,1]
