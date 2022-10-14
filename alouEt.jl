@@ -63,6 +63,7 @@ end
 setup all the data files needed for fitting a certain molecule
 """
 function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
+    println("data setup for ",[mol_name, n_data, n_feature, M], " starts!")
     # create subfolder:
     path = mkpath("data/$mol_name")
     # query (get the index of data) the molecule by molecule name:
@@ -214,7 +215,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ 1:1
+    for i ∈ [15]
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         Widx = Widx[1:30] # take subset for smaller matrix
