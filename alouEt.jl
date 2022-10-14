@@ -79,11 +79,18 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
     # slice the global feature matrix:
     W = load("data/ACSF_symm.jld")["data"] # 🌸
     W = W[indexes, vcat(1:Int(n_feature/2), 52:51+Int(n_feature/2))] # 🌸
-    W = W[1:n_data, :]
+    rowsize = size(W)[1]
+    if rowsize >= n_data # to avoid not enough data error
+        W = W[1:n_data, :]
+    end
     save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld", "data", W)
     # get center indexes:
+    M_actual = M
+    if M > rowsize # check if the wanted centers is too much for the data..
+        M_actual = rowsize
+    end
     main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld"
-    center_ids = set_cluster(main_file, M, universe_size=universe_size)
+    center_ids = set_cluster(main_file, M_actual, universe_size=universe_size)
     save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
     # compute all distances:
     Dist, idx = set_all_dist(main_file, universe_size=universe_size)
@@ -199,11 +206,6 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     # index op:
     data_idx = 1:n_data
     Midx_g = load(file_centers)["data"] # the global supervised data points' indices
-    n_m = size(Midx_g) # n_sup_data
-    #Widx = setdiff(data_idx, Midx_g) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-    #display(dataset)
-    #n_m = length(Midx_g); n_w = length(Widx)
-    #display([length(data_idx), n_m, n_w])
     
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
     n_basis += 3 # by definition of bspline
@@ -215,10 +217,10 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ [15]
+    for i ∈ 1:15
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-        Widx = Widx[1:30] # take subset for smaller matrix
+        #Widx = Widx[1:30] # take subset for smaller matrix
         println("======= LOOP i=$i =======")
         MAE, MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name)
         if MAE < thresh # in kcal/mol
@@ -229,15 +231,15 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     end
 
     # use the info of MAD for fitting :
-    for i ∈ 1:1
+    for i ∈ 1:9
         #println(i,", max MAD indexes from the last loop = ", MADmax_idxes)
         Midx = vcat(Midx, MADmax_idxes) # put the n-worst MAD as centers
         filter!(e->e ∉ MADmax_idxes, Widx) # cut the n-worst MAD from unsupervised data
         println("======= MAD mode, LOOP i=$i =======")
         MAE, MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name, get_mad = true)
         if MAE < thresh # in kcal/mol
-            break
             println("desirable MAE reached!!")
+            break
         end
         println()
     end
@@ -247,7 +249,7 @@ end
 """
 automatically generate data and fit based on list of molname, n_data, n_feature,M, and universe_size saved in json file 
 """
-function autofit_🌹()
+function autofit_🌹() 
     json_string = read("setup.json", String)
     d = JSON3.read(json_string)
     molnames = d["mol_name"]; ndatas = d["n_data"]; nfeatures = d["n_feature"]; Ms = d["M"] # later the all of the other vars should be a list too!, for now assume fixed
