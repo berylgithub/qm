@@ -1,7 +1,9 @@
 {
-    "mol_name": ["H10C9", "H12C8"],
+    "mol_name": ["H10C9", "H12C8", "H12C9", "H16C9", "H6C5O3", "H6C6O2", "H6C5N4", "H6C5O4", "H6C6O3", "H6C7N2", "H6C7O2",
+                "H7C6N3", "H7C8N1"],
     "n_data": 250,
     "n_feature": 24,
-    "M":100,
+    "M":250,
     "universe_size":1000
+    
 }
