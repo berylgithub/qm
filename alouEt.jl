@@ -99,7 +99,7 @@ to avoid clutter in main function, called within fitting iters
 outputs:
     - indexes of n-maximum MAD
 """
-function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_name)
+function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_mad=false)
     M = length(Midx); N = length(Widx)
     println("[M, N] = ",[M, N])
     t_ab = @elapsed begin
@@ -136,6 +136,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_nam
         c += 1       
     end
     MAE /= length(Widx)
+    MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
     n = 10 # 🌸
@@ -150,8 +151,13 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_nam
 
     # save all errors foreach iters:
     data = [MAE, RMSD, MADs[sidxes[end]]]
-    strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string.([t_ab, t_ls]))
-    open("result/$mol_name/err_"*strid*".txt","a") do io
+    if get_mad # put the MAD marker, to differentiate
+        strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string(true), string.([t_ab, t_ls]))
+    else
+        strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string.([t_ab, t_ls]))
+    end
+    
+    open("result/$mol_name/err_$mol_name.txt","a") do io
         str = ""
         for s ∈ strlist
             str*=s*"\t"
@@ -160,8 +166,8 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_nam
     end
     # save also the M indices and θ's to file!!:
     data = Dict("centers"=>Midx, "theta"=>θ)
-    save("result/$mol_name/theta_center_"*strid*".jld", "data", data)
-    return MADmax_idxes
+    save("result/$mol_name/theta_center_$mol_name.jld", "data", data)
+    return MAE, MADmax_idxes
 end
 
 """
@@ -173,6 +179,7 @@ try:
     - multirestart
 """
 function fit_🌹(mol_name)
+    println("FITTING MOL: $mol_name")
     # required files:
     #= file_dataset = "data/H10C6O3_dataset_250.jld"
     file_finger = "data/H10C6O3_ACSF_col26_250_symm_scaled.jld"
@@ -199,7 +206,7 @@ function fit_🌹(mol_name)
     Widx = setdiff(data_idx, Midx_g) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
     #display(dataset)
     n_m = length(Midx_g); n_w = length(Widx)
-    display([length(data_idx), n_m, n_w])
+    #display([length(data_idx), n_m, n_w])
     
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
     n_basis += 3 # by definition of bspline
@@ -207,7 +214,6 @@ function fit_🌹(mol_name)
     #display([nnz(ϕ), nnz(dϕ)]) # only ≈1/3 of total entry is nnz
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     println("[feature, basis]",[n_feature, n_basis])
-    strid = file_dataset[6:end-4] # substring until before ".", for file str identifier
     # === compute!! ===:
     inc_M = 10
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
@@ -216,17 +222,28 @@ function fit_🌹(mol_name)
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         #Widx = Widx[1:30] # take subset for smaller matrix
         println("======= LOOP i=$i =======")
-        MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_name)
+        MAE, MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name)
+        if MAE < 15. # in kcal/mol
+            println("desirable MAE reached!!")
+            break
+        end
         println()
     end
+
     # use the info of MAD for fitting :
     for i ∈ 1:5
         #println(i,", max MAD indexes from the last loop = ", MADmax_idxes)
         Midx = vcat(Midx, MADmax_idxes) # put the n-worst MAD as centers
         filter!(e->e ∉ MADmax_idxes, Widx) # cut the n-worst MAD from unsupervised data
-        #println(Midx," ",Widx)
-        MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_name)
+        println("======= MAD mode, LOOP i=$i =======")
+        MAE, MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name, get_mad = true)
+        if MAE < 15. # in kcal/mol
+            break
+            println("desirable MAE reached!!")
+        end
+        println()
     end
+    println()
 end
 
 
