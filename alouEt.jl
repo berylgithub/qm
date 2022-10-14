@@ -62,7 +62,7 @@ end
 """
 setup all the data files needed for fitting a certain molecule
 """
-function data_setup(mol_name, n_data, n_feature; M=100, universe_size=1_000)
+function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
     # create subfolder:
     path = mkpath("data/$mol_name")
     # query (get the index of data) the molecule by molecule name:
@@ -83,13 +83,14 @@ function data_setup(mol_name, n_data, n_feature; M=100, universe_size=1_000)
     # get center indexes:
     main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld"
     center_ids = set_cluster(main_file, M, universe_size=universe_size)
-    save(path*"/$mol_name"*"_M=$M"*"_idx_$n_data.jld", "data", center_ids)
+    save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
     # compute all distances:
     Dist, idx = set_all_dist(main_file, universe_size=universe_size)
-    save(path*"/$mol_name"*"_distances_$n_data"*"_i=$idx.jld", "data", Dist)
+    save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
     # scale feature for basis:
     W = normalize_routine(main_file)
     save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W)
+    println("data setup for ",[mol_name, n_data, n_feature, M], " complete!")
 end
 
 """
@@ -151,12 +152,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
 
     # save all errors foreach iters:
     data = [MAE, RMSD, MADs[sidxes[end]]]
-    if get_mad # put the MAD marker, to differentiate
-        strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string(true), string.([t_ab, t_ls]))
-    else
-        strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string.([t_ab, t_ls]))
-    end
-    
+    strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string(get_mad), string.([t_ab, t_ls]))
     open("result/$mol_name/err_$mol_name.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -178,21 +174,21 @@ try:
     - changing column length
     - multirestart
 """
-function fit_🌹(mol_name)
+function fit_🌹(mol_name, n_data, n_feature, M)
     println("FITTING MOL: $mol_name")
     # required files:
-    #= file_dataset = "data/H10C6O3_dataset_250.jld"
-    file_finger = "data/H10C6O3_ACSF_col26_250_symm_scaled.jld"
-    file_distance = "data/H10C6O3_distances_250_i=151.jld"
-    file_centers = "data/H10C6O3_M=100_idx_250.jld" =#
-    files = readdir("data/$mol_name"; join=true)
-    file_finger, file_centers, file_dataset, file_distance = files[2:end]
-
+    #= files = readdir("data/$mol_name"; join=true)
+    file_finger, file_centers, file_dataset, file_distance = files[2:end] =#
+    path = "data/$mol_name/"
+    file_dataset = path*"$mol_name"*"_dataset_$n_data.jld"
+    file_finger = path*"$mol_name"*"_ACSF_$n_feature"*"_$n_data"*"_symm_scaled.jld"
+    file_distance = path*"$mol_name"*"_distances_$n_feature"*"_$n_data.jld"
+    file_centers = path*"$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld"
     # result files:
     mkpath("result/$mol_name")
 
     # setup parameters:
-    n_basis = 3 # pre-inputted number, later n_basis := n_basis+3
+    n_basis = 3 # pre-inputted number, later n_basis := n_basis+3 🌸
     dataset = load(file_dataset)["data"] # energy is from here
     W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
     s_W = size(W) # n_feature × n_data
@@ -203,9 +199,9 @@ function fit_🌹(mol_name)
     data_idx = 1:n_data
     Midx_g = load(file_centers)["data"] # the global supervised data points' indices
     n_m = size(Midx_g) # n_sup_data
-    Widx = setdiff(data_idx, Midx_g) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
+    #Widx = setdiff(data_idx, Midx_g) # the (U)nsupervised data, which is ∀i w_i ∈ W \ K, "test" data
     #display(dataset)
-    n_m = length(Midx_g); n_w = length(Widx)
+    #n_m = length(Midx_g); n_w = length(Widx)
     #display([length(data_idx), n_m, n_w])
     
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
@@ -215,15 +211,16 @@ function fit_🌹(mol_name)
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     println("[feature, basis]",[n_feature, n_basis])
     # === compute!! ===:
-    inc_M = 10
+    inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
-    for i ∈ 1:10
+    thresh = 0.9 # .9 kcal/mol desired acc 🌸
+    for i ∈ 1:1
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-        #Widx = Widx[1:30] # take subset for smaller matrix
+        Widx = Widx[1:30] # take subset for smaller matrix
         println("======= LOOP i=$i =======")
         MAE, MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name)
-        if MAE < 15. # in kcal/mol
+        if MAE < thresh # in kcal/mol
             println("desirable MAE reached!!")
             break
         end
@@ -231,13 +228,13 @@ function fit_🌹(mol_name)
     end
 
     # use the info of MAD for fitting :
-    for i ∈ 1:5
+    for i ∈ 1:1
         #println(i,", max MAD indexes from the last loop = ", MADmax_idxes)
         Midx = vcat(Midx, MADmax_idxes) # put the n-worst MAD as centers
         filter!(e->e ∉ MADmax_idxes, Widx) # cut the n-worst MAD from unsupervised data
         println("======= MAD mode, LOOP i=$i =======")
         MAE, MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name, get_mad = true)
-        if MAE < 15. # in kcal/mol
+        if MAE < thresh # in kcal/mol
             break
             println("desirable MAE reached!!")
         end
@@ -246,6 +243,18 @@ function fit_🌹(mol_name)
     println()
 end
 
+"""
+automatically generate data and fit based on list of molname, n_data, n_feature,M, and universe_size saved in json file 
+"""
+function autofit_🌹()
+    json_string = read("setup.json", String)
+    d = JSON3.read(json_string)
+    molnames = d["mol_name"]; ndatas = d["n_data"]; nfeatures = d["n_feature"]; Ms = d["M"] # later the all of the other vars should be a list too!, for now assume fixed
+    for i ∈ eachindex(molnames)
+        data_setup(molnames[i], ndatas, nfeatures, Ms) # setup data
+        fit_🌹(molnames[i], ndatas, nfeatures, Ms) # fit data!
+    end
+end
 
 
 """

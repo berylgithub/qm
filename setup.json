@@ -1,0 +1,7 @@
+{
+    "mol_name": ["H10C9", "H12C8"],
+    "n_data": 250,
+    "n_feature": 24,
+    "M":100,
+    "universe_size":1000
+}
