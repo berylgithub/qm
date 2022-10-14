@@ -71,13 +71,14 @@ function data_setup(mol_name, n_data, n_feature; M=100, universe_size=1_000)
     indexes = []
     for i ∈ 1:len
         if D[i]["formula"] == mol_name
-           push!(indexes, i) 
+           push!(indexes, i)
         end
     end
     save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D[indexes])
     # slice the global feature matrix:
-    W = load("data/ACSF_symm.jld") # 🌸
-    W = W[1:n_data, vcat(1:Int(n_feature/2), 52:51+Int(n_feature/2))] # 🌸
+    W = load("data/ACSF_symm.jld")["data"] # 🌸
+    W = W[indexes, vcat(1:Int(n_feature/2), 52:51+Int(n_feature/2))] # 🌸
+    W = W[1:n_data, :]
     save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld", "data", W)
     # get center indexes:
     main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld"
@@ -98,7 +99,7 @@ to avoid clutter in main function, called within fitting iters
 outputs:
     - indexes of n-maximum MAD
 """
-function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
+function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_name)
     M = length(Midx); N = length(Widx)
     println("[M, N] = ",[M, N])
     t_ab = @elapsed begin
@@ -150,7 +151,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
     # save all errors foreach iters:
     data = [MAE, RMSD, MADs[sidxes[end]]]
     strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string.([t_ab, t_ls]))
-    open("data/result/err_"*strid*".txt","a") do io
+    open("result/$mol_name/err_"*strid*".txt","a") do io
         str = ""
         for s ∈ strlist
             str*=s*"\t"
@@ -159,7 +160,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
     end
     # save also the M indices and θ's to file!!:
     data = Dict("centers"=>Midx, "theta"=>θ)
-    save("data/result/theta_center_"*strid*".jld", "data", data)
+    save("result/$mol_name/theta_center_"*strid*".jld", "data", data)
     return MADmax_idxes
 end
 
@@ -171,13 +172,19 @@ try:
     - changing column length
     - multirestart
 """
-function fit_🌹()
+function fit_🌹(mol_name)
     # required files:
-    file_dataset = "data/H10C6O3_dataset_250.jld"
+    #= file_dataset = "data/H10C6O3_dataset_250.jld"
     file_finger = "data/H10C6O3_ACSF_col26_250_symm_scaled.jld"
     file_distance = "data/H10C6O3_distances_250_i=151.jld"
-    file_centers = "data/H10C6O3_M=100_idx_250.jld"
+    file_centers = "data/H10C6O3_M=100_idx_250.jld" =#
+    files = readdir("data/$mol_name"; join=true)
+    file_finger, file_centers, file_dataset, file_distance = files[2:end]
 
+    # result files:
+    mkpath("result/$mol_name")
+
+    # setup parameters:
     n_basis = 3 # pre-inputted number, later n_basis := n_basis+3
     dataset = load(file_dataset)["data"] # energy is from here
     W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
@@ -201,7 +208,7 @@ function fit_🌹()
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     println("[feature, basis]",[n_feature, n_basis])
     strid = file_dataset[6:end-4] # substring until before ".", for file str identifier
-    # === start fitting loop ===:
+    # === compute!! ===:
     inc_M = 10
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     for i ∈ 1:10
@@ -209,7 +216,7 @@ function fit_🌹()
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         #Widx = Widx[1:30] # take subset for smaller matrix
         println("======= LOOP i=$i =======")
-        MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
+        MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_name)
         println()
     end
     # use the info of MAD for fitting :
@@ -218,7 +225,7 @@ function fit_🌹()
         Midx = vcat(Midx, MADmax_idxes) # put the n-worst MAD as centers
         filter!(e->e ∉ MADmax_idxes, Widx) # cut the n-worst MAD from unsupervised data
         #println(Midx," ",Widx)
-        MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid)
+        MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, strid, mol_name)
     end
 end
 
