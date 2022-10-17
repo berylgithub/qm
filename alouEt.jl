@@ -1,7 +1,6 @@
 using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3, DelimitedFiles
 """
 contains all tests and experiments
-!!! FOR LATER: https://stackoverflow.com/questions/57950114/how-to-efficiently-initialize-huge-sparse-arrays-in-julia
 """
 
 include("voronoi.jl")
@@ -321,11 +320,19 @@ end
 
 function plot_mae()
     molnames = readdir("result")[2:end]
-    MAEs = zeros(length(molnames))
     count = 1
+    m = molnames[1]
+    N_set = parse.(Int, readdlm("result/"*m*"/err_$m.txt", '\t', String, '\n')[end-16:end, 2])
+    println(N_set)
     for m ∈ molnames
-        MAEs[count] = parse(Float64, readdlm("result/"*m*"/err_$m.txt", '\t', String, '\n')[end,3])
-        
+        MAEs = parse.(Float64, readdlm("result/"*m*"/err_$m.txt", '\t', String, '\n')[end-16:end,3])
+        sidx = sortperm(MAEs) # sort MAE ascending
+        println(sidx, " ", MAEs[sidx], " ", N_set[sidx])
+        sNset = string.(N_set[sidx]); sMAEs = MAEs[sidx];
+        s = scatter(sNset, sMAEs, xticks = sNset,
+                    title = m, xlabel = "N", ylabel = "MAE (kcal/mol)", xrotation = -45, xtickfontsize=6, legend=false)
+        display(s)
+        savefig(s, "plot/MAE_$m.png")
         count += 1
     end
     #mean runtime:
@@ -336,8 +343,7 @@ function plot_mae()
         T += sum(mT)/size(mT)[1]
     end
     println(T/length(molnames))
-    println(zip(molnames, MAEs))
-    scatter(molnames, MAEs, ylabel = "MAE (kcal/mol)", xrotation = -45, xtickfontsize=6, legend=false)
+
 end
 
 """
