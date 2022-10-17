@@ -70,6 +70,48 @@ end
 
 
 """
+feature selection by the PCA
+params:
+    - W, the full data matrix (133k × n_feature)
+    - n_select, the number of features to be selected
+output:
+    - U, the full data matrix but with n_select columns
+"""
+function PCA(W, n_select)
+    n_mol, n_f = size(W)
+    s = vec(sum(W, dims=1)) # sum over all molecules
+    
+    # long ver, more accurate, memory safe, slower:
+    #= S = zeros(n_f, n_f)
+    for i ∈ 1:n_mol
+        S .+= W[i,:]*W[i,:]'
+    end =#
+    S = W'*W # short ver, careful of memory alloc!
+    u_bar = s./n_mol
+    C = S/n_mol - u_bar*u_bar'
+    e = eigen(C)
+    v = e.values
+    Q = e.vectors
+    #display(norm(C - Q*diagm(v)*Q')) # this is correct, small norm
+    sidx = sortperm(v, rev=true) # sort by largest eigenvalue
+    # sort the v and Q (by column, by definition!!):
+    v = v[sidx]
+    Q = Q[:, sidx] # according to Julia factorization: F.vectors[:, k] is the kth eigenvector
+    #display(C)
+    #display(norm(C-Q*diagm(v)*Q'))
+    # select the n_select amount of number of features:
+    v = v[1:n_select]
+    Q = Q[:, 1:n_select]
+    #display(norm(C-Q*diagm(v)*Q'))
+    U = zeros(n_mol, n_select)
+    for i ∈ 1:n_mol 
+        U[i, :] = Q'*(u_bar - W[i, :])
+    end
+    return U
+end
+
+
+"""
 compute the B linear transformer for Mahalanobis distance
 params:
     - C, covariance matrix of the fingerprints
