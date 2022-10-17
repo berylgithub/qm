@@ -145,7 +145,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         c += 1       
     end
     MAE /= length(Widx)
-    MAE *= 627.503 # convert from Hartree to kcal/mol
+    #MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
     n = 3 # 🌸
@@ -202,6 +202,9 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     s_W = size(W) # n_feature × n_data
     n_feature = s_W[1]; n_data = s_W[2];
     E = map(d -> d["energy"], dataset)
+    display(E)
+    E .*= 627.503 # kcal/mol = 627.5 Hartree
+    display(E)
     D = load(file_distance)["data"] # the mahalanobis distance matrix
     # index op:
     data_idx = 1:n_data
