@@ -242,8 +242,8 @@ For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matr
 \section{The program flow}
 Below is the rough flow of the program for fitting the QM9 dataset.
 \begin{itemize}
-    \item Compute the molecular features using ACSF (\at{cite Behler}). This would give a vector with 51 length for each atom.
-    \item For each molecule, symmetrize the features by
+    \item Compute the molecular features using ACSF (\at{cite Behler}). This would give a vector with length $= 51$ for each atom. Apply this to all molecules in the dataset hence there should be a total of $n_\text{mol}$ ACSF extractions.
+    \item For each molecule containing $n_\text{atom}$ number of atoms, symmetrize the features by
         \begin{equation}
             \begin{split}
                 F_{S_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{ji},\\
@@ -255,6 +255,15 @@ Below is the rough flow of the program for fitting the QM9 dataset.
         \begin{equation}
             F := (F_{S_1}, F_{S_2}, ..., F_{S_{51}}, F_{Q_1},F_{Q_2} ..., F_{Q_{51}}).
         \end{equation}
+    	then we stack $F$ of each molecule as a row in the $\hat{F} \in \mathbb{R}^{n_\text{mol} \times n_\text{feature}}$ matrix.
+    \item Obtain the centers by using the farthest-distance-algorithm variations from the transformed $\hat{F}$ matrix:
+    	\begin{equation}
+			\begin{split}
+				content...
+			\end{split}
+    	\end{equation}
+    
+     this would give $M$ centers which would be used as the supervised data training
 \end{itemize}
 
 
