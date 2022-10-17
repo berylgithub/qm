@@ -1,4 +1,4 @@
-using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3
+using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3, DelimitedFiles
 """
 contains all tests and experiments
 !!! FOR LATER: https://stackoverflow.com/questions/57950114/how-to-efficiently-initialize-huge-sparse-arrays-in-julia
@@ -313,6 +313,28 @@ function test_A()
     ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
     display(ΔjK)
 
+end
+
+
+function plot_mae()
+    molnames = readdir("result")[2:end]
+    MAEs = zeros(length(molnames))
+    count = 1
+    for m ∈ molnames
+        MAEs[count] = parse(Float64, readdlm("result/"*m*"/err_$m.txt", '\t', String, '\n')[end,3])
+        
+        count += 1
+    end
+    #mean runtime:
+    T = 0.
+    for i ∈ eachindex(molnames)
+        m = molnames[i]
+        mT = parse.(Float64, readdlm("result/"*m*"/err_$m.txt", '\t', String, '\n')[:, end-2:end-1])
+        T += sum(mT)/size(mT)[1]
+    end
+    println(T/length(molnames))
+    println(zip(molnames, MAEs))
+    scatter(molnames, MAEs, ylabel = "MAE (kcal/mol)", xrotation = -45, xtickfontsize=6, legend=false)
 end
 
 """
