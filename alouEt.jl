@@ -25,7 +25,7 @@ function set_cluster(infile, M; universe_size=1_000)
     idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
     idx = Int(round(idx/universe_size*N)) # relative idx
     wbar, C = mean_cov(A, idx, N, L)
-    B = compute_B(C)
+    B = Matrix{Float64}(I, L, L) # try with B = I #B = compute_B(C) 
     display(wbar)
     display(B)
     # generate centers (M) for training:
@@ -48,7 +48,7 @@ function set_all_dist(infile; universe_size=1_000)
     idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
     idx = Int(round(idx/universe_size*N))
     wbar, C = mean_cov(W, idx, N, L)
-    B = compute_B(C)
+    B = Matrix{Float64}(I, L, L) # try with B = I #B = compute_B(C) 
     #display(wbar)
     #dist = f_distance(B, A[:,1], A[:,2])
     #display(dist)

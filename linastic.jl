@@ -80,7 +80,6 @@ output:
 function PCA(W, n_select)
     n_mol, n_f = size(W)
     s = vec(sum(W, dims=1)) # sum over all molecules
-    
     # long ver, more accurate, memory safe, slower:
     #= S = zeros(n_f, n_f)
     for i ∈ 1:n_mol
@@ -97,7 +96,6 @@ function PCA(W, n_select)
     # sort the v and Q (by column, by definition!!):
     v = v[sidx]
     Q = Q[:, sidx] # according to Julia factorization: F.vectors[:, k] is the kth eigenvector
-    #display(C)
     #display(norm(C-Q*diagm(v)*Q'))
     # select the n_select amount of number of features:
     v = v[1:n_select]
