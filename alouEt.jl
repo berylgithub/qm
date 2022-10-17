@@ -74,29 +74,34 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
            push!(indexes, i)
         end
     end
-    save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D[indexes])
-    # slice the global feature matrix:
-    W = load("data/ACSF_symm.jld")["data"] # 🌸
-    W = W[indexes, vcat(1:Int(n_feature/2), 52:51+Int(n_feature/2))] # 🌸
-    rowsize = size(W)[1]
-    if rowsize >= n_data # to avoid not enough data error
-        W = W[1:n_data, :]
+    # cut data into n_data:
+    l = length(indexes)
+    if l >= n_data
+        indexes = indexes[1:n_data]
     end
-    save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld", "data", W)
+    D = D[indexes]
+    println(length(D))
+    save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D)
+    # slice the global feature matrix:
+    #W = load("data/ACSF_symm.jld")["data"] # 🌸
+    #W = W[indexes, vcat(1:Int(n_feature/2), 52:51+Int(n_feature/2))] # 🌸
+    W = load("data/ACSF_PCA$n_feature"*"_scaled.jld")["data"] # try with scaled(PCA(W)), this file is pre-generated 🌸
+    W = W[indexes, :]
+    main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data.jld"
+    save(main_file, "data", W)
     # get center indexes:
     M_actual = M
-    if M > rowsize # check if the wanted centers is too much for the data..
-        M_actual = rowsize
+    if M > n_data # check if the wanted centers is too much for the data..
+        M_actual = n_data
     end
-    main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm.jld"
     center_ids = set_cluster(main_file, M_actual, universe_size=universe_size)
     save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
     # compute all distances:
     Dist, idx = set_all_dist(main_file, universe_size=universe_size)
     save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
     # scale feature for basis:
-    W = normalize_routine(main_file)
-    save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W)
+    #= W = normalize_routine(main_file)
+    save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W) =#
     println("data setup for ",[mol_name, n_data, n_feature, M], " complete!")
 end
 
@@ -144,7 +149,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         c += 1       
     end
     MAE /= length(Widx)
-    #MAE *= 627.503 # convert from Hartree to kcal/mol
+    MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
     n = 3 # 🌸
@@ -188,7 +193,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     file_finger, file_centers, file_dataset, file_distance = files[2:end] =#
     path = "data/$mol_name/"
     file_dataset = path*"$mol_name"*"_dataset_$n_data.jld"
-    file_finger = path*"$mol_name"*"_ACSF_$n_feature"*"_$n_data"*"_symm_scaled.jld"
+    file_finger = path*"$mol_name"*"_ACSF_$n_feature"*"_$n_data.jld"
     file_distance = path*"$mol_name"*"_distances_$n_feature"*"_$n_data.jld"
     file_centers = path*"$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld"
     # result files:
@@ -201,9 +206,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     s_W = size(W) # n_feature × n_data
     n_feature = s_W[1]; n_data = s_W[2];
     E = map(d -> d["energy"], dataset)
-    display(E)
-    E .*= 627.503 # kcal/mol = 627.5 Hartree
-    display(E)
+    
     D = load(file_distance)["data"] # the mahalanobis distance matrix
     # index op:
     data_idx = 1:n_data
