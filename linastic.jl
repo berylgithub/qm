@@ -103,7 +103,7 @@ function PCA(W, n_select)
     #display(norm(C-Q*diagm(v)*Q'))
     U = zeros(n_mol, n_select)
     for i ∈ 1:n_mol 
-        U[i, :] = Q'*(u_bar - W[i, :])
+        U[i, :] = Q'*(u_bar - W[i, :]) #Q^T*(u - ̄u) !!
     end
     return U
 end
