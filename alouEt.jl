@@ -206,7 +206,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     s_W = size(W) # n_feature × n_data
     n_feature = s_W[1]; n_data = s_W[2];
     E = map(d -> d["energy"], dataset)
-    
+    #println(E)
     D = load(file_distance)["data"] # the mahalanobis distance matrix
     # index op:
     data_idx = 1:n_data
@@ -219,24 +219,11 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     #display(Base.summarysize(ϕ)) # turns out only 6.5mb for sparse
     println("[feature, basis]",[n_feature, n_basis])
     # === compute!! ===:
-    inc_M = 10 # 🌸
+    inc_M = 3 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ 1:7
-        Midx = Midx_g[1:inc_M*i] # the supervised data
-        Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-        #Widx = Widx[1:30] # take subset for smaller matrix
-        println("======= LOOP i=$i =======")
-        MAE, MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name)
-        if MAE < thresh # in kcal/mol
-            println("desirable MAE reached!!")
-            break
-        end
-        println()
-    end
-    inc_M = 3
-    for i ∈ 1:10
-        Midx = Midx_g[70:70 + inc_M*i] # the supervised data
+    for i ∈ 1:10 #i ∈ 1:7 
+        Midx = Midx_g[1:70 + inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         #Widx = Widx[1:30] # take subset for smaller matrix
         println("======= LOOP i=$i =======")
