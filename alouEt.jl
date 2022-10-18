@@ -234,9 +234,23 @@ function fit_🌹(mol_name, n_data, n_feature, M)
         end
         println()
     end
+    inc_M = 3
+    for i ∈ 1:10
+        Midx = Midx_g[70:70 + inc_M*i] # the supervised data
+        Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
+        #Widx = Widx[1:30] # take subset for smaller matrix
+        println("======= LOOP i=$i =======")
+        MAE, MADmax_idxes = fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name)
+        if MAE < thresh # in kcal/mol
+            println("desirable MAE reached!!")
+            break
+        end
+        println()
+    end
+
 
     # use the info of MAD for fitting :
-    for i ∈ 1:10
+    #= for i ∈ 1:10
         #println(i,", max MAD indexes from the last loop = ", MADmax_idxes)
         Midx = vcat(Midx, MADmax_idxes) # put the n-worst MAD as centers
         filter!(e->e ∉ MADmax_idxes, Widx) # cut the n-worst MAD from unsupervised data
@@ -247,7 +261,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
             break
         end
         println()
-    end
+    end =#
     println()
 end
 
