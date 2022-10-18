@@ -351,6 +351,20 @@ function predict(mol_name, n_data, n_feature, M)
     Midx = res["centers"]
     Widx = setdiff(data_idx, Midx)
     A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    # compute MAE:
+    ΔEs = zeros(length(Widx))
+    c = 1
+    for m ∈ Widx
+        _, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+        err = abs(VK - E[m])
+        ΔEs[c] = err
+        c += 1
+    end
+    MAE = (sum(ΔEs)/length(Widx))*627.503 # convert from Hartree to kcal/mol
+    p = plot(Widx, ΔEs, xlabel = L"$m$", ylabel = L"$\Delta E_m$", legend = false)
+    display(p)
+    savefig(p, "plot/Delta_E.png")
+    println("MAE of all mol w/ unknown E is ", MAE)
     display(lsq(A, θ, b))
 end
 
