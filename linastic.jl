@@ -1,4 +1,4 @@
-using LinearAlgebra, Statistics, Distributions
+using LinearAlgebra, Statistics, Distributions, Plots
 
 """
 placeholder for linear algebra and statistics operations, if RoSemi is overcrowded, or when the need arises
@@ -97,6 +97,11 @@ function PCA(W, n_select)
     v = v[sidx]
     Q = Q[:, sidx] # according to Julia factorization: F.vectors[:, k] is the kth eigenvector
     #display(norm(C-Q*diagm(v)*Q'))
+    # == for plotting purpose only!!, comment when not needed!:
+    p = plot(sidx, log.(v), xlabel = L"$i$", ylabel = L"log($\Lambda_{ii}$)", legend = false)
+    display(p)
+    savefig(p, "plot/eigenvalues.png")
+    # == end of plot
     # select the n_select amount of number of features:
     v = v[1:n_select]
     Q = Q[:, 1:n_select]
