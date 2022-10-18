@@ -29,6 +29,8 @@
 \def\at#1{[*** \att #1 ***]}  % text needing attention
 \def\spc{\hspace*{0.5cm}}
 
+
+
 \title{RoSeMI: Robust Shepard model for interpolation}
 %\author{Beryl Ramadhian Aribowo}
 
@@ -155,107 +157,70 @@ The initial case study has the following parameters:
 	\end{split}
 \end{equation*}
 Hence in the final fitting-iteration, the linear system would have $15000 \times 48000$ sized data matrix $A$ with mem\_size $\approx 5.7$ gigabytes. The model is solved by using CGLS method with 400 maximum iterations. For the first two fitting-iteration this gives 5 and 20 seconds of fitting-time consecutively. 
-\iffalse
-% no longer needed:
-With regards to (\ref{eq:min}), (\ref{eq:delta_split}) can be rewritten into linear system form
-\begin{equation}
-    \label{eq:delta_matrix}
-    \begin{split}
-        &\Delta_{jK}(w) := \\
-        &\begin{bmatrix}
-            \frac{\phi_{1,1}(1-\gamma_1 + \delta_{1,1})}{\gamma_1\alpha_1} & \frac{\phi_{1,2}(1-\gamma_1+ \delta_{1,1})}{\gamma_1\alpha_1} & \dots & \frac{\phi_{2,1}(1-\gamma_2+ \delta_{1,2})}{\gamma_2\alpha_1} & \frac{\phi_{2,1}(1-\gamma_2+ \delta_{1,2})}{\gamma_2\alpha_1} & \dots & \frac{\phi_{k,l}(1-\gamma_k+ \delta_{j,k})}{\gamma_k\alpha_j} & \dots \\
-            \frac{\phi_{1,1}(1-\gamma_1 + \delta_{1,1})}{\gamma_1\alpha_2} & \frac{\phi_{1,2}(1-\gamma_1+ \delta_{1,1})}{\gamma_1\alpha_2} & \dots & \frac{\phi_{2,1}(1-\gamma_2+ \delta_{1,2})}{\gamma_2\alpha_2} & \frac{\phi_{2,1}(1-\gamma_2+ \delta_{1,2})}{\gamma_2\alpha_2} & \dots & \frac{\phi_{k,l}(1-\gamma_k+ \delta_{j,k})}{\gamma_k\alpha_j} & \dots \\
-            \vdots & \dots & \dots & \dots & \dots & \dots & \dots & \dots \\
-            \frac{\phi_{k,l}(1-\gamma_k+ \delta_{j,k})}{\gamma_k\alpha_j} & \dots & \dots & \dots & \dots & \dots & \dots & \dots\\
-            \vdots & \dots & \dots & \dots & \dots & \dots & \dots & \dots
-        \end{bmatrix}
-        \begin{bmatrix}
-            \theta_{1,1} \\
-            \theta_{1,2} \\
-            \vdots \\
-            \theta_{2,1} \\
-            \theta_{2,2} \\
-            \vdots \\
-            \theta_{k,l} \\
-            \vdots \\
-        \end{bmatrix}\\
-        &-
-        \begin{bmatrix}
-            E_1/\alpha_1 \\
-            E_2/\alpha_2 \\
-            \vdots \\
-            E_j/\alpha_j \\
-            \vdots
-        \end{bmatrix}
-        .
-    \end{split}
-\end{equation}
-and in the end for each row $j$ the final value will be summed with the energy terms $\sum_k \frac{E_k}{\gamma_k\alpha_j}$.
-\fi
 
-\iffalse
-For all $w_v, v = 1,2...N$, the matrices can be stacked into one large data matrix, where the row count is $N \times L$; while the entries of $b$ repeat for each $w_v$, hence
-\begin{equation}
-    \label{eq:A_matrix}
-    \begin{split}
-        &A\theta - b = \\
-        &\frac{
-            \begin{bmatrix}
-                \frac{1}{D_1(w_1)} & \frac{\phi_{1, 1}(w_1)}{D_1(w_1)} &  & \dots & \frac{\phi_{1,l}(w_1)}{D_1(w_1)} & \dots & \frac{\phi_{2,1}(w_1)}{D_2(w_1)} & \dots & \frac{\phi_{k,l}(w_1)}{D_k(w_1)} & \dots \\
-                \vdots & \vdots & \vdots & & \vdots & & \vdots & & \vdots &\\
-                \frac{1}{D_1(w_1)} & \frac{\phi_{1, 1}(w_1)}{D_1(w_1)} &  & \dots & \frac{\phi_{1,l}(w_1)}{D_1(w_1)} & \dots & \frac{\phi_{2,1}(w_1)}{D_2(w_1)} & \dots & \frac{\phi_{k,l}(w_1)}{D_k(w_1)} & \dots \\
-                \frac{1}{D_1(w_2)} & \frac{\phi_{1, 1}(w_2)}{D_1(w_2)} &  & \dots & \frac{\phi_{1,l}(w_2)}{D_1(w_2)} & \dots & \frac{\phi_{2,1}(w_2)}{D_2(w_2)} & \dots & \frac{\phi_{k,l}(w_2)}{D_k(w_2)} & \dots \\
-                \vdots & \vdots & \vdots & & \vdots & & \vdots & & \vdots &\\
-                \frac{1}{D_1(w_v)} & \frac{\phi_{1, 1}(w_v)}{D_1(w_v)} &  & \dots & \frac{\phi_{1,l}(w_v)}{D_1(w_v)} & \dots & \frac{\phi_{2,1}(w_v)}{D_2(w_v)} & \dots & \frac{\phi_{k,l}(w_v)}{D_k(w_v)} & \dots \\
-                \vdots & \vdots & \vdots & & \vdots & & \vdots & & \vdots &
-            \end{bmatrix}
-            \begin{bmatrix}
-                E_1 \\
-                \theta_{1,1} \\
-                \theta_{1,2} \\
-                \vdots \\
-                E_2 \\
-                \theta_{2,1} \\
-                \theta_{2,2} \\
-                \vdots \\
-                E_k \\
-                \theta_{k,l} \\
-                \vdots \\
-            \end{bmatrix}
-        }{S_K(w)}
-        - 
-        \begin{bmatrix}
-            E_1 + \sum_l \theta_{1,l} \phi_{1,l}(w_1) \\
-            \vdots \\
-            E_j + \sum_l \theta_{j,l} \phi_{j,l}(w_1) \\
-            \vdots \\
-            E_1 + \sum_l \theta_{1,l} \phi_{1,l}(w_v) \\
-            \vdots \\
-            E_j + \sum_l \theta_{j,l} \phi_{j,l}(w_v) \\
-            \vdots \\
-        \end{bmatrix}
-        .
-    \end{split}
-\end{equation}
-\fi
+
+
 
 \section{The program flow}
 Below is the rough flow of the program for fitting the QM9 dataset.
 \begin{itemize}
-    \item Compute the molecular features using ACSF (\at{cite Behler}). This would give a vector with length $= 51$ for each atom. Apply this to all molecules in the dataset hence there should be a total of $n_\text{mol}$ ACSF extractions.
+    \item Compute the molecular features using ACSF (\at{cite Behler}). This would give a vector with length $= 51$ (i.e., $n^\text{atom}_f = 51$) for each atom. Apply this to all molecules in the dataset hence there should be a total of $n_\text{mol}$ ACSF extractions.
     \item For each molecule containing $n_\text{atom}$ number of atoms, symmetrize the features by
         \begin{equation}
             \begin{split}
                 F_{S_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{ji},\\
                 F_{Q_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{ji}^2, \\
-                \text{for }j &= 1,2,...51. 
+                \text{for }j &= 1,2,..., n^\text{atom}_f. 
             \end{split}
         \end{equation}
         then by concatenating the vectors such that
         \begin{equation}
-            F := (F_{S_1}, F_{S_2}, ..., F_{S_{51}}, F_{Q_1},F_{Q_2} ..., F_{Q_{51}}).
+            F := (F_{S_1}, F_{S_2}, ..., F_{S_{n^\text{atom}_f}}, F_{Q_1},F_{Q_2} ..., F_{Q_{n^\text{atom}_f}}) \in \mathbb{R}^{n_f}.
         \end{equation}
-    	then we stack $F$ of each molecule as a row in the $\hat{F} \in \mathbb{R}^{n_\text{mol} \times n_\text{feature}}$ matrix.
+    	then we stack the feature vector $F$ of each molecule as a row in the $W \in \mathbb{R}^{n_\text{mol} \times n_f}$ matrix.
+    \item Do feature selection to take the subset of the columns of $W$, this can be done by the following:
+	    \begin{equation}
+			\begin{split}
+				\hat{s} &= \sum_i W_{i:}, \\
+				S &= \sum_i W_{i:}W_{i:}^\top, \\
+				\text{ for } i &= 1,2,...,n_{\text{mol}}. \\
+			\end{split}
+	    \end{equation}
+		then we compute the mean feature vector and covariance matrix
+		\begin{equation}
+			\begin{split}
+				\bar{u} &= \hat{s}/n_\text{mol}, \\
+				C &= S/n_\text{mol} - \bar{u}\bar{u}^\top. \\			
+			\end{split}
+		\end{equation}
+		We select the eigenvectors such that they correspond to the $n_\text{select} \in \mathbb{Z}^+$ largest eigenvalues, they are obtained by first doing the spectral decomposition of the covariance matrix
+		\begin{equation}
+			C = Q\Lambda Q^\top,
+		\end{equation}
+		where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we re-order the column index of $Q$ and the entries of $\Lambda$ such that
+		\begin{equation}
+			\Lambda_{11} \geq \Lambda_{22} \geq  ... \geq \Lambda_{n_fn_f},
+		\end{equation}
+		then we select
+		\begin{equation}
+			\hat{Q} = Q_{:, 1:n_\text{select}}.
+		\end{equation}
+		Finally the transformed feature can be obtained by
+		\begin{equation}
+			W_{i:} := \hat{Q}^\top(W_{i:} - \bar{u}), \text{ for }i = 1,2,...,n_\text{mol}.
+		\end{equation}
+	\item Scale $W$ such that 
+	\begin{equation}
+		W_{ij} \in [0, 1]
+	\end{equation}
+	by
+	\begin{equation}
+		\begin{split}
+			W_{:j} := (W_{:j} - \underbar{$W_{:j}$})/ (\overline{W_{:j}} - \underbar{$W_{:j}$}), \text{ for } j = 1,2,..., n_f.
+		\end{split}
+	\end{equation}
+	where \underbar{$W_{:j}$} is the smallest value of the $j$th feature and $\overline{W_{:j}}$ is the largest.
+	
     \item Obtain the centers by using the farthest-distance-algorithm variations from the transformed $\hat{F}$ matrix:
     	\begin{equation}
 			\begin{split}
