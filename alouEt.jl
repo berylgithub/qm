@@ -322,6 +322,39 @@ function test_A()
 end
 
 """
+just a quick pred func
+"""
+function predict(mol_name, n_data, n_feature, M)
+    res = load("result/H7C8N1/theta_center_H7C8N1.jld")["data"] # load optimized parameters
+    θ = res["theta"]
+    colsize = length(θ)
+    # load required data:
+    path = "data/$mol_name/"
+    file_dataset = path*"$mol_name"*"_dataset_$n_data.jld"
+    file_finger = path*"$mol_name"*"_ACSF_$n_feature"*"_$n_data.jld"
+    file_distance = path*"$mol_name"*"_distances_$n_feature"*"_$n_data.jld"
+    file_centers = path*"$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld"
+    # setup parameters:
+    n_basis = 3 # pre-inputted number, later n_basis := n_basis+3 🌸
+    dataset = load(file_dataset)["data"] # energy is from here
+    W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
+    s_W = size(W) # n_feature × n_data
+    n_feature = s_W[1]; n_data = s_W[2];
+    E = map(d -> d["energy"], dataset)
+    #println(E)
+    D = load(file_distance)["data"] # the mahalanobis distance matrix
+    # index op:
+    data_idx = 1:n_data
+    ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
+    n_basis += 3 # by definition of bspline
+    # setup matrix A:
+    Midx = res["centers"]
+    Widx = setdiff(data_idx, Midx)
+    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    display(lsq(A, θ, b))
+end
+
+"""
 unused stuffs but probably needed later..
 """
 function junk()
