@@ -93,14 +93,28 @@ function PCA(W, n_select)
     Q = e.vectors
     #display(norm(C - Q*diagm(v)*Q')) # this is correct, small norm
     sidx = sortperm(v, rev=true) # sort by largest eigenvalue
-    # sort the v and Q (by column, by definition!!):
+    # descend sort the v and Q (by column, by definition!!):
     v = v[sidx]
+    #println([sum(v), sum(v[1:n_select]), sum(v[1:n_select])/sum(v)])
     Q = Q[:, sidx] # according to Julia factorization: F.vectors[:, k] is the kth eigenvector
     #display(norm(C-Q*diagm(v)*Q'))
     # == for plotting purpose only!!, comment when not needed!:
-    p = plot(sidx, log.(v), xlabel = L"$i$", ylabel = L"log($\Lambda_{ii}$)", legend = false)
+    #= p = plot(sidx, log.(v), xlabel = L"$i$", ylabel = L"log($\Lambda_{ii}$)", legend = false)
     display(p)
-    savefig(p, "plot/eigenvalues.png")
+    savefig(p, "plot/eigenvalues.png") =#
+    # compute the ratio of the dropped eigenvalues/trace (v is already ordered descending):
+    #= trace = sum(v)
+    len = length(v)
+    q = zeros(len)
+    for j=1:len
+        q[j] = sum(v[end-j+1:end])
+    end
+    q ./= trace
+    q = reverse(q)
+    tickslice = [1,20,40,60, 80, 102]
+    p = scatter(log10.(q), xticks = (eachindex(q)[tickslice], reverse(eachindex(q))[tickslice]), markershape = :cross, xlabel = L"$n-j$", ylabel = L"log($q_{n-j}$)", legend = false)
+    display(p)
+    savefig(p, "plot/ev_dropped_ratio.png") =#
     # == end of plot
     # select the n_select amount of number of features:
     v = v[1:n_select]
