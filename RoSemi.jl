@@ -409,7 +409,59 @@ function comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk =
     end
 end
 
+
 """
+overloader for ΔjK, use precomputed distance matrix D and SK[m] 
+"""
+function comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)
+    RK = 0.
+    ∑l_j = 0. # for j indexer, only passed once and j ∈ K
+    ccount = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
+    for k ∈ Midx
+        ∑l = 0. # right term with l index
+        for l ∈ 1:n_l # ∑θ_kl*ϕ_kl
+            # for k:
+            ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+            θkl = θ[ccount] # since θ is in block vector of [k,l]
+            θϕ = θkl*ϕkl
+            ∑l = ∑l + θϕ
+            if k == j # for j terms:
+                ∑l_j = ∑l_j + θϕ
+            end
+            #println([ccount, θkl, ϕkl, ∑l, ∑l_j])
+            ccount += 1
+        end
+        vk = E[k] + ∑l
+        RK = RK + vk/D[k, m]
+        #println([E[k], ∑l, D[k, m], RK])
+    end
+    VK = RK/SK
+    αj = D[j, m]*SK - 1.
+    Vj = E[j] + ∑l_j
+    #println([VK, Vj, αj])
+    return (VK - Vj)/αj
+end
+
+"""
+compute the whole vector v with components v_jm := ΔjK(w_m)
+output:
+    - v, vector with length N × M
+"""
+function comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)
+    c = 1
+    skc = 1
+    @simd for m ∈ Widx
+        @simd for j ∈ Midx 
+           @inbounds v[c] = comp_v_jm(W, E, D, θ, ϕ, dϕ, SKs[skc], Midx, n_l, n_feature, m, j)
+           c += 1
+        end
+        skc += 1
+    end
+end
+
+
+"""
+UNUSED
 compute Δ_jK in terms of matrix vector mult, see if this checks out
 """
 function comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk = false)
@@ -436,6 +488,8 @@ function comp_ΔjK_m(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk
     A = ∑kl
     return A-b
 end
+
+
 
 
 """
@@ -493,3 +547,5 @@ function test_spline()
     #S = sparse(S); dϕ = sparse(dϕ)
     display([nnz(S), nnz(dϕ)])
 end
+
+
