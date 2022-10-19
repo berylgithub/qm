@@ -62,7 +62,7 @@ end
 setup all the data files needed for fitting a certain molecule
 """
 function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
-    println("data setup for ",[mol_name, n_data, n_feature, M], " starts!")
+    println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " starts!")
     # create subfolder:
     path = mkpath("data/$mol_name")
     # query (get the index of data) the molecule by molecule name:
@@ -83,10 +83,9 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
     println(length(D))
     save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D)
     # slice the global feature matrix:
-    #W = load("data/ACSF_symm.jld")["data"] # 🌸
-    #W = W[indexes, vcat(1:Int(n_feature/2), 52:51+Int(n_feature/2))] # 🌸
-    W = load("data/ACSF_PCA$n_feature"*"_scaled.jld")["data"] # try with scaled(PCA(W)), this file is pre-generated 🌸
-    W = W[indexes, :]
+    #W = load("data/ACSF_PCA$n_feature"*"_scaled.jld")["data"] # try with scaled(PCA(W)), this file is pre-generated 🌸
+    W = load("data/ACSF_PCA_scaled.jld")["data"] # load scaled(PCA(features)), this is more accurate since the columns are sorted by the most important featuers
+    W = W[indexes, 1:n_feature] # slice the featuere matrix by the data indices and the first n_feature
     main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data.jld"
     save(main_file, "data", W)
     # get center indexes:
@@ -102,7 +101,7 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
     # scale feature for basis:
     #= W = normalize_routine(main_file)
     save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W) =#
-    println("data setup for ",[mol_name, n_data, n_feature, M], " complete!")
+    println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished!")
 end
 
 """
@@ -317,77 +316,7 @@ function predict(mol_name, n_data, n_feature, M)
     display(lsq(A, θ, b))
 end
 
-"""
-test assemble A with dummy data
-"""
-function test_A()
-    # data setup:
-    n_data = 5; n_feature = 3; n_basis = 2
-    bas = vec(1.:5.)
-    W = zeros(n_feature, n_data)
-    for i ∈ 1:n_feature
-        W[i, :] = bas .+ (0.5*(i-1))
-    end
-    E = convert(Vector{Float64}, vec(1:5)) # dummy data matrix and energy vector
-    display(W)
-    D = convert(Matrix{Float64}, [0 1 2 3 4; 1 0 2 3 4; 1 2 0 3 4; 1 2 3 0 4; 1 2 3 4 0]) # dummy distance
-    D = (D .+ D')./2
-    display(D)
 
-    Midx = [1,5] # k and j index
-    data_idx = 1:n_data ; Widx = setdiff(data_idx, Midx) # unsupervised data index (m)
-    cols = length(Midx)*n_feature*n_basis # index of k,l
-    rows = length(Midx)*length(Widx) # index of j,m  
-    bas = repeat([1.], n_feature)
-    ϕ = zeros(n_feature, n_data, n_basis)
-    for i ∈ 1:n_data
-        for j ∈ 1:n_basis
-            ϕ[:, i, j] = bas .+ 0.5*(j-1) .+ (i-1)
-        end
-    end
-    # flattened basis*feature:
-    ϕ = permutedims(ϕ, [1,3,2])
-    ϕ = reshape(ϕ, n_feature*n_basis, n_data)
-    #ϕ[1, :] .= 0.
-    dϕ = ϕ*(-1.)
-    display(ϕ)
-    display(dϕ)
-
-    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # sparse ver
-    display(A)
-    println(b)
-    # test each element:
-    m = Widx[1]; j = Midx[1]; k = 1; l = 1
-    #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-    #αj = SK*D[j,m] - 1; γk = SK*D[k,m]
-    #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
-    #println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
-
-    SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
-    display(SKs)
-    # test predict V_K(w_m):
-    θ = Vector{Float64}(1:cols) # dummy theta
-    n_l =n_feature*n_basis
-    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-    
-    v_jm = zeros(length(Widx)*length(Midx))
-    c = 1
-    skc = 1
-    for m ∈ Widx
-        SK = SKs[skc]
-        skc += 1
-        for j ∈ Midx
-            v_jm[c] = comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)        
-            c += 1
-        end
-    end
-    v = zeros(length(Widx)*length(Midx))
-    comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)
-    display([v_jm v (A*θ - b)]) #
-    SK = comp_SK(D, Midx, m)
-    display(ReverseDiff.gradient(θ -> comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j), θ))
-    display(ReverseDiff.jacobian(θ -> A*θ - b, θ))
-end
 
 """
 unused stuffs but probably needed later..
