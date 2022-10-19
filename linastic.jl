@@ -182,3 +182,12 @@ function normalize_routine(infile)
     display(W)
     return W
 end
+
+"""
+overloader, takes the feature matrix instead of file
+"""
+function normalize_routine(W)
+    dt = StatsBase.fit(UnitRangeTransform, W, dims=1)
+    W = StatsBase.transform(dt, W)
+    return W
+end
