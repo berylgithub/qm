@@ -357,19 +357,27 @@ function test_A()
     println(A)
     println(b)
     # test each element:
-    m = 2; j = 1; k = 1; l = 1
-    ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-    SK = comp_SK(D, Midx, m)
-    αj = SK*D[j,m] - 1; γk = SK*D[k,m]
+    m = Widx[3]; j = Midx[1]; k = 1; l = 1
+    #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+    #αj = SK*D[j,m] - 1; γk = SK*D[k,m]
     #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
     #println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 
     # test predict V_K(w_m):
     θ = Vector{Float64}(1:cols) # dummy theta
     n_l =n_feature*n_basis
-    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
-    display(ΔjK)
-
+    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    
+    v_jm = zeros(length(Widx)*length(Midx))
+    c = 1
+    for m ∈ Widx
+        SK = comp_SK(D, Midx, m)
+        for j ∈ Midx
+            v_jm[c] = comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)        
+            c += 1
+        end
+    end
+    display([v_jm (A*θ - b)]) #
 end
 
 """
