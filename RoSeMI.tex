@@ -197,11 +197,11 @@ Below is the rough flow of the program for fitting the QM9 dataset.
 		\begin{equation}
 			C = Q\Lambda Q^\top,
 		\end{equation}
-		where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we re-order the column index of $Q$ and the entries of $\Lambda$ such that
+		where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we permute the columns of $Q$ and the entries of $\Lambda$ such that
 		\begin{equation}
 			\Lambda_{11} \geq \Lambda_{22} \geq  ... \geq \Lambda_{n_fn_f},
 		\end{equation}
-		then we select
+		and select
 		\begin{equation}
 			\hat{Q} = Q_{:, 1:n_\text{select}}.
 		\end{equation}
@@ -269,6 +269,11 @@ and
 Add the two and simplify, taking out common factors.
 
 Similarly, you extract the terms without theta's by setting all $\theta$'s to zero
+
+================== \\
+
+Please write a program for calculating the vector v with components $v_{jm}:=\Delta_{jK}(w_m)$ using (3), (2), (1), and (7a) of your writeup, adding in (3) only the nonzero terms. Compare times with those for computing $A\theta-b$. The numerical values should be the same, up to roundoff.
+
 \fi
 
 \end{document}
