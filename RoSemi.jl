@@ -548,4 +548,108 @@ function test_spline()
     display([nnz(S), nnz(dϕ)])
 end
 
+"""
+test assemble A with dummy data
+"""
+function test_A()
+    # data setup:
+    n_data = 5; n_feature = 3; n_basis = 2
+    bas = vec(1.:5.)
+    W = zeros(n_feature, n_data)
+    for i ∈ 1:n_feature
+        W[i, :] = bas .+ (0.5*(i-1))
+    end
+    E = convert(Vector{Float64}, vec(1:5)) # dummy data matrix and energy vector
+    display(W)
+    D = convert(Matrix{Float64}, [0 1 2 3 4; 1 0 2 3 4; 1 2 0 3 4; 1 2 3 0 4; 1 2 3 4 0]) # dummy distance
+    D = (D .+ D')./2
+    display(D)
 
+    Midx = [1,5] # k and j index
+    data_idx = 1:n_data ; Widx = setdiff(data_idx, Midx) # unsupervised data index (m)
+    cols = length(Midx)*n_feature*n_basis # index of k,l
+    rows = length(Midx)*length(Widx) # index of j,m  
+    bas = repeat([1.], n_feature)
+    ϕ = zeros(n_feature, n_data, n_basis)
+    for i ∈ 1:n_data
+        for j ∈ 1:n_basis
+            ϕ[:, i, j] = bas .+ 0.5*(j-1) .+ (i-1)
+        end
+    end
+    # flattened basis*feature:
+    ϕ = permutedims(ϕ, [1,3,2])
+    ϕ = reshape(ϕ, n_feature*n_basis, n_data)
+    #ϕ[1, :] .= 0.
+    dϕ = ϕ*(-1.)
+    display(ϕ)
+    display(dϕ)
+
+    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # sparse ver
+    display(A)
+    println(b)
+    # test each element:
+    m = Widx[1]; j = Midx[1]; k = 1; l = 1
+    #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+    #αj = SK*D[j,m] - 1; γk = SK*D[k,m]
+    #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
+    #println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
+
+    SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
+    display(SKs)
+    # test predict V_K(w_m):
+    θ = Vector{Float64}(1:cols) # dummy theta
+    n_l =n_feature*n_basis
+    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
+    
+    v_jm = zeros(length(Widx)*length(Midx))
+    c = 1
+    skc = 1
+    for m ∈ Widx
+        SK = SKs[skc]
+        skc += 1
+        for j ∈ Midx
+            v_jm[c] = comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)        
+            c += 1
+        end
+    end
+    v = zeros(length(Widx)*length(Midx))
+    comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)
+    display([v_jm v (A*θ - b)]) #
+    SK = comp_SK(D, Midx, m)
+    display(ReverseDiff.gradient(θ -> comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j), θ))
+    display(ReverseDiff.jacobian(θ -> A*θ - b, θ))
+end
+
+"""
+test the timing of v vs Aθ - b
+"""
+function testtime()
+    # setup data:
+    n_data = 250; n_feature = 14; n_basis = 3
+    W = rand(n_feature, n_data)
+    E = rand(n_data)
+    D = rand(n_data, n_data)
+    D = (D + D')/2
+    D[diagind(D)] .= 0.
+    ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true)
+    n_basis += 3
+    n_l = n_feature*n_basis
+    M = 100; N = n_data - M
+    dataidx = 1:n_data
+    Midx = sample(dataidx, M, replace=false)
+    Widx = setdiff(dataidx, Midx)
+    SKs = map(m -> comp_SK(D, Midx, m), Widx)
+    θ = rand(n_l*M)
+    # assemble systems and compare!!:
+    t_ls = @elapsed begin
+        # assemble A and b:
+        A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+        r_ls = A*θ - b
+    end
+    v = zeros(M*N)
+    t_v = @elapsed begin
+        comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
+    end
+    println("norm(v - (Aθ-b)) = ",norm(r_ls - v))
+    println("runtime of Aθ-b is ",t_ls," , runtime of v_jm is ",t_v)
+end

@@ -381,10 +381,12 @@ function test_A()
             c += 1
         end
     end
-    display([v_jm (A*θ - b)]) #
+    v = zeros(length(Widx)*length(Midx))
+    comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)
+    display([v_jm v (A*θ - b)]) #
     SK = comp_SK(D, Midx, m)
     display(ReverseDiff.gradient(θ -> comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j), θ))
-    display(ReverseDiff.gradient(θ -> (A*θ - b)[1], θ))
+    display(ReverseDiff.jacobian(θ -> A*θ - b, θ))
 end
 
 """
