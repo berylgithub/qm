@@ -15,7 +15,7 @@ params:
     - wk, the fingerprint which the distance wants to be computed to, similar(w)
 """
 function f_distance(B, w, wk)
-    return norm(B*(w-wk), 2)
+    return norm(B*(w-wk), 2)^2
 end
 
 
