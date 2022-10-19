@@ -112,7 +112,7 @@ function PCA(W, n_select)
     q ./= trace
     q = reverse(q)
     tickslice = [1,20,40,60, 80, 102]
-    p = scatter(log10.(q), xticks = (eachindex(q)[tickslice], reverse(eachindex(q))[tickslice]), markershape = :cross, xlabel = L"$n-j$", ylabel = L"log($q_{n-j}$)", legend = false)
+    p = scatter(log10.(q), xticks = (eachindex(q)[tickslice], (eachindex(q).-1)[tickslice]), markershape = :cross, xlabel = L"$j$", ylabel = L"log$_{10}$($q_{j}$)", legend = false)
     display(p)
     savefig(p, "plot/ev_dropped_ratio.png") =#
     # == end of plot
