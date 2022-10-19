@@ -354,15 +354,17 @@ function test_A()
     display(dϕ)
 
     A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # sparse ver
-    println(A)
+    display(A)
     println(b)
     # test each element:
-    m = Widx[3]; j = Midx[1]; k = 1; l = 1
+    m = Widx[1]; j = Midx[1]; k = 1; l = 1
     #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     #αj = SK*D[j,m] - 1; γk = SK*D[k,m]
     #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
     #println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 
+    SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
+    display(SKs)
     # test predict V_K(w_m):
     θ = Vector{Float64}(1:cols) # dummy theta
     n_l =n_feature*n_basis
@@ -370,14 +372,19 @@ function test_A()
     
     v_jm = zeros(length(Widx)*length(Midx))
     c = 1
+    skc = 1
     for m ∈ Widx
-        SK = comp_SK(D, Midx, m)
+        SK = SKs[skc]
+        skc += 1
         for j ∈ Midx
             v_jm[c] = comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)        
             c += 1
         end
     end
     display([v_jm (A*θ - b)]) #
+    SK = comp_SK(D, Midx, m)
+    display(ReverseDiff.gradient(θ -> comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j), θ))
+    display(ReverseDiff.gradient(θ -> (A*θ - b)[1], θ))
 end
 
 """
