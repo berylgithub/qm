@@ -85,7 +85,7 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
         save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D)
         # slice the global feature matrix:
         #W = load("data/ACSF_PCA$n_feature"*"_scaled_1.jld")["data"] # try with scaled(PCA(W)), this file is pre-generated 🌸
-        W = load("data/ACSF_PCA_scaled_2.jld")["data"] # load scaled(PCA(features)), this is more accurate since the columns are sorted by the most important featuers
+        W = load("data/ACSF_PCA_scaled.jld")["data"] # load scaled(PCA(features)), this is more accurate since the columns are sorted by the most important featuers
         W = W[indexes, 1:n_feature] # slice the featuere matrix by the data indices and the first n_feature
         main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data.jld"
         save(main_file, "data", W)
