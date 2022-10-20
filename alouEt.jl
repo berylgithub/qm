@@ -63,45 +63,47 @@ setup all the data files needed for fitting a certain molecule
 """
 function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
     println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " starts!")
-    # create subfolder:
-    path = mkpath("data/$mol_name")
-    # query (get the index of data) the molecule by molecule name:
-    D = load("data/qm9_dataset.jld")["data"] # 🌸
-    len = length(D)
-    indexes = []
-    for i ∈ 1:len
-        if D[i]["formula"] == mol_name
-           push!(indexes, i)
+    t = @elapsed begin
+        # create subfolder:
+        path = mkpath("data/$mol_name")
+        # query (get the index of data) the molecule by molecule name:
+        D = load("data/qm9_dataset.jld")["data"] # 🌸
+        len = length(D)
+        indexes = []
+        for i ∈ 1:len
+            if D[i]["formula"] == mol_name
+            push!(indexes, i)
+            end
         end
+        # cut data into n_data:
+        l = length(indexes)
+        if l >= n_data
+            indexes = indexes[1:n_data]
+        end
+        D = D[indexes]
+        println(length(D))
+        save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D)
+        # slice the global feature matrix:
+        #W = load("data/ACSF_PCA$n_feature"*"_scaled_1.jld")["data"] # try with scaled(PCA(W)), this file is pre-generated 🌸
+        W = load("data/ACSF_PCA_scaled_2.jld")["data"] # load scaled(PCA(features)), this is more accurate since the columns are sorted by the most important featuers
+        W = W[indexes, 1:n_feature] # slice the featuere matrix by the data indices and the first n_feature
+        main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data.jld"
+        save(main_file, "data", W)
+        # get center indexes:
+        M_actual = M
+        if M > n_data # check if the wanted centers is too much for the data..
+            M_actual = n_data
+        end
+        center_ids = set_cluster(main_file, M_actual, universe_size=universe_size)
+        save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
+        # compute all distances:
+        Dist, idx = set_all_dist(main_file, universe_size=universe_size)
+        save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
+        # scale feature for basis:
+        #= W = normalize_routine(main_file)
+        save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W) =#
     end
-    # cut data into n_data:
-    l = length(indexes)
-    if l >= n_data
-        indexes = indexes[1:n_data]
-    end
-    D = D[indexes]
-    println(length(D))
-    save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D)
-    # slice the global feature matrix:
-    W = load("data/ACSF_PCA$n_feature"*"_scaled_test.jld")["data"] # try with scaled(PCA(W)), this file is pre-generated 🌸
-    #W = load("data/ACSF_PCA_scaled.jld")["data"] # load scaled(PCA(features)), this is more accurate since the columns are sorted by the most important featuers
-    W = W[indexes, :] # slice the featuere matrix by the data indices and the first n_feature
-    main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data.jld"
-    save(main_file, "data", W)
-    # get center indexes:
-    M_actual = M
-    if M > n_data # check if the wanted centers is too much for the data..
-        M_actual = n_data
-    end
-    center_ids = set_cluster(main_file, M_actual, universe_size=universe_size)
-    save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
-    # compute all distances:
-    Dist, idx = set_all_dist(main_file, universe_size=universe_size)
-    save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
-    # scale feature for basis:
-    #= W = normalize_routine(main_file)
-    save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W) =#
-    println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished!")
+    println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished in $t seconds!!")
 end
 
 """
