@@ -153,7 +153,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
-    n = 3 # 🌸
+    n = 1 # 🌸
     sidxes = sortperm(MADs)[end-(n-1):end]
     MADmax_idxes = Widx[sidxes] # the indexes relative to Widx (global data index)
     
@@ -223,7 +223,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ 1:7 
+    for i ∈ 1:9 
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         #Widx = Widx[1:30] # take subset for smaller matrix
