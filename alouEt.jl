@@ -125,7 +125,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     n_l = n_basis*n_feature # length of feature*basis each k
     # iterative linear solver (CGLS):
     t_ls = @elapsed begin
-        linres = Krylov.cgls(A, b, itmax=1_000, history=true)  # 🌸
+        linres = Krylov.cgls(A, b, itmax=500, history=true)  # 🌸
     end
     θ = linres[1]
     obj = lsq(A, θ, b)
