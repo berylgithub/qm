@@ -125,7 +125,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     n_l = n_basis*n_feature # length of feature*basis each k
     # iterative linear solver (CGLS):
     t_ls = @elapsed begin
-        linres = Krylov.cgls(A, b, itmax=500, history=true)  # 🌸
+        linres = Krylov.lsqr(A, b, itmax=500, history=true)  # 🌸
     end
     θ = linres[1]
     obj = lsq(A, θ, b)
@@ -201,7 +201,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     mkpath("result/$mol_name")
 
     # setup parameters:
-    n_basis = 24 # pre-inputted number, later n_basis := n_basis+3 🌸
+    n_basis = 5 # pre-inputted number, later n_basis := n_basis+3 🌸
     dataset = load(file_dataset)["data"] # energy is from here
     W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
     s_W = size(W) # n_feature × n_data
@@ -223,7 +223,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ 1:10 
+    for i ∈ [10] 
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         #Widx = Widx[1:30] # take subset for smaller matrix
