@@ -122,6 +122,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     end
     println("LS assembly time: ",t_ab)
     display(A)
+    println("memory size of A = ", Base.summarysize(A)*1e-6, " megabytes")
     n_l = n_basis*n_feature # length of feature*basis each k
     # iterative linear solver (CGLS):
     t_ls = @elapsed begin
