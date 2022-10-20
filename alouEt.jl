@@ -201,7 +201,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     mkpath("result/$mol_name")
 
     # setup parameters:
-    n_basis = 3 # pre-inputted number, later n_basis := n_basis+3 🌸
+    n_basis = 24 # pre-inputted number, later n_basis := n_basis+3 🌸
     dataset = load(file_dataset)["data"] # energy is from here
     W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
     s_W = size(W) # n_feature × n_data
