@@ -148,30 +148,6 @@ function extract_bspline_sparse(x, M; flatten=false)
 end
 
 
-
-"""
-query for
-ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw,
-currently uses the assumption of P = I hence P*w = w, the most correct one is β':= bspline'((P*w)_t), 
-params:
-    - l here corresponds to the feature index,
-        used also to determine t, which is t = l % n_feature 
-        *** NOT NEEDED ANYMORE ***if there exists B basis, hence there are M × l indices, i.e., do indexing of l for each b ∈ B, the indexing formula should be: |l|(b-1)+l, where |l| is the feature length
-    - ϕ, basis matrix, ∈ Float64(n_s := n_feature*n_basis, n_data), arranged s.t. [f1b1, f2b1, ...., fnbn]
-    - dϕ, the derivative of ϕ, idem to ϕ
-    - W, feature matrix, ∈ Float64(n_feature, n_data)
-    - m, index of selected unsup data
-    - k, ... sup data 
-"""
-function qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-    t = l % n_feature # find index t given index l and length of feature vector chosen (or n_f = L/n_b)
-    if t == 0
-        t = n_feature
-    end
-    return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k]) # ϕ_{kl}(w_m) := ϕ_l(w_m) - ϕ_l(w_k) - ϕ_l'(w_k)(w_m - w_k), for k ∈ K, l = 1,...,L 
-end
-
-
 """
 wrapper for scalar w for ϕ'(w) = dϕ(w)/dw
 """
@@ -200,6 +176,64 @@ more "accurate" basis extractor to the formula:
 """
 function β_τ(P, w)
     
+end
+
+"""
+query for
+ϕ(w[m], w[k])[l] = ϕ(w[m])[l] - ϕ(w[k])[l] - ϕ'(w[k])[l]*(w[m] - w[k]) is the correct one; ϕ'(w)[l] = dϕ(w)[l]/dw,
+currently uses the assumption of P = I hence P*w = w, the most correct one is β':= bspline'((P*w)_t), 
+params:
+    - l here corresponds to the feature index,
+        used also to determine t, which is t = l % n_feature 
+        *** NOT NEEDED ANYMORE ***if there exists B basis, hence there are M × l indices, i.e., do indexing of l for each b ∈ B, the indexing formula should be: |l|(b-1)+l, where |l| is the feature length
+    - ϕ, basis matrix, ∈ Float64(n_s := n_feature*n_basis, n_data), arranged s.t. [f1b1, f2b1, ...., fnbn]
+    - dϕ, the derivative of ϕ, idem to ϕ
+    - W, feature matrix, ∈ Float64(n_feature, n_data)
+    - m, index of selected unsup data
+    - k, ... sup data 
+"""
+function qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+    t = l % n_feature # find index t given index l and length of feature vector chosen (or n_f = L/n_b)
+    if t == 0
+        t = n_feature
+    end
+    return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k]) # ϕ_{kl}(w_m) := ϕ_l(w_m) - ϕ_l(w_k) - ϕ_l'(w_k)(w_m - w_k), for k ∈ K, l = 1,...,L 
+end
+
+
+"""
+compute sparse B_k := ((B_k)_ml) matrix (sparsify it outside for now)
+params
+    -
+"""
+function comp_Bk!(Bk, ϕ, dϕ, W, Widx, L, n_feature)
+    for l ∈ 1:L
+        for m ∈ Widx
+            Bk[m, l] = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+        end
+    end
+end
+
+"""
+for (pre-)computing ϕ_{kl}(w_m) := ϕ_l(w_m) - ϕ_l(w_k) - ϕ_l'(w_k)(w_m - w_k), for k ∈ K (or k = 1,...,M), l = 1,...,L and store in block matrix B_k := ((B_k)ml) -> B := [B_1, B_2, ....] (vector of block matrices)
+params:
+    - ϕ, the extracted basis function, Matrix ∈ Float64(n_data, n_l:=n_f*n_b)
+    - dϕ, derivative of ϕ wrt w Matrix ∈ Float64(n_data, n_l)
+    - W, feature matrix ∈ Float64(n_data, n_f)
+    - Midx, index of set K, ∈ Int(M)
+    - Widx, index of all elements outside of set K, ∈ Int(N)
+    - n_feature, length of molecular feature
+output:
+    - B, vector ∈ SparseMatrixCSC(M) ∈ SparseMatrixCSC(N, L)
+"""
+function comp_ϕkl(ϕ, dϕ, W, Midx, Widx, n_feature)
+    M = length(Midx)
+    N = length(Widx)
+    B = Vector{SparseMatrixCSC}(undef, M) # B := B_k, for k ∈ K, but here B is not contiguous -> B:= B_i, i=1,..M, hence the indexing will need a counter
+    i = 1
+    for k ∈ Midx
+        i += 1
+    end
 end
 
 
