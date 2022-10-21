@@ -164,12 +164,11 @@ params:
     - k, ... sup data 
 """
 function qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-    t = l % n_feature # determine index of t, since dϕ is only non zero at t, hence the inner product is simplified
+    t = l % n_feature # find index t given index l and length of feature vector chosen (or n_f = L/n_b)
     if t == 0
         t = n_feature
     end
-    #display([t, ϕ[l, m], ϕ[l, k], dϕ[l, k], W[t,m], W[t,k]])
-    return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k])
+    return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k]) # ϕ_{kl}(w_m) := ϕ_l(w_m) - ϕ_l(w_k) - ϕ_l'(w_k)(w_m - w_k), for k ∈ K, l = 1,...,L 
 end
 
 
