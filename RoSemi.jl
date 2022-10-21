@@ -625,7 +625,7 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 250; n_feature = 14; n_basis = 3
+    n_data = 250; n_feature = 24; n_basis = 5
     W = rand(n_feature, n_data)
     E = rand(n_data)
     D = rand(n_data, n_data)
@@ -641,15 +641,17 @@ function testtime()
     SKs = map(m -> comp_SK(D, Midx, m), Widx)
     θ = rand(n_l*M)
     # assemble systems and compare!!:
-    t_ls = @elapsed begin
+    t_as = @elapsed begin
         # assemble A and b:
         A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
-        r_ls = A*θ - b
     end
+    t_ls = @elapsed begin
+        r_ls = A*θ - b
+    end 
     v = zeros(M*N)
     t_v = @elapsed begin
         comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
     end
     println("norm(v - (Aθ-b)) = ",norm(r_ls - v))
-    println("runtime of Aθ-b is ",t_ls," , runtime of v_jm is ",t_v)
+    println("runtime of A,b assembly is ",t_as,", Aθ-b took ", t_ls, " , runtime of v_jm is ",t_v)
 end
