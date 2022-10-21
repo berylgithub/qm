@@ -481,6 +481,25 @@ function comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)
 end
 
 """
+TEST THE VK ONLY FOR NOW!!
+overloader of v_jm, with precomputed vector of matrices B instead of (W, ϕ, dϕ)
+params:
+    - bidx, precomputed θ indexer, since θ is a block vector
+"""
+function comp_v_jm(E, D, θ, B, SK, Midx, bidx, n_l, n_feature, m, j)
+    RK = 0.
+    c = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
+    for k ∈ Midx
+        vk = E[k] + B[c]*θ[bidx[c]] # h is the indexer set
+        RK = RK + vk/D[k, m]
+        c += 1
+    end
+    VK = RK/SK
+    return VK
+end
+
+
+"""
 compute the whole vector v with components v_jm := ΔjK(w_m)
 output:
     - v, vector with length N × M
@@ -663,6 +682,8 @@ function test_A()
     display(ReverseDiff.jacobian(θ -> A*θ - b, θ)) =#
 
     # tests for precomputing the ϕkl:
+    SK = comp_SK(D, Midx, m)
+    θ = Vector{Float64}(1:cols) # dummy theta
     println("W = ")
     display(W)
     println("ϕ = ")
@@ -675,6 +696,18 @@ function test_A()
     display(Bk)
     B = comp_ϕkl(ϕ, dϕ, W, Midx, Widx, L, n_feature)
     display(B[2])
+    # generate the indexer of block vector:
+    bidx = Vector{UnitRange}(undef, L*M)
+    c = 1:L
+    for i ∈ c
+        n = (i-1)*L + 1 
+        bidx[i] = n:n+L-1
+    end
+    display(bidx[1])
+    display(B[1]*θ[bidx[1]])
+    VK = comp_v_jm(E, D, B, θ, SK, Midx, bidx, L, n_feature, m, j)
+    _, VK2 = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true)
+    println([VK, VK2])
 end
 
 """
