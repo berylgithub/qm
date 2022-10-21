@@ -1,4 +1,4 @@
-using JLD, SparseArrays, Distributions, Statistics, StatsBase, ForwardDiff
+using JLD, SparseArrays, Distributions, Statistics, StatsBase, ForwardDiff, ReverseDiff
 
 include("voronoi.jl")
 include("linastic.jl")
@@ -204,12 +204,14 @@ end
 """
 compute sparse B_k := ((B_k)_ml) matrix (sparsify it outside for now)
 params
-    -
+    - 
 """
-function comp_Bk!(Bk, ϕ, dϕ, W, Widx, L, n_feature)
+function comp_Bk!(Bk, ϕ, dϕ, W, Widx, k, L, n_feature)
     for l ∈ 1:L
+        r = 1 # the row entry is not contiguous
         for m ∈ Widx
-            Bk[m, l] = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+            Bk[r, l] = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+            r += 1
         end
     end
 end
@@ -593,9 +595,11 @@ function test_A()
         W[i, :] = bas .+ (0.5*(i-1))
     end
     E = convert(Vector{Float64}, vec(1:5)) # dummy data matrix and energy vector
+    println("W = ")
     display(W)
     D = convert(Matrix{Float64}, [0 1 2 3 4; 1 0 2 3 4; 1 2 0 3 4; 1 2 3 0 4; 1 2 3 4 0]) # dummy distance
     D = (D .+ D')./2
+    println("D = ")
     display(D)
 
     Midx = [1,5] # k and j index
@@ -614,20 +618,23 @@ function test_A()
     ϕ = reshape(ϕ, n_feature*n_basis, n_data)
     #ϕ[1, :] .= 0.
     dϕ = ϕ*(-1.)
+    println("ϕ = ")
     display(ϕ)
+    println("dϕ = ")
     display(dϕ)
 
     A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # sparse ver
     display(A)
     println(b)
     # test each element:
-    m = Widx[1]; j = Midx[1]; k = 1; l = 1
+    m = Widx[1]; j = Midx[1]; k = Midx[2]; l = 1
     #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     #αj = SK*D[j,m] - 1; γk = SK*D[k,m]
     #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
     #println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 
-    SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
+    # tests for vjm vs Aθ-b:
+    #= SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
     display(SKs)
     # test predict V_K(w_m):
     θ = Vector{Float64}(1:cols) # dummy theta
@@ -650,7 +657,19 @@ function test_A()
     display([v_jm v (A*θ - b)]) #
     SK = comp_SK(D, Midx, m)
     display(ReverseDiff.gradient(θ -> comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j), θ))
-    display(ReverseDiff.jacobian(θ -> A*θ - b, θ))
+    display(ReverseDiff.jacobian(θ -> A*θ - b, θ)) =#
+
+    # tests for precomputing the ϕkl:
+    println("W = ")
+    display(W)
+    println("ϕ = ")
+    display(ϕ)
+    println("dϕ = ")
+    display(dϕ)
+    M = length(Midx); N = length(Widx); L = n_feature*n_basis
+    Bk = zeros(N, L)
+    comp_Bk!(Bk, ϕ, dϕ, W, Widx, k, L, n_feature)
+    display(Bk)
 end
 
 """
