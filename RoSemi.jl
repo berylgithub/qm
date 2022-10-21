@@ -203,8 +203,7 @@ end
 
 """
 compute sparse B_k := ((B_k)_ml) matrix (sparsify it outside for now)
-params
-    - 
+params mostly same as qϕ
 """
 function comp_Bk!(Bk, ϕ, dϕ, W, Widx, k, L, n_feature)
     for l ∈ 1:L
@@ -228,14 +227,18 @@ params:
 output:
     - B, vector ∈ SparseMatrixCSC(M) ∈ SparseMatrixCSC(N, L)
 """
-function comp_ϕkl(ϕ, dϕ, W, Midx, Widx, n_feature)
+function comp_ϕkl(ϕ, dϕ, W, Midx, Widx, L, n_feature)
     M = length(Midx)
     N = length(Widx)
     B = Vector{SparseMatrixCSC}(undef, M) # B := B_k, for k ∈ K, but here B is not contiguous -> B:= B_i, i=1,..M, hence the indexing will need a counter
     i = 1
+    Bk = zeros(N, L)
     for k ∈ Midx
+        comp_Bk!(Bk, ϕ, dϕ, W, Widx, k, L, n_feature)
+        B[i] = Bk
         i += 1
     end
+    return B
 end
 
 
@@ -627,7 +630,7 @@ function test_A()
     display(A)
     println(b)
     # test each element:
-    m = Widx[1]; j = Midx[1]; k = Midx[2]; l = 1
+    m = Widx[1]; j = Midx[1]; k = Midx[1]; l = 1
     #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     #αj = SK*D[j,m] - 1; γk = SK*D[k,m]
     #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
@@ -670,6 +673,8 @@ function test_A()
     Bk = zeros(N, L)
     comp_Bk!(Bk, ϕ, dϕ, W, Widx, k, L, n_feature)
     display(Bk)
+    B = comp_ϕkl(ϕ, dϕ, W, Midx, Widx, L, n_feature)
+    display(B[2])
 end
 
 """
