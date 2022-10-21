@@ -625,20 +625,26 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 250; n_feature = 24; n_basis = 5
+    n_data = 250; n_feature = 24; n_basis = 3
     W = rand(n_feature, n_data)
     E = rand(n_data)
-    D = rand(n_data, n_data)
-    D = (D + D')/2
-    D[diagind(D)] .= 0.
-    ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true)
-    n_basis += 3
-    n_l = n_feature*n_basis
+    # setup data selection:
     M = 100; N = n_data - M
     dataidx = 1:n_data
     Midx = sample(dataidx, M, replace=false)
     Widx = setdiff(dataidx, Midx)
-    SKs = map(m -> comp_SK(D, Midx, m), Widx)
+    # compute D, S and ϕ:
+    t_data = @elapsed begin
+        #= D = rand(n_data, n_data)
+        D = (D + D')/2
+        D[diagind(D)] .= 0. =#
+        B = Matrix{Float64}(I, n_feature, n_feature)
+        D = compute_distance_all(W, B)
+        SKs = map(m -> comp_SK(D, Midx, m), Widx)
+        ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true)
+    end
+    n_basis += 3
+    n_l = n_feature*n_basis
     θ = rand(n_l*M)
     # assemble systems and compare!!:
     t_as = @elapsed begin
@@ -652,6 +658,13 @@ function testtime()
     t_v = @elapsed begin
         comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
     end
+    mems = [Base.summarysize(A), Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
+    println(mems)
+    println([t_data, t_as, t_ls, t_v])
     println("norm(v - (Aθ-b)) = ",norm(r_ls - v))
-    println("runtime of A,b assembly is ",t_as,", Aθ-b took ", t_ls, " , runtime of v_jm is ",t_v)
+    println("M = $M, N = $n_data, L = $n_feature × $n_basis = $n_l")
+    println("ratio of mem(A)+mem(b)/(mem(D)+mem(S)+mem(ϕ)+mem(dϕ)) = ", sum(mems[1:2])/sum(mems[3:end]))
+    println("ratio of time(A)+time(b)/(time(D)+time(S)+time(ϕ)+time(dϕ)) = ", t_as/t_data)
+    println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
+    
 end
