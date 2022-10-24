@@ -495,7 +495,6 @@ function comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)
 end
 
 """
-TEST THE VK ONLY FOR NOW!!
 computes v_j := ΔjK ∀m (returns a vector with length m), with precomputed vector of matrices B instead of (W, ϕ, dϕ)
 params:
     - klidx, precomputed θ indexer, since θ is a block vector
@@ -505,30 +504,30 @@ output:
 """
 function comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, αj, j)
     N = length(Widx)
-    ΔjK, vk, vj, RK, VK = [zeros(N) for _ = 1:5] # move these outside later, to avoid alloc
+    ΔjK, vk, vj, RK, VK, ϕkl, ϕjl = [zeros(N) for _ = 1:7]; # move these outside later, to avoid alloc
     c = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
-    ϕjl = 0.
     for k ∈ Midx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
-        ϕkl = B[:,klidx[c]]*θ[klidx[c]]
-        vk .= E[k] .+ ϕkl
-        RK .= RK .+ (vk./D[k, Widx])
+        ϕkl .= B[:,klidx[c]]*θ[klidx[c]]
+        @. vk = E[k] + ϕkl
+        @. RK = RK + (vk/D[k, Widx])
         if j == k # for j terms
-            ϕjl = ϕkl
+            ϕjl .= ϕkl
         end
         c += 1
     end
-    VK .= RK ./ SKs
-    vj .= E[j] .+ ϕjl
-    ΔjK .= (VK .- vj) ./ αj
+    @. VK = RK / SKs
+    @. vj = E[j] + ϕjl
+    @. ΔjK = (VK - vj) / αj
     return ΔjK
 end
 
 """
-for AD, since comp_v_j is vectorized
+full ΔjK computer ∀jm
 """
-function comp_v_jm()
+function comp_v()
     
 end
+
 
 """
 compute the whole vector v with components v_jm := ΔjK(w_m)
@@ -547,6 +546,13 @@ function comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)
     end
 end
 
+
+"""
+for AD, since comp_v_j is vectorized
+"""
+function comp_v_jm()
+    
+end
 
 """
 UNUSED
