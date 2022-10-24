@@ -276,6 +276,23 @@ function comp_αj(Dj, SK)
     return Dj*SK - 1
 end
 
+"""
+returns a matrix with size m × j
+params:
+    SKs, precomputed SK vector ∈ Float64(N)
+"""
+function comp_α(D, SKs, Midx, Widx)
+    J = length(Midx); N = length(Widx)
+    α = zeros(N, J)
+    mc = jc = 1
+    for m ∈ Widx
+        for j ∈ Midx
+            α[mc, jc] = D[j, m]*SKs[mc] - 1
+            jc += 1
+        end
+        mc += 1
+    end
+end
 
 """
 assemble A matrix and b vector for the linear system, should use sparse logic (I, J, V triplets) later!!
@@ -484,19 +501,31 @@ params:
 output:
     - v_j, a vector of length N (or n_unsup_data)
 """
-function comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j)
+function comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, αj, j)
     N = length(Widx)
-    RK = zeros(N)
+    vk, vj, RK, VK = [zeros(N) for _ = 1:3] # move these outside later, to avoid alloc
     c = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
+    ϕjl = 0.
     for k ∈ Midx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
-        vk = E[k] .+ B[:,klidx[c]]*θ[klidx[c]]
+        ϕkl = B[:,klidx[c]]*θ[klidx[c]]
+        vk .= E[k] .+ ϕkl
         RK .= RK .+ (vk./D[k, Widx])
+        if j == k # for j terms
+            ϕjl = ϕkl
+        end
         c += 1
     end
-    VK = RK ./ SKs
-    return VK
+    VK .= RK ./ SKs
+    vj .= E[j] .+ ϕjl
+    return (VK .- vj) ./ αj
 end
 
+"""
+for AD, since comp_v_j is vectorized
+"""
+function comp_v_jm()
+    
+end
 
 """
 compute the whole vector v with components v_jm := ΔjK(w_m)
@@ -689,22 +718,24 @@ function test_A()
     println("dϕ = ")
     display(dϕ)
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
-    m = Widx[3]; j = Midx[1]; k = Midx[1]; l = 1
+    mc = 1; jc = 1; kc = 1
+    m = Widx[mc]; j = Midx[jc]; k = Midx[kc]; l = 1
     SK = comp_SK(D, Midx, m)
     SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
     B = zeros(N, M*L)
     comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature) # the index should be k,l only
     display(B)
-    # generate the indexer of block vector:
     klidx = kl_indexer(M, L) # this is correct, this is the kl indexer!!
     k = 2
     display(klidx)
     display(B[:,klidx[k]])
     display(θ[klidx[k]])
     display(B[:,klidx[k]]*θ[klidx[k]])
-    VK = comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j) # this is the tested one
+    α = comp_α(D, SKs, Midx, Widx) # precompute alpha matrix for each jm
+    VK = comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, α[:,jc], j) # this is the tested one
     _, VK2 = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
     println([VK, VK2])
+    #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 end
 
 """
