@@ -502,30 +502,35 @@ params:
 output:
     - v_j, a vector of length N (or n_unsup_data)
 """
-function comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, αj, j)
-    N = length(Widx)
-    ΔjK, vk, vj, RK, VK, ϕkl, ϕjl = [zeros(N) for _ = 1:7]; # move these outside later, to avoid alloc
-    c = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
-    for k ∈ Midx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
+function comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, αj, j)
+    ΔjK, vk, vj, RK, VK, ϕkl, ϕjl = outs; # move these outside later, to avoid alloc
+    @simd for c ∈ cidx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
+        k = Midx[c]
         ϕkl .= B[:,klidx[c]]*θ[klidx[c]]
         @. vk = E[k] + ϕkl
         @. RK = RK + (vk/D[k, Widx])
         if j == k # for j terms
             ϕjl .= ϕkl
         end
-        c += 1
     end
     @. VK = RK / SKs
     @. vj = E[j] + ϕjl
     @. ΔjK = (VK - vj) / αj
-    return ΔjK
 end
 
 """
-full ΔjK computer ∀jm
+full ΔjK computer ∀jm, m × j vector := [m1j1, m1j2, ..., m2j1, m2j2,...]
 """
-function comp_v()
-    
+function comp_v!(v, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    M = length(Midx); N = length(Widx)
+    outs = [zeros(N) for _ = 1:7];
+    jidx = 1:M
+    for jc ∈ jidx
+        comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:, jc], Midx[jc])
+        v[:, jc] = outs[1]
+        outs .= [zeros(N) for _ = 1:7] # reset
+    end
+    return v
 end
 
 
@@ -727,7 +732,7 @@ function test_A()
     println("dϕ = ")
     display(dϕ)
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
-    mc = 1; jc = 1; kc = 1
+    mc = 2; jc = 2; kc = 1
     m = Widx[mc]; j = Midx[jc]; k = Midx[kc]; l = 1
     SK = comp_SK(D, Midx, m)
     SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
@@ -741,9 +746,15 @@ function test_A()
     display(θ[klidx[k]])
     display(B[:,klidx[k]]*θ[klidx[k]])
     α = comp_α(D, SKs, Midx, Widx) # precompute alpha matrix for each jm
-    ΔjK = comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, α[:,jc], j) # this is the tested one
+    outs = [zeros(N) for _ = 1:7];
+    cidx = 1:M # k indexer
+    comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:,jc], j) # this is the tested one
+    ΔjK = outs[1]
     ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
     println([ΔjK, ΔjK_act])
+    v = zeros(N, M)
+    comp_v!(v, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    display(v)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 end
 
