@@ -494,6 +494,15 @@ function comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)
     return (VK - Vj)/αj
 end
 
+
+"""
+computes the A*x := ∑_{kl} θ_kl ϕ_kl (1 - γ_k δ_jk)/γ_k α_j and b := (E_j - ∑_k E_k/γ_k α_j)
+Same as v_j function but for VK only (hence no dependence to j)
+"""
+function comp_VK_Axb!(Ax, b, temps, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, γ, α)
+    vk, RK, VK, ϕkl, ϕjl = temps;
+end
+
 """
 computes v_j := ΔjK ∀m (returns a vector with length m), with precomputed vector of matrices B instead of (W, ϕ, dϕ)
 params:
@@ -749,7 +758,8 @@ function test_A()
     ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
     println([ΔjK, ΔjK_act])
     v = zeros(N, M)
-    comp_v!(v, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
+    outs = [zeros(N) for _ = 1:7]; temp = [zeros(N) for _ = 1:7]
+    comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
     display(v)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 end
@@ -812,11 +822,12 @@ tests LS without forming A (try Krylov.jl and Optim.jl)
 function test_LS()
     # try arbitrary system:
     b = [1., 2., 3., 4., 5.]
-    A = diagm(b)
+    A = rand(5,5)
     function Ax(y, A, x)
         y .= A*x
     end
     op = LinearOperator(Float64,5, 5, false, false, (y,x) -> Ax(y,A,x))
-    gmres(op, b)
-    
+    x, stat = gmres(op, b)
+    display([A x])
+    display([A*x b])
 end
