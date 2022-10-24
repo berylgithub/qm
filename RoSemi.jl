@@ -480,6 +480,7 @@ TEST THE VK ONLY FOR NOW!!
 computes v_j, with precomputed vector of matrices B instead of (W, ϕ, dϕ)
 params:
     - klidx, precomputed θ indexer, since θ is a block vector
+
 output:
     - v_j, a vector of length N (or n_unsup_data)
 """
@@ -487,8 +488,8 @@ function comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j)
     N = length(Widx)
     RK = zeros(N)
     c = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
-    for k ∈ Midx # vectorized op on N vector length
-        vk .= E[k] .+ B[:,klidx[c]]*θ[klidx[c]]
+    for k ∈ Midx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
+        vk = E[k] .+ B[:,klidx[c]]*θ[klidx[c]]
         RK .= RK .+ (vk./D[k, Widx])
         c += 1
     end
@@ -647,7 +648,7 @@ function test_A()
     display(A)
     println(b)
     # test each element:
-    m = Widx[1]; j = Midx[1]; k = Midx[1]; l = 1
+    #m = Widx[1]; j = Midx[1]; k = Midx[1]; l = 1
     #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
     #αj = SK*D[j,m] - 1; γk = SK*D[k,m]
     #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
@@ -680,7 +681,6 @@ function test_A()
     display(ReverseDiff.jacobian(θ -> A*θ - b, θ)) =#
 
     # tests for precomputing the ϕkl:
-    SK = comp_SK(D, Midx, m)
     θ = Vector{Float64}(1:cols) # dummy theta
     println("W = ")
     display(W)
@@ -689,6 +689,9 @@ function test_A()
     println("dϕ = ")
     display(dϕ)
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
+    m = Widx[3]; j = Midx[1]; k = Midx[1]; l = 1
+    SK = comp_SK(D, Midx, m)
+    SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
     B = zeros(N, M*L)
     comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature) # the index should be k,l only
     display(B)
