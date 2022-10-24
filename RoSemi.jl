@@ -202,43 +202,23 @@ end
 
 
 """
-compute sparse B_k := ((B_k)_ml) matrix (sparsify it outside for now)
+for (pre-)computing ϕ_{kl}(w_m) := ϕ_l(w_m) - ϕ_l(w_k) - ϕ_l'(w_k)(w_m - w_k), for k ∈ K (or k = 1,...,M), l = 1,...,L, m ∈ Widx, 
+compute (and sparsify outside) B := B_{m,kl}, this is NOT a contiguous matrix hence it is indexed by row and column counter
+instead of directly m and kl.
 params mostly same as qϕ
 """
-function comp_Bk!(Bk, ϕ, dϕ, W, Widx, k, L, n_feature)
-    for l ∈ 1:L
-        r = 1 # the row entry is not contiguous
-        for m ∈ Widx
-            Bk[r, l] = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-            r += 1
+function comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature)
+    klc = 1                                                     # kl counter
+    for k ∈ Midx
+        for l ∈ 1:L
+            rc = 1                                              # the row entry is not contiguous
+            for m ∈ Widx
+                B[rc, klc] = qϕ(ϕ, dϕ, W, m, k, l, n_feature) 
+                rc += 1
+            end
+            klc += 1
         end
     end
-end
-
-"""
-for (pre-)computing ϕ_{kl}(w_m) := ϕ_l(w_m) - ϕ_l(w_k) - ϕ_l'(w_k)(w_m - w_k), for k ∈ K (or k = 1,...,M), l = 1,...,L and store in block matrix B_k := ((B_k)ml) -> B := [B_1, B_2, ....] (vector of block matrices)
-params:
-    - ϕ, the extracted basis function, Matrix ∈ Float64(n_data, n_l:=n_f*n_b)
-    - dϕ, derivative of ϕ wrt w Matrix ∈ Float64(n_data, n_l)
-    - W, feature matrix ∈ Float64(n_data, n_f)
-    - Midx, index of set K, ∈ Int(M)
-    - Widx, index of all elements outside of set K, ∈ Int(N)
-    - n_feature, length of molecular feature
-output:
-    - B, vector ∈ SparseMatrixCSC(M) ∈ SparseMatrixCSC(N, L)
-"""
-function comp_ϕkl(ϕ, dϕ, W, Midx, Widx, L, n_feature)
-    M = length(Midx)
-    N = length(Widx)
-    B = Vector{SparseMatrixCSC}(undef, M) # B := B_k, for k ∈ K, but here B is not contiguous -> B:= B_i, i=1,..M, hence the indexing will need a counter
-    i = 1
-    Bk = zeros(N, L)
-    for k ∈ Midx
-        comp_Bk!(Bk, ϕ, dϕ, W, Widx, k, L, n_feature)
-        B[i] = Bk
-        i += 1
-    end
-    return B
 end
 
 
@@ -691,20 +671,21 @@ function test_A()
     println("dϕ = ")
     display(dϕ)
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
-    Bk = zeros(N, L)
-    comp_Bk!(Bk, ϕ, dϕ, W, Widx, k, L, n_feature)
-    display(Bk)
-    B = comp_ϕkl(ϕ, dϕ, W, Midx, Widx, L, n_feature)
-    display(B[2])
+    B = zeros(N, M*L)
+    comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature) # the index should be k,l only
+    display(B)
     # generate the indexer of block vector:
-    bidx = Vector{UnitRange}(undef, L*M)
+    bidx = Vector{UnitRange}(undef, L*M) # this is correct:
     c = 1:L
     for i ∈ c
         n = (i-1)*L + 1 
         bidx[i] = n:n+L-1
     end
-    display(bidx[1])
-    display(B[1]*θ[bidx[1]])
+    k = 2
+    display(bidx[k])
+    display(B[:,bidx[k]])
+    display(θ[bidx[k]])
+    display(B[:,bidx[k]]*θ[bidx[k]])
     VK = comp_v_jm(E, D, B, θ, SK, Midx, bidx, L, n_feature, m, j)
     _, VK2 = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true)
     println([VK, VK2])
