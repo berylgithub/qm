@@ -221,6 +221,21 @@ function comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature)
     end
 end
 
+"""
+kl index computer, which indexes the column of B
+params:
+    - M, number of sup data
+    - L, n_feature*n_basis
+"""
+function kl_indexer(M, L)
+    klidx = Vector{UnitRange}(undef, M) # this is correct, this is the kl indexer!!
+    c = 1:M
+    for i ∈ c
+        n = (i-1)*L + 1 
+        klidx[i] = n:n+L-1
+    end
+    return klidx
+end
 
 """
 =============================
@@ -462,19 +477,22 @@ end
 
 """
 TEST THE VK ONLY FOR NOW!!
-overloader of v_jm, with precomputed vector of matrices B instead of (W, ϕ, dϕ)
+computes v_j, with precomputed vector of matrices B instead of (W, ϕ, dϕ)
 params:
-    - bidx, precomputed θ indexer, since θ is a block vector
+    - klidx, precomputed θ indexer, since θ is a block vector
+output:
+    - v_j, a vector of length N (or n_unsup_data)
 """
-function comp_v_jm(E, D, θ, B, SK, Midx, bidx, n_l, n_feature, m, j)
-    RK = 0.
+function comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j)
+    N = length(Widx)
+    RK = zeros(N)
     c = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
-    for k ∈ Midx
-        vk = E[k] + B[c]*θ[bidx[c]] # h is the indexer set
-        RK = RK + vk/D[k, m]
+    for k ∈ Midx # vectorized op on N vector length
+        vk .= E[k] .+ B[:,klidx[c]]*θ[klidx[c]]
+        RK .= RK .+ (vk./D[k, Widx])
         c += 1
     end
-    VK = RK/SK
+    VK = RK ./ SKs
     return VK
 end
 
@@ -675,19 +693,14 @@ function test_A()
     comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature) # the index should be k,l only
     display(B)
     # generate the indexer of block vector:
-    bidx = Vector{UnitRange}(undef, L*M) # this is correct:
-    c = 1:L
-    for i ∈ c
-        n = (i-1)*L + 1 
-        bidx[i] = n:n+L-1
-    end
+    klidx = kl_indexer(M, L) # this is correct, this is the kl indexer!!
     k = 2
-    display(bidx[k])
-    display(B[:,bidx[k]])
-    display(θ[bidx[k]])
-    display(B[:,bidx[k]]*θ[bidx[k]])
-    VK = comp_v_jm(E, D, B, θ, SK, Midx, bidx, L, n_feature, m, j)
-    _, VK2 = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true)
+    display(klidx)
+    display(B[:,klidx[k]])
+    display(θ[klidx[k]])
+    display(B[:,klidx[k]]*θ[klidx[k]])
+    VK = comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j) # this is the tested one
+    _, VK2 = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
     println([VK, VK2])
 end
 
