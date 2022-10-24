@@ -523,12 +523,12 @@ full ΔjK computer ∀jm, m × j vector := [m1j1, m1j2, ..., m2j1, m2j2,...]
 """
 function comp_v!(v, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
     M = length(Midx); N = length(Widx)
-    outs = [zeros(N) for _ = 1:7];
+    outs = [zeros(N) for _ = 1:7]; temp = [zeros(N) for _ = 1:7];
     jidx = 1:M
     for jc ∈ jidx
         comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:, jc], Midx[jc])
-        v[:, jc] = outs[1]
-        outs .= [zeros(N) for _ = 1:7] # reset
+        v[:, jc] .= outs[1]
+        outs .= temp
     end
     return v
 end
