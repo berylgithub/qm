@@ -284,14 +284,16 @@ params:
 function comp_α(D, SKs, Midx, Widx)
     J = length(Midx); N = length(Widx)
     α = zeros(N, J)
-    mc = jc = 1
+    mc = 1
     for m ∈ Widx
+        jc = 1
         for j ∈ Midx
             α[mc, jc] = D[j, m]*SKs[mc] - 1
             jc += 1
         end
         mc += 1
     end
+    return α
 end
 
 """
@@ -494,7 +496,7 @@ end
 
 """
 TEST THE VK ONLY FOR NOW!!
-computes v_j, with precomputed vector of matrices B instead of (W, ϕ, dϕ)
+computes v_j := ΔjK ∀m (returns a vector with length m), with precomputed vector of matrices B instead of (W, ϕ, dϕ)
 params:
     - klidx, precomputed θ indexer, since θ is a block vector
 
@@ -503,7 +505,7 @@ output:
 """
 function comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, αj, j)
     N = length(Widx)
-    vk, vj, RK, VK = [zeros(N) for _ = 1:3] # move these outside later, to avoid alloc
+    ΔjK, vk, vj, RK, VK = [zeros(N) for _ = 1:5] # move these outside later, to avoid alloc
     c = 1 # the col vector count, should follow k*l, easier to track than trying to compute the indexing pattern.
     ϕjl = 0.
     for k ∈ Midx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
@@ -517,7 +519,8 @@ function comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, αj, j)
     end
     VK .= RK ./ SKs
     vj .= E[j] .+ ϕjl
-    return (VK .- vj) ./ αj
+    ΔjK .= (VK .- vj) ./ αj
+    return ΔjK
 end
 
 """
@@ -732,9 +735,9 @@ function test_A()
     display(θ[klidx[k]])
     display(B[:,klidx[k]]*θ[klidx[k]])
     α = comp_α(D, SKs, Midx, Widx) # precompute alpha matrix for each jm
-    VK = comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, α[:,jc], j) # this is the tested one
-    _, VK2 = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
-    println([VK, VK2])
+    ΔjK = comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, α[:,jc], j) # this is the tested one
+    ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
+    println([ΔjK, ΔjK_act])
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 end
 
