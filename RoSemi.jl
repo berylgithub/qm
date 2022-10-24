@@ -828,13 +828,18 @@ tests LS without forming A (try Krylov.jl and Optim.jl)
 """
 function test_LS()
     # try arbitrary system:
-    b = [1., 2., 3., 4., 5.]
-    A = rand(5,5)
-    function Ax(y, A, x)
-        y .= A*x
+    row = 3; col = 5
+    b = Vector{Float64}(1:row)
+    A = rand(row, col)
+    function Ax!(y, A, u)
+        y .= A*u
     end
-    op = LinearOperator(Float64,5, 5, false, false, (y,x) -> Ax(y,A,x))
-    x, stat = gmres(op, b)
-    display([A x])
+    function Aᵀb!(y, A, v)
+        y .= A'*v
+    end
+    op = LinearOperator(Float64, row, col, false, false,    (y,u) -> Ax!(y,A,u),
+                                                            (y,v) -> Aᵀb!(y,A,v))
+    x, stat = cgls(op, b)
     display([A*x b])
+    display(norm(A*x - b))
 end
