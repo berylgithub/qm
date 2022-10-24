@@ -519,18 +519,14 @@ function comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, αj, j)
 end
 
 """
-full ΔjK computer ∀jm, m × j vector := [m1j1, m1j2, ..., m2j1, m2j2,...]
+full ΔjK computer ∀jm, m × j matrix
 """
-function comp_v!(v, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
-    M = length(Midx); N = length(Widx)
-    outs = [zeros(N) for _ = 1:7]; temp = [zeros(N) for _ = 1:7];
-    jidx = 1:M
-    for jc ∈ jidx
+function comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    for jc ∈ cidx
         comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:, jc], Midx[jc])
         v[:, jc] .= outs[1]
         outs .= temp
     end
-    return v
 end
 
 
@@ -753,7 +749,7 @@ function test_A()
     ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
     println([ΔjK, ΔjK_act])
     v = zeros(N, M)
-    comp_v!(v, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    comp_v!(v, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
     display(v)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 end
@@ -763,7 +759,7 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 250; n_feature = 24; n_basis = 3
+    n_data = 250; n_feature = 40; n_basis = 8
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
@@ -776,14 +772,15 @@ function testtime()
         #= D = rand(n_data, n_data)
         D = (D + D')/2
         D[diagind(D)] .= 0. =#
-        B = Matrix{Float64}(I, n_feature, n_feature)
-        D = compute_distance_all(W, B)
+        Bhat = Matrix{Float64}(I, n_feature, n_feature)
+        D = compute_distance_all(W, Bhat)
         SKs = map(m -> comp_SK(D, Midx, m), Widx)
+        α = comp_α(D, SKs, Midx, Widx)
         ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true)
+        n_basis += 3; L = n_feature*n_basis # reset L
+        B = zeros(N, M*L); comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
     end
-    n_basis += 3
-    n_l = n_feature*n_basis
-    θ = rand(n_l*M)
+    θ = rand(L*M)
     # assemble systems and compare!!:
     t_as = @elapsed begin
         # assemble A and b:
@@ -792,15 +789,17 @@ function testtime()
     t_ls = @elapsed begin
         r_ls = A*θ - b
     end 
-    v = zeros(M*N)
+    v = zeros(N, M) #v = zeros(M,N)
+    outs = [zeros(N) for _ = 1:7]; temp = [zeros(N) for _ = 1:7]; # temporary vars
+    klidx = kl_indexer(M, L); cidx = 1:M # indexers
     t_v = @elapsed begin
-        comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
+        comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) #comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
     end
     mems = [Base.summarysize(A), Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
     println(mems)
     println([t_data, t_as, t_ls, t_v])
-    println("norm(v - (Aθ-b)) = ",norm(r_ls - v))
-    println("M = $M, N = $n_data, L = $n_feature × $n_basis = $n_l")
+    println("norm(v - (Aθ-b)) = ",norm(r_ls - vec(v)))
+    println("M = $M, N = $n_data, L = $n_feature × $n_basis = $L")
     println("ratio of mem(A)+mem(b)/(mem(D)+mem(S)+mem(ϕ)+mem(dϕ)) = ", sum(mems[1:2])/sum(mems[3:end]))
     println("ratio of time(A)+time(b)/(time(D)+time(S)+time(ϕ)+time(dϕ)) = ", t_as/t_data)
     println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
