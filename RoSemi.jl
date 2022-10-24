@@ -496,11 +496,18 @@ end
 
 
 """
-computes the A*x := ∑_{kl} θ_kl ϕ_kl (1 - γ_k δ_jk)/γ_k α_j and b := (E_j - ∑_k E_k/γ_k α_j)
-Same as v_j function but for VK only (hence no dependence to j)
+computes the A*x := ∑_{kl} θ_kl ϕ_kl (1 - γ_k δ_jk)/γ_k α_j
+Same as v_j function but for VK only
 """
-function comp_VK_Axb!(Ax, b, temps, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, γ, α)
+function comp_Ax!(Ax, b, temps, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, γ, α)
     vk, RK, VK, ϕkl, ϕjl = temps;
+end
+
+"""
+computes b := (E_j - ∑_k E_k/γ_k α_j)
+"""
+function comp_b!()
+    
 end
 
 """
