@@ -805,3 +805,18 @@ function testtime()
     println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
     
 end
+
+"""
+tests LS without forming A (try Krylov.jl and Optim.jl)
+"""
+function test_LS()
+    # try arbitrary system:
+    b = [1., 2., 3., 4., 5.]
+    A = diagm(b)
+    function Ax(y, A, x)
+        y .= A*x
+    end
+    op = LinearOperator(Float64,5, 5, false, false, (y,x) -> Ax(y,A,x))
+    gmres(op, b)
+    
+end
