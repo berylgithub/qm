@@ -833,11 +833,11 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 5; n_feature = 3; n_basis = 2
+    n_data = 6; n_feature = 3; n_basis = 2
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
-    M = 3; N = n_data - M
+    M = 4; N = n_data - M
     dataidx = 1:n_data
     Midx = sample(dataidx, M, replace=false)
     Widx = setdiff(dataidx, Midx)
