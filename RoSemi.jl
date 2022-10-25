@@ -496,13 +496,20 @@ end
 
 
 """
-computes b := (E_j - ∑_k E_k/γ_k α_j)
+computes b_j := (E_j - ∑_k E_k/γ_k α_j) ∀m for each j, 
 """
+function comp_b_j!(temps, E, γ, α, Midx, cidx, jc, j)
+    b_j, ∑k = temps;
+    for c ∈ cidx
+        k = Midx[c]
+        @. ∑k = ∑k + (E[k] / (@view γ[:, c])) # ∑_k E_k/γ_k(w_m) , E has absolute index (j, k) while the others are relative indices (jc, mc)
+    end
+    @. b_j = (E[j] - ∑k) / (@view α[:, jc])
+end
+
 function comp_b!()
     
 end
-
-
 
 """
 computes the A*x := ∑_{kl} θ_kl ϕ_kl (1 - γ_k δ_jk)/γ_k α_j
@@ -810,6 +817,10 @@ function test_A()
     Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
     comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
     display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
+    display(b)
+    temps = [zeros(N) for _ in 1:2]
+    comp_b_j!(temps, E, γ, α, Midx, cidx, jc, j)
+    display(temps[1])
 end
 
 """
