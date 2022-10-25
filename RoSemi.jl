@@ -519,24 +519,36 @@ function comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
     end
 end
 
-
+function comp_Ax(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
+    
+end
 
 """
-computes v_j := ΔjK ∀m (returns a vector with length m), with precomputed vector of matrices B instead of (W, ϕ, dϕ)
+computes ΔjK := ΔjK for m = 1,...,N (returns a vector with length N), with precomputed vector of matrices B instead of (W, ϕ, dϕ)
 params:
-    - klidx, precomputed θ indexer, since θ is a block vector
-
+    - outs, temporary vectors to avoid memalloc
+    - E, energy vector, ∈ Float64(n_data)
+    - D, distance matrix, ∈ Float64(n_data, n_data)
+    - θ, tuning param vec, ∈ Float64(M*L)
+    - B, matrix containing ϕ_{m,kl}, ∈ Float64(N, M*L)
+    - SKs, vector containing SK ∀m, ∈ Float64(N)
+    - Midx, vector containing index of supervised data, ∈ Int(M)
+    - Widx, vector containing index of unsupervised data ∈ Int(N)
+    - cidx, indexer of k or j, ∈ UnitRange(1:M)
+    - klidx, vector containing indexer of block column, ∈ UnitRange(M, 1:L) 
+    - αj, vector which contains α_j ∀m, ∈ Float64(N)
+    - j, absolute index of j ∈ Midx, Int
 output:
-    - v_j, a vector of length N (or n_unsup_data)
+    - ΔjK, vector ∀m, ∈ Float64(N) (element of outs vector)
 """
 function comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, αj, j)
-    ΔjK, vk, vj, RK, VK, ϕkl, ϕjl = outs; # move these outside later, to avoid alloc
+    ΔjK, vk, vj, RK, VK, ϕkl, ϕjl = outs;
     @simd for c ∈ cidx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
         k = Midx[c]
         ϕkl .= B[:,klidx[c]]*θ[klidx[c]]
         @. vk = E[k] + ϕkl
         @. RK = RK + (vk/D[k, Widx])
-        if j == k # for j terms
+        if j == k # for j term
             ϕjl .= ϕkl
         end
     end
@@ -547,6 +559,8 @@ end
 
 """
 full ΔjK computer ∀jm, m × j matrix
+outputs:
+    - v, matrix ΔjK(w_m) ∀m,j ∈ Float64(N, M) (preallocated outside!)
 """
 function comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
     for jc ∈ cidx
