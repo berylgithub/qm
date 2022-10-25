@@ -496,22 +496,6 @@ end
 
 
 """
-computes b_j := (E_j - ∑_k E_k/γ_k α_j) ∀m for each j, 
-"""
-function comp_b_j!(temps, E, γ, α, Midx, cidx, jc, j)
-    b_j, ∑k = temps;
-    for c ∈ cidx
-        k = Midx[c]
-        @. ∑k = ∑k + (E[k] / (@view γ[:, c])) # ∑_k E_k/γ_k(w_m) , E has absolute index (j, k) while the others are relative indices (jc, mc)
-    end
-    @. b_j = (E[j] - ∑k) / (@view α[:, jc])
-end
-
-function comp_b!()
-    
-end
-
-"""
 computes the A*x := ∑_{kl} θ_kl ϕ_kl (1 - γ_k δ_jk)/γ_k α_j
 Same as v_j function but for VK only
 """
@@ -531,6 +515,26 @@ function comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
     for jc ∈ cidx
         comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, Midx[jc], jc)
         Ax[:, jc] .= temps[1]
+        temps .= reset
+    end
+end
+
+"""
+computes b_j := (E_j - ∑_k E_k/γ_k α_j) ∀m for each j, 
+"""
+function comp_b_j!(temps, E, γ, α, Midx, cidx, j, jc)
+    b_j, ∑k = temps;
+    for c ∈ cidx
+        k = Midx[c]
+        @. ∑k = ∑k + (E[k] / (@view γ[:, c])) # ∑_k E_k/γ_k(w_m) , E has absolute index (j, k) while the others are relative indices (jc, mc)
+    end
+    @. b_j = (E[j] - ∑k) / (@view α[:, jc])
+end
+
+function comp_b!(b, temps, reset, E, γ, α, Midx, cidx)
+    for jc ∈ cidx
+        comp_b_j!(temps, E, γ, α, Midx, cidx, Midx[jc], jc)
+        b[:, jc] .= temps[1]
         temps .= reset
     end
 end
@@ -812,15 +816,16 @@ function test_A()
     # test Ax and b routines:
     display(A*θ)
     temps = [zeros(N) for _ in 1:3]; reset = [zeros(N) for _ in 1:3]
-    #comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
-    #display(temps)
     Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
     comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
     display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     display(b)
-    temps = [zeros(N) for _ in 1:2]
-    comp_b_j!(temps, E, γ, α, Midx, cidx, jc, j)
-    display(temps[1])
+    temps = [zeros(N) for _ in 1:2]; reset = [zeros(N) for _ in 1:2]
+    bnny = zeros(N, M)
+    comp_b!(bnny, temps, reset, E, γ, α, Midx, cidx)
+    display(transpose(bnny)[:])
+    # test Ax-b comparison:
+    println("norm of (new func - old correct fun) (if 0. then new = correct) =",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
 end
 
 """
