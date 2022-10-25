@@ -1,4 +1,4 @@
-using JLD, SparseArrays, Distributions, Statistics, StatsBase, ForwardDiff, ReverseDiff
+using JLD, SparseArrays, Distributions, Statistics, StatsBase, ForwardDiff, ReverseDiff, LinearOperators, Krylov
 
 include("voronoi.jl")
 include("linastic.jl")
@@ -823,6 +823,17 @@ function testtime()
     
 end
 
+function Ax_out!(y, a, u)
+    for i ∈ eachindex(y)
+        y[i] = a[i]*u[i]
+    end
+end
+function Aᵀb_out!(y, a, v)
+    for i ∈ eachindex(y)
+        y[i] = a[i]*v[i]
+    end
+end
+
 """
 tests LS without forming A (try Krylov.jl and Optim.jl)
 """
@@ -831,22 +842,12 @@ function test_LS()
     row = 5; col = 5
     b = Vector{Float64}(1:row)
     a = rand(row)
-    function Ax!(y, a, u)
-        for i ∈ eachindex(y)
-            y[i] = a[i]*u[i]
-        end
-    end
-    function Aᵀb!(y, a, v)
-        for i ∈ eachindex(y)
-            y[i] = a[i]*v[i]
-        end
-    end
-    op = LinearOperator(Float64, row, col, false, false,    (y,u) -> Ax!(y,a,u),
-                                                            (y,v) -> Aᵀb!(y,a,v))
+    op = LinearOperator(Float64, row, col, false, false,    (y,u) -> Ax_out!(y,a,u),
+                                                            (y,v) -> Aᵀb_out!(y,a,v))
     x, stat = cgls(op, b)
     display(stat)
     y = zeros(row)
-    Ax!(y, a, x)
+    Ax_out!(y, a, x)
     display([y b])
     display(norm(y - b))
 end
