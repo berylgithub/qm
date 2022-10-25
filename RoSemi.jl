@@ -510,12 +510,12 @@ function comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
     end
 end
 
-function comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
+function comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
     # loop for all j:
     for jc ∈ cidx
         comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, Midx[jc], jc)
         Ax[:, jc] .= temps[1]
-        temps .= reset
+        fill!.(temps, 0.)
     end
 end
 
@@ -531,11 +531,11 @@ function comp_b_j!(temps, E, γ, α, Midx, cidx, j, jc)
     @. b_j = (E[j] - ∑k) / (@view α[:, jc])
 end
 
-function comp_b!(b, temps, reset, E, γ, α, Midx, cidx)
+function comp_b!(b, temps, E, γ, α, Midx, cidx)
     for jc ∈ cidx
         comp_b_j!(temps, E, γ, α, Midx, cidx, Midx[jc], jc)
         b[:, jc] .= temps[1]
-        temps .= reset
+        fill!.(temps, 0.)
     end
 end
 
@@ -833,11 +833,11 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 6; n_feature = 3; n_basis = 2
+    n_data = 250; n_feature = 24; n_basis = 3
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
-    M = 4; N = n_data - M
+    M = 100; N = n_data - M
     dataidx = 1:n_data
     Midx = sample(dataidx, M, replace=false)
     Widx = setdiff(dataidx, Midx)
@@ -874,14 +874,14 @@ function testtime()
     temps = [zeros(N) for _ in 1:3]; reset = [zeros(N) for _ in 1:3]
     Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
     t_ax = @elapsed begin
-        comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
-        #Ax = transpose(Ax)[:] # j first then m order
+        comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
+        Ax = transpose(Ax)[:] # j first then m order
     end
     bnny = zeros(N, M)
     temps = [zeros(N) for _ in 1:2]; reset = [zeros(N) for _ in 1:2]
     t_b = @elapsed begin
-        comp_b!(bnny, temps, reset, E, γ, α, Midx, cidx)
-        #bnny = transpose(bnny)[:] # same as Ax
+        comp_b!(bnny, temps, E, γ, α, Midx, cidx)
+        bnny = transpose(bnny)[:] # same as Ax
     end
     t_axb = @elapsed begin
         r = Ax - bnny
@@ -889,14 +889,12 @@ function testtime()
     mems = [Base.summarysize(A), Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
     println(mems)
     println([t_data, t_as, t_ls, t_v, t_ax, t_b, t_axb])
-    #println("norm(v - (Aθ-b)) = ",norm(r_ls - r))
+    println("norm(v - (Aθ-b)) = ",norm(r_ls - r))
     println("M = $M, N = $n_data, L = $n_feature × $n_basis = $L")
     println("ratio of mem(A)+mem(b)/(mem(D)+mem(S)+mem(ϕ)+mem(dϕ)) = ", sum(mems[1:2])/sum(mems[3:end]))
     println("ratio of time(A)+time(b)/(time(D)+time(S)+time(ϕ)+time(dϕ)) = ", t_as/t_data)
     println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
     println("ratio of time(Ax-b given A and b)/(time(Ax) + time(b) + time(Ax-b) [given precomputed ϕ, γ, α]) = ", t_ls/(t_ax+t_b+t_axb))
-    display(A*θ)
-    display(Ax)
 end
 
 function Ax_out!(y, a, u)
