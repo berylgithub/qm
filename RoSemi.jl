@@ -508,11 +508,14 @@ end
 computes the A*x := ∑_{kl} θ_kl ϕ_kl (1 - γ_k δ_jk)/γ_k α_j
 Same as v_j function but for VK only
 """
-function comp_Ax_j!(Ax, b, temps, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, γ, α, j)
-    ∑l = temps;
+function comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
+    ∑k, num, den = temps;
     @simd for c ∈ cidx  # vectorized op on N vector length s.t. x = [m1, m2, ... N]
         k = Midx[c]
-        ∑l .= ( ((@view B[:,klidx[c]])*θ[klidx[c]]) .* (1 .- (@view γ[:,k]).*δ(j,k)) )/( (@view γ[:,k]) .* (@view α[:, j])) # of length N
+        num .= (@view B[:,klidx[c]])*θ[klidx[c]] .* (1 .- (@view γ[:,c]).*δ(j,k))
+        den .= (@view γ[:,c]) .* (@view α[:, jc])
+        ∑k .+= (num ./ den)
+        #∑k .+= /( (@view γ[:,k]) .* (@view α[:, j])) # of length N
     end
 end
 
@@ -753,7 +756,7 @@ function test_A()
     println("dϕ = ")
     display(dϕ)
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
-    mc = 2; jc = 2; kc = 1
+    mc = 2; jc = 1; kc = 1
     m = Widx[mc]; j = Midx[jc]; k = Midx[kc]; l = 1
     SK = comp_SK(D, Midx, m)
     SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
@@ -763,9 +766,9 @@ function test_A()
     klidx = kl_indexer(M, L) # this is correct, this is the kl indexer!!
     k = 2
     display(klidx)
-    display(B[:,klidx[k]])
+#=     display(B[:,klidx[k]])
     display(θ[klidx[k]])
-    display(B[:,klidx[k]]*θ[klidx[k]])
+    display(B[:,klidx[k]]*θ[klidx[k]]) =#
     γ = comp_γ(D, SKs, Midx, Widx)
     α = γ .- 1 # precompute alpha matrix for each jm
     outs = [zeros(N) for _ = 1:7];
@@ -779,6 +782,12 @@ function test_A()
     comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
     display(v)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
+
+    # test Ax and b routines:
+    display(A*θ)
+    temps = [zeros(N) for _ in 1:3]
+    comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
+    display(temps)
 end
 
 """
