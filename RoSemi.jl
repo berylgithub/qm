@@ -281,21 +281,6 @@ returns a matrix with size m × j
 params:
     SKs, precomputed SK vector ∈ Float64(N)
 """
-function comp_α(D, SKs, Midx, Widx)
-    J = length(Midx); N = length(Widx)
-    α = zeros(N, J)
-    mc = 1
-    for m ∈ Widx
-        jc = 1
-        for j ∈ Midx
-            α[mc, jc] = D[j, m]*SKs[mc] - 1
-            jc += 1
-        end
-        mc += 1
-    end
-    return α
-end
-
 function comp_γ(D, SKs, Midx, Widx)
     M = length(Midx); N = length(Widx)
     γ = zeros(N, M)
