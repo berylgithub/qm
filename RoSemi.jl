@@ -519,8 +519,13 @@ function comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
     end
 end
 
-function comp_Ax(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
-    
+function comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
+    # loop for all j:
+    for jc ∈ cidx
+        comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, Midx[jc], jc)
+        Ax[:, jc] .= temps[1]
+        temps .= reset
+    end
 end
 
 """
@@ -799,9 +804,12 @@ function test_A()
 
     # test Ax and b routines:
     display(A*θ)
-    temps = [zeros(N) for _ in 1:3]
-    comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
-    display(temps)
+    temps = [zeros(N) for _ in 1:3]; reset = [zeros(N) for _ in 1:3]
+    #comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
+    #display(temps)
+    Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
+    comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
+    display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
 end
 
 """
