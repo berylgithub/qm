@@ -541,10 +541,18 @@ end
 
 """
 computes Aᵀv, where v ∈ Float64(col of A), required for CGLS
-
+params:
+    - klrange := the rename of klidx
 """
-function comp_Aᵀv!()
-    
+function comp_Aᵀv!(v, B, Midx, kidx, lidx, klrange, γ, α)
+    rrange = 1:M*L
+    for kc ∈ kidx # relative indexer of k
+        k = Midx[kc] # absolute indexer
+        #....
+        for l ∈ 1:L
+            
+        end
+    end
 end
 
 """
@@ -586,11 +594,11 @@ full ΔjK computer ∀jm, m × j matrix
 outputs:
     - v, matrix ΔjK(w_m) ∀m,j ∈ Float64(N, M) (preallocated outside!)
 """
-function comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+function comp_v!(v, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
     for jc ∈ cidx
         comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:, jc], Midx[jc])
         v[:, jc] .= outs[1]
-        outs .= temp
+        fill!.(outs, 0.)
     end
 end
 
@@ -787,12 +795,6 @@ function test_A()
 
     # tests for precomputing the ϕkl:
     θ = Vector{Float64}(1:cols) # dummy theta
-    println("W = ")
-    display(W)
-    println("ϕ = ")
-    display(ϕ)
-    println("dϕ = ")
-    display(dϕ)
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
     mc = 2; jc = 1; kc = 1
     m = Widx[mc]; j = Midx[jc]; k = Midx[kc]; l = 1
