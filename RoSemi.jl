@@ -706,8 +706,8 @@ test assemble A with dummy data
 """
 function test_A()
     # data setup:
-    n_data = 5; n_feature = 3; n_basis = 2
-    bas = vec(1.:5.)
+    n_data = 6; n_feature = 3; n_basis = 2
+    bas = Vector{Float64}(1:n_data)
     W = zeros(n_feature, n_data)
     for i ∈ 1:n_feature
         W[i, :] = bas .+ (0.5*(i-1))
@@ -715,7 +715,7 @@ function test_A()
     E = convert(Vector{Float64}, vec(1:5)) # dummy data matrix and energy vector
     println("W = ")
     display(W)
-    D = convert(Matrix{Float64}, [0 1 2 3 4; 1 0 2 3 4; 1 2 0 3 4; 1 2 3 0 4; 1 2 3 4 0]) # dummy distance
+    D = convert(Matrix{Float64}, [0 1 2 3 4 5; 1 0 2 3 4 5; 1 2 0 3 4 5; 1 2 3 0 4 5; 1 2 3 4 0 5; 1 2 3 4 5 0]) # dummy distance
     D = (D .+ D')./2
     println("D = ")
     display(D)
@@ -825,7 +825,7 @@ function test_A()
     comp_b!(bnny, temps, reset, E, γ, α, Midx, cidx)
     display(transpose(bnny)[:])
     # test Ax-b comparison:
-    println("norm of (new func - old correct fun) (if 0. then new = correct) =",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
+    println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
 end
 
 """
@@ -833,29 +833,30 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 250; n_feature = 24; n_basis = 3
+    n_data = 5; n_feature = 3; n_basis = 2
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
-    M = 100; N = n_data - M
+    M = 3; N = n_data - M
     dataidx = 1:n_data
     Midx = sample(dataidx, M, replace=false)
     Widx = setdiff(dataidx, Midx)
     # compute D, S and ϕ:
     t_data = @elapsed begin
-        #= D = rand(n_data, n_data)
-        D = (D + D')/2
-        D[diagind(D)] .= 0. =#
         Bhat = Matrix{Float64}(I, n_feature, n_feature)
         D = compute_distance_all(W, Bhat)
         SKs = map(m -> comp_SK(D, Midx, m), Widx)
-        α = comp_α(D, SKs, Midx, Widx)
+        γ = comp_γ(D, SKs, Midx, Widx)
+        α = γ .- 1
         ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true)
         n_basis += 3; L = n_feature*n_basis # reset L
         B = zeros(N, M*L); comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
+        # indexers:
+        klidx = kl_indexer(M, L)
+        cidx = 1:M
     end
     θ = rand(L*M)
-    # assemble systems and compare!!:
+    # A, b, then residual:
     t_as = @elapsed begin
         # assemble A and b:
         A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
@@ -863,21 +864,39 @@ function testtime()
     t_ls = @elapsed begin
         r_ls = A*θ - b
     end 
-    v = zeros(N, M) #v = zeros(M,N)
+    # residual directly:
+    v = zeros(N, M)
     outs = [zeros(N) for _ = 1:7]; temp = [zeros(N) for _ = 1:7]; # temporary vars
-    klidx = kl_indexer(M, L); cidx = 1:M # indexers
     t_v = @elapsed begin
         comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) #comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
     end
+    # Ax, b, then residual:
+    temps = [zeros(N) for _ in 1:3]; reset = [zeros(N) for _ in 1:3]
+    Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
+    t_ax = @elapsed begin
+        comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
+        #Ax = transpose(Ax)[:] # j first then m order
+    end
+    bnny = zeros(N, M)
+    temps = [zeros(N) for _ in 1:2]; reset = [zeros(N) for _ in 1:2]
+    t_b = @elapsed begin
+        comp_b!(bnny, temps, reset, E, γ, α, Midx, cidx)
+        #bnny = transpose(bnny)[:] # same as Ax
+    end
+    t_axb = @elapsed begin
+        r = Ax - bnny
+    end
     mems = [Base.summarysize(A), Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
     println(mems)
-    println([t_data, t_as, t_ls, t_v])
-    println("norm(v - (Aθ-b)) = ",norm(r_ls - vec(v)))
+    println([t_data, t_as, t_ls, t_v, t_ax, t_b, t_axb])
+    #println("norm(v - (Aθ-b)) = ",norm(r_ls - r))
     println("M = $M, N = $n_data, L = $n_feature × $n_basis = $L")
     println("ratio of mem(A)+mem(b)/(mem(D)+mem(S)+mem(ϕ)+mem(dϕ)) = ", sum(mems[1:2])/sum(mems[3:end]))
     println("ratio of time(A)+time(b)/(time(D)+time(S)+time(ϕ)+time(dϕ)) = ", t_as/t_data)
     println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
-    
+    println("ratio of time(Ax-b given A and b)/(time(Ax) + time(b) + time(Ax-b) [given precomputed ϕ, γ, α]) = ", t_ls/(t_ax+t_b+t_axb))
+    display(A*θ)
+    display(Ax)
 end
 
 function Ax_out!(y, a, u)
