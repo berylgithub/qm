@@ -296,6 +296,21 @@ function comp_α(D, SKs, Midx, Widx)
     return α
 end
 
+function comp_γ(D, SKs, Midx, Widx)
+    M = length(Midx); N = length(Widx)
+    γ = zeros(N, M)
+    mc = 1
+    for m ∈ Widx
+        kc = 1
+        for k ∈ Midx
+            γ[mc, kc] = D[k, m]*SKs[mc]
+            kc += 1
+        end
+        mc += 1
+    end
+    return γ
+end
+
 """
 assemble A matrix and b vector for the linear system, should use sparse logic (I, J, V triplets) later!!
 params:
@@ -496,19 +511,27 @@ end
 
 
 """
-computes the A*x := ∑_{kl} θ_kl ϕ_kl (1 - γ_k δ_jk)/γ_k α_j
-Same as v_j function but for VK only
-"""
-function comp_Ax!(Ax, b, temps, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, γ, α)
-    vk, RK, VK, ϕkl, ϕjl = temps;
-end
-
-"""
 computes b := (E_j - ∑_k E_k/γ_k α_j)
 """
 function comp_b!()
     
 end
+
+
+
+"""
+computes the A*x := ∑_{kl} θ_kl ϕ_kl (1 - γ_k δ_jk)/γ_k α_j
+Same as v_j function but for VK only
+"""
+function comp_Ax_j!(Ax, b, temps, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, γ, α, j)
+    ∑l = temps;
+    @simd for c ∈ cidx  # vectorized op on N vector length s.t. x = [m1, m2, ... N]
+        k = Midx[c]
+        ∑l .= ( ((@view B[:,klidx[c]])*θ[klidx[c]]) .* (1 .- (@view γ[:,k]).*δ(j,k)) )/( (@view γ[:,k]) .* (@view α[:, j])) # of length N
+    end
+end
+
+
 
 """
 computes v_j := ΔjK ∀m (returns a vector with length m), with precomputed vector of matrices B instead of (W, ϕ, dϕ)
@@ -565,6 +588,7 @@ end
 
 
 """
+>>> Probably not needed now, since LS solvers generally dont need gradient
 for AD, since comp_v_j is vectorized
 """
 function comp_v_jm()
@@ -757,7 +781,8 @@ function test_A()
     display(B[:,klidx[k]])
     display(θ[klidx[k]])
     display(B[:,klidx[k]]*θ[klidx[k]])
-    α = comp_α(D, SKs, Midx, Widx) # precompute alpha matrix for each jm
+    γ = comp_γ(D, SKs, Midx, Widx)
+    α = γ .- 1 # precompute alpha matrix for each jm
     outs = [zeros(N) for _ = 1:7];
     cidx = 1:M # k indexer
     comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:,jc], j) # this is the tested one
@@ -776,7 +801,7 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 250; n_feature = 40; n_basis = 8
+    n_data = 250; n_feature = 24; n_basis = 3
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
