@@ -540,6 +540,14 @@ function comp_b!(b, temps, E, γ, α, Midx, cidx)
 end
 
 """
+computes Aᵀv, where v ∈ Float64(col of A), required for CGLS
+
+"""
+function comp_Aᵀv!()
+    
+end
+
+"""
 computes ΔjK := ΔjK for m = 1,...,N (returns a vector with length N), with precomputed vector of matrices B instead of (W, ϕ, dϕ)
 params:
     - outs, temporary vectors to avoid memalloc
@@ -817,12 +825,12 @@ function test_A()
     display(A*θ)
     temps = [zeros(N) for _ in 1:3]; reset = [zeros(N) for _ in 1:3]
     Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
-    comp_Ax!(Ax, temps, reset, θ, B, Midx, cidx, klidx, γ, α)
+    comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
     display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     display(b)
     temps = [zeros(N) for _ in 1:2]; reset = [zeros(N) for _ in 1:2]
     bnny = zeros(N, M)
-    comp_b!(bnny, temps, reset, E, γ, α, Midx, cidx)
+    comp_b!(bnny, temps, E, γ, α, Midx, cidx)
     display(transpose(bnny)[:])
     # test Ax-b comparison:
     println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
@@ -833,7 +841,7 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 250; n_feature = 24; n_basis = 3
+    n_data = 400; n_feature = 24; n_basis = 8
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
@@ -889,8 +897,8 @@ function testtime()
     mems = [Base.summarysize(A), Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
     println(mems)
     println([t_data, t_as, t_ls, t_v, t_ax, t_b, t_axb])
-    println("norm(v - (Aθ-b)) = ",norm(r_ls - r))
     println("M = $M, N = $n_data, L = $n_feature × $n_basis = $L")
+    println("norm(v - (Aθ-b)) = ",norm(r_ls - r))
     println("ratio of mem(A)+mem(b)/(mem(D)+mem(S)+mem(ϕ)+mem(dϕ)) = ", sum(mems[1:2])/sum(mems[3:end]))
     println("ratio of time(A)+time(b)/(time(D)+time(S)+time(ϕ)+time(dϕ)) = ", t_as/t_data)
     println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
