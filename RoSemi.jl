@@ -844,7 +844,7 @@ function test_A()
     println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
 
     # test Aᵀv:
-    v = zeros(N*M); fill!(v, 0.1) # try rand after
+    v = rand(N*M); #fill!(v, 0.1) # try rand after
     display(A'*v)
     Aᵀv = zeros(M*L)
     comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
@@ -909,15 +909,23 @@ function testtime()
     t_axb = @elapsed begin
         r = Ax - bnny
     end
+    # Aᵀv, try compare norm against actual A too:
+    v = rand(N*M)
+    Aᵀv = zeros(M*L)
+    Aᵀv_act = A'*v
+    t_atv = @elapsed begin
+        comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
+    end
     mems = [Base.summarysize(A), Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
     println(mems)
-    println([t_data, t_as, t_ls, t_v, t_ax, t_b, t_axb])
+    println([t_data, t_as, t_ls, t_v, t_ax, t_b, t_axb, t_atv])
     println("M = $M, N = $n_data, L = $n_feature × $n_basis = $L")
     println("norm(v - (Aθ-b)) = ",norm(r_ls - r))
+    println("norm(Aᵀv - actual Aᵀv) = ", norm(Aᵀv- Aᵀv_act))
     println("ratio of mem(A)+mem(b)/(mem(D)+mem(S)+mem(ϕ)+mem(dϕ)) = ", sum(mems[1:2])/sum(mems[3:end]))
     println("ratio of time(A)+time(b)/(time(D)+time(S)+time(ϕ)+time(dϕ)) = ", t_as/t_data)
     println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
-    println("ratio of time(Ax-b given A and b)/(time(Ax) + time(b) + time(Ax-b) [given precomputed ϕ, γ, α]) = ", t_ls/(t_ax+t_b+t_axb))
+    println("ratio of time(Ax-b given A and b)/(time(Ax) + time(b) + time(Ax-b) + time(Aᵀv) [given precomputed ϕ, γ, α]) = ", t_ls/(t_ax+t_b+t_axb+t_atv))
 end
 
 function Ax_out!(y, a, u)
