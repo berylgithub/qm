@@ -944,27 +944,13 @@ end
 tests LS without forming A (try Krylov.jl and Optim.jl)
 """
 function test_LS()
-    # try arbitrary system:
-    row = 5; col = 5
-    b = Vector{Float64}(reverse(1:row))
-    a = rand(row)
-    op = LinearOperator(Float64, row, col, false, false,    (y,u) -> Ax_out!(y,a,u),
-                                                            (y,v) -> Aᵀb_out!(y,a,v))
-    x, stat = cgls(op, b)
-    display(stat)
-    y = zeros(row)
-    Ax_out!(y, a, x)
-    display([y b])
-    display(norm(y - b))
-    show(op)
-
     # try dummy system:
     # setup data:
-    n_data = 30; n_feature = 12; n_basis = 3
+    n_data = 250; n_feature = 24; n_basis = 6
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
-    M = 10; N = n_data - M
+    M = 100; N = n_data - M
     dataidx = 1:n_data
     Midx = sample(dataidx, M, replace=false)
     Widx = setdiff(dataidx, Midx)
@@ -993,12 +979,17 @@ function test_LS()
     show(op)
     # compute b:
     b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
-    comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
-    x, stat = cgls(op, b, itmax=500)
+    t_lo = @elapsed begin
+        comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
+        x, stat = cgls(op, b, itmax=500)
+    end
     display(stat)
     display(norm(op*x - b))
     # compare with standard A, b:
-    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
-    x, stat = cgls(A, b, itmax=500)
+    t_ls = @elapsed begin
+        A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+        x, stat = cgls(A, b, itmax=500)
+    end
     display(norm(A*x - b))
+    display([t_lo, t_ls])
 end
