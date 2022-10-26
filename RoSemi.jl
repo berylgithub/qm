@@ -510,13 +510,14 @@ function comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, j, jc)
     end
 end
 
-function comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
+function comp_Ax!(Ax, Axtemp, temps, θ, B, Midx, cidx, klidx, γ, α)
     # loop for all j:
     for jc ∈ cidx
         comp_Ax_j!(temps, θ, B, Midx, cidx, klidx, γ, α, Midx[jc], jc)
-        Ax[:, jc] .= temps[1]
+        Axtemp[:, jc] .= temps[1]
         fill!.(temps, 0.)
     end
+    Ax .= vec(transpose(Axtemp)) # transpose first for j as inner index then m outer
 end
 
 """
@@ -531,12 +532,13 @@ function comp_b_j!(temps, E, γ, α, Midx, cidx, j, jc)
     @. b_j = (E[j] - ∑k) / (@view α[:, jc])
 end
 
-function comp_b!(b, temps, E, γ, α, Midx, cidx)
+function comp_b!(b, btemp, temps, E, γ, α, Midx, cidx)
     for jc ∈ cidx
         comp_b_j!(temps, E, γ, α, Midx, cidx, Midx[jc], jc)
-        b[:, jc] .= temps[1]
+        btemp[:, jc] .= temps[1]
         fill!.(temps, 0.)
     end
+    b .= vec(transpose(btemp))  
 end
 
 """
@@ -831,15 +833,15 @@ function test_A()
     # test Ax and b routines:
     cidx = 1:M
     temps = [zeros(N) for _ in 1:3]; 
-    Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
-    comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
-    #display(A*θ)
-    #display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
+    Ax = zeros(N*M); Axtemp = zeros(N, M) #temporarily put as m × j matrix, flatten later
+    comp_Ax!(Ax,Axtemp, temps, θ, B, Midx, cidx, klidx, γ, α)
+    display(A*θ)
+    display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     temps = [zeros(N) for _ in 1:2]; 
-    bnny = zeros(N, M)
-    comp_b!(bnny, temps, E, γ, α, Midx, cidx)
-    #display(b)
-    #display(transpose(bnny)[:])
+    bnny = zeros(N*M); bnnytemp = zeros(N, M)
+    comp_b!(bnny, bnnytemp, temps, E, γ, α, Midx, cidx)
+    display(b)
+    display(transpose(bnny)[:])
     # test Ax-b comparison:
     println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
 
@@ -857,11 +859,11 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 400; n_feature = 24; n_basis = 8
+    n_data = 100; n_feature = 24; n_basis = 8
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
-    M = 100; N = n_data - M
+    M = 10; N = n_data - M
     dataidx = 1:n_data
     Midx = sample(dataidx, M, replace=false)
     Widx = setdiff(dataidx, Midx)
@@ -896,19 +898,17 @@ function testtime()
     end
     # Ax, b, then residual:
     temps = [zeros(N) for _ in 1:3];
-    Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
+    Ax = zeros(N*M); Axtemp = zeros(N, M) #temporarily put as m × j matrix, flatten later
     t_ax = @elapsed begin
-        comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
-        Ax = vec(transpose(Ax)) # j first then m order
+        comp_Ax!(Ax, Axtemp, temps, θ, B, Midx, cidx, klidx, γ, α)
     end
     temps = [zeros(N) for _ in 1:2];
-    bnny = zeros(N, M)
+    b = zeros(N*M); btemp = zeros(N, M)
     t_b = @elapsed begin
-        comp_b!(bnny, temps, E, γ, α, Midx, cidx)
-        bnny = vec(transpose(bnny)) # same as Ax
+        comp_b!(b, btemp, temps, E, γ, α, Midx, cidx)
     end
     t_axb = @elapsed begin
-        r = Ax - bnny
+        r = Ax - b
     end
     # Aᵀv, try compare norm against actual A too:
     v = rand(N*M)
@@ -946,7 +946,7 @@ tests LS without forming A (try Krylov.jl and Optim.jl)
 function test_LS()
     # try arbitrary system:
     row = 5; col = 5
-    b = Vector{Float64}(1:row)
+    b = Vector{Float64}(reverse(1:row))
     a = rand(row)
     op = LinearOperator(Float64, row, col, false, false,    (y,u) -> Ax_out!(y,a,u),
                                                             (y,v) -> Aᵀb_out!(y,a,v))
@@ -956,4 +956,46 @@ function test_LS()
     Ax_out!(y, a, x)
     display([y b])
     display(norm(y - b))
+    show(op)
+
+    # try dummy system:
+    # setup data:
+    n_data = 30; n_feature = 12; n_basis = 3
+    W = rand(n_feature, n_data)
+    E = rand(n_data)
+    # setup data selection:
+    M = 10; N = n_data - M
+    dataidx = 1:n_data
+    Midx = sample(dataidx, M, replace=false)
+    Widx = setdiff(dataidx, Midx)
+    # compute D, S and ϕ:
+    Bhat = Matrix{Float64}(I, n_feature, n_feature)
+    D = compute_distance_all(W, Bhat)
+    SKs = map(m -> comp_SK(D, Midx, m), Widx)
+    γ = comp_γ(D, SKs, Midx, Widx)
+    α = γ .- 1
+    ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true)
+    n_basis += 3; L = n_feature*n_basis # reset L
+    B = zeros(N, M*L); comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
+    # indexers:
+    klidx = kl_indexer(M, L)
+    cidx = 1:M
+    # Ax, b, then residual:
+    temps = [zeros(N) for _ in 1:3];
+    Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
+    comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
+    Ax = vec(transpose(Ax)) # j first then m order
+    temps = [zeros(N) for _ in 1:2];
+    bnny = zeros(N, M)
+    comp_b!(bnny, temps, E, γ, α, Midx, cidx)
+    bnny = vec(transpose(bnny)) # same as Ax
+    r = Ax - bnny
+    # Aᵀv, try compare norm against actual A too:
+    v = rand(N*M)
+    Aᵀv = zeros(M*L)
+    Aᵀv_act = A'*v
+    comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
+
+    op = LinearOperator(Float64, row, col, false, false,    (y,u) -> Ax_out!(y,a,u),
+                                                            (y,v) -> Aᵀb_out!(y,a,v))
 end
