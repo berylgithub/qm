@@ -542,19 +542,27 @@ end
 """
 computes Aᵀv, where v ∈ Float64(col of A), required for CGLS
 params:
-    - klrange := the rename of klidx
+    
 """
-function comp_Aᵀv!(Av, v, B, Midx, kidx, lidx, klrange, γ, α)
-    rrange = 1:M*L
-    crange = 1:M*N
-    for ri ∈ rrange
-        ∑ = 0.
-        for ci ∈ crange # mc, kc, jc are relative counters to non contiguous γ, α matrices.
-            num = B[m, ci]*v[ci]*(1-γ[mc,kc]*δ(j,k))
-            den = γ[mc, kc]*α[mc, jc] 
-            ∑ = ∑ + num/den
+function comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
+    rc = 1 # row counter
+    for kc ∈ eachindex(Midx)
+        k = Midx[kc]; # absolute index k
+        for l ∈ 1:L
+            cc = 1 # col counter
+            ∑ = 0.
+            for mc ∈ eachindex(Widx)
+                for jc ∈ eachindex(Midx)
+                    j = Midx[jc]; # absolute index j
+                    num = B[mc, rc]*v[cc]*(1 - γ[mc,kc]*δ(j,k))
+                    den = γ[mc, kc]*α[mc, jc]
+                    ∑ = ∑ + num/den
+                    cc += 1
+                end
+            end
+            Aᵀv[rc] = ∑
+            rc += 1
         end
-        Av[ri] = ∑
     end
 end
 
@@ -739,7 +747,7 @@ function test_A()
     println("D = ")
     display(D)
 
-    Midx = [1,5] # k and j index
+    Midx = [1,5,4] # k and j index
     data_idx = 1:n_data ; Widx = setdiff(data_idx, Midx) # unsupervised data index (m)
     cols = length(Midx)*n_feature*n_basis # index of k,l
     rows = length(Midx)*length(Widx) # index of j,m  
@@ -806,10 +814,9 @@ function test_A()
     comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature) # the index should be k,l only
     display(B)
     klidx = kl_indexer(M, L) # this is correct, this is the kl indexer!!
-    display(klidx)
     γ = comp_γ(D, SKs, Midx, Widx)
     α = γ .- 1 # precompute alpha matrix for each jm
-    outs = [zeros(N) for _ = 1:7];
+    #= outs = [zeros(N) for _ = 1:7];
     cidx = 1:M # k indexer
     comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:,jc], j) # this is the tested one
     ΔjK = outs[1]
@@ -818,22 +825,30 @@ function test_A()
     v = zeros(N, M)
     outs = [zeros(N) for _ = 1:7]; 
     comp_v!(v, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
-    display(v)
+    display(v) =#
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 
     # test Ax and b routines:
-    display(A*θ)
+    cidx = 1:M
     temps = [zeros(N) for _ in 1:3]; 
     Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
     comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
-    display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
-    display(b)
+    #display(A*θ)
+    #display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     temps = [zeros(N) for _ in 1:2]; 
     bnny = zeros(N, M)
     comp_b!(bnny, temps, E, γ, α, Midx, cidx)
-    display(transpose(bnny)[:])
+    #display(b)
+    #display(transpose(bnny)[:])
     # test Ax-b comparison:
     println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
+
+    # test Aᵀv:
+    v = zeros(N*M); fill!(v, 0.1) # try rand after
+    display(A'*v)
+    Aᵀv = zeros(M*L)
+    comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
+    display(Aᵀv)
 end
 
 """
