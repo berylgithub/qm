@@ -849,6 +849,7 @@ function test_A()
     Aᵀv = zeros(M*L)
     comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
     display(Aᵀv)
+    display(norm(Aᵀv - A'*v))
 end
 
 """
@@ -898,13 +899,13 @@ function testtime()
     Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
     t_ax = @elapsed begin
         comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
-        Ax = transpose(Ax)[:] # j first then m order
+        Ax = vec(transpose(Ax)) # j first then m order
     end
     temps = [zeros(N) for _ in 1:2];
     bnny = zeros(N, M)
     t_b = @elapsed begin
         comp_b!(bnny, temps, E, γ, α, Midx, cidx)
-        bnny = transpose(bnny)[:] # same as Ax
+        bnny = vec(transpose(bnny)) # same as Ax
     end
     t_axb = @elapsed begin
         r = Ax - bnny
