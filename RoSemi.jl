@@ -835,13 +835,13 @@ function test_A()
     temps = [zeros(N) for _ in 1:3]; 
     Ax = zeros(N*M); Axtemp = zeros(N, M) #temporarily put as m × j matrix, flatten later
     comp_Ax!(Ax,Axtemp, temps, θ, B, Midx, cidx, klidx, γ, α)
-    display(A*θ)
-    display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
+    #display(A*θ)
+    #display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     temps = [zeros(N) for _ in 1:2]; 
     bnny = zeros(N*M); bnnytemp = zeros(N, M)
     comp_b!(bnny, bnnytemp, temps, E, γ, α, Midx, cidx)
-    display(b)
-    display(transpose(bnny)[:])
+    #display(b)
+    #display(transpose(bnny)[:])
     # test Ax-b comparison:
     println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
 
@@ -981,21 +981,24 @@ function test_LS()
     klidx = kl_indexer(M, L)
     cidx = 1:M
     # Ax, b, then residual:
-    temps = [zeros(N) for _ in 1:3];
-    Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
-    comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
-    Ax = vec(transpose(Ax)) # j first then m order
-    temps = [zeros(N) for _ in 1:2];
-    bnny = zeros(N, M)
-    comp_b!(bnny, temps, E, γ, α, Midx, cidx)
-    bnny = vec(transpose(bnny)) # same as Ax
-    r = Ax - bnny
+    Axtemp = zeros(N, M); tempsA = [zeros(N) for _ in 1:3]
     # Aᵀv, try compare norm against actual A too:
     v = rand(N*M)
     Aᵀv = zeros(M*L)
-    Aᵀv_act = A'*v
     comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
-
-    op = LinearOperator(Float64, row, col, false, false,    (y,u) -> Ax_out!(y,a,u),
-                                                            (y,v) -> Aᵀb_out!(y,a,v))
+    row = N*M; col = L*M
+    # Au and Aᵀv as LinearOperator datastructure:
+    op = LinearOperator(Float64, row, col, false, false, (y,u) -> comp_Ax!(y, Axtemp, tempsA, u, B, Midx, cidx, klidx, γ, α), 
+                                                        (y,v) -> comp_Aᵀv!(y, v, B, Midx, Widx, γ, α, L))
+    show(op)
+    # compute b:
+    b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
+    comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
+    x, stat = cgls(op, b, itmax=500)
+    display(stat)
+    display(norm(op*x - b))
+    # compare with standard A, b:
+    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
+    x, stat = cgls(A, b, itmax=500)
+    display(norm(A*x - b))
 end
