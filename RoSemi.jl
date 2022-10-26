@@ -544,14 +544,17 @@ computes Aᵀv, where v ∈ Float64(col of A), required for CGLS
 params:
     - klrange := the rename of klidx
 """
-function comp_Aᵀv!(v, B, Midx, kidx, lidx, klrange, γ, α)
+function comp_Aᵀv!(Av, v, B, Midx, kidx, lidx, klrange, γ, α)
     rrange = 1:M*L
-    for kc ∈ kidx # relative indexer of k
-        k = Midx[kc] # absolute indexer
-        #....
-        for l ∈ 1:L
-            
+    crange = 1:M*N
+    for ri ∈ rrange
+        ∑ = 0.
+        for ci ∈ crange # mc, kc, jc are relative counters to non contiguous γ, α matrices.
+            num = B[m, ci]*v[ci]*(1-γ[mc,kc]*δ(j,k))
+            den = γ[mc, kc]*α[mc, jc] 
+            ∑ = ∑ + num/den
         end
+        Av[ri] = ∑
     end
 end
 
@@ -603,7 +606,7 @@ function comp_v!(v, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
 end
 
 
-"""
+#= """
 compute the whole vector v with components v_jm := ΔjK(w_m)
 output:
     - v, vector with length N × M
@@ -619,7 +622,7 @@ function comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)
         skc += 1
     end
 end
-
+ =#
 
 """
 >>> Probably not needed now, since LS solvers generally dont need gradient
@@ -798,17 +801,12 @@ function test_A()
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
     mc = 2; jc = 1; kc = 1
     m = Widx[mc]; j = Midx[jc]; k = Midx[kc]; l = 1
-    SK = comp_SK(D, Midx, m)
     SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
     B = zeros(N, M*L)
     comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature) # the index should be k,l only
     display(B)
     klidx = kl_indexer(M, L) # this is correct, this is the kl indexer!!
-    k = 2
     display(klidx)
-#=     display(B[:,klidx[k]])
-    display(θ[klidx[k]])
-    display(B[:,klidx[k]]*θ[klidx[k]]) =#
     γ = comp_γ(D, SKs, Midx, Widx)
     α = γ .- 1 # precompute alpha matrix for each jm
     outs = [zeros(N) for _ = 1:7];
@@ -818,19 +816,19 @@ function test_A()
     ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
     println([ΔjK, ΔjK_act])
     v = zeros(N, M)
-    outs = [zeros(N) for _ = 1:7]; temp = [zeros(N) for _ = 1:7]
-    comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
+    outs = [zeros(N) for _ = 1:7]; 
+    comp_v!(v, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
     display(v)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 
     # test Ax and b routines:
     display(A*θ)
-    temps = [zeros(N) for _ in 1:3]; reset = [zeros(N) for _ in 1:3]
+    temps = [zeros(N) for _ in 1:3]; 
     Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
     comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
     display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     display(b)
-    temps = [zeros(N) for _ in 1:2]; reset = [zeros(N) for _ in 1:2]
+    temps = [zeros(N) for _ in 1:2]; 
     bnny = zeros(N, M)
     comp_b!(bnny, temps, E, γ, α, Midx, cidx)
     display(transpose(bnny)[:])
@@ -876,19 +874,19 @@ function testtime()
     end 
     # residual directly:
     v = zeros(N, M)
-    outs = [zeros(N) for _ = 1:7]; temp = [zeros(N) for _ = 1:7]; # temporary vars
+    outs = [zeros(N) for _ = 1:7]; # temporary vars
     t_v = @elapsed begin
-        comp_v!(v, outs, temp, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) #comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
+        comp_v!(v, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) #comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
     end
     # Ax, b, then residual:
-    temps = [zeros(N) for _ in 1:3]; reset = [zeros(N) for _ in 1:3]
+    temps = [zeros(N) for _ in 1:3];
     Ax = zeros(N, M) #temporarily put as m × j matrix, flatten later
     t_ax = @elapsed begin
         comp_Ax!(Ax, temps, θ, B, Midx, cidx, klidx, γ, α)
         Ax = transpose(Ax)[:] # j first then m order
     end
+    temps = [zeros(N) for _ in 1:2];
     bnny = zeros(N, M)
-    temps = [zeros(N) for _ in 1:2]; reset = [zeros(N) for _ in 1:2]
     t_b = @elapsed begin
         comp_b!(bnny, temps, E, γ, α, Midx, cidx)
         bnny = transpose(bnny)[:] # same as Ax
