@@ -196,7 +196,7 @@ params:
     - m, num of selected features after PCA
 """
 function extract_binomial_feature(m)
-    W_half = load("data/ACSF_symm.jld")["data"][:, 1:51] # only include the sum features
+    W_half = load("data/ACSF_symm.jld")["data"][:, 52:102] # only include the sum features
     W_pca = PCA(W_half, m)
     # generate index:
     bin = binomial(m, 2)
