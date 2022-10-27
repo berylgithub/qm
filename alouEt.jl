@@ -72,7 +72,7 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
         indexes = []
         for i ∈ 1:len
             if D[i]["formula"] == mol_name
-            push!(indexes, i)
+                push!(indexes, i)
             end
         end
         # cut data into n_data:
@@ -88,9 +88,10 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
         W = W[indexes, 1:n_feature]     # slice
         W = normalize_routine(W)        # normalize =#
         # slice the global feature matrix:
-        W = load("data/ACSF_PCA_scaled.jld")["data"] # load scaled(PCA(features)), this is more accurate since the columns are sorted by the most important featuers
-        W = W[indexes, 1:n_feature] # slice the featuere matrix by the data indices and the first n_feature
-        
+        #W = load("data/ACSF_PCA_scaled.jld")["data"] # load scaled(PCA(features)), this is more accurate since the columns are sorted by the most important featuers
+        #W = W[indexes, 1:n_feature] # slice the featuere matrix by the data indices and the first n_feature
+        W = load("data/ACSF_PCA_bin_$n_feature"*"_scaled.jld")["data"] # need to change the flow later since the PCA and scaling is fast to compuite
+        W = W[indexes, :]
         main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data.jld"
         save(main_file, "data", W)
         # get center indexes:
