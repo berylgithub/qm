@@ -139,20 +139,22 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
 
     # !!!! using LinearOperators !!!:
     # precompute stuffs:
-    t_pre = @elapsed begin
+    t_ab = @elapsed begin
         SKs = map(m -> comp_SK(D, Midx, m), Widx)
         γ = comp_γ(D, SKs, Midx, Widx)
         α = γ .- 1
-        B = zeros(N, M*L); comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
+        B = zeros(N, M*L); 
+        comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
         klidx = kl_indexer(M, L)
         cidx = 1:M
     end
-    println("precomputation time = ",t_pre)
+    println("precomputation time = ",t_ab)
     t_ls = @elapsed begin
         # generate LinOp in place of A!:
         Axtemp = zeros(N, M); tempsA = [zeros(N) for _ in 1:3]
         op = LinearOperator(Float64, row, col, false, false, (y,u) -> comp_Ax!(y, Axtemp, tempsA, u, B, Midx, cidx, klidx, γ, α), 
                                                             (y,v) -> comp_Aᵀv!(y, v, B, Midx, Widx, γ, α, L))
+        show(op)
         # generate b:
         b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
