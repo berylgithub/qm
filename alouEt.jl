@@ -118,9 +118,10 @@ outputs:
     - indexes of n-maximum MAD
 """
 function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_mad=false)
-    M = length(Midx); N = length(Widx)
+    M = length(Midx); N = length(Widx); L = n_feature*n_basis
+    row = M*N; col = M*L
     println("[M, N] = ",[M, N])
-    t_ab = @elapsed begin
+    #= t_ab = @elapsed begin
         # assemble A and b:
         A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
     end
@@ -134,7 +135,33 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     end
     θ = linres[1]
     obj = lsq(A, θ, b)
-    println("CGLS obj = ",obj, ", CGLS time = ",t_ls)
+    println("CGLS obj = ",obj, ", CGLS time = ",t_ls) =#
+
+    # !!!! using LinearOperators !!!:
+    # precompute stuffs:
+    t_pre = @elapsed begin
+        SKs = map(m -> comp_SK(D, Midx, m), Widx)
+        γ = comp_γ(D, SKs, Midx, Widx)
+        α = γ .- 1
+        B = zeros(N, M*L); comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
+        klidx = kl_indexer(M, L)
+        cidx = 1:M
+    end
+    println("precomputation = ",t_pre)
+    t_ls = @elapsed begin
+        # generate LinOp in place of A!:
+        Axtemp = zeros(N, M); tempsA = [zeros(N) for _ in 1:3]
+        op = LinearOperator(Float64, row, col, false, false, (y,u) -> comp_Ax!(y, Axtemp, tempsA, u, B, Midx, cidx, klidx, γ, α), 
+                                                            (y,v) -> comp_Aᵀv!(y, v, B, Midx, Widx, γ, α, L))
+        # generate b:
+        b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
+        comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
+        # do LS:
+        θ, stat = cgls(op, b, itmax=500) # 🌸
+    end
+    # get residual:
+    obj = norm(op*θ - b)^2
+    println("solver obj = ",obj, ", solver time = ",t_ls)
 
     # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
     MAE = 0.
