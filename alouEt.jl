@@ -159,13 +159,13 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
         # do LS:
-        θ, stat = cgls(op, b, itmax=500) # 🌸
+        θ, stat = cgls(op, b, itmax=500, verbose=1) # 🌸
     end
     # get residual:
     obj = norm(op*θ - b)^2
     println("solver obj = ",obj, ", solver time = ",t_ls)
 
-    # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
+#=     # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
     MAE = 0.
     MADs = zeros(length(Widx)) # why use a list instead of just max? in case of multi MAD selection
     c = 1
@@ -173,7 +173,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         # MAD_K(w), depends on j:
         MAD = 0.; VK = 0.
         for j ∈ Midx
-            ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
+            ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk=true)
             MAD += abs(ΔjK)
         end
         MAD /= length(Midx)
@@ -182,8 +182,14 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         err = abs(VK - E[m])
         MAE += err
         c += 1       
-    end
-    MAE /= length(Widx)
+    end =#
+    # get MAE and MAD:
+    v = zeros(row); vmat = zeros(N, M); VK = zeros(N); tempsA = [zeros(N) for _ = 1:7] # replace temp var for memefficiency
+    comp_v!(v, vmat, VK, tempsA, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    MAE = sum(VK .- E[Widx]) / N
+    display([VK E[Widx]])
+    MADs = sum(abs.(vmat), dims=2) # length N
+    display(MADs)
     MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
