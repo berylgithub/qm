@@ -165,24 +165,6 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     obj = norm(op*θ - b)^2
     println("solver obj = ",obj, ", solver time = ",t_ls)
 
-#=     # ΔE:= |E_pred - E_actual|, independent of j (can pick any):
-    MAE = 0.
-    MADs = zeros(length(Widx)) # why use a list instead of just max? in case of multi MAD selection
-    c = 1
-    for m ∈ Widx
-        # MAD_K(w), depends on j:
-        MAD = 0.; VK = 0.
-        for j ∈ Midx
-            ΔjK, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk=true)
-            MAD += abs(ΔjK)
-        end
-        MAD /= length(Midx)
-        MADs[c] = MAD
-        #println("MAD of m=$m is ", MAD)
-        err = abs(VK - E[m])
-        MAE += err
-        c += 1       
-    end =#
     # get MAE and MAD:
     v = zeros(row); vmat = zeros(N, M); VK = zeros(N); tempsA = [zeros(N) for _ = 1:7] # replace temp var for memefficiency
     comp_v!(v, vmat, VK, tempsA, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
@@ -203,7 +185,8 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
 
     # save all errors foreach iters:
     data = [MAE, RMSD, MADs[sidxes[end]]]
-    strlist = vcat(string.([M, N]), [lstrip(@sprintf "%16.8e" s) for s in data], string(get_mad), string.([t_ab, t_ls]))
+    matsize = [M, N, n_feature, n_basis]
+    strlist = vcat(string.(matsize), [lstrip(@sprintf "%16.8e" s) for s in data], string(get_mad), string.([t_ab, t_ls]))
     open("result/$mol_name/err_$mol_name.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -213,7 +196,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     end
     # save also the M indices and θ's to file!!:
     data = Dict("centers"=>Midx, "theta"=>θ)
-    save("result/$mol_name/theta_center_$mol_name.jld", "data", data)
+    save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
     return MAE, MADmax_idxes
 end
 
