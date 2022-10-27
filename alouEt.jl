@@ -147,7 +147,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         klidx = kl_indexer(M, L)
         cidx = 1:M
     end
-    println("precomputation = ",t_pre)
+    println("precomputation time = ",t_pre)
     t_ls = @elapsed begin
         # generate LinOp in place of A!:
         Axtemp = zeros(N, M); tempsA = [zeros(N) for _ in 1:3]
