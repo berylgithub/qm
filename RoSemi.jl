@@ -585,9 +585,10 @@ params:
     - j, absolute index of j ∈ Midx, Int
 output:
     - ΔjK, vector ∀m, ∈ Float64(N) (element of outs vector)
+    - VK, VK(w_m) ∀m
 """
 function comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, αj, j)
-    ΔjK, vk, vj, RK, VK, ϕkl, ϕjl = outs;
+    ΔjK, VK, vk, vj, RK, ϕkl, ϕjl = outs;
     @simd for c ∈ cidx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
         k = Midx[c]
         ϕkl .= B[:,klidx[c]]*θ[klidx[c]]
@@ -605,14 +606,23 @@ end
 """
 full ΔjK computer ∀jm, m × j matrix
 outputs:
-    - v, matrix ΔjK(w_m) ∀m,j ∈ Float64(N, M) (preallocated outside!)
+    - vmat, matrix ΔjK(w_m) ∀m,j ∈ Float64(N, M) (preallocated outside!)
+    - VK, vector containing VK(w_m) ∀m
 """
-function comp_v!(v, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
-    for jc ∈ cidx
+function comp_v!(v, vmat, VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    # initial loop for VK (the first one cfant be parallel):
+    jc = cidx[1]
+    comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:, jc], Midx[jc])
+    vmat[:, jc] .= outs[1]
+    VK .= outs[2] # this only needs to be computed once
+    fill!.(outs, 0.)
+    # rest of the loop for ΔjK:
+    for jc ∈ cidx[2:end]
         comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:, jc], Midx[jc])
-        v[:, jc] .= outs[1]
+        vmat[:, jc] .= outs[1]
         fill!.(outs, 0.)
     end
+    v .= vec(transpose(vmat))
 end
 
 
@@ -749,7 +759,7 @@ function test_A()
     println("D = ")
     display(D)
 
-    Midx = [1,5,4] # k and j index
+    Midx = [1,5] # k and j index
     data_idx = 1:n_data ; Widx = setdiff(data_idx, Midx) # unsupervised data index (m)
     cols = length(Midx)*n_feature*n_basis # index of k,l
     rows = length(Midx)*length(Widx) # index of j,m  
@@ -818,19 +828,20 @@ function test_A()
     klidx = kl_indexer(M, L) # this is correct, this is the kl indexer!!
     γ = comp_γ(D, SKs, Midx, Widx)
     α = γ .- 1 # precompute alpha matrix for each jm
-    #= outs = [zeros(N) for _ = 1:7];
+    outs = [zeros(N) for _ = 1:7];
     cidx = 1:M # k indexer
-    comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:,jc], j) # this is the tested one
-    ΔjK = outs[1]
+    #comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:,jc], j) # this is the tested one
+    #ΔjK = outs[1]
     ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
-    println([ΔjK, ΔjK_act])
-    v = zeros(N, M)
-    outs = [zeros(N) for _ = 1:7]; 
-    comp_v!(v, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
-    display(v) =#
+    println([ΔjK_act, VK_act])
+    v = zeros(N*M); vmat = zeros(N, M); VK = zeros(N); outs = [zeros(N) for _ = 1:7]; 
+    comp_v!(v, vmat, VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
+    display(vmat)
+    display(v)
+    display(VK)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 
-    # test Ax and b routines:
+    #= # test Ax and b routines:
     cidx = 1:M
     temps = [zeros(N) for _ in 1:3]; 
     Ax = zeros(N*M); Axtemp = zeros(N, M) #temporarily put as m × j matrix, flatten later
@@ -843,15 +854,15 @@ function test_A()
     #display(b)
     #display(transpose(bnny)[:])
     # test Ax-b comparison:
-    println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
+    println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:]))) =#
 
-    # test Aᵀv:
+    #= # test Aᵀv:
     v = rand(N*M); #fill!(v, 0.1) # try rand after
     display(A'*v)
     Aᵀv = zeros(M*L)
     comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
     display(Aᵀv)
-    display(norm(Aᵀv - A'*v))
+    display(norm(Aᵀv - A'*v)) =#
 end
 
 """
