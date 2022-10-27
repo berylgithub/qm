@@ -175,11 +175,8 @@ end
 function normalize_routine(infile)
     W = load(infile)["data"]
     #W = W' # 1 data = 1 column
-    display(W)
     dt = StatsBase.fit(UnitRangeTransform, W, dims=1)
-    display(dt)
     W = StatsBase.transform(dt, W)
-    display(W)
     return W
 end
 
@@ -190,4 +187,35 @@ function normalize_routine(W)
     dt = StatsBase.fit(UnitRangeTransform, W, dims=1)
     W = StatsBase.transform(dt, W)
     return W
+end
+
+
+"""
+compute the binomial(m, 2) feature from PCA(W, 51)
+params:
+    - m, num of selected features after PCA
+"""
+function extract_binomial_feature(m)
+    W_half = load("data/ACSF_symm.jld")["data"][:, 1:51] # only include the sum features
+    W_pca = PCA(W_half, m)
+    # generate index:
+    bin = binomial(m, 2)
+    b_ind = zeros(Int, bin, 2)
+    c = 1
+    for j ∈ 1:m
+        for i ∈ 1:m
+            if i<j
+                b_ind[c,:] .= [i, j]
+                c += 1
+            end
+        end
+    end
+    # compute feature:
+    n_f = m + bin
+    W_new = zeros(size(W_half,1), n_f)
+    W_new[:, 1:m] .= W_pca 
+    for i ∈ eachindex(b_ind[:, 1])
+        W_new[:, m+i] .= W_pca[:, b_ind[i, 1]] .* W_pca[:, b_ind[i, 2]]
+    end
+    save("data/ACSF_PCA_bin_$n_f.jld", "data", W_new)
 end
