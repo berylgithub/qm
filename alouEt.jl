@@ -159,7 +159,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
         # do LS:
-        θ, stat = cgls(op, b, itmax=500, verbose=1) # 🌸
+        θ, stat = cgls(op, b, itmax=500, verbose=0) # 🌸
     end
     # get residual:
     obj = norm(op*θ - b)^2
@@ -186,10 +186,8 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     # get MAE and MAD:
     v = zeros(row); vmat = zeros(N, M); VK = zeros(N); tempsA = [zeros(N) for _ = 1:7] # replace temp var for memefficiency
     comp_v!(v, vmat, VK, tempsA, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
-    MAE = sum(VK .- E[Widx]) / N
-    display([VK E[Widx]])
-    MADs = sum(abs.(vmat), dims=2) # length N
-    display(MADs)
+    MAE = sum(abs.(VK .- E[Widx])) / N
+    MADs = vec(sum(abs.(vmat), dims=2)) ./ M # length N
     MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
