@@ -293,7 +293,7 @@ end
 just a quick pred func
 """
 function predict(mol_name, n_data, n_feature, M)
-    res = load("result/H7C8N1/theta_center_H7C8N1.jld")["data"] # load optimized parameters
+    res = load("result/H7C8N1/theta_center_$mol_name"*"_[100, 150, 24, 8].jld")["data"] # load optimized parameters
     θ = res["theta"]
     colsize = length(θ)
     # load required data:
@@ -315,28 +315,32 @@ function predict(mol_name, n_data, n_feature, M)
     data_idx = 1:n_data
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
     n_basis += 3 # by definition of bspline
-    n_l = n_basis*n_feature
-    # setup matrix A:
-    Midx = res["centers"]
-    j = Midx[1] # arbitrary for MAE, dosent matter
-    Widx = setdiff(data_idx, Midx)
-    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
-    # compute MAE:
-    ΔEs = zeros(length(Widx))
-    c = 1
-    for m ∈ Widx
-        _, VK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=true)
-        err = abs(VK - E[m])
-        ΔEs[c] = err
-        c += 1
-    end
-    ΔEs *= 627.5
+    M = length(Midx); N = length(Widx); L = n_feature*n_basis; row = M*N; col = M*L
+    # precompute stuffs:
+    SKs = map(m -> comp_SK(D, Midx, m), Widx)
+    γ = comp_γ(D, SKs, Midx, Widx)
+    α = γ .- 1
+    B = zeros(N, M*L); 
+    comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
+    klidx = kl_indexer(M, L)
+    cidx = 1:M
+    # generate LinOp in place of A!:
+    Axtemp = zeros(N, M); tempsA = [zeros(N) for _ in 1:3]
+    op = LinearOperator(Float64, row, col, false, false, (y,u) -> comp_Ax!(y, Axtemp, tempsA, u, B, Midx, cidx, klidx, γ, α), 
+                                                        (y,v) -> comp_Aᵀv!(y, v, B, Midx, Widx, γ, α, L))
+    show(op)
+    # get MAE and MAD:
+    v = zeros(row); vmat = zeros(N, M); VK = zeros(N); tempsA = [zeros(N) for _ = 1:7] # replace temp var for memefficiency
+    comp_v!(v, vmat, VK, tempsA, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    ΔEs = (VK .- E[Widx])*627.503 # convert from Hartree to kcal/mol
+    MAE = sum(abs.(ΔEs)) / N
+    MADs = vec(sum(abs.(vmat), dims=2)) ./ M # vector of length N
+    println("MAE of all mol w/ unknown E is ", MAE)
     sidx = sortperm(ΔEs)
-    MAE = (sum(ΔEs)/length(Widx)) # convert from Hartree to kcal/mol
     Wstr = string.(Widx)
     p = scatter(Wstr[sidx], ΔEs[sidx], xlabel = L"$m$", ylabel = L"$\Delta E_m$ (kcal/mol)", legend = false)
     display(p)
-    savefig(p, "plot/Delta_E.png")
+    savefig(p, "plot/Delta_E_new.png")
     println("MAE of all mol w/ unknown E is ", MAE)
     display(lsq(A, θ, b))
 end
