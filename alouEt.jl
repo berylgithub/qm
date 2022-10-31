@@ -303,16 +303,17 @@ function predict(mol_name, n_data, n_feature, M)
     file_distance = path*"$mol_name"*"_distances_$n_feature"*"_$n_data.jld"
     file_centers = path*"$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld"
     # setup parameters:
-    n_basis = 3 # pre-inputted number, later n_basis := n_basis+3 🌸
+    n_basis = 5 # pre-inputted number, later n_basis := n_basis+3 🌸
     dataset = load(file_dataset)["data"] # energy is from here
     W = load(file_finger)["data"]' # load and transpose the normalized fingerprint (sometime later needs to be in feature × data format already so no transpose)
     s_W = size(W) # n_feature × n_data
-    n_feature = s_W[1]; n_data = s_W[2];
+    n_feature = s_W[1]; n_data = s_W[2]; data_idx = 1:n_data
+    Midx = load(file_centers)["data"]; Midx = Midx[1:100] # slice the M indexes!!
+    Widx = setdiff(data_idx, Midx)
     E = map(d -> d["energy"], dataset)
     #println(E)
     D = load(file_distance)["data"] # the mahalanobis distance matrix
     # index op:
-    data_idx = 1:n_data
     ϕ, dϕ = extract_bspline_df(W, n_basis; flatten=true, sparsemat=true) # compute basis from fingerprint ∈ (n_feature*(n_basis+3), n_data)
     n_basis += 3 # by definition of bspline
     M = length(Midx); N = length(Widx); L = n_feature*n_basis; row = M*N; col = M*L
@@ -324,25 +325,20 @@ function predict(mol_name, n_data, n_feature, M)
     comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
     klidx = kl_indexer(M, L)
     cidx = 1:M
-    # generate LinOp in place of A!:
-    Axtemp = zeros(N, M); tempsA = [zeros(N) for _ in 1:3]
-    op = LinearOperator(Float64, row, col, false, false, (y,u) -> comp_Ax!(y, Axtemp, tempsA, u, B, Midx, cidx, klidx, γ, α), 
-                                                        (y,v) -> comp_Aᵀv!(y, v, B, Midx, Widx, γ, α, L))
-    show(op)
     # get MAE and MAD:
     v = zeros(row); vmat = zeros(N, M); VK = zeros(N); tempsA = [zeros(N) for _ = 1:7] # replace temp var for memefficiency
-    comp_v!(v, vmat, VK, tempsA, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
-    ΔEs = (VK .- E[Widx])*627.503 # convert from Hartree to kcal/mol
-    MAE = sum(abs.(ΔEs)) / N
-    MADs = vec(sum(abs.(vmat), dims=2)) ./ M # vector of length N
+    comp_v!(v, vmat, VK, tempsA, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) # compute errors
+    ΔEs = abs.(VK .- E[Widx]) .* 627.503 # convert from Hartree to kcal/mol
+    MAE = sum(ΔEs) / N
+    MADs = (vec(sum(abs.(vmat), dims=2)) ./ M) .* 627.503 # vector of length N and convert to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
-    sidx = sortperm(ΔEs)
+    sidx = sortperm(ΔEs); madidx = sortperm(MADs)
     Wstr = string.(Widx)
-    p = scatter(Wstr[sidx], ΔEs[sidx], xlabel = L"$m$", ylabel = L"$\Delta E_m$ (kcal/mol)", legend = false)
-    display(p)
-    savefig(p, "plot/Delta_E_new.png")
+    p1 = scatter(Wstr[sidx], ΔEs[sidx], xlabel = L"$m$", ylabel = L"$\Delta E_m$ (kcal/mol)", legend = false)
+    p2 = scatter(Wstr[sidx], log10.(MADs[sidx]), xlabel = L"$m$", ylabel = L"log$_{10}$MAD($w_m$) (kcal/mol)", legend = false)
+    display(p1); savefig(p1, "plot/Delta_E_new.png")
+    display(p2); savefig(p2, "plot/MAD_new.png")
     println("MAE of all mol w/ unknown E is ", MAE)
-    display(lsq(A, θ, b))
 end
 
 
