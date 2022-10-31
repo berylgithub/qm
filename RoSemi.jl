@@ -625,6 +625,19 @@ function comp_v!(v, vmat, VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, �
     v .= vec(transpose(vmat))
 end
 
+"""
+only for VK(w_m) prediction
+"""
+function comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    vk, RK, ϕkl = outs;
+    @simd for c ∈ cidx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
+        k = Midx[c]
+        ϕkl .= B[:,klidx[c]]*θ[klidx[c]]
+        @. vk = E[k] + ϕkl
+        @. RK = RK + (vk/D[k, Widx])
+    end
+    @. VK = RK / SKs
+end
 
 #= """
 compute the whole vector v with components v_jm := ΔjK(w_m)
@@ -839,6 +852,9 @@ function test_A()
     display(vmat)
     display(v)
     display(VK)
+    VKnew = zeros(N); outs = [zeros(N) for _ = 1:3]
+    comp_VK!(VKnew, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    display(VKnew)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 
     #= # test Ax and b routines:
@@ -903,9 +919,9 @@ function testtime()
     end 
     # residual directly:
     v = zeros(N, M)
-    outs = [zeros(N) for _ = 1:7]; # temporary vars
+    vmat = zeros(N, M); VK = zeros(N); outs = [zeros(N) for _ = 1:7]; # temporary vars
     t_v = @elapsed begin
-        comp_v!(v, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) #comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
+        comp_v!(v, vmat, VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) #comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
     end
     # Ax, b, then residual:
     temps = [zeros(N) for _ in 1:3];
@@ -938,17 +954,6 @@ function testtime()
     println("ratio of time(A)+time(b)/(time(D)+time(S)+time(ϕ)+time(dϕ)) = ", t_as/t_data)
     println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
     println("ratio of time(Ax-b given A and b)/(time(Ax) + time(b) + time(Ax-b) + time(Aᵀv) [given precomputed ϕ, γ, α]) = ", t_ls/(t_ax+t_b+t_axb+t_atv))
-end
-
-function Ax_out!(y, a, u)
-    for i ∈ eachindex(y)
-        y[i] = a[i]*u[i]
-    end
-end
-function Aᵀb_out!(y, a, v)
-    for i ∈ eachindex(y)
-        y[i] = a[i]*v[i]
-    end
 end
 
 """
