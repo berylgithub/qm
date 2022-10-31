@@ -101,7 +101,7 @@ By continuing from the last line of (\refeq{eq:delta}) in a simplified expressio
 where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
 \begin{equation}
 	\begin{split}
-		\Delta_{jK}(w_m) &= \sum_{kl} A_{(jm), (kl)} \theta_{kl} - b_{jm}, \\
+		\Delta_{jK}(w_m) &= \sum_{kl} A_{jm, kl} \theta_{kl} - b_{jm}, \\
 	\end{split}	
 \end{equation}
 where
@@ -161,15 +161,15 @@ Hence in the final fitting-iteration, the linear system would have $15000 \times
 
 
 
-\section{The program flow}
-Below is the rough flow of the program for fitting the QM9 dataset.
+\section{Feature extraction}
+Below is roughly the flow of feature extraction used for fitting the QM9 dataset.
 \begin{itemize}
     \item Compute the molecular features using ACSF (\at{cite Behler}). This would give a vector with length $= 51$ (i.e., $n^\text{atom}_f = 51$) for each atom. Apply this to all molecules in the dataset hence there should be a total of $n_\text{mol}$ ACSF extractions.
     \item For each molecule containing $n_\text{atom}$ number of atoms, symmetrize the features by
         \begin{equation}
             \begin{split}
-                F_{S_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{ji},\\
-                F_{Q_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{ji}^2, \\
+                F_{S_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{j,i},\\
+                F_{Q_j} &= \sum_{i=1}^{n_{\text{atom}}} F_{j,i}^2, \\
                 \text{for }j &= 1,2,..., n^\text{atom}_f. 
             \end{split}
         \end{equation}
@@ -181,8 +181,8 @@ Below is the rough flow of the program for fitting the QM9 dataset.
     \item Do feature selection to take the subset of the columns of $W$, this can be done by the following:
 	    \begin{equation}
 			\begin{split}
-				\hat{s} &= \sum_i W_{i:}, \\
-				S &= \sum_i W_{i:}W_{i:}^\top, \\
+				\hat{s} &= \sum_i W_{i,:}, \\
+				S &= \sum_i W_{i,:}W_{i,:}^\top, \\
 				\text{ for } i &= 1,2,...,n_{\text{mol}}. \\
 			\end{split}
 	    \end{equation}
@@ -207,7 +207,7 @@ Below is the rough flow of the program for fitting the QM9 dataset.
 		\end{equation}
 		Finally the transformed feature can be obtained by
 		\begin{equation}
-			W_{i:} := \hat{Q}^\top(W_{i:} - \bar{u}), \text{ for }i = 1,2,...,n_\text{mol}.
+			W_{i,:} := \hat{Q}^\top(W_{i,:} - \bar{u}), \text{ for }i = 1,2,...,n_\text{mol}.
 		\end{equation}
 	\item Scale $W$ such that 
 	\begin{equation}
@@ -216,20 +216,35 @@ Below is the rough flow of the program for fitting the QM9 dataset.
 	by
 	\begin{equation}
 		\begin{split}
-			W_{:j} := (W_{:j} - \underbar{$W_{:j}$})/ (\overline{W_{:j}} - \underbar{$W_{:j}$}), \text{ for } j = 1,2,..., n_f.
+			W_{:,j} := (W_{:,j} - \underbar{$W_{:,j}$})/ (\overline{W_{:,j}} - \underbar{$W_{:,j}$}), \text{ for } j = 1,2,..., n_f.
 		\end{split}
 	\end{equation}
-	where \underbar{$W_{:j}$} is the smallest value of the $j$th feature and $\overline{W_{:j}}$ is the largest.
-	
-    \item Obtain the data centers by using the farthest-distance-algorithm variations from $W$:
-    	\begin{equation}
-			\begin{split}
-				content...
-			\end{split}
-    	\end{equation}
-    
-     this would give $M$ centers which would be used as the supervised data training
+	where \underbar{$W_{:,j}$} is the smallest value of the $j$th feature and $\overline{W_{:,j}}$ is the largest.
+	\item Store $W$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
 \end{itemize}
+
+\section{Data selection}
+The set of indices which refers to data points with known energies (or training data points) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $M = |K| = 100$. The flow of the data selection is as the following:
+\begin{itemize}
+	\item Pre-compute and store distance matrix $D$ given $W$
+	\begin{equation}
+		D := f_{\text{dist}}(B, W) \in \mathbb{R}^{n_\text{data} \times n_\text{data}},
+	\end{equation}
+	where $D$ is symmetric with zero diagonal \at{might be necessary to be stored in sparse (reduces the matrix size, instead of $n \times n$ it becomes $n(n-1)/2$) for full computation of 113k molecules}, and $B$ is a matrix which transforms the feature space (currently $B := I$). The distance between two data points of index $k$ and $m$ can also be defined by
+	\begin{equation}
+		D_k(W_{m,:}) := \|W_{m,:} - W_{k,:}\|^2_B := \|B(W_{m,:} - W_{k,:})\|^2_2
+	\end{equation}
+	\item Get and store the set of indices $K$ by farthest-minimum-distance algorithm \at{cite Eldar} given $D$, $B$ and $M$.
+	\begin{equation}
+		K := f_{\text{fmd}}(D, B, M) \in \mathbb{Z}^{+M},
+	\end{equation}
+	for example, we can obtain one data point which belongs to the training set by indexing
+	\begin{equation}
+		w_k := W_{k,:}, \text{ for } k \in K.
+	\end{equation}
+	
+\end{itemize}
+
 
 
 
