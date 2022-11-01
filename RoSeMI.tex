@@ -52,12 +52,12 @@ where
 and
 \begin{equation}
     \label{eq:vk}
-    V_k(w) = E_k + \sum_l \theta_{k,l} \phi_{k,l}(w).
+    V_k(w) = E_k + \sum_l \theta_{kl} \phi_{kl}(w).
 \end{equation}
 By (\ref{eq:vk}), (\ref{eq:shepard}) can be expanded into
 \begin{equation}
     \label{eq:vk_expand}
-    V_K(w) := \sum_{k\in K} \frac{E_k + \sum_l \theta_{k,l} \phi_{k,l}(w)}{D_k(w)} / S_K(w). 
+    V_K(w) := \sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w). 
 \end{equation}
 The quality of the prediction accuracy is measured by the \textbf{mean absolute deviation}
 \begin{equation}
@@ -72,7 +72,7 @@ where by (\refeq{eq:vk}) and (\refeq{eq:vk_expand})
     \label{eq:delta}
     \begin{split}
         \Delta_{jK}(w)&:=\D\frac{V_K(w)-V_j(w)}{D_j(w)S_K(w)-1} \\
-        &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{k,l} \phi_{k,l}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{j,l} \phi_{j,l}(w)\right)}{D_j(w)S_K(w)-1}, \\
+        &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
     \end{split}
 \end{equation}
 and $l=1,2,...L$.
@@ -89,7 +89,7 @@ The feature matrix $W \in \mathbb{R}^{n_\text{data} \times n_f}$ needs to be pre
                 \text{for }j &= 1,2,..., n^\text{atom}_f. 
             \end{split}
         \end{equation}
-        then by concatenating the vectors such that
+        then concatenating the vectors such that
         \begin{equation}
             F := (F_{S_1}, F_{S_2}, ..., F_{S_{n^\text{atom}_f}}, F_{Q_1},F_{Q_2} ..., F_{Q_{n^\text{atom}_f}}) \in \mathbb{R}^{n_f}.
         \end{equation}
@@ -109,13 +109,13 @@ The feature matrix $W \in \mathbb{R}^{n_\text{data} \times n_f}$ needs to be pre
 				C &= S/n_\text{data} - \bar{u}\bar{u}^\top. \\			
 			\end{split}
 		\end{equation}
-		We select the eigenvectors such that they correspond to the $n_\text{select} \in \mathbb{Z}^+$ largest eigenvalues, they are obtained by first doing the spectral decomposition of the covariance matrix
+		We select the eigenvectors such that they correspond to the $n_\text{select}$ largest eigenvalues, they are obtained by first doing the spectral decomposition of the covariance matrix
 		\begin{equation}
 			C = Q\Lambda Q^\top,
 		\end{equation}
 		where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we permute the columns of $Q$ and the entries of $\Lambda$ such that
 		\begin{equation}
-			\Lambda_{11} \geq \Lambda_{22} \geq  ... \geq \Lambda_{n_fn_f},
+			\Lambda_{1,1} \geq \Lambda_{2,2} \geq  ... \geq \Lambda_{n_f,n_f},
 		\end{equation}
 		and select
 		\begin{equation}
@@ -127,7 +127,7 @@ The feature matrix $W \in \mathbb{R}^{n_\text{data} \times n_f}$ needs to be pre
 		\end{equation}
 	\item Scale $W$ such that 
 	\begin{equation}
-		W_{ij} \in [0, 1]
+		W_{i,j} \in [0, 1]
 	\end{equation}
 	by
 	\begin{equation}
@@ -168,13 +168,14 @@ Several intermediate values need to be computed and stored in the random access 
 	\end{equation}
 	\item Compute intermediate values:
 	\begin{equation}
+		\label{eq:intermediate}
 		\begin{split}
 			S_K &\in \mathbb{R}^{T} := S_K(W_{m,:}) \text{ for } m \in T,\\
 			\gamma &\in \mathbb{R}^{T \times M} := \gamma_k(W_{m,:}) \text{ for } k \in K, m \in T, \\
 			\alpha &:= \gamma - 1.
 		\end{split}
 	\end{equation}
-	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $W_{i,j}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $W$ for the spline computation and its derivative):
+	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $W_{i,j}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $W$ for the computation of the spline and its derivative):
 	\begin{equation}
 		\begin{split}
 			\Phi := \beta(W) \in \mathbb{R}^{n_\text{data} \times L}, \\
@@ -213,10 +214,10 @@ using this, (\refeq{eq:delta}) can be re-arranged into
 \begin{equation}
     \label{eq:delta_split}
     \begin{split}
-        \Delta_{j,K}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \psi_{k,l}}{D_k} \right)/ S_K - \big(E_j + \sum_l \psi_{j,l}\big)}{\alpha_j} \\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\psi_{k,l}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{j,l}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\psi_{k,l}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{j,k}\psi_{k,l}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
-        &= \sum_{k,l} \frac{\psi_{k,l} (1-\gamma_k\delta_{j,k})}{\gamma_k\alpha_j} - \left(E_j - \sum_k\frac{E_k}{\gamma_k}\right)/\alpha_j,
+        \Delta_{j,K}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} \right)/ S_K - \big(E_j + \sum_l \psi_{jl}\big)}{\alpha_j} \\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{jl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{jk}\psi_{kl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
+        &= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \left(E_j - \sum_k\frac{E_k}{\gamma_k}\right)/\alpha_j,
     \end{split}
 \end{equation}
 where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
@@ -228,7 +229,7 @@ where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
 where
 \begin{equation}
 	\begin{split}
-		A_{(jm), (kl)} &= \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
+		A_{jm, kl} &= \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
 		b_{jm} &= \left(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\right)/\alpha_j(w_m).
 	\end{split}
 \end{equation}
@@ -245,7 +246,29 @@ A good prediction model is reflected by small MAD or RMSD, hence a minimization 
 \end{equation}
 the data matrix $A$ with $MN$ rows and $ML$ columns where $N = |T|$, the coefficient vector $\theta$, and the target vector $b$.
 
-For storage efficiency, it is desirable to not explicitly form the data matrix $A$, since it grows quickly with more data points included in the training $K$ and testing set $T$. We can alleviate this problem by writing a routine for computing $Av$ where $v$ is a variable vector, hence instead of having a matrix with $\mathcal{O}(M^2N)$ storage we would have a vector with only $\mathcal{O}(N)$ storage.
+For storage efficiency, it is desirable to not explicitly form the data matrix $A$, since it grows quickly with more data points included in the training set $K$ and testing set $T$. 
+We can alleviate the storage problem by writing a routine for computing $Au$ where $u$ is a variable vector, hence instead of having a matrix with $\mathcal{O}(M^2N)$ storage we would have a vector with only $\mathcal{O}(N)$ storage. 
+This can be done by augmenting the first sum of the last line of (\refeq{eq:delta_split}) into
+\begin{equation}
+	\label{eq:Au}
+	\begin{split}
+		Au = \sum_{kl} \frac{\phi_{kl}(w_m) u_{kl} (1-\gamma_k(w_m)\delta_{jk})}{\gamma_k(w_m)\alpha_j(w_m)},
+	\end{split}
+\end{equation}
+or more explicitly, with the intermediate values in (\refeq{eq:intermediate}) already pre-computed
+\begin{equation}
+	Au = \sum_{kl} \frac{\phi_{m, kl} u_{kl} (1-\gamma_{m, k}\delta_{jk})}{\gamma_{m,k}\alpha_{m,j}},
+\end{equation}
+Here, CGLS \at{cite Hestenes} method is used to minimize the objective function in (\refeq{eq:min}). The memory-less form of CGLS requires not only $Au$ but also $A^\top v$ routine, which is
+\begin{equation}
+	\begin{split}
+		A^\top v = \sum_{jm} \frac{\phi_{m, kl} v_{jm} (1-\gamma_{m, k}\delta_{jk})}{\gamma_{m,k}\alpha_{m,j}},
+	\end{split}
+\end{equation}
+
+
+\section{Numerical experiment}
+Currently, all experiments are run on several hand-picked compounds which contains $n_\text{data} \geq 250$, which are
 
 
 \iffalse
