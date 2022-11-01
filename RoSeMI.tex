@@ -52,12 +52,12 @@ where
 and
 \begin{equation}
     \label{eq:vk}
-    V_k(w) = E_k + \sum_l \theta_{kl} \phi_{kl}(w).
+    V_k(w) = E_k + \sum_l \theta_{k,l} \phi_{k,l}(w).
 \end{equation}
 By (\ref{eq:vk}), (\ref{eq:shepard}) can be expanded into
 \begin{equation}
     \label{eq:vk_expand}
-    V_K(w) := \sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w). 
+    V_K(w) := \sum_{k\in K} \frac{E_k + \sum_l \theta_{k,l} \phi_{k,l}(w)}{D_k(w)} / S_K(w). 
 \end{equation}
 The quality of the prediction accuracy is measured by the \textbf{mean absolute deviation}
 \begin{equation}
@@ -72,94 +72,10 @@ where by (\refeq{eq:vk}) and (\refeq{eq:vk_expand})
     \label{eq:delta}
     \begin{split}
         \Delta_{jK}(w)&:=\D\frac{V_K(w)-V_j(w)}{D_j(w)S_K(w)-1} \\
-        &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
+        &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{k,l} \phi_{k,l}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{j,l} \phi_{j,l}(w)\right)}{D_j(w)S_K(w)-1}, \\
     \end{split}
 \end{equation}
 and $l=1,2,...L$.
-Let us simplify the expressions
-\begin{equation*}
-	\label{eq:simp}
-    \begin{split}
-        D_k &:= D_k(w), \\
-        S_K &:= S_K(w), \\
-        \phi_{kl} &:= \phi_{kl}(w),\\
-        \psi_{kl} &:= \theta_{kl}\phi_{kl}, \\
-        \gamma_k &:= D_kS_K, \\
-        \alpha_j &:= D_jS_K-1.
-    \end{split}
-\end{equation*}
-By continuing from the last line of (\refeq{eq:delta}) in a simplified expression, then (\refeq{eq:delta}) can be re-arranged into
-\begin{equation}
-    \label{eq:delta_split}
-    \begin{split}
-        \Delta_{j,K}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} / S_K\right) - \left(E_j + \sum_l \psi_{jl}\right)}{\alpha_j} \\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{jl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{jk}\psi_{kl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
-        &= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \left(\frac{E_j}{\alpha_j} - \sum_k\frac{E_k}{\gamma_k\alpha_j}\right),
-    \end{split}
-\end{equation}
-where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
-\begin{equation}
-	\begin{split}
-		\Delta_{jK}(w_m) &= \sum_{kl} A_{jm, kl} \theta_{kl} - b_{jm}, \\
-	\end{split}	
-\end{equation}
-where
-\begin{equation}
-	\begin{split}
-		A_{(jm), (kl)} &= \frac{\phi_{k,l}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
-		b_{jm} &= \frac{E_j}{\alpha_j(w_m)} - \sum_k\frac{E_k}{\gamma_k(w_m)  \alpha_j(w_m)}.
-	\end{split}
-\end{equation}
-
-\iffalse
-In order to see the general pattern of (\refeq{eq:delta}), let us see a simple example with $j = 1$, $|K| = 2$, and $L = 2$; and using simplified expressions by omitting the arguments
-\begin{equation*}
-    \begin{split}
-        D_k &:= D_k(w), \\
-        S_K &:= S_K(w), \\
-        \phi_{k,l} &:= \phi_{k,l}(w),
-    \end{split}
-\end{equation*}
-hence
-\begin{equation}
-    \begin{split}
-        \Delta_{1,K}(w)&:= \frac{\D \frac{ E_1 + \theta_{1,1}\phi_{1,1} + \theta_{1,2}\phi_{1,2}}{D_1S_K} + \frac{E_2 + \theta_{2,1}\phi_{2,1} + \theta_{2,2}\phi_{2,2}}{D_2S_K} - (E_1 + \theta_{1,1}\phi_{1,1} + \theta_{1,2}\phi_{1,2})}{D_1S_K-1} \\
-        &= \D \frac{ E_1 + \theta_{1,1}\phi_{1,1} + \theta_{1,2}\phi_{1,2}}{D_1S_K(D_1S_K-1)} + \frac{E_2 + \theta_{2,1}\phi_{2,1} + \theta_{2,2}\phi_{2,2}}{D_2S_K(D_1S_K-1)} - \frac{(E_1 + \theta_{1,1}\phi_{1,1} + \theta_{1,2}\phi_{1,2})}{D_1S_K-1} \\
-        &= \dots
-    \end{split}
-\end{equation}
-\fi
-
-A good prediction model is reflected by small MAD or RMSD, hence a minimization routine is required. In order to solve the minimzation problem, a linear sysem or least squares formulation is needed. For example, if the RMSD is chosen as the objective function then the problem formulation would be
-\begin{equation}
-    \label{eq:min}
-    \begin{split}
-        \min |K| \sum_m \text{RMSD}_K(w_m)^2 &= \min \sum_m \sum_j \Delta_{jK}(w_m)^2 \\
-        &= \min \sum_m \left\| A_{(:,m),(:,:)}\theta - b_{:,m}\right\|_2^2 \\
-        f_{\text{obj}} &:= \min \|A \theta - b\|_2^2,
-    \end{split}
-\end{equation}
-where $A$ is the data matrix with $MN$ row size and $ML$ column size; where $M$ is the number of data points with known energies, $N$ is the number of data points without energies, and $L$ is the number of the basis features; meanwhile $\theta$ is the coefficient vector, and $b$ is the target vector.
-
-The initial case study has the following parameters:
-\begin{equation*}
-	\begin{split}
-		M &= 10,\\
-		N &= 240,\\
-		L &= 320, \\
-		\text{row\_count} &= 2400,\\
-		\text{col\_count} &= 3200, \\
-		\text{mem\_size} &\approx 61.44 \text{ megabytes}, \\
-		\text{M\_increment} &= 10, \\
-		\text{fit\_iter} &= 15. \\
-		\text{sparsity\_rate} &\approx 0.7.
-	\end{split}
-\end{equation*}
-Hence in the final fitting-iteration, the linear system would have $15000 \times 48000$ sized data matrix $A$ with mem\_size $\approx 5.7$ gigabytes. The model is solved by using CGLS method with 400 maximum iterations. For the first two fitting-iteration this gives 5 and 20 seconds of fitting-time consecutively. 
-
-
-
 
 \section{Feature extraction}
 The feature matrix $W \in \mathbb{R}^{n_\text{data} \times n_f}$ needs to be pre-computed and stored in the non-volatile storage in order to avoid re-computation. Below is roughly the flow of feature extraction used for fitting the QM9 dataset.
@@ -243,8 +159,8 @@ The set of indices which refers to data points with known energies (or training 
 		w_k := W_{k,:}, \text{ for } k \in K.
 	\end{equation}
 \end{itemize}
-\section{Fitting procedure}
-We need to compute several intermediate values and store it in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $W, D$ and $K$:
+\section{Intermediate values}
+Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $W, D$ and $K$:
 \begin{itemize}
 	\item Compute the set of indices of the data points with unknown energy (or the test set):
 	\begin{equation}
@@ -280,7 +196,56 @@ We need to compute several intermediate values and store it in the random access
 	this results in matrix $\phi$ where the block column is indexed by $k,l$ indices.
 \end{itemize}
 
+\section{Fitting the model}
+Now that the required pieces are in place, we can fit the RoSeMI. First we need to express (\refeq{eq:delta}) as a system of linear equations, let us simplify it by writing
+\begin{equation*}
+	\label{eq:simp}
+    \begin{split}
+        D_k &:= D_k(w), \\
+        S_K &:= S_K(w), \\
+        \phi_{kl} &:= \phi_{kl}(w),\\
+        \psi_{kl} &:= \theta_{kl}\phi_{kl}, \\
+        \gamma_k &:= D_kS_K, \\
+        \alpha_j &:= \gamma_j-1.
+    \end{split}
+\end{equation*}
+using this, (\refeq{eq:delta}) can be re-arranged into
+\begin{equation}
+    \label{eq:delta_split}
+    \begin{split}
+        \Delta_{j,K}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \psi_{k,l}}{D_k} \right)/ S_K - \big(E_j + \sum_l \psi_{j,l}\big)}{\alpha_j} \\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\psi_{k,l}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{j,l}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
+        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{k,l} \frac{\psi_{k,l}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{j,k}\psi_{k,l}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
+        &= \sum_{k,l} \frac{\psi_{k,l} (1-\gamma_k\delta_{j,k})}{\gamma_k\alpha_j} - \left(E_j - \sum_k\frac{E_k}{\gamma_k}\right)/\alpha_j,
+    \end{split}
+\end{equation}
+where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
+\begin{equation}
+	\begin{split}
+		\Delta_{j,K}(w_m) &= \sum_{k,l} A_{jm, kl} \theta_{kl} - b_{jm}, \\
+	\end{split}	
+\end{equation}
+where
+\begin{equation}
+	\begin{split}
+		A_{(jm), (kl)} &= \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
+		b_{jm} &= \left(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\right)/\alpha_j(w_m).
+	\end{split}
+\end{equation}
 
+
+A good prediction model is reflected by small MAD or RMSD, hence a minimization routine is required. In order to solve the minimzation problem, a linear sysem or least squares formulation is needed. For example, if the RMSD is chosen as the objective function then the problem formulation would be
+\begin{equation}
+    \label{eq:min}
+    \begin{split}
+        \min |K| \sum_m \text{RMSD}_K(w_m)^2 &= \min \sum_m \sum_j \Delta_{jK}(w_m)^2 \\
+        &= \min \sum_{jm} \left( A_{jm}\theta - b_{jm}\right)^2 \\
+        f_{\text{obj}} &:= \min \|A \theta - b\|_2^2,
+    \end{split}
+\end{equation}
+the data matrix $A$ with $MN$ rows and $ML$ columns where $N = |T|$, the coefficient vector $\theta$, and the target vector $b$.
+
+For storage efficiency, it is desirable to not explicitly form the data matrix $A$, since it grows quickly with more data points included in the training $K$ and testing set $T$. We can alleviate this problem by writing a routine for computing $Av$ where $v$ is a variable vector, hence instead of having a matrix with $\mathcal{O}(M^2N)$ storage we would have a vector with only $\mathcal{O}(N)$ storage.
 
 
 \iffalse
