@@ -244,7 +244,7 @@ The set of indices which refers to data points with known energies (or training 
 	\end{equation}
 \end{itemize}
 \section{Fitting procedure}
-We need to compute several intermediate values and store it in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are relatively quite fast to compute hence it is not necessary to store them into the non-volatile memory. Given the stored $W, D$ and $K$:
+We need to compute several intermediate values and store it in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $W, D$ and $K$:
 \begin{itemize}
 	\item Compute the set of indices of the data points with unknown energy (or the test set):
 	\begin{equation}
@@ -268,15 +268,16 @@ We need to compute several intermediate values and store it in the random access
 	where $L = n_fn_b$ and $n_b$ is the number of splines for each feature.
 	\item Compute
 	\begin{equation} % ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k])
-		\phi_{m, kl} := \Phi_{m,l} - \Phi_{k,l} - \Phi'_{k,l}(W_{m,t}-W_{k,t}) \quad \text{for } k \in K, \text{ }l = 1,...,L,
+		\phi_{m, kl} := \Phi_{m,l} - \Phi_{k,l} - \Phi'_{k,l}(W_{m,t}-W_{k,t}) \quad \text{for } m \in T, \text{ }k \in K, \text{ }l = 1,...,L,
 	\end{equation}
 	where
 	\begin{equation}
 		\begin{split}
 			\hat{t} &:= l \text{ mod } n_f, \\
-			t &\leftarrow \hat{t} = 0 \text{ ? } n_f : \hat{t}.
+			t &\leftarrow \hat{t} = 0 \text{ ? } n_f : \hat{t},
 		\end{split}
-	\end{equation} 
+	\end{equation}
+	this results in matrix $\phi$ where the block column is indexed by $k,l$ indices.
 \end{itemize}
 
 
