@@ -226,7 +226,7 @@ The feature matrix $W \in \mathbb{R}^{n_\text{data} \times n_f}$ needs to be pre
 \section{Data selection}
 The set of indices which refers to data points with known energies (or training data points) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $M = |K| = 100$. The flow of the data selection is as the following:
 \begin{itemize}
-	\item Pre-compute and store distance matrix $D$ given $W$
+	\item Compute and store distance matrix $D$ given $W$
 	\begin{equation}
 		D := f_{\text{dist}}(B, W) \in \mathbb{R}^{n_\text{data} \times n_\text{data}},
 	\end{equation}
@@ -243,17 +243,40 @@ The set of indices which refers to data points with known energies (or training 
 		w_k := W_{k,:}, \text{ for } k \in K.
 	\end{equation}
 \end{itemize}
-\section{Memory level pre-computations}
+\section{Fitting procedure}
 We need to compute several intermediate values and store it in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are relatively quite fast to compute hence it is not necessary to store them into the non-volatile memory. Given the stored $W, D$ and $K$:
 \begin{itemize}
-	\item Compute and store the set of indices of the data points with unknown energy (or the test set)
+	\item Compute the set of indices of the data points with unknown energy (or the test set):
 	\begin{equation}
 		T := \{1,2,...,n_\text{data}\} \setminus K.
 	\end{equation}
-	\item Compute the splines:
+	\item Compute intermediate values:
 	\begin{equation}
-		content...
+		\begin{split}
+			S_K &\in \mathbb{R}^{T} := S_K(W_{m,:}) \text{ for } m \in T,\\
+			\gamma &\in \mathbb{R}^{T \times M} := \gamma_k(W_{m,:}) \text{ for } k \in K, m \in T, \\
+			\alpha &:= \gamma - 1.
+		\end{split}
 	\end{equation}
+	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $W_{i,j}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $W$ for the spline computation and its derivative):
+	\begin{equation}
+		\begin{split}
+			\Phi := \beta(W) \in \mathbb{R}^{n_\text{data} \times L}, \\
+			\Phi' := \beta'(W) \in \mathbb{R}^{n_\text{data} \times L}.
+		\end{split}
+	\end{equation}
+	where $L = n_fn_b$ and $n_b$ is the number of splines for each feature.
+	\item Compute
+	\begin{equation} % ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k])
+		\phi_{m, kl} := \Phi_{m,l} - \Phi_{k,l} - \Phi'_{k,l}(W_{m,t}-W_{k,t}) \quad \text{for } k \in K, \text{ }l = 1,...,L,
+	\end{equation}
+	where
+	\begin{equation}
+		\begin{split}
+			\hat{t} &:= l \text{ mod } n_f, \\
+			t &\leftarrow \hat{t} = 0 \text{ ? } n_f : \hat{t}.
+		\end{split}
+	\end{equation} 
 \end{itemize}
 
 
