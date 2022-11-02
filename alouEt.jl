@@ -44,7 +44,7 @@ function filter_indices(n_data)
             filtered[k] = ind[k]
         end
     end
-    display(filtered)
+    return filtered
 end
 
 """

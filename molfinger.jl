@@ -201,6 +201,52 @@ function extract_ACSF_sum(infile, outfile)
     load(outfile)["data"]
 end
 
+"""
+this returns vector of matrices for the ACSF of length N, each matrix ∈ Float64 (n_atom, n_f) however with different n_atom
+"""
+function extract_ACSF_array(infile, outfile)
+    max_coor = 30. # is actually 12. from the dataset, just to add more safer boundary
+    len_desc = 51 
+    cellbounds = diagm([max_coor, max_coor, max_coor])
+    tdata = @elapsed begin
+        dataset = load(infile)["data"]
+    end
+    n_data = length(dataset)
+    ACSF = Vector{Matrix{Float64}}(undef, n_data) # initialize output
+    tcomp = @elapsed begin # start timer
+        for i ∈ 1:n_data # loop dataset
+            if i == 2
+                break
+            end
+            # generate atom datastructure:
+            coord = transpose(dataset[i]["coordinates"])
+            n_atom = dataset[i]["n_atom"]
+            # compute descriptor:
+            at = Atoms(coord,
+                    [0., 0., 0.], 
+                    [1., 1.], 
+                    [8., 8., 8.], 
+                    cellbounds, 
+                    (false, false, false)
+                    )
+            desc = acsf(at)
+            display(n_atom)
+            display(desc)
+            display([length(desc[1]), length(desc[2]), length(desc[3])])
+            # compute fingerprint:
+            A = zeros(n_atom, len_desc)
+            for i ∈ 1:n_atom
+                A[i,:] .= desc[i]
+            end
+            display(A)
+        end
+    end
+    println("data-loading time = ",tdata)
+    println("comp time = ",tcomp)
+    save(outfile, "data", A)
+    load(outfile)["data"]
+end
+
 
 """
 transforms the descriptors to fingerprint matrix, usually not needed, as the output of the descriptor extractor is already in matrix

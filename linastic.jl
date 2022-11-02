@@ -98,7 +98,7 @@ function PCA(W, n_select)
     #println([sum(v), sum(v[1:n_select]), sum(v[1:n_select])/sum(v)])
     Q = Q[:, sidx] # according to Julia factorization: F.vectors[:, k] is the kth eigenvector
     #display(norm(C-Q*diagm(v)*Q'))
-    # == for plotting purpose only!!, comment when not needed!:
+    # >>>> for plotting purpose only!!, comment when not needed!: <<<<
     #= p = plot(sidx, log.(v), xlabel = L"$i$", ylabel = L"log($\Lambda_{ii}$)", legend = false)
     display(p)
     savefig(p, "plot/eigenvalues.png") =#
@@ -115,7 +115,7 @@ function PCA(W, n_select)
     p = scatter(log10.(q), xticks = (eachindex(q)[tickslice], (eachindex(q).-1)[tickslice]), markershape = :cross, xlabel = L"$j$", ylabel = L"log$_{10}$($q_{j}$)", legend = false)
     display(p)
     savefig(p, "plot/ev_dropped_ratio.png") =#
-    # == end of plot
+    # >>>> end of plot <<<<
     # select the n_select amount of number of features:
     v = v[1:n_select]
     Q = Q[:, 1:n_select]
