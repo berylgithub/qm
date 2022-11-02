@@ -40,109 +40,129 @@
 \maketitle
 
 
-\section{The model}
-The generalized Shepard model has the form of 
-\begin{equation}
-    \label{eq:shepard}
-    V_K(w):=R_K(w)/S_K(w) ~~~ \text{ for } w \in \mathbb{R}^m \setminus \{w_k\mid k\in K \},
-\end{equation}
-where
-\begin{equation}
-    R_K(w):=\sum_{k\in K} \frac{V_k(w)}{D_k(w)},~~~
-    S_K(w):=\sum_{k\in K} \frac{1}{D_k(w)},
-\end{equation}
-and
-\begin{equation}
-    \label{eq:vk}
-    V_k(w) = E_k + \sum_l \theta_{kl} \phi_{kl}(w).
-\end{equation}
-By (\ref{eq:vk}), (\ref{eq:shepard}) can be expanded into
-\begin{equation}
-    \label{eq:vk_expand}
-    V_K(w) := \sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w). 
-\end{equation}
-The quality of the prediction accuracy is measured by the \textbf{mean absolute deviation}
-\begin{equation}
-    \text{MAD}_K(w) := \frac{1}{|K|}\sum_{j\in K}|\Delta_{jK}(w)|
-\end{equation}
-and the \textbf{root mean square deviation}
-\begin{equation}
-    \text{RMSD}_K(w) := \sqrt{\frac{1}{|K|}\sum_{j\in K}\Delta_{jK}(w)^2},
-\end{equation}
-where by (\refeq{eq:vk}) and (\refeq{eq:vk_expand})
-\begin{equation}
-    \label{eq:delta}
-    \begin{split}
-        \Delta_{jK}(w)&:=\D\frac{V_K(w)-V_j(w)}{D_j(w)S_K(w)-1} \\
-        &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
-    \end{split}
-\end{equation}
-and $l=1,2,...L$.
-
 \section{Feature extraction}
-The feature matrix $W \in \mathbb{R}^{n_\text{data} \times n_f}$ needs to be pre-computed and stored in the non-volatile storage in order to avoid re-computation. Below is roughly the flow of feature extraction used for fitting the QM9 dataset.
+The very first piece which needs to be computed is the molecular features. The feature matrix $W \in \mathbb{R}^{N \times n_f}$ where $N$ is the total number of data points and $n_f$ is the number of features, needs to be pre-computed and stored in the non-volatile storage in order to avoid re-computation.
+\subsection{Atomic feature selection}
 \begin{itemize}
-    \item Compute the molecular features using ACSF (\at{cite Behler}). This would give a vector with length $= 51$ (i.e., $n^\text{atom}_f = 51$) for each atom. Apply this to all molecules in the dataset hence there should be a total of $n_\text{data}$ ACSF extractions.
-    \item For each molecule containing $n_\text{atom}$ number of atoms, symmetrize the features by
-        \begin{equation}
-			\label{eq:acsf}
-            \begin{split}
-                F_{S_j} &:= \sum_{i=1}^{n_{\text{atom}}} F_{j,i},\\
-                F_{Q_j} &:= \sum_{i=1}^{n_{\text{atom}}} F_{j,i}^2, \\
-                \text{for }j &= 1,2,..., n^\text{atom}_f. 
-            \end{split}
-        \end{equation}
-        then concatenating the vectors such that
-        \begin{equation}
-            F := (F_{S_1}, F_{S_2}, ..., F_{S_{n^\text{atom}_f}}, F_{Q_1},F_{Q_2} ..., F_{Q_{n^\text{atom}_f}}) \in \mathbb{R}^{n_f}.
-        \end{equation}
-    	then we stack the feature vector $F$ of each molecule as a row in the $W \in \mathbb{R}^{n_\text{data} \times n_f}$ matrix.
-    \item Do feature selection to take the subset of the columns of $W$, this can be done by the following:
-	    \begin{equation}
-			\label{eq:pca_1}
-			\begin{split}
-				\hat{s} &= \sum_i W_{i,:}, \\
-				S &= \sum_i W_{i,:}W_{i,:}^\top, \\
-				\text{ for } i &= 1,2,...,n_{\text{data}}. \\
-			\end{split}
-	    \end{equation}
-		then we compute the mean feature vector and covariance matrix
-		\begin{equation}
-			\begin{split}
-				\bar{u} &= \hat{s}/n_\text{data}, \\
-				C &= S/n_\text{data} - \bar{u}\bar{u}^\top. \\			
-			\end{split}
-		\end{equation}
-		We select the eigenvectors such that they correspond to the $n_\text{select}$ largest eigenvalues, they are obtained by first doing the spectral decomposition of the covariance matrix
-		\begin{equation}
-			C = Q\Lambda Q^\top,
-		\end{equation}
-		where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we permute the columns of $Q$ and the entries of $\Lambda$ such that
-		\begin{equation}
-			\Lambda_{1,1} \geq \Lambda_{2,2} \geq  ... \geq \Lambda_{n_f,n_f},
-		\end{equation}
-		and select
-		\begin{equation}
-			\hat{Q} = Q_{:, 1:n_\text{select}}.
-		\end{equation}
-		Finally the transformed feature can be obtained by
-		\begin{equation}
-			\label{eq:pca_8}
-			W_{i,:} := \hat{Q}^\top(W_{i,:} - \bar{u}), \text{ for }i = 1,2,...,n_\text{data}.
-		\end{equation}
-	\item Scale $W$ such that 
+	\item Compute the atomic features using ACSF (\at{cite Behler}). This gives a row vector $f^l_{i:}$ with length $n^\text{atom}_f = 51$ for each atom. Apply this to all molecules in the dataset, hence there are a total of $N$ ACSF matrices.
+	\item In order to select the most relevant features, we do the \textbf{principal component analysis} (PCA), first by computing the intermediate vector and matrix:
+	\begin{equation}
+		\begin{split}
+			\hat{s} &= \sum_{li} f^l_{i:}, \\
+			S &= \sum_{li} f^l_{i:} (f^l_{i:})^\top, \\
+			\text{for } l &= 1,...,N, ~~ i = 1,2,...
+		\end{split}
+	\end{equation}
+	then compute the mean feature vector and covariance matrix
+	\begin{equation}
+		\label{eq:pca_atom_start}
+		\begin{split}
+			\bar{u} &= \hat{s}/N, \\
+			C &= S/N - \bar{u}\bar{u}^\top. \\			
+		\end{split}
+	\end{equation}
+	Select the eigenvectors such that they correspond to the $n_f^{\text{select}}$ largest eigenvalues, they are obtained by first doing the spectral decomposition of the covariance matrix
+	\begin{equation}
+		C = Q\Lambda Q^\top,
+	\end{equation}
+	where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we permute the columns of $Q$ and the entries of $\Lambda$ such that
+	\begin{equation}
+		\Lambda_{11} \geq \Lambda_{22} \geq  ... \geq \Lambda_{n_fn_f},
+	\end{equation}
+	and select
+	\begin{equation}
+		\hat{Q} = Q_{:, 1:n_f^{\text{select}}}.
+	\end{equation}
+	Finally the transformed feature can be obtained by
+	\begin{equation}
+		\label{eq:pca_atom_end}
+		f^l_{i:} \leftarrow \hat{Q}^\top(f^l_{i:} - \bar{u}), \text{ for }i = 1,2,...,N.
+	\end{equation}
+	\item Scale
 	\begin{equation}
 		\label{eq:scale_1}
-		W_{i,j} \in [0, 1]
+		f^l_{ij} \in [0, 1]
 	\end{equation}
 	by
 	\begin{equation}
 		\label{eq:scale_2}
 		\begin{split}
-			W_{:,j} \leftarrow (W_{:,j} - \underbar{$W_{:,j}$})/ (\overline{W_{:,j}} - \underbar{$W_{:,j}$}), \text{ for } j = 1,2,..., n_f.
+			\underbar{$f$}_j &:= \min_{li} f^l_{ij}, ~~~ \overline{f}_j := \max_{li} f^l_{ij}, \\
+			f^l_{ij} &\leftarrow (f^l_{ij} - \underbar{$f$}_j)/ (\overline{f}_j - \underbar{$f$}_j), \text{ for } j = 1,..., n_f^\text{select},
 		\end{split}
 	\end{equation}
-	where \underbar{$W_{:,j}$} is the smallest value of the $j$th feature and $\overline{W_{:,j}}$ is the largest.
+	and re-assign
+	\begin{equation}
+		n_f \leftarrow n_f^\text{select}.
+	\end{equation}
+\end{itemize}
+	
+\subsection{Molecular feature selection}
+\begin{itemize}
+    \item For each molecule containing $n_\text{atom}$ number of atoms, the molecular features are the symmetrized atomic features, which are computed by
+        \begin{equation}
+			\label{eq:acsf}
+            \begin{split}
+                \hat{s}^l &= \sum_i f^l_{i:}, \\
+                S^l &= \sum_i f^l_{i:}(f^l_{i:})^\top,
+            \end{split}
+        \end{equation}
+        since $S^l$ is a symmetric matrix, only the upper triangular and the diagonal entries are needed, we re-arrange them together with $\hat{s}^l$ into a vector
+        \begin{equation}
+			F := [\hat{s}^l_1, \hat{s}^l_2, ..., S^l_{11}, S^l_{12}, ... ] \in \mathbb{R}^{n_f(n_f-1)/2 + 2n_f},
+        \end{equation}
+    	and for simplicity, re-assign
+    	\begin{equation}
+    		n_f \leftarrow n_f(n_f-1)/2 + 2n_f,
+    	\end{equation}
+    	then we stack the feature vector $F$ of each molecule as a row in the $W \in \mathbb{R}^{N \times n_f}$ matrix.
+    \item Do feature selection by using PCA in a similar manner as (\refeq{eq:pca_atom_start}) -- (\refeq{eq:pca_atom_end}) to take the subset of the columns of $W$, this can be done by the following:
+	    \begin{equation}
+			\label{eq:pca_mol_start}
+			\begin{split}
+				\hat{s} &= \sum_l W_{l:}, \\
+				S &= \sum_l W_{l:}(W_{l:})^\top, \\
+				\text{ for } l &= 1,2,...,N, \\
+			\end{split}
+	    \end{equation}
+		compute the mean feature vector and covariance matrix
+		\begin{equation}
+			\begin{split}
+				\bar{u} &= \hat{s}/N, \\
+				C &= S/N - \bar{u}\bar{u}^\top, \\			
+			\end{split}
+		\end{equation}
+		compute the spectral decomposition of the covariance matrix
+		\begin{equation}
+			C = Q\Lambda Q^\top,
+		\end{equation}
+		permute the columns of $Q$ and the entries of $\Lambda$ such that
+		\begin{equation}
+			\Lambda_{11} \geq \Lambda_{22} \geq  ... \geq \Lambda_{n_fn_f},
+		\end{equation}
+		and select
+		\begin{equation}
+			\hat{Q} = Q_{:, 1:n^\text{select}_f}.
+		\end{equation}
+		Obtain the transformed feature by
+		\begin{equation}
+			\label{eq:pca_mol_end}
+			W_{l,:} \leftarrow \hat{Q}^\top(W_{l,:} - \bar{u}), \text{ for }l = 1,2,...,N.
+		\end{equation}
+	\item Scale $W$ such that 
+	\begin{equation}
+		\label{eq:scale_mol_1}
+		W_{lj} \in [0, 1]
+	\end{equation}
+	by
+	\begin{equation}
+		\label{eq:scale_mol_2}
+		\begin{split}
+			\underbar{$W$}_{j} &:= \min_{l} W_{lj}, ~~ \overline{W}_{j} := \max_{l} W_{lj}, \\
+			W_{:j} &\leftarrow (W_{:j} - \underbar{$W$}_{j})/ (\overline{W}_{j} - \underbar{$W$}_{j}), \text{ for } j = 1,2,..., n^\text{select}_f, \\
+			n_f &\leftarrow n^\text{select}_f.
+		\end{split}
+	\end{equation}
 	\item Store $W$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
 \end{itemize}
 
@@ -166,6 +186,83 @@ The set of indices which refers to data points with known energies (or training 
 		w_k := W_{k,:}, \text{ for } k \in K.
 	\end{equation}
 \end{itemize}
+
+\section{The model}
+The generalized Shepard model has the form of 
+\begin{equation}
+	\label{eq:shepard}
+	V_K(w):=R_K(w)/S_K(w) ~~~ \text{ for } w \in \mathbb{R}^m \setminus \{w_k\mid k\in K \},
+\end{equation}
+where
+\begin{equation}
+	R_K(w):=\sum_{k\in K} \frac{V_k(w)}{D_k(w)},~~~
+	S_K(w):=\sum_{k\in K} \frac{1}{D_k(w)},
+\end{equation}
+and
+\begin{equation}
+	\label{eq:vk}
+	V_k(w) = E_k + \sum_l \theta_{kl} \phi_{kl}(w).
+\end{equation}
+By (\ref{eq:vk}), (\ref{eq:shepard}) can be expanded into
+\begin{equation}
+	\label{eq:vk_expand}
+	V_K(w) := \sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w). 
+\end{equation}
+The quality of the prediction accuracy is measured by the \textbf{mean absolute deviation}
+\begin{equation}
+	\text{MAD}_K(w) := \frac{1}{|K|}\sum_{j\in K}|\Delta_{jK}(w)|
+\end{equation}
+and the \textbf{root mean square deviation}
+\begin{equation}
+	\text{RMSD}_K(w) := \sqrt{\frac{1}{|K|}\sum_{j\in K}\Delta_{jK}(w)^2},
+\end{equation}
+where by (\refeq{eq:vk}) and (\refeq{eq:vk_expand})
+\begin{equation}
+	\label{eq:delta}
+	\Delta_{jK}(w):=\D\frac{V_K(w)-V_j(w)}{D_j(w)S_K(w)-1}.
+\end{equation}
+First we need to express (\refeq{eq:delta}) as a system of linear equations, let us simplify it by writing
+\begin{equation*}
+	\label{eq:simp}
+	\begin{split}
+		D_k &:= D_k(w), \\
+		S_K &:= S_K(w), \\
+		\phi_{kl} &:= \phi_{kl}(w),\\
+		\psi_{kl} &:= \theta_{kl}\phi_{kl}, \\
+		\gamma_k &:= D_kS_K, \\
+		\alpha_j &:= \gamma_j-1.
+	\end{split}
+\end{equation*}
+using this, (\refeq{eq:delta}) can be re-arranged into
+\begin{equation}
+	\label{eq:delta_split}
+	\begin{split}
+		\Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} \right)/ S_K - \big(E_j + \sum_l \psi_{jl}\big)}{\alpha_j} \\
+		&= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{jl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
+		&= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{jk}\psi_{kl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
+		&= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \left(E_j - \sum_k\frac{E_k}{\gamma_k}\right)/\alpha_j,
+	\end{split}
+\end{equation}
+where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
+\begin{equation}
+	\begin{split}
+		\Delta_{jK}(w_m) &= \sum_{k,l} A_{jm, kl} \theta_{kl} - b_{jm}, \\
+		&= A_{jm,:}\theta - b_{jm} = (A\theta - b)_{jm}
+	\end{split}	
+\end{equation}
+where
+\begin{equation}
+	\begin{split}
+		A_{jm, kl} &= \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
+		b_{jm} &= \left(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\right)/\alpha_j(w_m).
+	\end{split}
+\end{equation}
+
+
+
+\iffalse
+&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
+\fi
 
 \section{Intermediate values}
 \label{sec:intermediate}
@@ -207,49 +304,12 @@ Several intermediate values need to be computed and stored in the random access 
 \end{itemize}
 
 \section{Fitting the model}
-Now that the required pieces are in place, we can fit the RoSeMI. First we need to express (\refeq{eq:delta}) as a system of linear equations, let us simplify it by writing
-\begin{equation*}
-	\label{eq:simp}
-    \begin{split}
-        D_k &:= D_k(w), \\
-        S_K &:= S_K(w), \\
-        \phi_{kl} &:= \phi_{kl}(w),\\
-        \psi_{kl} &:= \theta_{kl}\phi_{kl}, \\
-        \gamma_k &:= D_kS_K, \\
-        \alpha_j &:= \gamma_j-1.
-    \end{split}
-\end{equation*}
-using this, (\refeq{eq:delta}) can be re-arranged into
-\begin{equation}
-    \label{eq:delta_split}
-    \begin{split}
-        \Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} \right)/ S_K - \big(E_j + \sum_l \psi_{jl}\big)}{\alpha_j} \\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{jl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
-        &= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{jk}\psi_{kl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
-        &= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \left(E_j - \sum_k\frac{E_k}{\gamma_k}\right)/\alpha_j,
-    \end{split}
-\end{equation}
-where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
-\begin{equation}
-	\begin{split}
-		\Delta_{jK}(w_m) &= \sum_{k,l} A_{jm, kl} \theta_{kl} - b_{jm}, \\
-	\end{split}	
-\end{equation}
-where
-\begin{equation}
-	\begin{split}
-		A_{jm, kl} &= \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
-		b_{jm} &= \left(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\right)/\alpha_j(w_m).
-	\end{split}
-\end{equation}
-
-
 A good prediction model is reflected by small MAD or RMSD, hence a minimization routine is required. In order to solve the minimzation problem, a linear sysem or least squares formulation is needed. For example, if the RMSD is chosen as the objective function then the problem formulation would be
 \begin{equation}
     \label{eq:min}
     \begin{split}
         \min |K| \sum_m \text{RMSD}_K(w_m)^2 &= \min \sum_m \sum_j \Delta_{jK}(w_m)^2 \\
-        &= \min \sum_{jm} \left( A_{jm}\theta - b_{jm}\right)^2 \\
+        &= \min \sum_{jm} \left( A\theta - b\right)_{jm}^2 \\
         f_{\text{obj}} &:= \min \|A \theta - b\|_2^2,
     \end{split}
 \end{equation}
@@ -257,14 +317,7 @@ the data matrix $A$ with $MN$ rows and $ML$ columns where $N = |T|$, the coeffic
 
 For storage efficiency, it is desirable to not explicitly form the data matrix $A$, since it grows quickly with more data points included in the training set $K$ and testing set $T$. 
 We can alleviate the storage problem by writing a routine for computing $Au$ where $u$ is a variable vector, hence instead of having a matrix with $\mathcal{O}(M^2N)$ storage we would have a vector with only $\mathcal{O}(N)$ storage. 
-This can be done by augmenting the first sum of the last line of (\refeq{eq:delta_split}) into
-\begin{equation}
-	\label{eq:Au}
-	\begin{split}
-		Au = \sum_{kl} \frac{\phi_{kl}(w_m) u_{kl} (1-\gamma_k(w_m)\delta_{jk})}{\gamma_k(w_m)\alpha_j(w_m)},
-	\end{split}
-\end{equation}
-or more explicitly, with the pre-computed intermediate values in (\refeq{eq:intermediate}):
+This can be done by augmenting the first sum of the last line of (\refeq{eq:delta_split}) with the pre-computed intermediate values in (\refeq{eq:intermediate}):
 \begin{equation}
 	Au = \sum_{kl} \frac{\phi_{m, kl} u_{kl} (1-\gamma_{m, k}\delta_{jk})}{\gamma_{m,k}\alpha_{m,j}},
 \end{equation}
