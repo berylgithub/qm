@@ -8,6 +8,45 @@ include("linastic.jl")
 include("RoSemi.jl")
 
 
+function get_index(molname, D)
+    indices = []
+    for i ∈ eachindex(D)
+        if D[i]["formula"] == molname
+            push!(indices, i)
+        end
+    end
+    return indices
+end
+
+"""
+get the index of data that has n_data >= 200
+"""
+function find_data()
+    D = load("data/qm9_dataset.jld")["data"]
+    formulas= collect(Set([d["formula"] for d in D]))
+    indices = map(formula -> get_index(formula, D), formulas) # a vector of vector
+    # transform to dictionary:
+    D = Dict()
+    for i ∈ eachindex(indices) # eachindex returns an iterator, which means avoids materialization/alloc → more efficient, should use more iterators wherever possible
+        D[formulas[i]] = convert(Vector{Int}, indices[i])
+    end
+    save("data/formula_indices.jld", "data", D)
+end
+
+"""
+filter data which has num of data >= n_data
+"""
+function filter_indices(n_data)
+    ind = load("data/formula_indices.jld")["data"]
+    filtered = Dict()
+    for k ∈ keys(ind)
+        if length(ind[k]) >= n_data
+            filtered[k] = ind[k]
+        end
+    end
+    display(filtered)
+end
+
 """
 get the indices of the supervised datapoints M, fix w0 as i=603 for now
 params:
@@ -123,21 +162,6 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
     row = M*N; col = M*L
     println("[M, N] = ",[M, N])
-    #= t_ab = @elapsed begin
-        # assemble A and b:
-        A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
-    end
-    println("LS assembly time: ",t_ab)
-    display(A)
-    println("memory size of A = ", Base.summarysize(A)*1e-6, " megabytes")
-    n_l = n_basis*n_feature # length of feature*basis each k
-    # iterative linear solver (CGLS):
-    t_ls = @elapsed begin
-        linres = Krylov.cgls(A, b, itmax=500, history=true)  # 🌸
-    end
-    θ = linres[1]
-    obj = lsq(A, θ, b)
-    println("CGLS obj = ",obj, ", CGLS time = ",t_ls) =#
 
     # !!!! using LinearOperators !!!:
     # precompute stuffs:
@@ -246,7 +270,7 @@ function fit_🌹(mol_name, n_data, n_feature, M)
     inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ [10] # change iters here
+    for i ∈ [10] # M iter increment
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         #Widx = Widx[1:30] # take subset for smaller matrix
@@ -258,6 +282,9 @@ function fit_🌹(mol_name, n_data, n_feature, M)
         end
         println()
     end
+
+
+    # N iter increment mode, start from 150
 
 
     #= # use the info of MAD for fitting :
