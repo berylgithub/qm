@@ -215,9 +215,6 @@ function extract_ACSF_array(infile, outfile)
     ACSF = Vector{Matrix{Float64}}(undef, n_data) # initialize output
     tcomp = @elapsed begin # start timer
         for i ∈ 1:n_data # loop dataset
-            if i == 2
-                break
-            end
             # generate atom datastructure:
             coord = transpose(dataset[i]["coordinates"])
             n_atom = dataset[i]["n_atom"]
@@ -230,20 +227,17 @@ function extract_ACSF_array(infile, outfile)
                     (false, false, false)
                     )
             desc = acsf(at)
-            display(n_atom)
-            display(desc)
-            display([length(desc[1]), length(desc[2]), length(desc[3])])
             # compute fingerprint:
-            A = zeros(n_atom, len_desc)
+            A = zeros(n_atom, len_desc) # unavoidable reallocation, due to dynamic n_atom
             for i ∈ 1:n_atom
                 A[i,:] .= desc[i]
             end
-            display(A)
+            ACSF[i] = A
         end
     end
     println("data-loading time = ",tdata)
     println("comp time = ",tcomp)
-    save(outfile, "data", A)
+    save(outfile, "data", ACSF)
     load(outfile)["data"]
 end
 
