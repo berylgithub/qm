@@ -152,26 +152,29 @@ function PCA_atom(f, n_select)
             S .= S .+ (f[l][i,:]*f[l][i,:]')
         end
     end
+    S ./= N
     # covariance matrix:
-    #C = (S ./ N) - s*s'
-    C = (S - s*s') ./ (N - 1)
+    C = S - s*s'
+    #C = (S - s*s') ./ (N - 1)
     # spectral decomposition:
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
-    display(v)
-    U, sing, V = svd(C) # for comparison if numerical instability ever arise
-    display(sing)
+    #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
+    display(sing) =#
+    # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
+    b = [i for i ∈ eachindex(v) if v[i] < -1.] # temporary fix for the negative eigenvalue
     # sort from largest eigenvalue instead:
     sidx = sortperm(v, rev=true)
-    v = v[sidx]
-    Q = Q[:, sidx] # according to Julia factorization: F.vectors[:, k] is the kth eigenvector
+    display(vcat(b, sidx))
+    v = v[vcat(b, sidx)] # temporary fix for the negative eigenvalue
+    Q = Q[:, vcat(b, sidx)] # temporary fix for the negative eigenvalue
     # select eigenvalues:
     v = v[1:n_select]
     #display(v)
     Q = Q[:, 1:n_select]
     #display(norm(C-Q*diagm(v)*Q'))
-    temp = Vector{Float64}(undef, n_select)
+    temp_f = Vector{Float64}(undef, n_select)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         @simd for i ∈ 1:n_atom
