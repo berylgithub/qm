@@ -200,9 +200,29 @@ end
 
 """
 this should be extracted after PCA_atom, hence it's here
+params:
+    - atomic features, f ∈ (N,n_atom,n_f)
 """
-function comp_mol_feature(f)
-    
+function comp_mol_l!(s, S, fl, n_atom)
+    for i ∈ 1:n_atom
+        s .= s .+ fl[i, :]
+        S .= S .+ (fl[i, :]*fl[i, :]')
+    end
+end
+
+function extract_mol_features(f)
+    N, n_f = (length(f), size(f[1], 2))
+    n_mol_f = Int(2*n_f + n_f*(n_f - 1)/2)
+    F = zeros(N, n_mol_f)
+    s = zeros(n_f)
+    S = zeros(n_f, n_f)
+    for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        comp_mol_l!(s, S, f[l], n_atom)
+        F[l, :] .= vcat(s, S[triu!(trues(n_f, n_f))])
+        fill!(s, 0.); fill!(S, 0.) # reset
+    end
+    return F
 end
 
 function checkcov(X)
