@@ -134,7 +134,7 @@ PCA for atomic features
 params:
     - atomic features, f ∈ (N,n_atom,n_f)
 """
-function PCA_atom(f, n_select)
+function PCA_atom(f, n_select; normalize=true)
     N, n_f = (length(f), size(f[1], 2))
     # compute mean vector:
     s = zeros(n_f)
@@ -175,15 +175,34 @@ function PCA_atom(f, n_select)
     #display(v)
     Q = Q[:, 1:n_select]
     #display(norm(C-Q*diagm(v)*Q'))
-    #f_new = Vector{Matrix{Float64}}(undef, N)
+    f_new = Vector{Matrix{Float64}}(undef, N)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         temp_A = zeros(n_atom, n_select)
         @simd for i ∈ 1:n_atom
             temp_A[i,:] .= Q'*(f[l][i,:] - s)
         end
-        f[l] = temp_A
+        f_new[l] = temp_A
     end
+    # normalize
+    if normalize
+        maxs = map(f_el -> maximum(f_el, dims=1), f_new); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+        mins = map(f_el -> minimum(f_el, dims=1), f_new); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+        @simd for l ∈ 1:N
+            n_atom = size(f[l], 1)
+            @simd for i ∈ 1:n_atom
+                f_new[l][i,:] .= (f_new[l][i,:] .- mins) ./ (maxs .- mins) 
+            end
+        end
+    end
+    return f_new
+end
+
+"""
+this should be extracted after PCA_atom, hence it's here
+"""
+function comp_mol_feature(f)
+    
 end
 
 function checkcov(X)
