@@ -7,6 +7,12 @@ include("voronoi.jl")
 include("linastic.jl")
 include("RoSemi.jl")
 
+"""
+timer callback for earlier stop by time duration
+"""
+function time_callback(solver, start_time, duration)
+    return time()-start_time ≥ duration
+end
 
 function get_index(molname, D)
     indices = []

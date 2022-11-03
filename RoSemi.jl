@@ -1010,11 +1010,11 @@ function test_LS()
     display([t_lo, t_ls]) =#
 
     # try timer callback:
-    function time_callback(solver::CglsSolver, start_time, duration)
+    function time_callback(solver, start_time, duration)
         return time()-start_time ≥ duration
     end
     start = time()
-    x, stat = cgls(op, b, itmax=500, verbose=1, callback=solver -> time_callback(solver, start, 2))
+    x, stat = cgls(op, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, 2))
     display(stat)
     display(norm(op*x - b))
 
