@@ -129,7 +129,8 @@ function PCA(W, n_select)
 end
 
 """
-PCA for atomic features 
+PCA for atomic features
+!!! USES TEMPORARY TRICK TO ALLEVIATE NEGATIVE LARGE EIGENVALUE !!!
 params:
     - atomic features, f ∈ (N,n_atom,n_f)
 """
@@ -143,7 +144,7 @@ function PCA_atom(f, n_select)
             s .= s .+ f[l][i,:] 
         end
     end
-    s .= s ./ N
+    s ./= N
     # intermediate matrix:
     S = zeros(n_f, n_f)
     @simd for l ∈ 1:N
@@ -166,7 +167,7 @@ function PCA_atom(f, n_select)
     b = [i for i ∈ eachindex(v) if v[i] < -1.] # temporary fix for the negative eigenvalue
     # sort from largest eigenvalue instead:
     sidx = sortperm(v, rev=true)
-    display(vcat(b, sidx))
+    #display(vcat(b, sidx))
     v = v[vcat(b, sidx)] # temporary fix for the negative eigenvalue
     Q = Q[:, vcat(b, sidx)] # temporary fix for the negative eigenvalue
     # select eigenvalues:
@@ -174,12 +175,14 @@ function PCA_atom(f, n_select)
     #display(v)
     Q = Q[:, 1:n_select]
     #display(norm(C-Q*diagm(v)*Q'))
-    temp_f = Vector{Float64}(undef, n_select)
+    #f_new = Vector{Matrix{Float64}}(undef, N)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
+        temp_A = zeros(n_atom, n_select)
         @simd for i ∈ 1:n_atom
-            temp .= Q'*(f[l][i,:] - s)
+            temp_A[i,:] .= Q'*(f[l][i,:] - s)
         end
+        f[l] = temp_A
     end
 end
 
