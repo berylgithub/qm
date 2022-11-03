@@ -997,9 +997,9 @@ function test_LS()
     b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
     t_lo = @elapsed begin
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
-        x, stat = cgls(op, b, itmax=500)
+        #x, stat = cgls(op, b, itmax=500, verbose=1)
     end
-    display(stat)
+    #= display(stat)
     display(norm(op*x - b))
     # compare with standard A, b:
     t_ls = @elapsed begin
@@ -1007,5 +1007,15 @@ function test_LS()
         x, stat = cgls(A, b, itmax=500)
     end
     display(norm(A*x - b))
-    display([t_lo, t_ls])
+    display([t_lo, t_ls]) =#
+
+    # try timer callback:
+    function time_callback(solver::CglsSolver, start_time, duration)
+        return time()-start_time ≥ duration
+    end
+    start = time()
+    x, stat = cgls(op, b, itmax=500, verbose=1, callback=solver -> time_callback(solver, start, 2))
+    display(stat)
+    display(norm(op*x - b))
+
 end
