@@ -70,6 +70,25 @@ end
 
 
 """
+PCA for atomic features 
+params:
+    - atomic features, f ∈ (N,n_atom,n_f)
+"""
+function PCA_atom(f, n_select)
+    N, n_f = (length(f), size(f[1], 2))
+    # compute mean vector:
+    s = zeros(n_f)
+    for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        for i ∈ 1:n_atom
+            s .= s .+ f[l][i,:] 
+        end
+    end
+    s .= s./N
+end
+
+
+"""
 feature selection by the PCA
 params:
     - W, the full data matrix (133k × n_feature)
