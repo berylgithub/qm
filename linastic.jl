@@ -153,16 +153,44 @@ function PCA_atom(f, n_select)
         end
     end
     # covariance matrix:
-    C = S./N - s*s'
+    #C = (S ./ N) - s*s'
+    C = (S - s*s') ./ (N - 1)
     # spectral decomposition:
     e = eigen(C)
-    v = e.values
+    v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
     display(v)
-    U, sing, V = svd(C)
+    U, sing, V = svd(C) # for comparison if numerical instability ever arise
     display(sing)
-    display(Q*diagm(v)*Q')
-    display(C)
+    # sort from largest eigenvalue instead:
+    sidx = sortperm(v, rev=true)
+    v = v[sidx]
+    Q = Q[:, sidx] # according to Julia factorization: F.vectors[:, k] is the kth eigenvector
+    # select eigenvalues:
+    v = v[1:n_select]
+    #display(v)
+    Q = Q[:, 1:n_select]
+    #display(norm(C-Q*diagm(v)*Q'))
+    temp = Vector{Float64}(undef, n_select)
+    @simd for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        @simd for i ∈ 1:n_atom
+            temp .= Q'*(f[l][i,:] - s)
+        end
+    end
+end
+
+function checkcov(X)
+    r, c = size(X)
+    s = vec(sum(X, dims=1)) ./ r
+    S = zeros(c, c)
+    for i ∈ 1:r
+        S .= S .+ (X[i, :]*X[i, :]')
+    end
+    S ./= r
+    C = S - s*s'
+    #C = (S - s*s') ./ (r - 1)
+    return C
 end
 
 """
