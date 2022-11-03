@@ -70,25 +70,6 @@ end
 
 
 """
-PCA for atomic features 
-params:
-    - atomic features, f ∈ (N,n_atom,n_f)
-"""
-function PCA_atom(f, n_select)
-    N, n_f = (length(f), size(f[1], 2))
-    # compute mean vector:
-    s = zeros(n_f)
-    for l ∈ 1:N
-        n_atom = size(f[l], 1)
-        for i ∈ 1:n_atom
-            s .= s .+ f[l][i,:] 
-        end
-    end
-    s .= s./N
-end
-
-
-"""
 feature selection by the PCA
 params:
     - W, the full data matrix (133k × n_feature)
@@ -107,6 +88,7 @@ function PCA(W, n_select)
     S = W'*W # short ver, careful of memory alloc!
     u_bar = s./n_mol
     C = S/n_mol - u_bar*u_bar'
+    display(C)
     e = eigen(C)
     v = e.values
     Q = e.vectors
@@ -146,6 +128,42 @@ function PCA(W, n_select)
     return U
 end
 
+"""
+PCA for atomic features 
+params:
+    - atomic features, f ∈ (N,n_atom,n_f)
+"""
+function PCA_atom(f, n_select)
+    N, n_f = (length(f), size(f[1], 2))
+    # compute mean vector:
+    s = zeros(n_f)
+    @simd for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        @simd for i ∈ 1:n_atom
+            s .= s .+ f[l][i,:] 
+        end
+    end
+    s .= s ./ N
+    # intermediate matrix:
+    S = zeros(n_f, n_f)
+    @simd for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        @simd for i ∈ 1:n_atom
+            S .= S .+ (f[l][i,:]*f[l][i,:]')
+        end
+    end
+    # covariance matrix:
+    C = S./N - s*s'
+    # spectral decomposition:
+    e = eigen(C)
+    v = e.values
+    Q = e.vectors
+    display(v)
+    U, sing, V = svd(C)
+    display(sing)
+    display(Q*diagm(v)*Q')
+    display(C)
+end
 
 """
 compute the B linear transformer for Mahalanobis distance

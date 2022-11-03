@@ -10,7 +10,7 @@ include("RoSemi.jl")
 """
 timer callback for earlier stop by time duration
 """
-function time_callback(solver, start_time, duration)
+function time_callback(solver::CglsSolver, start_time, duration)
     return time()-start_time ≥ duration
 end
 
