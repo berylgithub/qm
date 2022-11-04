@@ -130,28 +130,34 @@ end
 
 """
 PCA for atomic features
-!!! USES TEMPORARY TRICK TO ALLEVIATE NEGATIVE LARGE EIGENVALUE !!!
 params:
     - atomic features, f ∈ (N,n_atom,n_f)
 """
 function PCA_atom(f, n_select; normalize=true)
+    # cut number of features:
     N, n_f = (length(f), size(f[1], 2))
     # compute mean vector:
-    s = zeros(n_f)
+    s = zeros(n_f); ∑ = zeros(n_f)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         @simd for i ∈ 1:n_atom
-            s .= s .+ f[l][i,:] 
+            ∑ .= ∑ .+ f[l][i,:] 
         end
+        ∑ .= ∑ ./ n_atom
+        s .= s .+ ∑
+        fill!(∑, 0.) # reset
     end
     s ./= N
     # intermediate matrix:
-    S = zeros(n_f, n_f)
+    S = zeros(n_f, n_f); ∑S = zeros(n_f, n_f)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         @simd for i ∈ 1:n_atom
-            S .= S .+ (f[l][i,:]*f[l][i,:]')
+            ∑S .= ∑S .+ (f[l][i,:]*f[l][i,:]')
         end
+        ∑S .= ∑S ./ n_atom
+        S .= S .+ ∑S
+        fill!(∑S, 0.)
     end
     S ./= N
     # covariance matrix:
@@ -164,17 +170,15 @@ function PCA_atom(f, n_select; normalize=true)
     #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
     display(sing) =#
     # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
-    b = [i for i ∈ eachindex(v) if v[i] < -1.] # temporary fix for the negative eigenvalue
     # sort from largest eigenvalue instead:
     sidx = sortperm(v, rev=true)
-    #display(vcat(b, sidx))
-    v = v[vcat(b, sidx)] # temporary fix for the negative eigenvalue
-    Q = Q[:, vcat(b, sidx)] # temporary fix for the negative eigenvalue
+    v = v[sidx]
+    Q = Q[:, sidx]
     # select eigenvalues:
     v = v[1:n_select]
     #display(v)
     Q = Q[:, 1:n_select]
-    #display(norm(C-Q*diagm(v)*Q'))
+    display(norm(C-Q*diagm(v)*Q'))
     f_new = Vector{Matrix{Float64}}(undef, N)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
