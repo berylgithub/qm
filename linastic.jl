@@ -178,7 +178,7 @@ function PCA_atom(f, n_select; normalize=true)
     v = v[1:n_select]
     #display(v)
     Q = Q[:, 1:n_select]
-    display(norm(C-Q*diagm(v)*Q'))
+    #display(norm(C-Q*diagm(v)*Q'))
     f_new = Vector{Matrix{Float64}}(undef, N)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)

@@ -157,6 +157,9 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
     println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished in $t seconds!!")
 end
 
+"""
+overloader for data setup, manually input filedir here
+"""
 function data_setup(mol_name, n_data, n_feature, M, feature_file; universe_size=1_000)
     println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " starts!")
     t = @elapsed begin
