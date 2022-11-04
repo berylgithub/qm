@@ -68,6 +68,35 @@ function mean_cov(w_matrix, idx, N, len_finger)
     return w_matrix[:, idx] .+ dw, (S .- (dw*dw'))./(N-1) # mean, covariance
 end
 
+"""
+eigenvalue distribution plotter
+personal use only
+"""
+function plot_ev(v, tickslice, filename; rotate=false)
+    # put small egeinvalues to zero:
+    b = abs.(v) .< 1e-10
+    v[b] .= 0.
+    # compute distribution:
+    trace = sum(v)
+    len = length(v)
+    q = zeros(len)
+    display(v)
+    for j=1:len
+        q[j] = sum(v[end-j+1:end])
+    end
+    q ./= trace
+    q = reverse(q)
+    #tickslice = [1,10,20,30,40,50] # manual
+    # plot:
+    #p = scatter(log10.(q), xticks = (eachindex(q)[tickslice], (eachindex(q).-1)[tickslice]), markershape = :cross, xlabel = L"$j$", ylabel = L"log$_{10}$($q_{j}$)", legend = false)
+    if rotate
+        p = scatter(log10.(v), xticks = tickslice, markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false, xrotation = -45, xtickfontsize=6)
+    else
+        p = scatter(log10.(v), xticks = tickslice, markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false)
+    end
+    display(p)
+    savefig(p, filename)
+end
 
 """
 feature selection by the PCA
@@ -132,8 +161,10 @@ end
 PCA for atomic features
 params:
     - atomic features, f ∈ (N,n_atom,n_f)
+    ;
+    - callplot is for personal use only
 """
-function PCA_atom(f, n_select; normalize=true)
+function PCA_atom(f, n_select; normalize=true, callplot=false)
     # cut number of features:
     N, n_f = (length(f), size(f[1], 2))
     # compute mean vector:
@@ -167,6 +198,8 @@ function PCA_atom(f, n_select; normalize=true)
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
+    # plot here:
+    plot_ev(v, [1,10,20,30,40,50], "plot/log_eigenvalue_atom.png")
     #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
     display(sing) =#
     # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
@@ -244,6 +277,9 @@ function PCA_mol(F, n_select; normalize=true)
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
+
+    # plot here:
+    plot_ev(v, round.(range(1, n_f, 20)), "plot/log_eigenvalue_mol.png", rotate=true)
 
     sidx = sortperm(v, rev=true)
     v = v[sidx] # temporary fix for the negative eigenvalue
