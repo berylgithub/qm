@@ -263,6 +263,17 @@ function PCA_mol(F, n_select; normalize=true)
     return F_new
 end
 
+
+"""
+caller for PCA_atom up to PCA_mol
+"""
+function feature_extractor(f, n_select_at, n_select_mol; normalize_at=true, normalize_mol=true)
+    f = PCA_atom(f, n_select_at; normalize = normalize_at)
+    F = extract_mol_features(f)
+    F = PCA_mol(F, n_select_mol; normalize = normalize_mol)
+    return F
+end
+
 function checkcov(X)
     r, c = size(X)
     s = vec(sum(X, dims=1)) ./ r
