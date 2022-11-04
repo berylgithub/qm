@@ -225,6 +225,44 @@ function extract_mol_features(f)
     return F
 end
 
+"""
+PCA for molecule (matrix data type)
+params:
+    - F, ∈Float64(N, n_f)
+"""
+function PCA_mol(F, n_select; normalize=true)
+    N, n_f = size(F)
+    s = zeros(n_f); S = zeros(n_f, n_f)
+    comp_mol_l!(s, S, F, N)
+    s ./= N; S ./= N
+    C = S - s*s'
+
+    e = eigen(C)
+    v = e.values # careful of numerical overflow and errors!!
+    Q = e.vectors
+
+    sidx = sortperm(v, rev=true)
+    v = v[sidx] # temporary fix for the negative eigenvalue
+    Q = Q[:, sidx] # temporary fix for the negative eigenvalue
+    # select eigenvalues:
+    v = v[1:n_select]
+    Q = Q[:, 1:n_select]
+
+    F_new = zeros(N, n_select)
+    for l ∈ 1:N
+        F_new[l,:] .= Q'*(F[l,:] - s)
+    end
+
+    if normalize
+        maxs = vec(maximum(F_new, dims=1))
+        mins = vec(minimum(F_new, dims=1))
+        for l ∈ 1:N
+            F_new[l,:] .= (F_new[l,:] .- mins) ./ (maxs .- mins)
+        end
+    end
+    return F_new
+end
+
 function checkcov(X)
     r, c = size(X)
     s = vec(sum(X, dims=1)) ./ r
