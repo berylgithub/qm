@@ -64,18 +64,14 @@ function set_cluster(infile, M; universe_size=1_000)
     dataset = load(infile)["data"]
     N, L = size(dataset)
     A = dataset' # transpose data (becomes column major)
-    display(A)
     println(N, " ", L)
     # compute mean and cov:
     idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
     idx = Int(round(idx/universe_size*N)) # relative idx
     wbar, C = mean_cov(A, idx, N, L)
     B = Matrix{Float64}(I, L, L) # try with B = I #B = compute_B(C) 
-    display(wbar)
-    display(B)
     # generate centers (M) for training:
     center_ids, mean_point = eldar_cluster(A, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd") # generate cluster centers
-    display(mean_point)
     display(center_ids)
     return center_ids
 end

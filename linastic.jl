@@ -1,4 +1,4 @@
-using LinearAlgebra, Statistics, Distributions, Plots
+using LinearAlgebra, Statistics, Distributions, Plots, LaTeXStrings
 
 """
 placeholder for linear algebra and statistics operations, if RoSemi is overcrowded, or when the need arises

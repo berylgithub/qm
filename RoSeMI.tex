@@ -41,42 +41,39 @@
 
 
 \section{Feature extraction}
-The very first piece which needs to be computed is the molecular features. The feature matrix $W \in \mathbb{R}^{N \times n_f}$ where $N$ is the total number of data points and $n_f$ is the number of features, needs to be pre-computed and stored in the non-volatile storage in order to avoid re-computation.
+The very first piece which needs to be computed is the collection of molecular features. The feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
 \subsection{Atomic feature selection}
 \begin{itemize}
-	\item Compute the atomic features using ACSF (\at{cite Behler}). This gives a row vector $f^l_{i:}$ with length $n^\text{atom}_f = 51$ for each atom. Apply this to all molecules in the dataset, hence there are a total of $N$ ACSF matrices.
-	\item In order to select the most relevant features, we do the \textbf{principal component analysis} (PCA), first by computing the intermediate vector and matrix:
+	\item Compute the atomic features using ACSF (\at{cite Behler}). This gives a row vector $f^l_{i:}$ with length $n^\text{atom}_f = 51$ for each atom $i$ in a molecule $l$. Apply this to all molecules in the dataset, hence there are a total of $N$ ACSF matrices $f^l$.
+	\item In order to select the most relevant features, we do the \textbf{principal component analysis} (PCA), first by computing the mean vectors and the matrix $S$ by
 	\begin{equation}
 		\begin{split}
-			\hat{s} &= \sum_{li} f^l_{i:}, \\
-			S &= \sum_{li} f^l_{i:} (f^l_{i:})^\top, \\
-			\text{for } l &= 1,...,N, ~~ i = 1,2,...
+			\hat{s} &= \frac{1}{N_\text{QM9}}\sum_{l} \frac{1}{n^l_\text{atom}}\sum_{i} f^l_{i:}, \\ 
+			S &= \frac{1}{N_\text{QM9}}\sum_{l} \frac{1}{n^l_\text{atom}} \sum_{i} f^l_{i:} (f^l_{i:})^\top, \\ 
+			\text{for } l &= 1,...,N_\text{QM9}, ~~ i = 1,2,...,n^l_\text{atom},
 		\end{split}
 	\end{equation}
-	then compute the mean feature vector and covariance matrix
+	where $n^l_\text{atom}$ is the number of atom in molecule $l$; then compute the covariance matrix
 	\begin{equation}
 		\label{eq:pca_atom_start}
-		\begin{split}
-			\bar{u} &= \hat{s}/N, \\
-			C &= S/N - \bar{u}\bar{u}^\top. \\			
-		\end{split}
+		C = S - ss^\top. \\			
 	\end{equation}
-	Select the eigenvectors such that they correspond to the $n_f^{\text{select}}$ largest eigenvalues, they are obtained by first doing the spectral decomposition of the covariance matrix
+	Select the eigenvectors such that they correspond to the $n_{af}$ largest eigenvalues. They are obtained by first doing the spectral decomposition of the covariance matrix
 	\begin{equation}
 		C = Q\Lambda Q^\top,
 	\end{equation}
-	where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we permute the columns of $Q$ and the entries of $\Lambda$ such that
+	where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we permute the columns of $Q$ and the diagonal entries $\lambda_i$ of $\Lambda$ such that
 	\begin{equation}
-		\Lambda_{11} \geq \Lambda_{22} \geq  ... \geq \Lambda_{n_fn_f},
+		\lambda_{1} \geq \lambda_{2} \geq  ... \geq \lambda_{n^\text{atom}_f},
 	\end{equation}
 	and select
 	\begin{equation}
-		\hat{Q} = Q_{:, 1:n_f^{\text{select}}}.
+		\hat{Q} = Q_{:, 1:n_{af}}.
 	\end{equation}
 	Finally the transformed feature can be obtained by
 	\begin{equation}
 		\label{eq:pca_atom_end}
-		f^l_{i:} \leftarrow \hat{Q}^\top(f^l_{i:} - \bar{u}), \text{ for }i = 1,2,...,N.
+		f^l_{i:} \leftarrow \hat{Q}^\top(f^l_{i:} - s), \text{ for }i = 1,2,...,N_\text{QM9}.
 	\end{equation}
 	\item Scale
 	\begin{equation}
@@ -90,10 +87,6 @@ The very first piece which needs to be computed is the molecular features. The f
 			\underbar{$f$}_j &:= \min_{li} f^l_{ij}, ~~~ \overline{f}_j := \max_{li} f^l_{ij}, \\
 			f^l_{ij} &\leftarrow (f^l_{ij} - \underbar{$f$}_j)/ (\overline{f}_j - \underbar{$f$}_j), \text{ for } j = 1,..., n_f^\text{select},
 		\end{split}
-	\end{equation}
-	and re-assign
-	\begin{equation}
-		n_f \leftarrow n_f^\text{select}.
 	\end{equation}
 \end{itemize}
 	
