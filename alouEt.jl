@@ -157,6 +157,51 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
     println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished in $t seconds!!")
 end
 
+function data_setup(mol_name, n_data, n_feature, M, feature_file; universe_size=1_000)
+    println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " starts!")
+    t = @elapsed begin
+        # create subfolder:
+        path = mkpath("data/$mol_name")
+        # query (get the index of data) the molecule by molecule name:
+        D = load("data/qm9_dataset.jld")["data"] # 🌸
+        len = length(D)
+        indexes = []
+        for i ∈ 1:len
+            if D[i]["formula"] == mol_name
+                push!(indexes, i)
+            end
+        end
+        # cut data into n_data:
+        l = length(indexes)
+        if l >= n_data
+            indexes = indexes[1:n_data]
+        end
+        D = D[indexes]
+        println(length(D))
+        save(path*"/$mol_name"*"_dataset_$n_data.jld", "data", D)
+
+        W = load(feature_file)["data"] # load scaled(PCA(features)), this is more accurate since the columns are sorted by the most important featuers
+        W = W[indexes, :] # slice the featuere matrix by the data indices and the first n_feature
+        
+        main_file = path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data.jld"
+        save(main_file, "data", W)
+        # get center indexes:
+        M_actual = M
+        if M > n_data # check if the wanted centers is too much for the data..
+            M_actual = n_data
+        end
+        center_ids = set_cluster(main_file, M_actual, universe_size=universe_size)
+        save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
+        # compute all distances:
+        Dist, idx = set_all_dist(main_file, universe_size=universe_size)
+        save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
+        # scale feature for basis:
+        #= W = normalize_routine(main_file)
+        save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W) =#
+    end
+    println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished in $t seconds!!")
+end
+
 """
 main fitter function, assemble LS -> fit -> save to file
 to avoid clutter in main function, called within fitting iters
