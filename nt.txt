@@ -1,4 +1,1 @@
-- use linear solver (try compare vs LBFGS) --> linear solver results in very high RMSD
-- compute RMSE := ||\sum E_m - V_K(E_m)||^2_2, this is the actual error, meanwhile RMSD is the approx error, 
-- fix N, vary M, more M should give better RMSE
-- iterate the fitting by fixing N, add the point m with the worst MAD_K(w_m) into set K, hence M += 1, plot the RMSD and RMSE, see how they differ
+- try fitting with n_atom_select = 15 and n_mol_select = 40
