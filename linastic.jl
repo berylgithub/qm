@@ -74,26 +74,27 @@ personal use only
 """
 function plot_ev(v, tickslice, filename; rotate=false)
     # put small egeinvalues to zero:
-    b = abs.(v) .< 1e-10
+    b = abs.(v) .< 1e-7
     v[b] .= 0.
+    v_nz = [v_el for v_el in v if v_el > 0.]
+    idx_v = [i for i in eachindex(v) if v[i] > 0.]
+    v_nz = reverse(v_nz); idx_v = reverse(idx_v)
     # compute distribution:
-    trace = sum(v)
-    len = length(v)
-    q = zeros(len)
     display(v)
-    for j=1:len
+    display(v_nz)
+    display(idx_v)
+    #= for j=1:len
         q[j] = sum(v[end-j+1:end])
     end
     q ./= trace
-    q = reverse(q)
-    #tickslice = [1,10,20,30,40,50] # manual
+    q = reverse(q) =#
+
+
     # plot:
     #p = scatter(log10.(q), xticks = (eachindex(q)[tickslice], (eachindex(q).-1)[tickslice]), markershape = :cross, xlabel = L"$j$", ylabel = L"log$_{10}$($q_{j}$)", legend = false)
-    if rotate
-        p = scatter(log10.(v), xticks = tickslice, markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false, xrotation = -45, xtickfontsize=6)
-    else
-        p = scatter(log10.(v), xticks = tickslice, markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false)
-    end
+    slicer = Int.(round.(collect(range(1, length(idx_v), 20))))
+    display(slicer)
+    p = scatter(log10.(v_nz), xticks = (eachindex(v_nz)[slicer], eachindex(v_nz)[slicer]), markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false, xrotation = -45, xtickfontsize=6)
     display(p)
     savefig(p, filename)
 end
@@ -199,7 +200,7 @@ function PCA_atom(f, n_select; normalize=true, callplot=false)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
     # plot here:
-    plot_ev(v, [1,10,20,30,40,50], "plot/log_eigenvalue_atom.png")
+    #plot_ev(v, [1,10,20,30,40,50], "plot/log_eigenvalue_atom.png")
     #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
     display(sing) =#
     # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
@@ -277,9 +278,9 @@ function PCA_mol(F, n_select; normalize=true)
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
-
+    #println("ev compute done")
     # plot here:
-    plot_ev(v, round.(range(1, n_f, 20)), "plot/log_eigenvalue_mol.png", rotate=true)
+    #plot_ev(v, round.(range(1, n_f, 20)), "plot/log_eigenvalue_mol.png")
 
     sidx = sortperm(v, rev=true)
     v = v[sidx] # temporary fix for the negative eigenvalue
