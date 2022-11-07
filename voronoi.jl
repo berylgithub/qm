@@ -486,7 +486,6 @@ function test_usequence()
     coords .+= perturb
 
     M = 10
-    center_ids, mean_point = eldar_cluster(coords, M, distance="default", mode="fmd") # generate cluster centers
     s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
     # mean point:
     scatter!([mean_point[1]], [mean_point[2]], color="red")
@@ -499,16 +498,20 @@ function test_usequence()
     display(s) =#
 
     # call usequence here:
-    N, d = (1000, 2)
+    N, d = (1000, 500)
     M = max(1000, N)
     z = rand(d, M)
-    x = usequence(z, N)
-    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
-    display(pl)
-    savefig(pl, "plot/rep.png")
-    x = usequence(z, N, rep=false)
-    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
-    display(pl)
-    savefig(pl, "plot/norep.png")
+
+    t_cl1 = @elapsed begin
+        center_ids, mean_point = eldar_cluster(z, M, distance="default", mode="fmd") # generate cluster centers
+    end
+    #pl = scatter([z[1, center_ids]], [z[2, center_ids]], makershape = :circle)
+    #display(pl)
+    t_cl2 = @elapsed begin
+        x = usequence(z, N)
+    end
+    #pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    #display(pl)
+    display([t_cl1, t_cl2])
 end
 
