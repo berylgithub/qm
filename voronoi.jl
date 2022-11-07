@@ -463,40 +463,6 @@ function test_grid()
 end
 
 function test_usequence()
-#=     # inputs:
-    indices_M = convert(Vector{Int64}, range(10,50,5))
-    # ∀ requested M, do the algorithm:
-    #M = 10 # number of centers
-    # fixed coords, ∈ (fingerprint length, data length):
-    len_finger = 2
-    n_data = 70
-    coords = Matrix{Float64}(undef, len_finger, n_data) # a list of 2d coord arrays for testing
-    # fill fixed coords:
-    counter = 1
-    for i ∈ 1.:7. 
-        for j ∈ 1.:10.
-            coords[1, counter] = i # dim1 
-            coords[2, counter] = j # dim2
-            counter += 1
-        end
-    end
-
-    perturb_val = .1
-    perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
-    coords .+= perturb
-
-    M = 10
-    s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
-    # mean point:
-    scatter!([mean_point[1]], [mean_point[2]], color="red")
-    annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
-    # centers:
-    #scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
-    for i ∈ eachindex(center_ids)
-        annotate!([coords[1, center_ids[i]]].-.1, [coords[2, center_ids[i]]].+0.4, L"$%$i$")
-    end
-    display(s) =#
-
     # call usequence here:
     N, d = (1000, 500)
     M = max(1000, N)
