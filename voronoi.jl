@@ -357,15 +357,14 @@ function usequence(N, d; prt=0)
         end
     end
     scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    return x
 end
 
 """
-overloader
+overloader with z pre-generated
 """
-function usequence(N, d; prt=0)
-    #d, N = size(z)
-    M=max(1000,N);
-    z=rand(d,M);            # random reservoir of M vectors
+function usequence(z::Matrix{Float64}, N::Int; prt=0, rep=true)
+    d, M = size(z)
     zerM=zeros(Int, M);        # for later vectorization
     x=zeros(d,N);           # storage for the sequence to be constructed
 
@@ -382,21 +381,26 @@ function usequence(N, d; prt=0)
         x[:, k] = z[:,j]
 
         # update the reservoir
-        zj = rand(d,1)  
-        z[:, j] = zj
+        zj = rand(d,1)
+        if rep
+            z[:, j] = zj
+        end
 
         # update minimum squared distance vector 
         onk = ones(Int, k)
-        u[j] = minimum(sum((zj[:, onk] - x[:, 1:k]) .^ 2, dims=1))
+        if rep
+            u[j] = minimum(sum((zj[:, onk] - x[:, 1:k]) .^ 2, dims=1))
+        end
         s .= vec(sum((z - x[:, k .+ zerM]) .^ 2, dims=1)); 
         if k == 1 
             u .= s
         else
-
             u .= min.(u, s) # elemwisemin
         end
     end
-    scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    display(pl)
+    return x
 end
 
 function test_grid()
@@ -498,6 +502,10 @@ function test_usequence()
     display(s) =#
 
     # call usequence here:
-    usequence(100, 2)
+    N, d = (1000, 2)
+    M = max(1000, N)
+    z = rand(d, M)
+    usequence(z, N)
+    usequence(z, N, rep=false)
 end
 
