@@ -505,10 +505,10 @@ function test_usequence()
     x = usequence(z, N)
     pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
     display(pl)
-    savefig(pl, "plot/norep.png")
+    savefig(pl, "plot/rep.png")
     x = usequence(z, N, rep=false)
     pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
     display(pl)
-    savefig(pl, "plot/rep.png")
+    savefig(pl, "plot/norep.png")
 end
 
