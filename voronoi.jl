@@ -356,7 +356,6 @@ function usequence(N, d; prt=0)
             u .= min.(u, s) # elemwisemin
         end
     end
-    scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
     return x
 end
 
@@ -398,8 +397,6 @@ function usequence(z::Matrix{Float64}, N::Int; prt=0, rep=true)
             u .= min.(u, s) # elemwisemin
         end
     end
-    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
-    display(pl)
     return x
 end
 
@@ -505,7 +502,13 @@ function test_usequence()
     N, d = (1000, 2)
     M = max(1000, N)
     z = rand(d, M)
-    usequence(z, N)
-    usequence(z, N, rep=false)
+    x = usequence(z, N)
+    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    display(pl)
+    savefig(pl, "plot/norep.png")
+    x = usequence(z, N, rep=false)
+    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    display(pl)
+    savefig(pl, "plot/rep.png")
 end
 
