@@ -322,6 +322,82 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default
     return center_ids, mean_point
 end
 
+function usequence(N, d; prt=0)
+    #d, N = size(z)
+    M=max(1000,N);
+    z=rand(d,M);            # random reservoir of M vectors
+    zerM=zeros(Int, M);        # for later vectorization
+    x=zeros(d,N);           # storage for the sequence to be constructed
+
+    u, s = [zeros(M) for _ ∈ 1:2]
+    for k ∈ 1:N
+        # pick a vector from the reservoir
+        if k == 1 
+            j = 1
+        else 
+            # find the reservoir vector with largest minimum distance
+            # from the vectors already chosen
+            umax, j = findmax(u)
+        end
+        x[:, k] = z[:,j]
+
+        # update the reservoir
+        zj = rand(d,1)  
+        z[:, j] = zj
+
+        # update minimum squared distance vector 
+        onk = ones(Int, k)
+        u[j] = minimum(sum((zj[:, onk] - x[:, 1:k]) .^ 2, dims=1))
+        s .= vec(sum((z - x[:, k .+ zerM]) .^ 2, dims=1)); 
+        if k == 1 
+            u .= s
+        else
+
+            u .= min.(u, s) # elemwisemin
+        end
+    end
+    scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+end
+
+"""
+overloader
+"""
+function usequence(N, d; prt=0)
+    #d, N = size(z)
+    M=max(1000,N);
+    z=rand(d,M);            # random reservoir of M vectors
+    zerM=zeros(Int, M);        # for later vectorization
+    x=zeros(d,N);           # storage for the sequence to be constructed
+
+    u, s = [zeros(M) for _ ∈ 1:2]
+    for k ∈ 1:N
+        # pick a vector from the reservoir
+        if k == 1 
+            j = 1
+        else 
+            # find the reservoir vector with largest minimum distance
+            # from the vectors already chosen
+            umax, j = findmax(u)
+        end
+        x[:, k] = z[:,j]
+
+        # update the reservoir
+        zj = rand(d,1)  
+        z[:, j] = zj
+
+        # update minimum squared distance vector 
+        onk = ones(Int, k)
+        u[j] = minimum(sum((zj[:, onk] - x[:, 1:k]) .^ 2, dims=1))
+        s .= vec(sum((z - x[:, k .+ zerM]) .^ 2, dims=1)); 
+        if k == 1 
+            u .= s
+        else
+
+            u .= min.(u, s) # elemwisemin
+        end
+    end
+    scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+end
 
 function test_grid()
     # inputs:
@@ -383,5 +459,45 @@ function test_grid()
             end
         end
     end
+end
+
+function test_usequence()
+#=     # inputs:
+    indices_M = convert(Vector{Int64}, range(10,50,5))
+    # ∀ requested M, do the algorithm:
+    #M = 10 # number of centers
+    # fixed coords, ∈ (fingerprint length, data length):
+    len_finger = 2
+    n_data = 70
+    coords = Matrix{Float64}(undef, len_finger, n_data) # a list of 2d coord arrays for testing
+    # fill fixed coords:
+    counter = 1
+    for i ∈ 1.:7. 
+        for j ∈ 1.:10.
+            coords[1, counter] = i # dim1 
+            coords[2, counter] = j # dim2
+            counter += 1
+        end
+    end
+
+    perturb_val = .1
+    perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
+    coords .+= perturb
+
+    M = 10
+    center_ids, mean_point = eldar_cluster(coords, M, distance="default", mode="fmd") # generate cluster centers
+    s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
+    # mean point:
+    scatter!([mean_point[1]], [mean_point[2]], color="red")
+    annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
+    # centers:
+    #scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
+    for i ∈ eachindex(center_ids)
+        annotate!([coords[1, center_ids[i]]].-.1, [coords[2, center_ids[i]]].+0.4, L"$%$i$")
+    end
+    display(s) =#
+
+    # call usequence here:
+    usequence(100, 2)
 end
 
