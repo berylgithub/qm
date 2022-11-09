@@ -252,7 +252,7 @@ params:
 """
 function comp_SK(D, Midx, m)
     sum = 0.
-    for i ∈ Midx
+    for i ∈ eachindex(Midx)
         sum += 1/D[i, m]
     end
     return sum
@@ -274,14 +274,11 @@ params:
 function comp_γ(D, SKs, Midx, Widx)
     M = length(Midx); N = length(Widx)
     γ = zeros(N, M)
-    mc = 1
-    for m ∈ Widx
-        kc = 1
-        for k ∈ Midx
-            γ[mc, kc] = D[k, m]*SKs[mc]
-            kc += 1
+    for mc ∈ eachindex(Widx)
+        m = Widx[mc]
+        for kc ∈ eachindex(Midx)
+            γ[mc, kc] = D[kc, m]*SKs[mc]
         end
-        mc += 1
     end
     return γ
 end
@@ -583,7 +580,7 @@ function comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, αj, j)
         k = Midx[c]
         ϕkl .= B[:,klidx[c]]*θ[klidx[c]]
         @. vk = E[k] + ϕkl
-        @. RK = RK + (vk/D[k, Widx])
+        @. RK = RK + (vk/D[c, Widx])
         if j == k # for j term
             ϕjl .= ϕkl
         end
@@ -763,6 +760,8 @@ function test_A()
     display(D)
 
     Midx = [1,5] # k and j index
+    D = D[:, Midx] # to mimic the new indexing
+    display(D)
     data_idx = 1:n_data ; Widx = setdiff(data_idx, Midx) # unsupervised data index (m)
     cols = length(Midx)*n_feature*n_basis # index of k,l
     rows = length(Midx)*length(Widx) # index of j,m  
@@ -783,9 +782,6 @@ function test_A()
     println("dϕ = ")
     display(dϕ)
 
-    A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) # sparse ver
-    display(A)
-    println(b)
     # test each element:
     #m = Widx[1]; j = Midx[1]; k = Midx[1]; l = 1
     #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
@@ -831,13 +827,14 @@ function test_A()
     display(B)
     klidx = kl_indexer(M, L) # this is correct, this is the kl indexer!!
     γ = comp_γ(D, SKs, Midx, Widx)
+    display(["gamma", γ])
     α = γ .- 1 # precompute alpha matrix for each jm
     outs = [zeros(N) for _ = 1:7];
     cidx = 1:M # k indexer
     #comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:,jc], j) # this is the tested one
     #ΔjK = outs[1]
-    ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
-    println([ΔjK_act, VK_act])
+    #ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
+    #println([ΔjK_act, VK_act])
     v = zeros(N*M); vmat = zeros(N, M); VK = zeros(N); outs = [zeros(N) for _ = 1:7]; 
     comp_v!(v, vmat, VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
     display(vmat)
