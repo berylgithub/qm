@@ -67,7 +67,7 @@ outputs:
     - mean_point: the coordinate of the mean point, Vector{Float64}(n_dim)
     - center_ids: containing the sorted (by order of selection) IDs of the centers, Vector{Float64}(M)
 """
-function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default", mode="default", break_ties="default")
+function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default", mode="default", break_ties="default", get_distances=false)
     data_size = size(coords)[2] # compute once
     # Eldar's [*cite*] sampling algo, default ver: break ties by earliest index:
     # later move all of the matrices and vectors alloc outside:
@@ -244,8 +244,8 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default
             for m ∈ 1:M-1  ## To find k_x s.t. x > 1, for m ∈ M:
                 ## Find largest distance:
                 ### compute list of distances from mean:
-                for i ∈ 1:data_size
-                    distances[i, m] = f_distance(B, ref_point, coords[:, i]) #compute distances
+                @simd for i ∈ 1:data_size
+                    distances[i, m] = f_distance(B, ref_point, (@view coords[:, i])) #compute distances
                 end
                 ### min of column:        
                 for i ∈ 1:data_size
@@ -319,7 +319,15 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default
             end
         end
     end
-    return center_ids, mean_point
+    if get_distances
+        # since the distance to last ref point by default is not needed, but needed here:
+        @simd for i ∈ 1:data_size
+            distances[i, M] = f_distance(B, ref_point, (@view coords[:, i]))
+        end
+        return center_ids, mean_point, distances
+    else
+        return center_ids, mean_point
+    end
 end
 
 function usequence(N, d; prt=0)
@@ -481,3 +489,39 @@ function test_usequence()
     display([t_cl1, t_cl2])
 end
 
+function test_distances()
+    # inputs:
+    indices_M = convert(Vector{Int64}, range(10,50,5))
+    # ∀ requested M, do the algorithm:
+    #M = 10 # number of centers
+    # fixed coords, ∈ (fingerprint length, data length):
+    len_finger = 2
+    n_data = 70
+    coords = Matrix{Float64}(undef, len_finger, n_data) # a list of 2d coord arrays for testing
+    # fill fixed coords:
+    counter = 1
+    for i ∈ 1.:7. 
+        for j ∈ 1.:10.
+            coords[1, counter] = i # dim1 
+            coords[2, counter] = j # dim2
+            counter += 1
+        end
+    end
+
+    # perturb points:
+    perturb_val = .3
+    perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
+    coords .+= perturb
+
+    len_finger = 1000
+    coords = rand(1000, 500)
+    M = 10
+    wbar, C = mean_cov(coords, 17, n_data, len_finger)
+    B = Matrix{Float64}(I, len_finger, len_finger)
+    display(wbar)
+    center_ids, mean_point, distances = eldar_cluster(coords, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd", get_distances=true) # generate cluster centers
+    display(center_ids)
+    display(distances)
+    D = compute_distance_all(coords, B)
+    display(D[:, center_ids])
+end
