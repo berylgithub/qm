@@ -242,16 +242,6 @@ end
 refer to RoSeMI.pdf and RSI.pdf for these quantities:
 """
 
-"""
-get the distance between w_l and w_k, D_k(w_l), uses precomputed matrix D with fixed i
-params:
-    - D, mahalanobis distance matrix, ∈ Float64 (n_data, n_data)
-    - m, index of the selected unsupervised datapoint
-    - k, index of the selected supervised datapoint
-"""
-function get_Dk(D, k, m)
-    return D[k, m] # = D[l,k], same thing    
-end
 
 """
 compute S_K := ∑1/Dₖ
@@ -837,6 +827,7 @@ function test_A()
     SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
     B = zeros(N, M*L)
     comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature) # the index should be k,l only
+    println("B=")
     display(B)
     klidx = kl_indexer(M, L) # this is correct, this is the kl indexer!!
     γ = comp_γ(D, SKs, Midx, Widx)
