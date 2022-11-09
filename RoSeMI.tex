@@ -158,8 +158,12 @@ The very first piece which needs to be computed is the collection of molecular f
 	\begin{equation}
 		F_{:j} \leftarrow (F_{:j} - \underbar{$F$}_{j})/ (\overline{F}_{j} - \underbar{$F$}_{j}), \text{ for } j = 1,2,..., n_{mf}.
 	\end{equation}
-	\item Store $F$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
 \end{itemize}
+
+\subsection{Timing and memory usage}
+\at{add formula and numerical table -- for different choices of $n_{af}, n_{mf}$}
+Store $F$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
+
 
 \section{Data selection}
 The set of indices which refers to data points with known energies (or training data points) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $M = |K| = 100$. The flow of the data selection is as the following:
@@ -168,13 +172,13 @@ The set of indices which refers to data points with known energies (or training 
 	\begin{equation}
 		D := f_{\text{dist}}(B, F) \in \mathbb{R}^{n_\text{data} \times n_\text{data}},
 	\end{equation}
-	where $D$ is symmetric with zero diagonal \at{might be necessary to be stored in sparse (reduces the matrix size, instead of $n \times n$ it becomes $n(n-1)/2$) for full computation of 113k molecules}, and $B$ is a matrix which transforms the feature space (currently $B := I$). The distance between two data points of index $k$ and $m$ can also be defined by
+	where $D$ is symmetric with zero diagonal \at{might be necessary to be stored in sparse (reduces the matrix size, instead of $n \times n$ it becomes $n(n-1)/2$) for full computation of 134k molecules}, and $B$ is a matrix which transforms the feature space (currently $B := I$). The distance between two data points of index $k$ and $m$ can also be defined by
 	\begin{equation}
 		D_k(F_{m,:}) := \|F_{m,:} - F_{k,:}\|^2_B := \|B(F_{m,:} - F_{k,:})\|^2_2
 	\end{equation}
 	\item Compute and store the set of indices $K$ by farthest-minimum-distance algorithm \at{cite Eldar} given $D$, $B$ and $M$.
 	\begin{equation}
-		K := f_{\text{fmd}}(D, B, M) \in \mathbb{Z}^{+M},
+		K := f_{\text{fmd}}(D, B, M),
 	\end{equation}
 	for example, we can obtain one data point which belongs to the training set by indexing
 	\begin{equation}
