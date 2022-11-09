@@ -324,7 +324,7 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default
         @simd for i ∈ 1:data_size
             distances[i, M] = f_distance(B, ref_point, (@view coords[:, i]))
         end
-        return center_ids, mean_point, distances
+        return center_ids, mean_point, distances'
     else
         return center_ids, mean_point
     end
@@ -513,8 +513,6 @@ function test_distances()
     perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
     coords .+= perturb
 
-    len_finger = 1000
-    coords = rand(1000, 500)
     M = 10
     wbar, C = mean_cov(coords, 17, n_data, len_finger)
     B = Matrix{Float64}(I, len_finger, len_finger)
@@ -523,5 +521,5 @@ function test_distances()
     display(center_ids)
     display(distances)
     D = compute_distance_all(coords, B)
-    display(D[:, center_ids])
+    display(D[center_ids, :])
 end
