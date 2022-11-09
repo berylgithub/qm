@@ -41,14 +41,14 @@
 
 
 \section{Feature extraction}
-The very first piece which needs to be computed is the collection of molecular features. The feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
+The very first piece which needs to be computed is the collection of molecular features. The feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
 \subsection{Atomic feature selection}
 \begin{itemize}
 	\item Compute the atomic features using ACSF (\at{cite Behler}). This gives a row vector $f^l_{i:}$ with length $n^\text{atom}_f = 51$ for each atom $i$ in a molecule $l$. Apply this to all molecules in the dataset, hence there are a total of $N$ ACSF matrices $f^l$.
 	\item In order to select the most relevant features, we do the \textbf{principal component analysis} (PCA), first by computing the mean vectors and the matrix $S$ by
 	\begin{equation}
 		\begin{split}
-			\hat{s} &= \frac{1}{N_\text{QM9}}\sum_{l} \frac{1}{n^l_\text{atom}}\sum_{i} f^l_{i:}, \\ 
+			s &= \frac{1}{N_\text{QM9}}\sum_{l} \frac{1}{n^l_\text{atom}}\sum_{i} f^l_{i:}, \\ 
 			S &= \frac{1}{N_\text{QM9}}\sum_{l} \frac{1}{n^l_\text{atom}} \sum_{i} f^l_{i:} (f^l_{i:})^\top, \\ 
 			\text{for } l &= 1,...,N_\text{QM9}, ~~ i = 1,2,...,n^l_\text{atom},
 		\end{split}
@@ -82,12 +82,15 @@ The very first piece which needs to be computed is the collection of molecular f
 	\end{equation}
 	by
 	\begin{equation}
-		\label{eq:scale_2}
-		\begin{split}
-			\underbar{$f$}_j &:= \min_{li} f^l_{ij}, ~~~ \overline{f}_j := \max_{li} f^l_{ij}, \\
-			f^l_{ij} &\leftarrow (f^l_{ij} - \underbar{$f$}_j)/ (\overline{f}_j - \underbar{$f$}_j), \text{ for } j = 1,..., n_f^\text{select},
-		\end{split}
+		\underbar{$f$}_j := \min_{li} f^l_{ij},
 	\end{equation}
+	\begin{equation}
+		\overline{f}_j := \max_{li} f^l_{ij},
+	\end{equation}
+	\begin{equation}
+		f^l_{ij} \leftarrow (f^l_{ij} - \underbar{$f$}_j)/ (\overline{f}_j - \underbar{$f$}_j), \text{ for } j = 1,..., n_f^\text{select}.
+	\end{equation}
+	
 \end{itemize}
 	
 \subsection{Molecular feature selection}
@@ -96,34 +99,31 @@ The very first piece which needs to be computed is the collection of molecular f
         \begin{equation}
 			\label{eq:acsf}
             \begin{split}
-                \hat{s}^l &= \sum_i f^l_{i:}, \\
+                s^l &= \sum_i f^l_{i:}, \\
                 S^l &= \sum_i f^l_{i:}(f^l_{i:})^\top,
             \end{split}
         \end{equation}
         since $S^l$ is a symmetric matrix, only the upper triangular and the diagonal entries are needed, we re-arrange them together with $\hat{s}^l$ into a vector
         \begin{equation}
-			F := [\hat{s}^l_1, \hat{s}^l_2, ..., S^l_{11}, S^l_{12}, ... ] \in \mathbb{R}^{n_f(n_f-1)/2 + 2n_f},
+			F_l := [s^l_1, s^l_2, ..., S^l_{11}, S^l_{12}, ... ] \in \mathbb{R}^{1 \times n_f^\text{mol}},
         \end{equation}
-    	and for simplicity, re-assign
+    	of size
     	\begin{equation}
-    		n_f \leftarrow n_f(n_f-1)/2 + 2n_f,
+    		n_f^\text{mol} := n_f(n_f-1)/2 + 2n_f.
     	\end{equation}
-    	then we stack the feature vector $F$ of each molecule as a row in the $W \in \mathbb{R}^{N \times n_f}$ matrix.
+    	This defines the fingerprint matrix $F \in \mathbb{R}^{N \times n_f}$.
     \item Do feature selection by using PCA in a similar manner as (\refeq{eq:pca_atom_start}) -- (\refeq{eq:pca_atom_end}) to take the subset of the columns of $W$, this can be done by the following:
 	    \begin{equation}
 			\label{eq:pca_mol_start}
 			\begin{split}
-				\hat{s} &= \sum_l W_{l:}, \\
-				S &= \sum_l W_{l:}(W_{l:})^\top, \\
-				\text{ for } l &= 1,2,...,N, \\
+				s &= \frac{1}{N} \sum_l F_{l:}, \\
+				S &= \frac{1}{N} \sum_l F_{l:}(F_{l:})^\top, \\
+				\text{ for } l &= 1,2,...,N_\text{QM9}, \\
 			\end{split}
 	    \end{equation}
-		compute the mean feature vector and covariance matrix
+		compute the covariance matrix
 		\begin{equation}
-			\begin{split}
-				\bar{u} &= \hat{s}/N, \\
-				C &= S/N - \bar{u}\bar{u}^\top, \\			
-			\end{split}
+			C = S - ss^\top, \\			
 		\end{equation}
 		compute the spectral decomposition of the covariance matrix
 		\begin{equation}
@@ -131,44 +131,46 @@ The very first piece which needs to be computed is the collection of molecular f
 		\end{equation}
 		permute the columns of $Q$ and the entries of $\Lambda$ such that
 		\begin{equation}
-			\Lambda_{11} \geq \Lambda_{22} \geq  ... \geq \Lambda_{n_fn_f},
+			\lambda_{1} \geq \lambda_{2} \geq  ... \geq \lambda_{n^\text{mol}_f},
 		\end{equation}
 		and select
 		\begin{equation}
-			\hat{Q} = Q_{:, 1:n^\text{select}_f}.
+			\hat{Q} = Q_{:, 1:n_{mf}}.
 		\end{equation}
 		Obtain the transformed feature by
 		\begin{equation}
 			\label{eq:pca_mol_end}
-			W_{l,:} \leftarrow \hat{Q}^\top(W_{l,:} - \bar{u}), \text{ for }l = 1,2,...,N.
+			F_{l:} \leftarrow \hat{Q}^\top(F_{l:} - s), \text{ for }l = 1,2,...,N.
 		\end{equation}
-	\item Scale $W$ such that 
+	\item Scale $F$ such that 
 	\begin{equation}
 		\label{eq:scale_mol_1}
-		W_{lj} \in [0, 1]
+		F_{lj} \in [0, 1]
 	\end{equation}
 	by
 	\begin{equation}
 		\label{eq:scale_mol_2}
-		\begin{split}
-			\underbar{$W$}_{j} &:= \min_{l} W_{lj}, ~~ \overline{W}_{j} := \max_{l} W_{lj}, \\
-			W_{:j} &\leftarrow (W_{:j} - \underbar{$W$}_{j})/ (\overline{W}_{j} - \underbar{$W$}_{j}), \text{ for } j = 1,2,..., n^\text{select}_f, \\
-			n_f &\leftarrow n^\text{select}_f.
-		\end{split}
+		\underbar{$F$}_{j} := \min_{l} F_{lj}
 	\end{equation}
-	\item Store $W$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
+	\begin{equation}
+		\overline{F}_{j} := \max_{l} F_{lj}
+	\end{equation}
+	\begin{equation}
+		F_{:j} \leftarrow (F_{:j} - \underbar{$F$}_{j})/ (\overline{F}_{j} - \underbar{$F$}_{j}), \text{ for } j = 1,2,..., n_{mf}.
+	\end{equation}
+	\item Store $F$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
 \end{itemize}
 
 \section{Data selection}
 The set of indices which refers to data points with known energies (or training data points) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $M = |K| = 100$. The flow of the data selection is as the following:
 \begin{itemize}
-	\item Compute and store distance matrix $D$ given $W$
+	\item Compute and store distance matrix $D$ given $F$
 	\begin{equation}
-		D := f_{\text{dist}}(B, W) \in \mathbb{R}^{n_\text{data} \times n_\text{data}},
+		D := f_{\text{dist}}(B, F) \in \mathbb{R}^{n_\text{data} \times n_\text{data}},
 	\end{equation}
 	where $D$ is symmetric with zero diagonal \at{might be necessary to be stored in sparse (reduces the matrix size, instead of $n \times n$ it becomes $n(n-1)/2$) for full computation of 113k molecules}, and $B$ is a matrix which transforms the feature space (currently $B := I$). The distance between two data points of index $k$ and $m$ can also be defined by
 	\begin{equation}
-		D_k(W_{m,:}) := \|W_{m,:} - W_{k,:}\|^2_B := \|B(W_{m,:} - W_{k,:})\|^2_2
+		D_k(F_{m,:}) := \|F_{m,:} - F_{k,:}\|^2_B := \|B(F_{m,:} - F_{k,:})\|^2_2
 	\end{equation}
 	\item Compute and store the set of indices $K$ by farthest-minimum-distance algorithm \at{cite Eldar} given $D$, $B$ and $M$.
 	\begin{equation}
@@ -176,7 +178,7 @@ The set of indices which refers to data points with known energies (or training 
 	\end{equation}
 	for example, we can obtain one data point which belongs to the training set by indexing
 	\begin{equation}
-		w_k := W_{k,:}, \text{ for } k \in K.
+		w_k := F_{k,:}, \text{ for } k \in K.
 	\end{equation}
 \end{itemize}
 
@@ -259,7 +261,7 @@ where
 
 \section{Intermediate values}
 \label{sec:intermediate}
-Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $W, D$ and $K$:
+Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $F, D$ and $K$:
 \begin{itemize}
 	\item Compute the set of indices of the data points with unknown energy (or the test set):
 	\begin{equation}
@@ -269,22 +271,22 @@ Several intermediate values need to be computed and stored in the random access 
 	\begin{equation}
 		\label{eq:intermediate}
 		\begin{split}
-			S_K &\in \mathbb{R}^{T} := S_K(W_{m,:}) \text{ for } m \in T,\\
-			\gamma &\in \mathbb{R}^{T \times M} := \gamma_k(W_{m,:}) \text{ for } k \in K, m \in T, \\
+			S_K &\in \mathbb{R}^{T} := S_K(F_{m,:}) \text{ for } m \in T,\\
+			\gamma &\in \mathbb{R}^{T \times M} := \gamma_k(F_{m,:}) \text{ for } k \in K, m \in T, \\
 			\alpha &:= \gamma - 1.
 		\end{split}
 	\end{equation}
-	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $W_{i,j}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $W$ for the computation of the spline and its derivative):
+	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $F_{i,j}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $F$ for the computation of the spline and its derivative):
 	\begin{equation}
 		\begin{split}
-			\Phi := \beta(W) \in \mathbb{R}^{n_\text{data} \times L}, \\
-			\Phi' := \beta'(W) \in \mathbb{R}^{n_\text{data} \times L}.
+			\Phi := \beta(F) \in \mathbb{R}^{n_\text{data} \times L}, \\
+			\Phi' := \beta'(F) \in \mathbb{R}^{n_\text{data} \times L}.
 		\end{split}
 	\end{equation}
 	where $L = n_fn_b$ and $n_b$ is the number of splines for each feature.
 	\item Compute
-	\begin{equation} % ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k])
-		\phi_{m, kl} := \Phi_{m,l} - \Phi_{k,l} - \Phi'_{k,l}(W_{m,t}-W_{k,t}) \quad \text{for } m \in T, \text{ }k \in K, \text{ }l = 1,...,L,
+	\begin{equation} % ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(F[t,m]-F[t,k])
+		\phi_{m, kl} := \Phi_{m,l} - \Phi_{k,l} - \Phi'_{k,l}(F_{m,t}-F_{k,t}) \quad \text{for } m \in T, \text{ }k \in K, \text{ }l = 1,...,L,
 	\end{equation}
 	where
 	\begin{equation}
@@ -309,7 +311,7 @@ A good prediction model is reflected by small MAD or RMSD, hence a minimization 
 the data matrix $A$ with $MN$ rows and $ML$ columns where $N = |T|$, the coefficient vector $\theta$, and the target vector $b$.
 
 For storage efficiency, it is desirable to not explicitly form the data matrix $A$, since it grows quickly with more data points included in the training set $K$ and testing set $T$. 
-We can alleviate the storage problem by writing a routine for computing $Au$ where $u$ is a variable vector, hence instead of having a matrix with $\mathcal{O}(M^2N)$ storage we would have a vector with only $\mathcal{O}(N)$ storage. 
+We can alleviate the storage problem by writing a routine for computing $Au$ where $u$ is a variable vector, hence instead of having a matrix with $\mathcal{O}(M^2NL)$ storage we would have a vector with only $\mathcal{O}(N)$ storage. 
 This can be done by augmenting the first sum of the last line of (\refeq{eq:delta_split}) with the pre-computed intermediate values in (\refeq{eq:intermediate}):
 \begin{equation}
 	Au = \sum_{kl} \frac{\phi_{m, kl} u_{kl} (1-\gamma_{m, k}\delta_{jk})}{\gamma_{m,k}\alpha_{m,j}},
