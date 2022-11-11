@@ -432,10 +432,10 @@ function test_grid()
     coords = rand(len_finger, n_data) # test 3-dimensional data =#
 
     # perturb points:
-    perturb_val = .1
+    perturb_val = .15
     perturb = rand(Uniform(-perturb_val, perturb_val), size(coords))
     coords .+= perturb
-    for M ∈ [10, 70]
+    for M ∈ [30]
         # compute B:
         wbar, C = mean_cov(coords, 35, n_data, len_finger)
         B = compute_B(C)
@@ -453,18 +453,23 @@ function test_grid()
                 center_ids, mean_point = eldar_cluster(coords, M, 
                                             wbar=ws[i], B=Bs[i], distance=ds[i], mode=md) # generate cluster centers
                 #display(center_ids)
-                                            # plot the points:
-                s = scatter(coords[1, :], coords[2, :], legend = false) # datapoints
+                # plot the points:
+                s = scatter(coords[1, :], coords[2, :], legend=false, markersize = 3)
+                scatter!(coords[1, center_ids[1:6]], coords[2, center_ids[1:6]], legend = false, markersize=7.5, color="blue") # datapoints
+                scatter!(coords[1, center_ids[7:12]], coords[2, center_ids[7:12]], legend = false, markersize=6., color="blue")
+                scatter!(coords[1, center_ids[13:18]], coords[2, center_ids[13:18]], legend = false, markersize=5, color="blue")
+                scatter!(coords[1, center_ids[19:24]], coords[2, center_ids[19:24]], legend = false, markersize=4., color="blue")
+                scatter!(coords[1, center_ids[25:30]], coords[2, center_ids[25:30]], legend = false, markersize=3, color="blue")
                 # mean point:
                 scatter!([mean_point[1]], [mean_point[2]], color="red")
-                annotate!([mean_point[1]].+0.15, [mean_point[2]].+0.25, L"$\bar w$")
+                annotate!([mean_point[1]] .+ .1, [mean_point[2]] .+ .4, L"$\bar w$")
                 # centers:
                 #scatter!([coords[1, center_ids]], [coords[2, center_ids]], color="red", shape = :x, markersize = 10)
                 for i ∈ eachindex(center_ids)
-                    annotate!([coords[1, center_ids[i]]].-.2, [coords[2, center_ids[i]]].+0.4, L"$%$i$")
+                    annotate!([coords[1, center_ids[i]]] .- .15, [coords[2, center_ids[i]]] .+ 0.4, L"$%$i$")
                 end
                 display(s)
-                #savefig(s, "clusterplot/$md"*"_$M.png")
+                savefig(s, "clusterplot/$md"*"_$M.png")
             end
         end
     end
