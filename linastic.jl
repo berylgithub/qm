@@ -74,11 +74,12 @@ personal use only
 """
 function plot_ev(v, tickslice, filename; rotate=false)
     # put small egeinvalues to zero:
-    b = abs.(v) .< 1e-7
+    b = abs.(v) .< 1e-9
     v[b] .= 0.
     v_nz = [v_el for v_el in v if v_el > 0.]
     idx_v = [i for i in eachindex(v) if v[i] > 0.]
     v_nz = reverse(v_nz); idx_v = reverse(idx_v)
+    v_rev = reverse(v)
     # compute distribution:
     display(v)
     display(v_nz)
@@ -92,9 +93,10 @@ function plot_ev(v, tickslice, filename; rotate=false)
 
     # plot:
     #p = scatter(log10.(q), xticks = (eachindex(q)[tickslice], (eachindex(q).-1)[tickslice]), markershape = :cross, xlabel = L"$j$", ylabel = L"log$_{10}$($q_{j}$)", legend = false)
-    slicer = Int.(round.(collect(range(1, length(idx_v), 20))))
-    display(slicer)
-    p = scatter(log10.(v_nz), xticks = (eachindex(v_nz)[slicer], eachindex(v_nz)[slicer]), markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false, xrotation = -45, xtickfontsize=6)
+    #slicer = Int.(round.(collect(range(1, length(idx_v), 20))))
+    #display(slicer)
+    #p = scatter(log10.(v_nz), xticks = (eachindex(v_nz)[slicer], eachindex(v_nz)[slicer]), markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false, xrotation = -45, xtickfontsize=6)
+    p = scatter(log10.(v_rev), xticks = (eachindex(v_rev)[tickslice], eachindex(v_rev)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false, xtickfontsize=6)
     display(p)
     savefig(p, filename)
 end
