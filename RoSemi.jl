@@ -253,10 +253,11 @@ params:
 function comp_SK(D, Midx, m)
     sum = 0.
     for i ∈ eachindex(Midx)
-        sum += 1/D[i, m]
+        sum += 1/D[m, i] # not the best indexing way...
     end
     return sum
 end
+
 
 function comp_γk(Dk, SK)
     return Dk*SK
@@ -274,10 +275,10 @@ params:
 function comp_γ(D, SKs, Midx, Widx)
     M = length(Midx); N = length(Widx)
     γ = zeros(N, M)
-    for mc ∈ eachindex(Widx)
-        m = Widx[mc]
-        for kc ∈ eachindex(Midx)
-            γ[mc, kc] = D[kc, m]*SKs[mc]
+    for kc ∈ eachindex(Midx)
+        for mc ∈ eachindex(Widx)
+            m = Widx[mc]
+            γ[mc, kc] = D[m, kc]*SKs[mc]
         end
     end
     return γ
@@ -580,7 +581,7 @@ function comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, αj, j)
         k = Midx[c]
         ϕkl .= B[:,klidx[c]]*θ[klidx[c]]
         @. vk = E[k] + ϕkl
-        @. RK = RK + (vk/D[c, Widx])
+        @. RK = RK + (vk/D[Widx, c])
         if j == k # for j term
             ϕjl .= ϕkl
         end
@@ -621,7 +622,7 @@ function comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
         k = Midx[c]
         ϕkl .= B[:,klidx[c]]*θ[klidx[c]]
         @. vk = E[k] + ϕkl
-        @. RK = RK + (vk/D[k, Widx])
+        @. RK = RK + (vk/D[Widx, c])
     end
     @. VK = RK / SKs
 end
@@ -821,6 +822,7 @@ function test_A()
     mc = 2; jc = 1; kc = 1
     m = Widx[mc]; j = Midx[jc]; k = Midx[kc]; l = 1
     SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
+    println(["SK", SKs])
     B = zeros(N, M*L)
     comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature) # the index should be k,l only
     println("B=")
@@ -845,28 +847,28 @@ function test_A()
     display(VKnew)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 
-    #= # test Ax and b routines:
+    # test Ax and b routines:
     cidx = 1:M
     temps = [zeros(N) for _ in 1:3]; 
     Ax = zeros(N*M); Axtemp = zeros(N, M) #temporarily put as m × j matrix, flatten later
     comp_Ax!(Ax,Axtemp, temps, θ, B, Midx, cidx, klidx, γ, α)
     #display(A*θ)
-    #display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
+    display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     temps = [zeros(N) for _ in 1:2]; 
     bnny = zeros(N*M); bnnytemp = zeros(N, M)
     comp_b!(bnny, bnnytemp, temps, E, γ, α, Midx, cidx)
     #display(b)
-    #display(transpose(bnny)[:])
+    display(transpose(bnny)[:])
     # test Ax-b comparison:
-    println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:]))) =#
+    #println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
 
-    #= # test Aᵀv:
-    v = rand(N*M); #fill!(v, 0.1) # try rand after
-    display(A'*v)
+    # test Aᵀv:
+    v = rand(N*M); fill!(v, 0.1) # try rand after
+    #display(A'*v)
     Aᵀv = zeros(M*L)
     comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
     display(Aᵀv)
-    display(norm(Aᵀv - A'*v)) =#
+    #display(norm(Aᵀv - A'*v))
 end
 
 """
