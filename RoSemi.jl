@@ -876,7 +876,7 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 100; n_feature = 24; n_basis = 8
+    n_data = 250; n_feature = 28; n_basis = 8
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
@@ -888,6 +888,7 @@ function testtime()
     t_data = @elapsed begin
         Bhat = Matrix{Float64}(I, n_feature, n_feature)
         D = compute_distance_all(W, Bhat)
+        D = D[:, Midx] # this is just a dummy, this is actually obtained from Eldar's algo
         SKs = map(m -> comp_SK(D, Midx, m), Widx)
         γ = comp_γ(D, SKs, Midx, Widx)
         α = γ .- 1
