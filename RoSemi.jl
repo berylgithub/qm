@@ -591,28 +591,6 @@ function comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, αj, j)
     @. ΔjK = (VK - vj) / αj
 end
 
-"""
-computes the ΔjK across all m ∈ T (vectorized across m)
-"""
-function comp_ΔjK!(outs, VK, E, θ, B, klidx, αj, jc, j)
-    ΔjK, vj, ϕjl = outs;
-    ϕjl .= B[:,klidx[jc]]*θ[klidx[jc]]
-    @. vj = E[j] + ϕjl
-    @. ΔjK = (VK - vj) / αj
-end
-
-"""
-computes all of the ΔjK (residuals) given VK for j ∈ K, m ∈ T, indexed by j first then m
-"""
-function comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
-    @simd for jc ∈ eachindex(Midx)
-        j = Midx[jc]
-        comp_ΔjK!(outs, VK, E, θ, B, klidx, α[:, jc], jc, j)
-        vmat[:, jc] .= outs[1]
-        fill!.(outs, 0.)
-    end
-    v .= vec(transpose(vmat))
-end
 
 """
 full ΔjK computer ∀jm, m × j matrix
@@ -648,6 +626,29 @@ function comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
         @. RK = RK + (vk/D[Widx, c])
     end
     @. VK = RK / SKs
+end
+
+"""
+computes the ΔjK across all m ∈ T (vectorized across m)
+"""
+function comp_ΔjK!(outs, VK, E, θ, B, klidx, αj, jc, j)
+    ΔjK, vj, ϕjl = outs;
+    ϕjl .= B[:,klidx[jc]]*θ[klidx[jc]]
+    @. vj = E[j] + ϕjl
+    @. ΔjK = (VK - vj) / αj
+end
+
+"""
+computes all of the ΔjK (residuals) given VK for j ∈ K, m ∈ T, indexed by j first then m
+"""
+function comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
+    @simd for jc ∈ eachindex(Midx)
+        j = Midx[jc]
+        comp_ΔjK!(outs, VK, E, θ, B, klidx, α[:, jc], jc, j)
+        vmat[:, jc] .= outs[1]
+        fill!.(outs, 0.)
+    end
+    v .= vec(transpose(vmat))
 end
 
 """
@@ -818,7 +819,7 @@ function test_A()
     comp_VK!(VKnew, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
     println("VK:")
     display(VKnew)
-    v = zeros(N*M); vmat = zeros(N, M); VK = zeros(N); outs = [zeros(N) for _ = 1:3]
+    v = zeros(N*M); vmat = zeros(N, M); outs = [zeros(N) for _ = 1:3]
     println("new residuals:")
     comp_res!(v, vmat, outs, VKnew, E, θ, B, klidx, Midx, α)
     display(v)
@@ -829,14 +830,16 @@ function test_A()
     temps = [zeros(N) for _ in 1:3]; 
     Ax = zeros(N*M); Axtemp = zeros(N, M) #temporarily put as m × j matrix, flatten later
     comp_Ax!(Ax,Axtemp, temps, θ, B, Midx, cidx, klidx, γ, α)
-    println("Ax:")
+    #println("Ax:")
     #display(A*θ)
-    display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
+    #display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     temps = [zeros(N) for _ in 1:2]; 
     bnny = zeros(N*M); bnnytemp = zeros(N, M)
     comp_b!(bnny, bnnytemp, temps, E, γ, α, Midx, cidx)
     #display(b)
-    display(transpose(bnny)[:])
+    #display(transpose(bnny)[:])
+    println("Ax - b")
+    display(Ax - bnny)
     # test Ax-b comparison:
     #println("norm of (new func - old correct fun) (if 0. then new = correct) = ",norm((A*θ - b) - (transpose(Ax)[:]-transpose(bnny)[:])))
 
@@ -858,7 +861,7 @@ function testtime()
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
-    M = 10; N = n_data - M
+    M = 100; N = n_data - M
     dataidx = 1:n_data
     Midx = sample(dataidx, M, replace=false)
     Widx = setdiff(dataidx, Midx)
@@ -877,20 +880,13 @@ function testtime()
         klidx = kl_indexer(M, L)
         cidx = 1:M
     end
-    θ = rand(L*M)
-    # A, b, then residual:
-    t_as = @elapsed begin
-        # assemble A and b:
-        A, b = assemble_Ab_sparse(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis) #A, b = assemble_Ab(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis)
-    end
-    t_ls = @elapsed begin
-        r_ls = A*θ - b
-    end 
     # residual directly:
-    v = zeros(N, M)
-    vmat = zeros(N, M); VK = zeros(N); outs = [zeros(N) for _ = 1:7]; # temporary vars
+    θ = ones(L*M)
     t_v = @elapsed begin
-        comp_v!(v, vmat, VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) #comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)    
+        VK = zeros(N); outs = [zeros(N) for _ = 1:3]
+        comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+        v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
+        comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
     end
     # Ax, b, then residual:
     temps = [zeros(N) for _ in 1:3];
@@ -907,22 +903,16 @@ function testtime()
         r = Ax - b
     end
     # Aᵀv, try compare norm against actual A too:
-    v = rand(N*M)
+    u = rand(N*M)
     Aᵀv = zeros(M*L)
-    Aᵀv_act = A'*v
     t_atv = @elapsed begin
-        comp_Aᵀv!(Aᵀv, v, B, Midx, Widx, γ, α, L)
+        comp_Aᵀv!(Aᵀv, u, B, Midx, Widx, γ, α, L)
     end
-    mems = [Base.summarysize(A), Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
+    mems = [Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
     println(mems)
-    println([t_data, t_as, t_ls, t_v, t_ax, t_b, t_axb, t_atv])
+    println([t_data, t_v, t_ax, t_b, t_axb, t_atv])
     println("M = $M, N = $n_data, L = $n_feature × $n_basis = $L")
-    println("norm(v - (Aθ-b)) = ",norm(r_ls - r))
-    println("norm(Aᵀv - actual Aᵀv) = ", norm(Aᵀv- Aᵀv_act))
-    println("ratio of mem(A)+mem(b)/(mem(D)+mem(S)+mem(ϕ)+mem(dϕ)) = ", sum(mems[1:2])/sum(mems[3:end]))
-    println("ratio of time(A)+time(b)/(time(D)+time(S)+time(ϕ)+time(dϕ)) = ", t_as/t_data)
-    println("ratio of time(Ax-b given A and b)/time(v given D, S, ϕ, and dϕ) = ", t_ls/t_v)
-    println("ratio of time(Ax-b given A and b)/(time(Ax) + time(b) + time(Ax-b) + time(Aᵀv) [given precomputed ϕ, γ, α]) = ", t_ls/(t_ax+t_b+t_axb+t_atv))
+    println("norm ax-b - residual = ", norm(r - v))
 end
 
 """
