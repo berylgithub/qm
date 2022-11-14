@@ -385,7 +385,7 @@ function usequence(z::Matrix{Float64}, N::Int; prt=0, rep=true)
             # from the vectors already chosen
             umax, j = findmax(u)
         end
-        x[:, k] = z[:,j]
+        x[:, k] = z[:,j] # change with label instead of the points
 
         # update the reservoir
         zj = rand(d,1)
@@ -405,7 +405,7 @@ function usequence(z::Matrix{Float64}, N::Int; prt=0, rep=true)
             u .= min.(u, s) # elemwisemin
         end
     end
-    return x
+    return x # change with the sequence of labels instead of points
 end
 
 function test_grid()
