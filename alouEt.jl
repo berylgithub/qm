@@ -71,9 +71,9 @@ function set_cluster(infile, M; universe_size=1_000)
     wbar, C = mean_cov(A, idx, N, L)
     B = Matrix{Float64}(I, L, L) # try with B = I #B = compute_B(C) 
     # generate centers (M) for training:
-    center_ids, mean_point = eldar_cluster(A, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd") # generate cluster centers
+    center_ids, mean_point, D = eldar_cluster(A, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd", get_distances=true) # generate cluster centers
     display(center_ids)
-    return center_ids
+    return center_ids, D
 end
 
 
@@ -141,10 +141,10 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
         if M > n_data # check if the wanted centers is too much for the data..
             M_actual = n_data
         end
-        center_ids = set_cluster(main_file, M_actual, universe_size=universe_size)
+        center_ids, Dist = set_cluster(main_file, M_actual, universe_size=universe_size)
         save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
         # compute all distances:
-        Dist, idx = set_all_dist(main_file, universe_size=universe_size)
+        #Dist, idx = set_all_dist(main_file, universe_size=universe_size)
         save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
         # scale feature for basis:
         #= W = normalize_routine(main_file)
@@ -154,7 +154,7 @@ function data_setup(mol_name, n_data, n_feature, M; universe_size=1_000)
 end
 
 """
-overloader for data setup, manually input filedir here
+overloader for data setup, manually input filedir of the feature here
 """
 function data_setup(mol_name, n_data, n_feature, M, feature_file; universe_size=1_000)
     println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " starts!")
@@ -186,17 +186,13 @@ function data_setup(mol_name, n_data, n_feature, M, feature_file; universe_size=
         save(main_file, "data", W)
         # get center indexes:
         M_actual = M
-        if M > n_data # check if the wanted centers is too much for the data..
+        if M > n_data # check if the wanted centers is too many for the data..
             M_actual = n_data
         end
-        center_ids = set_cluster(main_file, M_actual, universe_size=universe_size)
+        center_ids, Dist = set_cluster(main_file, M_actual, universe_size=universe_size)
         save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
         # compute all distances:
-        Dist, idx = set_all_dist(main_file, universe_size=universe_size)
         save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
-        # scale feature for basis:
-        #= W = normalize_routine(main_file)
-        save(path*"/$mol_name"*"_ACSF_"*"$n_feature"*"_"*"$n_data"*"_symm_scaled.jld", "data", W) =#
     end
     println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished in $t seconds!!")
 end
