@@ -592,6 +592,29 @@ function comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, αj, j)
 end
 
 """
+computes the ΔjK across all m ∈ T (vectorized across m)
+"""
+function comp_ΔjK!(outs, VK, E, θ, B, klidx, αj, jc, j)
+    ΔjK, vj, ϕjl = outs;
+    ϕjl .= B[:,klidx[jc]]*θ[klidx[jc]]
+    @. vj = E[j] + ϕjl
+    @. ΔjK = (VK - vj) / αj
+end
+
+"""
+computes all of the ΔjK (residuals) given VK for j ∈ K, m ∈ T, indexed by j first then m
+"""
+function comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
+    @simd for jc ∈ eachindex(Midx)
+        j = Midx[jc]
+        comp_ΔjK!(outs, VK, E, θ, B, klidx, α[:, jc], jc, j)
+        vmat[:, jc] .= outs[1]
+        fill!.(outs, 0.)
+    end
+    v .= vec(transpose(vmat))
+end
+
+"""
 full ΔjK computer ∀jm, m × j matrix
 outputs:
     - vmat, matrix ΔjK(w_m) ∀m,j ∈ Float64(N, M) (preallocated outside!)
@@ -625,32 +648,6 @@ function comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
         @. RK = RK + (vk/D[Widx, c])
     end
     @. VK = RK / SKs
-end
-
-#= """
-compute the whole vector v with components v_jm := ΔjK(w_m)
-output:
-    - v, vector with length N × M
-"""
-function comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)
-    c = 1
-    skc = 1
-    @simd for m ∈ Widx
-        @simd for j ∈ Midx 
-           @inbounds v[c] = comp_v_jm(W, E, D, θ, ϕ, dϕ, SKs[skc], Midx, n_l, n_feature, m, j)
-           c += 1
-        end
-        skc += 1
-    end
-end
- =#
-
-"""
->>> Probably not needed now, since LS solvers generally dont need gradient
-for AD, since comp_v_j is vectorized
-"""
-function comp_v_jm()
-    
 end
 
 """
@@ -790,32 +787,6 @@ function test_A()
     #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
     #println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 
-    # tests for vjm vs Aθ-b:
-    #= SKs = map(m -> comp_SK(D, Midx, m), Widx) # precompute vector of SK ∈ R^N for each set of K
-    display(SKs)
-    # test predict V_K(w_m):
-    θ = Vector{Float64}(1:cols) # dummy theta
-    n_l =n_feature*n_basis
-    ΔjK = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, n_l, n_feature, m, j; return_vk=false)
-    
-    v_jm = zeros(length(Widx)*length(Midx))
-    c = 1
-    skc = 1
-    for m ∈ Widx
-        SK = SKs[skc]
-        skc += 1
-        for j ∈ Midx
-            v_jm[c] = comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j)        
-            c += 1
-        end
-    end
-    v = zeros(length(Widx)*length(Midx))
-    comp_v!(v, W, E, D, θ, ϕ, dϕ, SKs, Widx, Midx, n_l, n_feature)
-    display([v_jm v (A*θ - b)]) #
-    SK = comp_SK(D, Midx, m)
-    display(ReverseDiff.gradient(θ -> comp_v_jm(W, E, D, θ, ϕ, dϕ, SK, Midx, n_l, n_feature, m, j), θ))
-    display(ReverseDiff.jacobian(θ -> A*θ - b, θ)) =#
-
     # tests for precomputing the ϕkl:
     θ = Vector{Float64}(1:cols) # dummy theta
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
@@ -839,12 +810,18 @@ function test_A()
     #println([ΔjK_act, VK_act])
     v = zeros(N*M); vmat = zeros(N, M); VK = zeros(N); outs = [zeros(N) for _ = 1:7]; 
     comp_v!(v, vmat, VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
+    println("residuals:")
     display(vmat)
     display(v)
-    display(VK)
+    #display(VK)
     VKnew = zeros(N); outs = [zeros(N) for _ = 1:3]
     comp_VK!(VKnew, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    println("VK:")
     display(VKnew)
+    v = zeros(N*M); vmat = zeros(N, M); VK = zeros(N); outs = [zeros(N) for _ = 1:3]
+    println("new residuals:")
+    comp_res!(v, vmat, outs, VKnew, E, θ, B, klidx, Midx, α)
+    display(v)
     #ReverseDiff.jacobian(θ->comp_v_j(E, D, θ, B, SKs, Midx, Widx, klidx, j), θ) # for AD, use each jm index and loop it instead of taking the jacobian (slow)
 
     # test Ax and b routines:
@@ -852,6 +829,7 @@ function test_A()
     temps = [zeros(N) for _ in 1:3]; 
     Ax = zeros(N*M); Axtemp = zeros(N, M) #temporarily put as m × j matrix, flatten later
     comp_Ax!(Ax,Axtemp, temps, θ, B, Midx, cidx, klidx, γ, α)
+    println("Ax:")
     #display(A*θ)
     display(transpose(Ax)[:]) # default flatten (without transpose) is m index first then j
     temps = [zeros(N) for _ in 1:2]; 
