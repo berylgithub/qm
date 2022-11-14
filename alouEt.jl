@@ -237,13 +237,16 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         # do LS:
         θ, stat = cgls(op, b, itmax=500, verbose=0) # 🌸
     end
+
     # get residual:
     obj = norm(op*θ - b)^2
     println("solver obj = ",obj, ", solver time = ",t_ls)
 
     # get MAE and MAD:
-    v = zeros(row); vmat = zeros(N, M); VK = zeros(N); tempsA = [zeros(N) for _ = 1:7] # replace temp var for memefficiency
-    comp_v!(v, vmat, VK, tempsA, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    VK = zeros(N); outs = [zeros(N) for _ = 1:3]
+    comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
+    comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
     MAE = sum(abs.(VK .- E[Widx])) / N
     MADs = vec(sum(abs.(vmat), dims=2)) ./ M # length N
     MAE *= 627.503 # convert from Hartree to kcal/mol
@@ -257,7 +260,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     RMSD = obj #Optim.minimum(res)
     
     println("largest MAD is = ", MADs[sidxes[end]], ", with index = ",MADmax_idxes)
-    println("min K|∑RMSD(w) = ", RMSD)
+    println("|K|*∑RMSD(w) = ", RMSD)
 
     # save all errors foreach iters:
     data = [MAE, RMSD, MADs[sidxes[end]]]
