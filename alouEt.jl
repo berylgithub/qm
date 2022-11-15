@@ -16,7 +16,7 @@ end
 
 function get_index(molname, D)
     indices = []
-    for i ∈ eachindex(D)
+    @simd for i ∈ eachindex(D)
         if D[i]["formula"] == molname
             push!(indices, i)
         end
@@ -417,11 +417,11 @@ function fit_🌹(foldername, n_basis)
     Midx_g = load(file_centers)["data"]
     ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
     n_basis += 3
-    println("[feature, basis]",[n_feature, n_basis])
+    println("[data, feature, basis, centers]",[n_data, n_feature, n_basis, length(Midx_g)])
     inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ [10] # M iter increment
+    for i ∈ [1] # M iter increment
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         #Widx = Widx[1:30] # take subset for smaller matrix
