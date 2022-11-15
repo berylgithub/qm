@@ -82,12 +82,13 @@ overloader, using matrix as input
 function set_cluster(F::Matrix{Float64}, M; universe_size=1_000)
     N, L = size(F)
     F = F'
+    display(F)
     idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
     idx = Int(round(idx/universe_size*N)) # relative idx
     wbar, C = mean_cov(A, idx, N, L)
     B = Matrix{Float64}(I, L, L) # try with B = I #B = compute_B(C) 
     # generate centers (M) for training:
-    center_ids, mean_point, D = eldar_cluster(A, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd", get_distances=true) # generate cluster centers
+    center_ids, mean_point, D = eldar_cluster(F, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd", get_distances=true) # generate cluster centers
     return center_ids, D
 end
 
