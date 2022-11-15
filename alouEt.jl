@@ -274,7 +274,8 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
         # do LS:
-        θ, stat = cgls(op, b, itmax=500, verbose=0) # 🌸
+        start = time()
+        θ, stat = cgls(op, b, itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, 5)) # with callback🌸
     end
 
     # get residual:
@@ -398,7 +399,7 @@ end
 """
 fit overloader, for custom data indices
 """
-function fit_🌹(foldername, n_basis)
+function fit_🌹(foldername, n_basis; mad = false)
     println("FITTING MOL: $foldername")
     # input files:
     path = "data/$foldername/"
@@ -417,20 +418,38 @@ function fit_🌹(foldername, n_basis)
     ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
     n_basis += 3
     println("[data, feature, basis, centers]",[n_data, n_feature, n_basis, length(Midx_g)])
-    inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ [10] # M iter increment
-        Midx = Midx_g[1:inc_M*i] # the supervised data
-        Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
-        #Widx = Widx[1:30] # take subset for smaller matrix
-        println("======= LOOP i=$i =======")
-        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, foldername)
-        if MAE < thresh # in kcal/mol
-            println("desirable MAE reached!!")
-            break
+    if mad
+        inc_M = 10 # 🌸
+        for i ∈ [9] # M iter increment 🌸
+            Midx = Midx_g[1:inc_M*i] # the supervised data
+            Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
+            #Widx = Widx[1:30] # take subset for smaller matrix
+            println("======= LOOP i=$i =======")
+            MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, foldername)
+            if MAE < thresh # in kcal/mol
+                println("desirable MAE reached!!")
+                break
+            end
+            println()
         end
-        println()
+        for i ∈ 1:10 #🌸
+            #println(i,", max MAD indexes from the last loop = ", MADmax_idxes)
+            Midx = vcat(Midx, MADmax_idxes) # put the n-worst MAD as centers
+            filter!(e->e ∉ MADmax_idxes, Widx) # cut the n-worst MAD from unsupervised data
+            println("======= MAD mode, LOOP i=$i =======")
+            MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, foldername, get_mad = true)
+            if MAE < thresh # in kcal/mol
+                println("desirable MAE reached!!")
+                break
+            end
+            println()
+        end
+    else
+        Midx = Midx_g
+        Widx = setdiff(data_idx, Midx)
+        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, foldername)
     end
 end
 
