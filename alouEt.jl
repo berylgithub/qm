@@ -397,6 +397,45 @@ function fit_🌹(mol_name, n_data, n_feature, M)
 end
 
 """
+fit overloader, for custom data indices
+"""
+function fit_🌹(foldername, n_basis)
+    println("FITTING MOL: $foldername")
+    # input files:
+    path = "data/$foldername/"
+    file_dataset = path*"dataset.jld"
+    file_finger = path*"features.jld"
+    file_distance = path*"distances.jld"
+    file_centers = path*"center_ids.jld"
+    # result folder:
+    mkpath("result/$foldername")
+    # setup data:
+    dataset = load(file_dataset)["data"]
+    E = map(d -> d["energy"], dataset)
+    F = load(file_finger)["data"]'; n_feature, n_data = size(F)
+    D = load(file_distance)["data"]; data_idx = 1:n_data
+    Midx_g = load(file_centers)["data"]
+    ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
+    n_basis += 3
+    println("[feature, basis]",[n_feature, n_basis])
+    inc_M = 10 # 🌸
+    MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
+    thresh = 0.9 # .9 kcal/mol desired acc 🌸
+    for i ∈ [10] # M iter increment
+        Midx = Midx_g[1:inc_M*i] # the supervised data
+        Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
+        #Widx = Widx[1:30] # take subset for smaller matrix
+        println("======= LOOP i=$i =======")
+        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, foldername)
+        if MAE < thresh # in kcal/mol
+            println("desirable MAE reached!!")
+            break
+        end
+        println()
+    end
+end
+
+"""
 automatically generate data and fit based on list of molname, n_data, n_feature,M, and universe_size saved in json file 
 """
 function autofit_🌹() 
