@@ -82,7 +82,6 @@ overloader, using matrix as input
 function set_cluster(F::Matrix{Float64}, M; universe_size=1_000)
     N, L = size(F)
     F = F'
-    display(F)
     idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
     idx = Int(round(idx/universe_size*N)) # relative idx
     wbar, C = mean_cov(F, idx, N, L)
@@ -421,7 +420,7 @@ function fit_🌹(foldername, n_basis)
     inc_M = 10 # 🌸
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
-    for i ∈ [1] # M iter increment
+    for i ∈ [10] # M iter increment
         Midx = Midx_g[1:inc_M*i] # the supervised data
         Widx = setdiff(data_idx, Midx) # the unsupervised data, which is ∀i w_i ∈ W \ K, "test" data
         #Widx = Widx[1:30] # take subset for smaller matrix
