@@ -225,7 +225,7 @@ function data_setup(foldername, data_indices, n_af, n_mf, num_centers, feature_f
         display(dataset)
         # PCA:
         F = load(feature_file)["data"] # pre-extracted features
-        F = feature_extractor(F, n_at, n_mf)
+        F = feature_extractor(F, n_af, n_mf)
         F = F[data_indices, :]
         display(F)
         # get centers:
