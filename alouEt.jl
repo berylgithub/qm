@@ -76,6 +76,20 @@ function set_cluster(infile, M; universe_size=1_000)
     return center_ids, D
 end
 
+"""
+overloader, using matrix as input
+"""
+function set_cluster(F::Matrix{Float64}, M; universe_size=1_000)
+    N, L = size(F)
+    F = F'
+    idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
+    idx = Int(round(idx/universe_size*N)) # relative idx
+    # wbar, C = mean_cov(A, idx, N, L)
+    B = Matrix{Float64}(I, L, L) # try with B = I #B = compute_B(C) 
+    # generate centers (M) for training:
+    center_ids, mean_point, D = eldar_cluster(A, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd", get_distances=true) # generate cluster centers
+    return center_ids, D
+end
 
 """
 compute all D_k(w_l) ∀k,l, for now fix i = 603 (rozemi)
@@ -195,6 +209,35 @@ function data_setup(mol_name, n_data, n_feature, M, feature_file; universe_size=
         save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
     end
     println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished in $t seconds!!")
+end
+
+"""
+full data setup, in contrast to each molecule data setup, INCLUDES PCA!.
+takes in the data indices (relative to the qm9 dataset).
+"""
+function data_setup(foldername, data_indices, n_af, n_mf, num_centers, feature_file; universe_size=1_000)
+    println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
+    t = @elapsed begin
+        path = mkpath("data/$foldername")
+        # slice:
+        dataset = load("data/qm9_dataset.jld")["data"]
+        dataset = dataset[data_indices]
+        display(dataset)
+        # PCA:
+        F = load(feature_file)["data"] # pre-extracted features
+        F = feature_extractor(F, n_at, n_mf)
+        F = F[data_indices, :]
+        display(F)
+        # get centers:
+        center_ids, distances = set_cluster(F, num_centers, universe_size=universe_size)
+        display(center_ids)
+        # save files:
+        save("data/$foldername/dataset.jld", "data", dataset)
+        save("data/$foldername/features.jld", "data", F)
+        save("data/$foldername/center_ids.jld", "data", center_ids)
+        save("data/$foldername/distances.jld", "data", distances)
+    end
+    println("data setup is finished in ",t,"s")
 end
 
 """
