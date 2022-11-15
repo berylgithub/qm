@@ -360,7 +360,6 @@ function usequence(N, d; prt=0)
         if k == 1 
             u .= s
         else
-
             u .= min.(u, s) # elemwisemin
         end
     end
@@ -477,21 +476,21 @@ end
 
 function test_usequence()
     # call usequence here:
-    N, d = (1000, 500)
+    N, d = (1000, 2)
     M = max(1000, N)
     z = rand(d, M)
 
-    t_cl1 = @elapsed begin
+    #= t_cl1 = @elapsed begin
         center_ids, mean_point = eldar_cluster(z, M, distance="default", mode="fmd") # generate cluster centers
     end
-    #pl = scatter([z[1, center_ids]], [z[2, center_ids]], makershape = :circle)
-    #display(pl)
+    pl = scatter([z[1, center_ids]], [z[2, center_ids]], makershape = :circle)
+    display(pl) =#
     t_cl2 = @elapsed begin
         x = usequence(z, N)
     end
-    #pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
-    #display(pl)
-    display([t_cl1, t_cl2])
+    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    display(pl)
+    #display([t_cl1, t_cl2])
 end
 
 function test_distances()

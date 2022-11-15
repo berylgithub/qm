@@ -275,7 +275,8 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
         # do LS:
         start = time()
-        θ, stat = cgls(op, b, itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, 5)) # with callback🌸
+        #θ, stat = cgls(op, b, itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, 10)) # with callback 🌸
+        θ, stat = cgls(op, b, itmax=500, verbose=0) # without ccallback
     end
 
     # get residual:
