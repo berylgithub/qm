@@ -922,7 +922,7 @@ end
 testtime using actual data (without data setup time)
 """
 function testtimeactual()
-    foldername = "exp_5k"
+    foldername = "exp_all_1"
     path = "data/$foldername/"
     file_dataset = path*"dataset.jld"
     file_finger = path*"features.jld"
@@ -938,7 +938,6 @@ function testtimeactual()
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx)
     N = length(Tidx); M = length(Midx); Nqm9 = length(Widx)
-    display([N, M, Nqm9])
     # compute D, S and ϕ:
     t_data = @elapsed begin
         SKs = map(m -> comp_SK(D, Midx, m), Widx)
@@ -947,20 +946,22 @@ function testtimeactual()
         ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
         n_basis += 3; L = n_feature*n_basis # reset L
         B = zeros(Nqm9, M*L); comp_B!(B, ϕ, dϕ, F, Midx, Widx, L, n_feature);
-        display(B)
+        display(Base.summarysize(B)*1e-6)
         # indexers:
         klidx = kl_indexer(M, L)
         cidx = 1:M
     end
     # compute residual:
     θ = rand(M*L)
-    t_v = @elapsed begin
+    t_VK = @elapsed begin
         VK = zeros(Nqm9); outs = [zeros(Nqm9) for _ = 1:3]
         comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
         #v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
         #comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
     end
     display(VK)
+    println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, M, n_feature, n_basis, L])
+    println("[precomputation, prediction(VK(w_m) ∀m ∈ Nqm9)] = ", [t_data, t_VK])
 end
 
 """
