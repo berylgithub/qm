@@ -744,7 +744,7 @@ test assemble A with dummy data
 """
 function test_A()
     # data setup:
-    n_data = 6; n_feature = 3; n_basis = 2
+    n_data = 10; n_feature = 3; n_basis = 2
     bas = Vector{Float64}(1:n_data)
     W = zeros(n_feature, n_data)
     for i ∈ 1:n_feature
@@ -753,17 +753,30 @@ function test_A()
     E = convert(Vector{Float64}, vec(1:5)) # dummy data matrix and energy vector
     println("W = ")
     display(W)
-    D = convert(Matrix{Float64}, [0 1 2 3 4 5; 1 0 2 3 4 5; 1 2 0 3 4 5; 1 2 3 0 4 5; 1 2 3 4 0 5; 1 2 3 4 5 0]) # dummy distance
+    # dummy distance:
+    D = zeros(Float64, n_data, n_data)
+    v = 0.
+    for j ∈ axes(D, 2)
+        for i ∈ axes(D, 1)
+            if i == j
+                D[i, j] = 0.
+                v += 1.
+            else
+                D[i, j] = v
+            end
+        end
+    end
     D = (D .+ D')./2
     println("D = ")
-    display(D)
 
-    Midx = [1,5] # k and j index
-    D = D[:, Midx] # to mimic the new indexing
+    Tidx = [1,3,5,7,8,9] # set with length of N, this is from the farthest points heuristics
+    Midx = Tidx[[1,3]] # K labels, the known energies
+    Uidx = setdiff(Tidx, Midx) # T\K labels, the unsupervised data
+    D = D[:, Tidx] # to mimic the new indexing
     display(D)
-    data_idx = 1:n_data ; Widx = setdiff(data_idx, Midx) # unsupervised data index (m)
+    data_idx = 1:n_data; Widx = setdiff(data_idx, Midx) # set with length Nqm9-M,for MAE evaluation
     cols = length(Midx)*n_feature*n_basis # index of k,l
-    rows = length(Midx)*length(Widx) # index of j,m  
+    rows = length(Midx)*length(Tidx) # index of j,m  
     bas = repeat([1.], n_feature)
     ϕ = zeros(n_feature, n_data, n_basis)
     for i ∈ 1:n_data
@@ -780,13 +793,6 @@ function test_A()
     display(ϕ)
     println("dϕ = ")
     display(dϕ)
-
-    # test each element:
-    #m = Widx[1]; j = Midx[1]; k = Midx[1]; l = 1
-    #ϕkl = qϕ(ϕ, dϕ, W, m, k, l, n_feature)
-    #αj = SK*D[j,m] - 1; γk = SK*D[k,m]
-    #println([ϕkl, SK, D[j,m], D[k,m], δ(j, k)])
-    #println(ϕkl*(1-γk + δ(j, k)) / (γk*αj))
 
     # tests for precomputing the ϕkl:
     θ = Vector{Float64}(1:cols) # dummy theta
@@ -805,10 +811,6 @@ function test_A()
     α = γ .- 1 # precompute alpha matrix for each jm
     outs = [zeros(N) for _ = 1:7];
     cidx = 1:M # k indexer
-    #comp_v_j!(outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α[:,jc], j) # this is the tested one
-    #ΔjK = outs[1]
-    #ΔjK_act, VK_act = comp_ΔjK(W, E, D, θ, ϕ, dϕ, Midx, L, n_feature, m, j; return_vk = true) # this is the correct one
-    #println([ΔjK_act, VK_act])
     v = zeros(N*M); vmat = zeros(N, M); VK = zeros(N); outs = [zeros(N) for _ = 1:7]; 
     comp_v!(v, vmat, VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α) 
     println("residuals:")

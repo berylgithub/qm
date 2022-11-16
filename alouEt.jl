@@ -398,7 +398,8 @@ function fit_🌹(mol_name, n_data, n_feature, M)
 end
 
 """
-fit overloader, for custom data indices
+fit overloader, for custom data indices, 
+and new indexing mode: fitted with data from w ∈ T\K (unsupervised), where centers = T, hence the centers should be larger than previous one now (>100)
 """
 function fit_🌹(foldername, n_basis; mad = false)
     println("FITTING MOL: $foldername")
@@ -415,7 +416,7 @@ function fit_🌹(foldername, n_basis; mad = false)
     E = map(d -> d["energy"], dataset)
     F = load(file_finger)["data"]'; n_feature, n_data = size(F)
     D = load(file_distance)["data"]; data_idx = 1:n_data
-    Midx_g = load(file_centers)["data"]
+    T = load(file_centers)["data"]
     ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
     n_basis += 3
     println("[data, feature, basis, centers]",[n_data, n_feature, n_basis, length(Midx_g)])
@@ -448,8 +449,9 @@ function fit_🌹(foldername, n_basis; mad = false)
             println()
         end
     else
-        Midx = Midx_g
-        Widx = setdiff(data_idx, Midx)
+        Midx = T[1:100] # minimum is 100 data points for this mode
+        Widx = T[101:end] # this is the one for unsupervised fitting
+        Gidx = setdiff(data_idx, T) # G for global, means N_QM9 labels
         MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, foldername)
     end
 end
