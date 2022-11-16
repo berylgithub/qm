@@ -399,7 +399,7 @@ end
 
 """
 fit overloader, for custom data indices, 
-and new indexing mode: fitted with data from w ∈ T\K (unsupervised), where centers = T, hence the centers should be larger than previous one now (>100)
+and new indexing mode: fitted with data from w ∈ T ∉ K (unsupervised), where centers = T, hence the centers should be larger than previous one now (>100)
 """
 function fit_🌹(foldername, n_basis; mad = false)
     println("FITTING MOL: $foldername")
@@ -522,6 +522,24 @@ function predict(mol_name, n_data, n_feature, M)
 end
 
 
+"""
+self use only, # save this to PDF
+"""
+function check_MAE()
+    foldername = "exp_5k"
+    path = "data/$foldername/"
+    file_dataset = path*"dataset.jld"
+    file_finger = path*"features.jld"
+    file_distance = path*"distances.jld"
+    file_centers = path*"center_ids.jld"
+    files = [file_dataset, file_finger, file_distance, file_centers]
+    dataset, F, D, T = [load(f)["data"] for f in files]
+    E = map(d -> d["energy"], dataset)
+    K = T[1:100]
+    E_med = median(E[K])
+    MAE_approx = sum(abs.(E .- E_med))
+    display(MAE_approx)
+end
 
 """
 unused stuffs but probably needed later..
