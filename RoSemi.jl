@@ -617,7 +617,7 @@ end
 """
 only for VK(w_m) prediction
 """
-function comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+function comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx)
     vk, RK, ϕkl = outs;
     @simd for c ∈ cidx # vectorized op on N vector length s.t. x = [m1, m2, ... N]
         k = Midx[c]
@@ -938,38 +938,60 @@ function testtimeactual()
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx)
     N = length(Tidx); nK = length(Midx); Nqm9 = length(Widx)
-    # compute D, S and ϕ:
+    # compute bspline:
+    ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true) # move this to data setup later
+    n_basis += 3; nL = n_feature*n_basis # reset L
+    # compute D, S:
     t_data = @elapsed begin
-        SKs = map(m -> comp_SK(D, Midx, m), Widx)
-        γ = comp_γ(D, SKs, Midx, Widx)
-        α = γ .- 1
-        ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true) # move this to data setup later
-        n_basis += 3; nL = n_feature*n_basis # reset L
-        B = zeros(Nqm9, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Widx, nL, n_feature);
-        display(Base.summarysize(B)*1e-6)
         # indexers:
         klidx = kl_indexer(nK, nL)
         cidx = 1:nK
+        # intermediate value:
+        SKs = map(m -> comp_SK(D, Midx, m), Widx)
+        γ = comp_γ(D, SKs, Midx, Widx)
+        α = γ .- 1
+        B = zeros(Nqm9, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Widx, nL, n_feature);
+        display(Base.summarysize(B)*1e-6)
     end
     # compute residual:
     θ = rand(nK*nL)
     t_VK = @elapsed begin
         VK = zeros(Nqm9); outs = [zeros(Nqm9) for _ = 1:3]
-        comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+        comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx)
+        VK_nb = VK
         #v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
         #comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
     end
-    # batch mode:
-    Nqm9 = 10
-    bsize = 3 # 10k per batch fits to memory ~ 1GB
-    blength = Nqm9 ÷ bsize 
+    # !!! batch mode !!!:
+    # compute batch index:
+    bsize = 2222 # 10k per batch fits to memory ~ 1GB
+    blength = Nqm9 ÷ bsize # number of batch iterations
     batches = kl_indexer(blength, bsize)
     bend = batches[end][end]
-    push!(batches, bend+1 : bend + (Nqm9 - (blength*bsize)))
-    println(batches)
-
+    bendsize = Nqm9 - (blength*bsize)
+    push!(batches, bend+1 : bend + bendsize)
+    # compute predictions:
+    t_batch = @elapsed begin
+        VK_fin = zeros(Nqm9)
+        B = zeros(Float64, bsize, nK*nL)
+        VK = zeros(bsize); outs = [zeros(bsize) for _ = 1:3]
+        @simd for batch in batches[1:end-1]
+            comp_B!(B, ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature)
+            comp_VK!(VK, outs, E, D, θ, B, SKs[batch], Midx, Widx[batch], cidx, klidx)
+            VK_fin[batch] .= VK
+            # reset:
+            fill!(B, 0.); fill!(VK, 0.); fill!.(outs, 0.); 
+        end
+        # remainder part:
+        B = zeros(Float64, bendsize, nK*nL)
+        VK = zeros(bendsize); outs = [zeros(bendsize) for _ = 1:3]
+        comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
+        comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
+        VK_fin[batches[end]] .= VK
+    end
+    display(norm(VK_nb - VK_fin)) # if 0. then correct
     println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])
-    println("[precomputation, prediction(VK(w_m) ∀m ∈ Nqm9)] = ", [t_data, t_VK])
+    println("[precomputation, prediction(VK(w_m) ∀m ∈ Nqm9), predbatch] = ", [t_data, t_VK, t_batch])
 end
 
 """
