@@ -922,7 +922,7 @@ end
 testtime using actual data (without data setup time)
 """
 function testtimeactual()
-    foldername = "exp_all_1"
+    foldername = "exp_5k"
     path = "data/$foldername/"
     file_dataset = path*"dataset.jld"
     file_finger = path*"features.jld"
@@ -946,6 +946,8 @@ function testtimeactual()
         ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
         n_basis += 3; L = n_feature*n_basis # reset L
         B = zeros(Nqm9, M*L); comp_B!(B, ϕ, dϕ, F, Midx, Widx, L, n_feature);
+        B = sparse(B)
+        display(nnz(B)/(size(B, 1)*size(B,2)))
         display(Base.summarysize(B)*1e-6)
         # indexers:
         klidx = kl_indexer(M, L)
