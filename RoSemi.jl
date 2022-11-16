@@ -937,32 +937,38 @@ function testtimeactual()
     Midx = Tidx[1:100]
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx)
-    N = length(Tidx); M = length(Midx); Nqm9 = length(Widx)
+    N = length(Tidx); nK = length(Midx); Nqm9 = length(Widx)
     # compute D, S and ϕ:
     t_data = @elapsed begin
         SKs = map(m -> comp_SK(D, Midx, m), Widx)
         γ = comp_γ(D, SKs, Midx, Widx)
         α = γ .- 1
-        ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
-        n_basis += 3; L = n_feature*n_basis # reset L
-        B = zeros(Nqm9, M*L); comp_B!(B, ϕ, dϕ, F, Midx, Widx, L, n_feature);
-        B = sparse(B)
-        display(nnz(B)/(size(B, 1)*size(B,2)))
+        ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true) # move this to data setup later
+        n_basis += 3; nL = n_feature*n_basis # reset L
+        B = zeros(Nqm9, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Widx, nL, n_feature);
         display(Base.summarysize(B)*1e-6)
         # indexers:
-        klidx = kl_indexer(M, L)
-        cidx = 1:M
+        klidx = kl_indexer(nK, nL)
+        cidx = 1:nK
     end
     # compute residual:
-    θ = rand(M*L)
+    θ = rand(nK*nL)
     t_VK = @elapsed begin
         VK = zeros(Nqm9); outs = [zeros(Nqm9) for _ = 1:3]
         comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
         #v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
         #comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
     end
-    display(VK)
-    println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, M, n_feature, n_basis, L])
+    # batch mode:
+    Nqm9 = 10
+    bsize = 3 # 10k per batch fits to memory ~ 1GB
+    blength = Nqm9 ÷ bsize 
+    batches = kl_indexer(blength, bsize)
+    bend = batches[end][end]
+    push!(batches, bend+1 : bend + (Nqm9 - (blength*bsize)))
+    println(batches)
+
+    println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])
     println("[precomputation, prediction(VK(w_m) ∀m ∈ Nqm9)] = ", [t_data, t_VK])
 end
 
