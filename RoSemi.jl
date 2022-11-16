@@ -859,7 +859,7 @@ test the timing of v vs Aθ - b
 """
 function testtime()
     # setup data:
-    n_data = 250; n_feature = 28; n_basis = 8
+    n_data = 1000; n_feature = 28; n_basis = 8
     W = rand(n_feature, n_data)
     E = rand(n_data)
     # setup data selection:
@@ -883,7 +883,7 @@ function testtime()
         cidx = 1:M
     end
     # residual directly:
-    θ = ones(L*M)
+    θ = rand(L*M)
     t_v = @elapsed begin
         VK = zeros(N); outs = [zeros(N) for _ = 1:3]
         comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
@@ -911,10 +911,56 @@ function testtime()
         comp_Aᵀv!(Aᵀv, u, B, Midx, Widx, γ, α, L)
     end
     mems = [Base.summarysize(b), Base.summarysize(D), Base.summarysize(SKs), Base.summarysize(ϕ), Base.summarysize(dϕ)].*1e-6 # get storages
-    println(mems)
-    println([t_data, t_v, t_ax, t_b, t_axb, t_atv])
+    println(mems)       
+    println("[t_data, t_res, t_ax, t_b, t_axb, t_atv]", [t_data, t_v, t_ax, t_b, t_axb, t_atv])                                                                                                                                                                                     
     println("M = $M, N = $n_data, L = $n_feature × $n_basis = $L")
-    println("norm ax-b - residual = ", norm(r - v))
+    println("norm ax-b - residual = ", norm(r - v))                                                                                                                                                                                                                 
+    println("t_atv/t_res = ",t_atv/t_v)
+end
+
+"""
+testtime using actual data (without data setup time)
+"""
+function testtimeactual()
+    foldername = "exp_5k"
+    path = "data/$foldername/"
+    file_dataset = path*"dataset.jld"
+    file_finger = path*"features.jld"
+    file_distance = path*"distances.jld"
+    file_centers = path*"center_ids.jld"
+    files = [file_dataset, file_finger, file_distance, file_centers]
+    dataset, F, D, Tidx = [load(f)["data"] for f in files]
+    F = F' # always transpose
+    E = map(d -> d["energy"], dataset)
+    # compute indices:
+    n_data = length(dataset); n_feature = size(F, 1); n_basis = 2
+    Midx = Tidx[1:100]
+    Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
+    Widx = setdiff(1:n_data, Midx)
+    N = length(Tidx); M = length(Midx); Nqm9 = length(Widx)
+    display([N, M, Nqm9])
+    # compute D, S and ϕ:
+    t_data = @elapsed begin
+        SKs = map(m -> comp_SK(D, Midx, m), Widx)
+        γ = comp_γ(D, SKs, Midx, Widx)
+        α = γ .- 1
+        ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
+        n_basis += 3; L = n_feature*n_basis # reset L
+        B = zeros(Nqm9, M*L); comp_B!(B, ϕ, dϕ, F, Midx, Widx, L, n_feature);
+        display(B)
+        # indexers:
+        klidx = kl_indexer(M, L)
+        cidx = 1:M
+    end
+    # compute residual:
+    θ = rand(M*L)
+    t_v = @elapsed begin
+        VK = zeros(Nqm9); outs = [zeros(Nqm9) for _ = 1:3]
+        comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+        #v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
+        #comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
+    end
+    display(VK)
 end
 
 """
