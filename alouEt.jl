@@ -252,7 +252,7 @@ to avoid clutter in main function, called within fitting iters
 outputs:
     - indexes of n-maximum MAD
 """
-function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize; get_mad=false)
+function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false)
     N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
     nL = size(ϕ, 1); n_basis = nL/n_feature
     println(typeof(Nqm9))
@@ -284,7 +284,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
         # do LS:
         start = time()
-        θ, stat = cgls(op, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, 20)) # with callback 🌸
+        θ, stat = cgls(op, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit)) # with callback 🌸
         #θ, stat = cgls(op, b, itmax=500, verbose=0) # without ccallback
     end
 
@@ -298,12 +298,40 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     v = zeros(nU*nK); vmat = zeros(nU, nK); fill!.(outs, 0.)
     comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
     MADs = vec(sum(abs.(vmat), dims=2)) ./ nK # length nU
-    display(MADs)
-    # get MAE of test set (QM9):
-    # BATCHMODE:
-    #= MAE = sum(abs.(VK .- E[Widx])) / N
+
+    # semi-BATCHMODE PRED for Nqm9:
+    blength = Nqm9 ÷ bsize # number of batch iterations
+    batches = kl_indexer(blength, bsize)
+    bend = batches[end][end]
+    bendsize = Nqm9 - (blength*bsize)
+    push!(batches, bend+1 : bend + bendsize)
+    # compute predictions:
+    t_batch = @elapsed begin
+        VK_fin = zeros(Nqm9)
+        B = zeros(Float64, bsize, nK*nL)
+        VK = zeros(bsize); outs = [zeros(bsize) for _ = 1:3]
+        @simd for batch in batches[1:end-1]
+            comp_B!(B, ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature)
+            comp_VK!(VK, outs, E, D, θ, B, SKs[batch], Midx, Widx[batch], cidx, klidx)
+            VK_fin[batch] .= VK
+            # reset:
+            fill!(B, 0.); fill!(VK, 0.); fill!.(outs, 0.); 
+        end
+        # remainder part:
+        B = zeros(Float64, bendsize, nK*nL)
+        VK = zeros(bendsize); outs = [zeros(bendsize) for _ = 1:3]
+        comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
+        comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
+        VK_fin[batches[end]] .= VK
+        VK = VK_fin # swap
+    end
+    println("batchpred time = ",t_batch)
+
+    # get errors: 
+    MAE = sum(abs.(VK .- E[Widx])) / Nqm9
     MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
+
     # get the n-highest MAD:
     n = 1 # 🌸
     sidxes = sortperm(MADs)[end-(n-1):end]
@@ -317,8 +345,8 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
 
     # save all errors foreach iters:
     data = [MAE, RMSD, MADs[sidxes[end]]]
-    matsize = [nK, nU, n_feature, n_basis]
-    strlist = vcat(string.(matsize), [lstrip(@sprintf "%16.8e" s) for s in data], string(get_mad), string.([t_ab, t_ls]))
+    matsize = [Nqm9, nK, nU, n_feature, n_basis]
+    strlist = vcat(string.(matsize), [lstrip(@sprintf "%16.8e" s) for s in data], string(get_mad), string.([t_ab, t_ls, t_batch]))
     open("result/$mol_name/err_$mol_name.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -329,7 +357,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     # save also the nK indices and θ's to file!!:
     data = Dict("centers"=>Midx, "theta"=>θ)
     save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
-    return MAE, MADmax_idxes =#
+    return MAE, MADmax_idxes
 end
 
 """
@@ -413,10 +441,11 @@ end
 fit overloader, for custom data indices, 
 and new indexing mode: fitted with data from w ∈ T ∉ K (unsupervised), where centers = T, hence the centers should be larger than previous one now (>100)
 """
-function fit_🌹(foldername, bsize; mad = false)
+function fit_🌹(foldername, bsize, tlimit; mad = false)
     println("FITTING: $foldername")
     # input files:
     path = "data/$foldername/"
+    mkpath("result/$foldername")
     file_dataset = path*"dataset.jld"
     file_finger = path*"features.jld"
     file_distance = path*"distances.jld"
@@ -462,7 +491,7 @@ function fit_🌹(foldername, bsize; mad = false)
         Midx = Tidx[1:100] # 🌸 for now
         Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
         Widx = setdiff(1:n_data, Midx) # for evaluation 
-        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize) #
+        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize, tlimit) #
     end
 end
 
