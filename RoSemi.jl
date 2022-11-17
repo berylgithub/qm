@@ -920,16 +920,23 @@ end
 
 """
 testtime using actual data (without data setup time)
+complete_batch means the batching starts from the data (hence no intermediate values)
 """
-function testtimeactual(foldername, bsize, n_basis)
-    #foldername = "exp_5k"
+function testtimeactual(foldername, bsize; complete_batch=false)
+    # data setup:
     path = "data/$foldername/"
-    file_dataset = path*"dataset.jld"
-    file_finger = path*"features.jld"
-    file_distance = path*"distances.jld"
-    file_centers = path*"center_ids.jld"
-    files = [file_dataset, file_finger, file_distance, file_centers]
-    dataset, F, D, Tidx = [load(f)["data"] for f in files]
+    if complete_batch
+        return nothing
+    else
+        file_dataset = path*"dataset.jld"
+        file_finger = path*"features.jld"
+        file_distance = path*"distances.jld"
+        file_centers = path*"center_ids.jld"
+        file_spline = path*"spline.jld"
+        file_dspline = path*"dspline.jld"
+        files = [file_dataset, file_finger, file_distance, file_centers, file_spline, file_dspline]
+        dataset, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files]
+    end
     F = F' # always transpose
     E = map(d -> d["energy"], dataset)
     # compute indices:
@@ -938,9 +945,7 @@ function testtimeactual(foldername, bsize, n_basis)
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx) # for evaluation
     N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
-    # compute bspline:
-    ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true) # move this to data setup later
-    n_basis += 3; nL = n_feature*n_basis # set L
+    nL = size(ϕ, 1); n_basis = nL/n_feature
     # compute D, S:
     t_data = @elapsed begin
         # indexers:
@@ -975,36 +980,41 @@ function testtimeactual(foldername, bsize, n_basis)
     end
     # !!! batch mode residual/prediction!!!:
     # compute batch index:
-    #bsize = 2222 # 10k per batch fits to memory ~ 1GB
-    blength = Nqm9 ÷ bsize # number of batch iterations
-    batches = kl_indexer(blength, bsize)
-    bend = batches[end][end]
-    bendsize = Nqm9 - (blength*bsize)
-    push!(batches, bend+1 : bend + bendsize)
-    # compute predictions:
-    t_batch = @elapsed begin
-        VK_fin = zeros(Nqm9)
-        B = zeros(Float64, bsize, nK*nL)
-        VK = zeros(bsize); outs = [zeros(bsize) for _ = 1:3]
-        @simd for batch in batches[1:end-1]
-            comp_B!(B, ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature)
-            comp_VK!(VK, outs, E, D, θ, B, SKs[batch], Midx, Widx[batch], cidx, klidx)
-            VK_fin[batch] .= VK
-            # reset:
-            fill!(B, 0.); fill!(VK, 0.); fill!.(outs, 0.); 
+    if complete_batch
+        return nothing
+    else
+        blength = Nqm9 ÷ bsize # number of batch iterations
+        batches = kl_indexer(blength, bsize)
+        bend = batches[end][end]
+        bendsize = Nqm9 - (blength*bsize)
+        push!(batches, bend+1 : bend + bendsize)
+        # compute predictions:
+        t_batch = @elapsed begin
+            VK_fin = zeros(Nqm9)
+            B = zeros(Float64, bsize, nK*nL)
+            VK = zeros(bsize); outs = [zeros(bsize) for _ = 1:3]
+            @simd for batch in batches[1:end-1]
+                comp_B!(B, ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature)
+                comp_VK!(VK, outs, E, D, θ, B, SKs[batch], Midx, Widx[batch], cidx, klidx)
+                VK_fin[batch] .= VK
+                # reset:
+                fill!(B, 0.); fill!(VK, 0.); fill!.(outs, 0.); 
+            end
+            # remainder part:
+            B = zeros(Float64, bendsize, nK*nL)
+            VK = zeros(bendsize); outs = [zeros(bendsize) for _ = 1:3]
+            comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
+            comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
+            VK_fin[batches[end]] .= VK
         end
-        # remainder part:
-        B = zeros(Float64, bendsize, nK*nL)
-        VK = zeros(bendsize); outs = [zeros(bendsize) for _ = 1:3]
-        comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
-        comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
-        VK_fin[batches[end]] .= VK
     end
     # residual 
     println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])
     println("linop timings [t_ax, t_atv] = ", [t_ax, t_atv], ", total = ",sum([t_ax, t_atv]))
     println("[intermediate values, batchpred of VK(w_m) ∀m ∈ Nqm9] = ", [t_data, t_batch])
 end
+
+
 
 """
 tests LS without forming A (try Krylov.jl and Optim.jl)
