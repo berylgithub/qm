@@ -818,7 +818,7 @@ function test_A()
     display(v)
     #display(VK)
     VKnew = zeros(N); outs = [zeros(N) for _ = 1:3]
-    comp_VK!(VKnew, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    comp_VK!(VKnew, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx)
     println("VK:")
     display(VKnew)
     v = zeros(N*M); vmat = zeros(N, M); outs = [zeros(N) for _ = 1:3]
@@ -940,13 +940,13 @@ function testtimeactual(foldername, bsize; complete_batch=false)
     F = F' # always transpose
     E = map(d -> d["energy"], dataset)
     # compute indices:
-    n_data = length(dataset); n_feature = size(F, 1); #n_basis = 2
+    n_data = length(dataset); n_feature = size(F, 1);
     Midx = Tidx[1:100]
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx) # for evaluation
     N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
     nL = size(ϕ, 1); n_basis = nL/n_feature
-    # compute D, S:
+    # all of the vars below depend on Midx, Uidx, Widx:
     t_data = @elapsed begin
         # indexers:
         klidx = kl_indexer(nK, nL)
@@ -978,7 +978,7 @@ function testtimeactual(foldername, bsize; complete_batch=false)
     t_atv = @elapsed begin
         comp_Aᵀv!(Aᵀv, u, B, Midx, Uidx, γ, α, nL)
     end
-    # !!! batch mode residual/prediction!!!:
+    # !!! batch mode prediction!!!:
     # compute batch index:
     if complete_batch
         return nothing
@@ -1006,12 +1006,13 @@ function testtimeactual(foldername, bsize; complete_batch=false)
             comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
             comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
             VK_fin[batches[end]] .= VK
+            VK = VK_fin # swap
         end
     end
-    # residual 
+    # prints :
     println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])
     println("linop timings [t_ax, t_atv] = ", [t_ax, t_atv], ", total = ",sum([t_ax, t_atv]))
-    println("[intermediate values, batchpred of VK(w_m) ∀m ∈ Nqm9] = ", [t_data, t_batch])
+    println("timings of [intermediate values, batchpred of VK(w_m) ∀m ∈ Nqm9] = ", [t_data, t_batch])
 end
 
 
