@@ -2,7 +2,7 @@
 
 data setup:
 exp_all_1: naf = 20, t = 585.4786466s + 1.0853673s
-exp_all_2: naf = 20, t = 10532.7200658s 
+exp_all_2: naf = 20, t = 10532.7200658s + 3.3s
 
 
 OMP1:
@@ -18,7 +18,7 @@ julia> testtimeactual("exp_all_1", 2223)
 linop timings [t_ax, t_atv] = [0.3374591, 0.5015092], total = 0.8389683
 [intermediate values, batchpred of VK(w_m) ∀m ∈ Nqm9] = [0.199886, 75.3966083]
 
-julia> testtimeactual("exp_all_2", 10_000, 12)
-[Nqm9, N, nK, nf, ns, nL] = [133628, 2400, 100, 120, 15, 1800]
-linop timings [t_ax, t_atv] = [15.2934917, 76.4115135], total = 91.7050052
-[intermediate values, batchpred of VK(w_m) ∀m ∈ Nqm9] = [39.5071537, 1232.0716423]
+julia> testtimeactual("exp_all_2", 5_000)
+[Nqm9, N, nK, nf, ns, nL] = [133628.0, 2400.0, 100.0, 120.0, 15.0, 1800.0]
+linop timings [t_ax, t_atv] = [13.2890423, 76.2501555], total = 89.53919780000001
+[intermediate values, batchpred of VK(w_m) ∀m ∈ Nqm9] = [36.992655, 1190.335657]
