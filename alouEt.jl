@@ -216,7 +216,7 @@ end
 full data setup, in contrast to each molecule data setup, INCLUDES PCA!.
 takes in the data indices (relative to the qm9 dataset).
 """
-function data_setup(foldername, data_indices, n_af, n_mf, num_centers, feature_file; universe_size=1_000)
+function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, feature_file; universe_size=1_000)
     println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
