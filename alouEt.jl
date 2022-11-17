@@ -207,6 +207,7 @@ function data_setup(mol_name, n_data, n_feature, M, feature_file; universe_size=
         save(path*"/$mol_name"*"_M=$M"*"_$n_feature"*"_$n_data.jld", "data", center_ids)
         # compute all distances:
         save(path*"/$mol_name"*"_distances_"*"$n_feature"*"_$n_data.jld", "data", Dist)
+
     end
     println("data setup for mol=",mol_name,", n_data=", n_data,", n_feature=",n_feature,", M=", M, " is finished in $t seconds!!")
 end
@@ -227,16 +228,20 @@ function data_setup(foldername, data_indices, n_af, n_mf, num_centers, feature_f
         F = load(feature_file)["data"] # pre-extracted features
         F = feature_extractor(F, n_af, n_mf)
         F = F[data_indices, :]
+        # compute bspline:
+        ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
         display(F)
         # get centers:
         center_ids, distances = set_cluster(F, num_centers, universe_size=universe_size)
         display(center_ids)
         # save files:
-        save("data/$foldername/dataset.jld", "data", dataset)
-        save("data/$foldername/features.jld", "data", F)
-        save("data/$foldername/center_ids.jld", "data", center_ids)
-        save("data/$foldername/distances.jld", "data", distances)
     end
+    save("data/$foldername/dataset.jld", "data", dataset)
+    save("data/$foldername/features.jld", "data", F)
+    save("data/$foldername/center_ids.jld", "data", center_ids)
+    save("data/$foldername/distances.jld", "data", distances)
+    save("data/$foldername/spline.jld", "data", ϕ)
+    save("data/$foldername/dspline.jld", "data", dϕ)
     println("data setup is finished in ",t,"s")
 end
 
