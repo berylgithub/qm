@@ -921,7 +921,7 @@ end
 """
 testtime using actual data (without data setup time)
 """
-function testtimeactual(foldername, bsize)
+function testtimeactual(foldername, bsize, n_basis)
     #foldername = "exp_5k"
     path = "data/$foldername/"
     file_dataset = path*"dataset.jld"
@@ -933,7 +933,7 @@ function testtimeactual(foldername, bsize)
     F = F' # always transpose
     E = map(d -> d["energy"], dataset)
     # compute indices:
-    n_data = length(dataset); n_feature = size(F, 1); n_basis = 2
+    n_data = length(dataset); n_feature = size(F, 1); #n_basis = 2
     Midx = Tidx[1:100]
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx) # for evaluation
