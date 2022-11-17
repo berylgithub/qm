@@ -921,7 +921,7 @@ end
 """
 testtime using actual data (without data setup time)
 """
-function testtimeactual(foldername)
+function testtimeactual(foldername, bsize)
     #foldername = "exp_5k"
     path = "data/$foldername/"
     file_dataset = path*"dataset.jld"
@@ -975,7 +975,7 @@ function testtimeactual(foldername)
     end
     # !!! batch mode residual/prediction!!!:
     # compute batch index:
-    bsize = 2222 # 10k per batch fits to memory ~ 1GB
+    #bsize = 2222 # 10k per batch fits to memory ~ 1GB
     blength = Nqm9 ÷ bsize # number of batch iterations
     batches = kl_indexer(blength, bsize)
     bend = batches[end][end]
