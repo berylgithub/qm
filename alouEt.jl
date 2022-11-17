@@ -252,7 +252,7 @@ to avoid clutter in main function, called within fitting iters
 outputs:
     - indexes of n-maximum MAD
 """
-function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_mad=false)
+function fitter(W, E, D, ϕ, dϕ, Midx, Uidx, Widx, n_feature, n_basis, mol_name; get_mad=false)
     M = length(Midx); N = length(Widx); L = n_feature*n_basis
     row = M*N; col = M*L
     println("[M, N] = ",[M, N])
@@ -280,7 +280,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
         # do LS:
         start = time()
-        θ, stat = cgls(op, b, itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, 900)) # with callback 🌸
+        θ, stat = cgls(op, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, 5)) # with callback 🌸
         #θ, stat = cgls(op, b, itmax=500, verbose=0) # without ccallback
     end
 
@@ -288,13 +288,15 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, mol_name; get_
     obj = norm(op*θ - b)^2
     println("solver obj = ",obj, ", solver time = ",t_ls)
 
-    # get MAE and MAD:
+    # get residuals of training set:
     VK = zeros(N); outs = [zeros(N) for _ = 1:3]
-    comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+    comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx)
     v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
     comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
-    MAE = sum(abs.(VK .- E[Widx])) / N
     MADs = vec(sum(abs.(vmat), dims=2)) ./ M # length N
+
+    # get MAE of test set (QM9):
+    MAE = sum(abs.(VK .- E[Widx])) / N
     MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
@@ -406,26 +408,21 @@ end
 fit overloader, for custom data indices, 
 and new indexing mode: fitted with data from w ∈ T ∉ K (unsupervised), where centers = T, hence the centers should be larger than previous one now (>100)
 """
-function fit_🌹(foldername, n_basis; mad = false)
-    println("FITTING MOL: $foldername")
+function fit_🌹(foldername; mad = false)
+    println("FITTING: $foldername")
     # input files:
-    path = "data/$foldername/"
     file_dataset = path*"dataset.jld"
     file_finger = path*"features.jld"
     file_distance = path*"distances.jld"
     file_centers = path*"center_ids.jld"
-    # result folder:
-    mkpath("result/$foldername")
-    # setup data:
-    dataset = load(file_dataset)["data"]
+    file_spline = path*"spline.jld"
+    file_dspline = path*"dspline.jld"
+    files = [file_dataset, file_finger, file_distance, file_centers, file_spline, file_dspline]
+    dataset, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files]
+    F = F' # always transpose
     E = map(d -> d["energy"], dataset)
-    F = load(file_finger)["data"]'; n_feature, n_data = size(F)
-    D = load(file_distance)["data"]; data_idx = 1:n_data
-    T = load(file_centers)["data"]
-    ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true)
-    n_basis += 3
-    println("[data, feature, basis, centers]",[n_data, n_feature, n_basis, length(Midx_g)])
-    MADmax_idxes = nothing; Midx = nothing; Widx = nothing # set empty vars
+    # set empty vars:
+    MADmax_idxes = nothing; Midx = nothing; Widx = nothing 
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
     if mad
         inc_M = 10 # 🌸
@@ -454,10 +451,15 @@ function fit_🌹(foldername, n_basis; mad = false)
             println()
         end
     else
-        Midx = T[1:100] # minimum is 100 data points for this mode
-        Widx = T[101:end] # this is the one for unsupervised fitting
-        Gidx = setdiff(data_idx, T) # G for global, means N_QM9 labels
-        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Widx, n_feature, n_basis, foldername)
+        # compute indices:
+        n_data = length(dataset); n_feature = size(F, 1);
+        Midx = Tidx[1:100] # 🌸 for now
+        Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
+        Widx = setdiff(1:n_data, Midx) # for evaluation
+        N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
+        nL = size(ϕ, 1); n_basis = nL/n_feature
+        println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])    
+        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Uidx, Widx, n_feature, n_basis, foldername) #
     end
 end
 
