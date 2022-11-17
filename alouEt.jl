@@ -252,35 +252,39 @@ to avoid clutter in main function, called within fitting iters
 outputs:
     - indexes of n-maximum MAD
 """
-function fitter(W, E, D, ϕ, dϕ, Midx, Uidx, Widx, n_feature, n_basis, mol_name; get_mad=false)
-    M = length(Midx); N = length(Widx); L = n_feature*n_basis
-    row = M*N; col = M*L
-    println("[M, N] = ",[M, N])
+function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize; get_mad=false)
+    N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
+    nL = size(ϕ, 1); n_basis = nL/n_feature
+    println(typeof(Nqm9))
+    println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])   
 
     # !!!! using LinearOperators !!!:
     # precompute stuffs:
     t_ab = @elapsed begin
-        SKs = map(m -> comp_SK(D, Midx, m), Widx)
-        γ = comp_γ(D, SKs, Midx, Widx)
+        # indexers:
+        klidx = kl_indexer(nK, nL)
+        cidx = 1:nK
+        # intermediate value:
+        SKs_train = map(m -> comp_SK(D, Midx, m), Uidx) # only for training, disjoint index from pred
+        γ = comp_γ(D, SKs_train, Midx, Uidx)
+        SKs = map(m -> comp_SK(D, Midx, m), Widx) # for prediction
         α = γ .- 1
-        B = zeros(N, M*L); 
-        comp_B!(B, ϕ, dϕ, W, Midx, Widx, L, n_feature);
-        klidx = kl_indexer(M, L)
-        cidx = 1:M
+        B = zeros(nU, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Uidx, nL, n_feature);
     end
     println("precomputation time = ",t_ab)
+    row = nU*nK; col = nK*nL #define LinearOperator's size
     t_ls = @elapsed begin
         # generate LinOp in place of A!:
-        Axtemp = zeros(N, M); tempsA = [zeros(N) for _ in 1:3]
+        Axtemp = zeros(nU, nK); tempsA = [zeros(nU) for _ in 1:3]
         op = LinearOperator(Float64, row, col, false, false, (y,u) -> comp_Ax!(y, Axtemp, tempsA, u, B, Midx, cidx, klidx, γ, α), 
-                                                            (y,v) -> comp_Aᵀv!(y, v, B, Midx, Widx, γ, α, L))
+                                                            (y,v) -> comp_Aᵀv!(y, v, B, Midx, Uidx, γ, α, nL))
         show(op)
         # generate b:
-        b = zeros(N*M); btemp = zeros(N, M); tempsb = [zeros(N) for _ in 1:2]
+        b = zeros(nU*nK); btemp = zeros(nU, nK); tempsb = [zeros(nU) for _ in 1:2]
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
         # do LS:
         start = time()
-        θ, stat = cgls(op, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, 5)) # with callback 🌸
+        θ, stat = cgls(op, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, 20)) # with callback 🌸
         #θ, stat = cgls(op, b, itmax=500, verbose=0) # without ccallback
     end
 
@@ -289,14 +293,15 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Uidx, Widx, n_feature, n_basis, mol_name
     println("solver obj = ",obj, ", solver time = ",t_ls)
 
     # get residuals of training set:
-    VK = zeros(N); outs = [zeros(N) for _ = 1:3]
-    comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx)
-    v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
+    VK = zeros(nU); outs = [zeros(nU) for _ = 1:3]
+    comp_VK!(VK, outs, E, D, θ, B, SKs_train, Midx, Uidx, cidx, klidx)
+    v = zeros(nU*nK); vmat = zeros(nU, nK); fill!.(outs, 0.)
     comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
-    MADs = vec(sum(abs.(vmat), dims=2)) ./ M # length N
-
+    MADs = vec(sum(abs.(vmat), dims=2)) ./ nK # length nU
+    display(MADs)
     # get MAE of test set (QM9):
-    MAE = sum(abs.(VK .- E[Widx])) / N
+    # BATCHMODE:
+    #= MAE = sum(abs.(VK .- E[Widx])) / N
     MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
     # get the n-highest MAD:
@@ -312,7 +317,7 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Uidx, Widx, n_feature, n_basis, mol_name
 
     # save all errors foreach iters:
     data = [MAE, RMSD, MADs[sidxes[end]]]
-    matsize = [M, N, n_feature, n_basis]
+    matsize = [nK, nU, n_feature, n_basis]
     strlist = vcat(string.(matsize), [lstrip(@sprintf "%16.8e" s) for s in data], string(get_mad), string.([t_ab, t_ls]))
     open("result/$mol_name/err_$mol_name.txt","a") do io
         str = ""
@@ -321,10 +326,10 @@ function fitter(W, E, D, ϕ, dϕ, Midx, Uidx, Widx, n_feature, n_basis, mol_name
         end
         print(io, str*"\n")
     end
-    # save also the M indices and θ's to file!!:
+    # save also the nK indices and θ's to file!!:
     data = Dict("centers"=>Midx, "theta"=>θ)
     save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
-    return MAE, MADmax_idxes
+    return MAE, MADmax_idxes =#
 end
 
 """
@@ -408,9 +413,10 @@ end
 fit overloader, for custom data indices, 
 and new indexing mode: fitted with data from w ∈ T ∉ K (unsupervised), where centers = T, hence the centers should be larger than previous one now (>100)
 """
-function fit_🌹(foldername; mad = false)
+function fit_🌹(foldername, bsize; mad = false)
     println("FITTING: $foldername")
     # input files:
+    path = "data/$foldername/"
     file_dataset = path*"dataset.jld"
     file_finger = path*"features.jld"
     file_distance = path*"distances.jld"
@@ -455,11 +461,8 @@ function fit_🌹(foldername; mad = false)
         n_data = length(dataset); n_feature = size(F, 1);
         Midx = Tidx[1:100] # 🌸 for now
         Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
-        Widx = setdiff(1:n_data, Midx) # for evaluation
-        N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
-        nL = size(ϕ, 1); n_basis = nL/n_feature
-        println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])    
-        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Uidx, Widx, n_feature, n_basis, foldername) #
+        Widx = setdiff(1:n_data, Midx) # for evaluation 
+        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize) #
     end
 end
 
