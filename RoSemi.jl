@@ -886,7 +886,7 @@ function testtime()
     θ = rand(L*M)
     t_v = @elapsed begin
         VK = zeros(N); outs = [zeros(N) for _ = 1:3]
-        comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx, α)
+        comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx)
         v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
         comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
     end
@@ -921,8 +921,8 @@ end
 """
 testtime using actual data (without data setup time)
 """
-function testtimeactual()
-    foldername = "exp_5k"
+function testtimeactual(foldername)
+    #foldername = "exp_5k"
     path = "data/$foldername/"
     file_dataset = path*"dataset.jld"
     file_finger = path*"features.jld"
@@ -936,33 +936,44 @@ function testtimeactual()
     n_data = length(dataset); n_feature = size(F, 1); n_basis = 2
     Midx = Tidx[1:100]
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
-    Widx = setdiff(1:n_data, Midx)
-    N = length(Tidx); nK = length(Midx); Nqm9 = length(Widx)
+    Widx = setdiff(1:n_data, Midx) # for evaluation
+    N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
     # compute bspline:
     ϕ, dϕ = extract_bspline_df(F, n_basis; flatten=true, sparsemat=true) # move this to data setup later
-    n_basis += 3; nL = n_feature*n_basis # reset L
+    n_basis += 3; nL = n_feature*n_basis # set L
     # compute D, S:
     t_data = @elapsed begin
         # indexers:
         klidx = kl_indexer(nK, nL)
         cidx = 1:nK
         # intermediate value:
-        SKs = map(m -> comp_SK(D, Midx, m), Widx)
-        γ = comp_γ(D, SKs, Midx, Widx)
+        SKs_train = map(m -> comp_SK(D, Midx, m), Uidx) # only for training, disjoint index from pred
+        γ = comp_γ(D, SKs_train, Midx, Uidx)
+        SKs = map(m -> comp_SK(D, Midx, m), Widx) # for prediction
         α = γ .- 1
-        B = zeros(Nqm9, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Widx, nL, n_feature);
-        display(Base.summarysize(B)*1e-6)
+        B = zeros(nU, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Uidx, nL, n_feature);
     end
-    # compute residual:
+    # fobj comp:
     θ = rand(nK*nL)
-    t_VK = @elapsed begin
-        VK = zeros(Nqm9); outs = [zeros(Nqm9) for _ = 1:3]
-        comp_VK!(VK, outs, E, D, θ, B, SKs, Midx, Widx, cidx, klidx)
-        VK_nb = VK
-        #v = zeros(N*M); vmat = zeros(N, M); fill!.(outs, 0.)
-        #comp_res!(v, vmat, outs, VK, E, θ, B, klidx, Midx, α)
+    temps = [zeros(nU) for _ in 1:3];
+    Ax = zeros(nU*nK); Axtemp = zeros(nU, nK) #temporarily put as m × j matrix, flatten later
+    t_ax = @elapsed begin
+        comp_Ax!(Ax, Axtemp, temps, θ, B, Midx, cidx, klidx, γ, α)
     end
-    # !!! batch mode !!!:
+    temps = [zeros(nU) for _ in 1:2];
+    b = zeros(nU*nK); btemp = zeros(nU, nK)
+    t_b = @elapsed begin
+        comp_b!(b, btemp, temps, E, γ, α, Midx, cidx)
+    end
+    t_axb = @elapsed begin
+        r = Ax - b
+    end
+    u = rand(nU*nK)
+    Aᵀv = zeros(nK*nL)
+    t_atv = @elapsed begin
+        comp_Aᵀv!(Aᵀv, u, B, Midx, Uidx, γ, α, nL)
+    end
+    # !!! batch mode residual/prediction!!!:
     # compute batch index:
     bsize = 2222 # 10k per batch fits to memory ~ 1GB
     blength = Nqm9 ÷ bsize # number of batch iterations
@@ -989,9 +1000,10 @@ function testtimeactual()
         comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
         VK_fin[batches[end]] .= VK
     end
-    display(norm(VK_nb - VK_fin)) # if 0. then correct
+    # residual 
     println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])
-    println("[precomputation, prediction(VK(w_m) ∀m ∈ Nqm9), predbatch] = ", [t_data, t_VK, t_batch])
+    println("linop timings [t_ax, t_atv] = ", [t_ax, t_atv], ", total = ",sum([t_ax, t_atv]))
+    println("[intermediate values, batchpred of VK(w_m) ∀m ∈ Nqm9] = ", [t_data, t_batch])
 end
 
 """
