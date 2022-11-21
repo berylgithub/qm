@@ -84,21 +84,28 @@ function plot_ev(v, tickslice, filename; rotate=false)
     display(v_rev)
     display(idx_v)
     # compute distribution:
-    μ = sum(v)
+    μ = sum(v_rev)
     init_μ = μ
-    μs = zeros(length(v))
-    for i ∈ eachindex(v)
+    μs = zeros(length(v_rev))
+    for i ∈ eachindex(v_rev)
         μs[i] = μ
-        μ = μ - v_rev[i]
+        μ = max(0., μ - v_rev[i])
     end
-    μs = μs ./ init_μ
+    display(μ)
     display(μs)
+    μs = μs ./ init_μ
+    # remove zeros:
+    μs_nz = [v_el for v_el in μs if v_el ≥ 1e-10]
+    idx_μ = [i for i in eachindex(μs) if μs[i] ≥ 1e-10]
+    display(μs_nz)
     # plots:
-    p = scatter(log10.(v_rev), xticks = (eachindex(v_rev)[tickslice], eachindex(v_rev)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}/\lambda_1$)", legend = false, xtickfontsize=6)
+    p = scatter(log10.(v_rev), xticks = (eachindex(v_rev)[tickslice], eachindex(v_rev)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"$log_{10}(\lambda_{i}/\lambda_1)$", legend = false, xtickfontsize=6)
     display(p)
     savefig(p, filename*"_ratio.png")
 
-    p = scatter(μs, xticks = (eachindex(μs)[tickslice], eachindex(μs)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"$\mu_{i}/\mu_1$", legend = false, xtickfontsize=6)
+    # replace tickslice here:
+    tickslice = Int.(round.(range(1, length(μs_nz), 15)))
+    p = scatter(log10.(μs_nz), xticks = (eachindex(μs_nz)[tickslice], eachindex(μs_nz)[tickslice]), yticks = (-10.0:0.), markershape = :cross, xlabel = L"$i$", ylabel = L"$log_{10}(\mu_{i}/\mu_1)$", legend = false, xtickfontsize=6)
     display(p)
     savefig(p, filename*"_distribution.png")
 end
