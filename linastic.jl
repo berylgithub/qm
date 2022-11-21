@@ -266,6 +266,47 @@ function extract_mol_features(f)
 end
 
 """
+this separates each atomic features into block vectors: [H,C,N,O,F, n_x/n, 1/n],
+where 1/n is a scalar and x ∈ HCONF
+assume features and dataset are contiguous
+"""
+function extract_mol_features(f, dataset)
+    N, n_f0 = (length(f), size(f[1], 2))
+    n_f = n_f0*5 # since the features are separated
+    n_mol_f = Int(2*n_f + n_f*(n_f - 1)/2) + 6 # 6 = 5 distinct type + 1 sum 
+    types = ["H", "C", "N", "O", "F"]
+    F = zeros(N, n_f) #zeros(N, n_mol_f)
+    # extract feature per atom type:
+    fd = Dict()
+    for typ in types
+        fd[typ] = zeros(Float64, n_f0)
+    end
+    # loop this ∀mol later:
+    println(dataset[1]["atoms"][1])
+    display(fd[dataset[1]["atoms"][2]])
+    
+    fl = zeros(n_f)
+    for l ∈ eachindex(f) 
+        n_atom = dataset[l]["n_atom"]
+        atoms = dataset[l]["atoms"]
+        # compute features for each atom:
+        for i ∈ eachindex(atoms)
+            fd[atoms[i]] += f[l][i,:]
+        end
+        # concat manual, cleaner:
+        f_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"])
+        F[l,:] = f_at
+        # reset fd:
+        for typ in types
+            fd[typ] .= 0.
+        end
+    end
+    display(dataset[1])
+    display(f[1][2,:] + f[1][3,:] + f[1][4,:] + f[1][5,:])
+    display(F[1,1:51])
+end
+
+"""
 PCA for molecule (matrix data type)
 params:
     - F, ∈Float64(N, n_f)
