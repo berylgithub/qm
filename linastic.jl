@@ -273,37 +273,44 @@ assume features and dataset are contiguous
 function extract_mol_features(f, dataset)
     N, n_f0 = (length(f), size(f[1], 2))
     n_f = n_f0*5 # since the features are separated
-    n_mol_f = Int(2*n_f + n_f*(n_f - 1)/2) + 6 # 6 = 5 distinct type + 1 sum 
+    #n_mol_f = Int(2*n_f + n_f*(n_f - 1)/2) + 6 # 6 = 5 distinct type + 1 sum 
     types = ["H", "C", "N", "O", "F"]
-    F = zeros(N, n_f) #zeros(N, n_mol_f)
-    # extract feature per atom type:
+    F = zeros(N, n_f+6) #zeros(N, n_mol_f)
+    # initialize Dict:
     fd = Dict()
     for typ in types
         fd[typ] = zeros(Float64, n_f0)
     end
-    # loop this ∀mol later:
-    println(dataset[1]["atoms"][1])
-    display(fd[dataset[1]["atoms"][2]])
-    
-    fl = zeros(n_f)
+    fs = Dict()
+    for typ in types
+        fs[typ] = 0.
+    end
+    fl = zeros(n_f); S = zeros(n_f)
+    # compute feature for each mol:
     for l ∈ eachindex(f) 
         n_atom = dataset[l]["n_atom"]
         atoms = dataset[l]["atoms"]
         # compute features for each atom:
         for i ∈ eachindex(atoms)
             fd[atoms[i]] += f[l][i,:]
+            fs[atoms[i]] += 1.0 # count the number of atoms
         end
         # concat manual, cleaner:
-        f_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"])
-        F[l,:] = f_at
+        fd_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"])
+        fs_at = vcat(fs["H"], fs["C"], fs["N"], fs["O"], fs["F"]) ./ n_atom
+        # compute the upper triangular matrix:
+
+        # combine everything:
+        F[l,:] = vcat(fd_at, fs_at, 1/n_atom)
         # reset fd:
         for typ in types
             fd[typ] .= 0.
+            fs[typ] = 0.
         end
     end
-    display(dataset[1])
-    display(f[1][2,:] + f[1][3,:] + f[1][4,:] + f[1][5,:])
-    display(F[1,1:51])
+    #display(dataset[100])
+    #println(F[100,:],)
+    return 
 end
 
 """
