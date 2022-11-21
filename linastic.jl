@@ -285,7 +285,6 @@ function extract_mol_features(f, dataset)
     for typ in types
         fs[typ] = 0.
     end
-    fl = zeros(n_f); S = zeros(n_f)
     # compute feature for each mol:
     for l ∈ eachindex(f) 
         n_atom = dataset[l]["n_atom"]
@@ -310,7 +309,7 @@ function extract_mol_features(f, dataset)
     end
     #display(dataset[100])
     #println(F[100,:],)
-    return 
+    return F
 end
 
 """
