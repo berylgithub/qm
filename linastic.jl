@@ -79,26 +79,28 @@ function plot_ev(v, tickslice, filename; rotate=false)
     v_nz = [v_el for v_el in v if v_el > 0.]
     idx_v = [i for i in eachindex(v) if v[i] > 0.]
     v_nz = reverse(v_nz); idx_v = reverse(idx_v)
-    v_rev = reverse(v)
-    # compute distribution:
+    v_rev = reverse(v) ./ v[end] # λi/λ1
     display(v)
-    display(v_nz)
+    display(v_rev)
     display(idx_v)
-    #= for j=1:len
-        q[j] = sum(v[end-j+1:end])
+    # compute distribution:
+    μ = sum(v)
+    init_μ = μ
+    μs = zeros(length(v))
+    for i ∈ eachindex(v)
+        μs[i] = μ
+        μ = μ - v_rev[i]
     end
-    q ./= trace
-    q = reverse(q) =#
-
-
-    # plot:
-    #p = scatter(log10.(q), xticks = (eachindex(q)[tickslice], (eachindex(q).-1)[tickslice]), markershape = :cross, xlabel = L"$j$", ylabel = L"log$_{10}$($q_{j}$)", legend = false)
-    #slicer = Int.(round.(collect(range(1, length(idx_v), 20))))
-    #display(slicer)
-    #p = scatter(log10.(v_nz), xticks = (eachindex(v_nz)[slicer], eachindex(v_nz)[slicer]), markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false, xrotation = -45, xtickfontsize=6)
-    p = scatter(log10.(v_rev), xticks = (eachindex(v_rev)[tickslice], eachindex(v_rev)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}$)", legend = false, xtickfontsize=6)
+    μs = μs ./ init_μ
+    display(μs)
+    # plots:
+    p = scatter(log10.(v_rev), xticks = (eachindex(v_rev)[tickslice], eachindex(v_rev)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"log$_{10}$($\lambda_{i}/\lambda_1$)", legend = false, xtickfontsize=6)
     display(p)
-    savefig(p, filename)
+    savefig(p, filename*"_ratio.png")
+
+    p = scatter(μs, xticks = (eachindex(μs)[tickslice], eachindex(μs)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"$\mu_{i}/\mu_1$", legend = false, xtickfontsize=6)
+    display(p)
+    savefig(p, filename*"_distribution.png")
 end
 
 """
@@ -202,7 +204,7 @@ function PCA_atom(f, n_select; normalize=true, callplot=false)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
     # plot here:
-    #plot_ev(v, [1,10,20,30,40,50], "plot/log_eigenvalue_atom.png")
+    plot_ev(v, [1,10,20,30,40,50], "plot/log_eigenvalue_atom")
     #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
     display(sing) =#
     # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
@@ -329,7 +331,7 @@ function PCA_mol(F, n_select; normalize=true)
     Q = e.vectors
     #println("ev compute done")
     # plot here:
-    #plot_ev(v, round.(range(1, n_f, 20)), "plot/log_eigenvalue_mol.png")
+    plot_ev(v, Int.(round.(range(1, n_f, 20))), "plot/log_eigenvalue_mol")
 
     sidx = sortperm(v, rev=true)
     v = v[sidx] # temporary fix for the negative eigenvalue
