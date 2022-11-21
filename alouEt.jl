@@ -220,14 +220,14 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
     println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
-        # slice:
+        # load dataset:
         dataset = load("data/qm9_dataset.jld")["data"]
-        dataset = dataset[data_indices]
-        display(dataset)
         # PCA:
-        F = load(feature_file)["data"] # pre-extracted features
-        F = feature_extractor(F, n_af, n_mf)
+        F = load(feature_file)["data"] # pre-extracted atomic features
+        F = feature_extractor(F, dataset, n_af, n_mf)
         F = F[data_indices, :]
+        dataset = dataset[data_indices] # slice dataset
+        display(dataset)
         # compute bspline:
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
         display(F)
