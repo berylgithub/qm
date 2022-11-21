@@ -80,9 +80,9 @@ function plot_ev(v, tickslice, filename; rotate=false)
     idx_v = [i for i in eachindex(v) if v[i] > 0.]
     v_nz = reverse(v_nz); idx_v = reverse(idx_v)
     v_rev = reverse(v) ./ v[end] # λi/λ1
-    display(v)
-    display(v_rev)
-    display(idx_v)
+    #display(v)
+    #display(v_rev)
+    #display(idx_v)
     # compute distribution:
     μ = sum(v_rev)
     init_μ = μ
@@ -91,13 +91,13 @@ function plot_ev(v, tickslice, filename; rotate=false)
         μs[i] = μ
         μ = max(0., μ - v_rev[i])
     end
-    display(μ)
-    display(μs)
+    #display(μ)
+    #display(μs)
     μs = μs ./ init_μ
     # remove zeros:
     μs_nz = [v_el for v_el in μs if v_el ≥ 1e-10]
     idx_μ = [i for i in eachindex(μs) if μs[i] ≥ 1e-10]
-    display(μs_nz)
+    #display(μs_nz)
     # plots:
     p = scatter(log10.(v_rev), xticks = (eachindex(v_rev)[tickslice], eachindex(v_rev)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"$log_{10}(\lambda_{i}/\lambda_1)$", legend = false, xtickfontsize=6)
     display(p)
