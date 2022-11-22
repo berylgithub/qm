@@ -259,6 +259,7 @@ function comp_mol_l!(s, S, fl, n_atom)
     end
 end
 
+
 function extract_mol_features(f)
     N, n_f = (length(f), size(f[1], 2))
     n_mol_f = Int(2*n_f + n_f*(n_f - 1)/2)
@@ -281,20 +282,24 @@ assume features and dataset are contiguous
 """
 function extract_mol_features(f, dataset)
     N, n_f0 = (length(f), size(f[1], 2))
-    n_f = n_f0*5*2 # since the features are separated, ×2 since the includes also the quadratic
+    n_f = n_f0*5*2 + (binomial(51, 2)+51)*5 # since the features are separated, ×2 since the includes also the quadratic, + binomial(n_f0, 2)*5 since it's the atomic combination
     #n_mol_f = Int(2*n_f + n_f*(n_f - 1)/2) + 6 # 6 = 5 distinct type + 1 sum 
     types = ["H", "C", "N", "O", "F"]
-    F = zeros(N, n_f+6) #zeros(N, n_mol_f)
+    F = zeros(N, n_f+6) #zeros(N, n_mol_f) #+6 for the tail features (the count of the atoms)
     # initialize Dicts:
-    fd = Dict()
+    fd = Dict() # sum features
     for typ in types
         fd[typ] = zeros(Float64, n_f0)
     end
-    fds = Dict()
+    fds = Dict() # sum of squares features
     for typ in types
         fds[typ] = zeros(Float64, n_f0)
     end
-    fs = Dict()
+    fbin = Dict() # binomial feature matrix for each atom type
+    for typ in types
+        fbin[typ] = zeros(Float64, n_f0, n_f0)
+    end
+    fs = Dict() # the atomic counts
     for typ in types
         fs[typ] = 0.
     end
@@ -306,26 +311,28 @@ function extract_mol_features(f, dataset)
         for i ∈ eachindex(atoms)
             fd[atoms[i]] += f[l][i,:]
             fds[atoms[i]] += (f[l][i,:] .^ 2)
+            fbin[atoms[i]] += (f[l][i,:]*f[l][i,:]') # compute the upper triangular matrix (binomial features) only from the summed ACSF features
             fs[atoms[i]] += 1.0 # count the number of atoms
         end
         # concat manual, cleaner:
         fd_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"])
         fds_at = vcat(fds["H"], fds["C"], fds["N"], fds["O"], fds["F"])
+        fbin_at = vcat(fbin["H"][triu!(trues(n_f0, n_f0))], fbin["C"][triu!(trues(n_f0, n_f0))], fbin["N"][triu!(trues(n_f0, n_f0))], fbin["O"][triu!(trues(n_f0, n_f0))], fbin["F"][triu!(trues(n_f0, n_f0))])
         fs_at = vcat(fs["H"], fs["C"], fs["N"], fs["O"], fs["F"]) ./ n_atom # N_X/N
-        # compute the upper triangular matrix:
-
         # combine everything:
-        F[l,:] = vcat(fd_at, fds_at, fs_at, 1/n_atom)
+        F[l,:] = vcat(fd_at, fds_at, fbin_at, fs_at, 1/n_atom)
         # reset dicts:
         for typ in types
             fd[typ] .= 0.
             fds[typ] .= 0.
             fs[typ] = 0.
+            fbin[typ] .= 0.
         end
     end
     #display(dataset[1])
     #println(f[1][2,:].^2 + f[1][3,:].^2 + f[1][4,:].^2 + f[1][5,:].^2)
-    #println(F[1,256:306],)
+    #display(f[1][2,1:5]*f[1][2,1:5]' + f[1][3,1:5]*f[1][3,1:5]' + f[1][4,1:5]*f[1][4,1:5]' + f[1][5,1:5]*f[1][5,1:5]')
+    #println(F[1,511:550])
     return F
 end
 
