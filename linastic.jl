@@ -282,7 +282,7 @@ assume features and dataset are contiguous
 """
 function extract_mol_features(f, dataset)
     N, n_f0 = (length(f), size(f[1], 2))
-    n_f = n_f0*5*2 + (binomial(51, 2)+51)*5 # since the features are separated, ×2 since the includes also the quadratic, + binomial(n_f0, 2)*5 since it's the atomic combination
+    n_f = n_f0*5*2 + (binomial(n_f0, 2)+n_f0)*5 # since the features are separated, ×2 since the includes also the quadratic, + binomial(n_f0, 2)*5 since it's the atomic combination
     #n_mol_f = Int(2*n_f + n_f*(n_f - 1)/2) + 6 # 6 = 5 distinct type + 1 sum 
     types = ["H", "C", "N", "O", "F"]
     F = zeros(N, n_f+6) #zeros(N, n_mol_f) #+6 for the tail features (the count of the atoms)
