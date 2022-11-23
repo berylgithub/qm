@@ -224,7 +224,8 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         dataset = load("data/qm9_dataset.jld")["data"]
         # PCA:
         F = load(feature_file)["data"] # pre-extracted atomic features
-        F = feature_extractor(F, dataset, n_af, n_mf, ft_sos=ft_sos, ft_bin=ft_bin)
+        plot_fname = "$foldername"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
+        F = feature_extractor(F, dataset, n_af, n_mf, ft_sos=ft_sos, ft_bin=ft_bin, fname_plot_at=plot_fname, fname_plot_mol=plot_fname)
         F = F[data_indices, :]
         dataset = dataset[data_indices] # slice dataset
         display(dataset)

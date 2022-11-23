@@ -176,7 +176,7 @@ params:
     ;
     - callplot is for personal use only
 """
-function PCA_atom(f, n_select; normalize=true, callplot=false)
+function PCA_atom(f, n_select; normalize=true, fname_plot_at="")
     # cut number of features:
     N, n_f = (length(f), size(f[1], 2))
     # compute mean vector:
@@ -214,7 +214,7 @@ function PCA_atom(f, n_select; normalize=true, callplot=false)
     Q = e.vectors
     #display(v)
     # plot here:
-    plot_ev(v, [1,10,20,30,40,50], "plot/log_eigenvalue_atom")
+    plot_ev(v, [1,10,20,30,40,50], "plot/eigenvalue_atom_"*fname_plot_at)
     #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
     display(sing) =#
     # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
@@ -376,7 +376,7 @@ PCA for molecule (matrix data type)
 params:
     - F, ∈Float64(N, n_f)
 """
-function PCA_mol(F, n_select; normalize=true)
+function PCA_mol(F, n_select; normalize=true, fname_plot_mol="")
     N, n_f = size(F)
     s = zeros(n_f); S = zeros(n_f, n_f)
     comp_mol_l!(s, S, F, N)
@@ -393,7 +393,7 @@ function PCA_mol(F, n_select; normalize=true)
     #display(v)
     #println("ev compute done")
     # plot here:
-    plot_ev(v, Int.(round.(range(1, n_f, 20))), "plot/log_eigenvalue_mol")
+    plot_ev(v, Int.(round.(range(1, n_f, 20))), "plot/eigenvalue_mol_"*fname_plot_mol)
 
     sidx = sortperm(v, rev=true)
     v = v[sidx] # temporary fix for the negative eigenvalue
@@ -421,11 +421,11 @@ end
 """
 caller for PCA_atom up to PCA_mol
 """
-function feature_extractor(f, dataset, n_select_at, n_select_mol; normalize_at=true, normalize_mol=true, ft_sos=true, ft_bin=true)
-    f = PCA_atom(f, n_select_at; normalize = normalize_at)
+function feature_extractor(f, dataset, n_select_at, n_select_mol; normalize_at=true, normalize_mol=true, ft_sos=true, ft_bin=true, fname_plot_at="", fname_plot_mol="")
+    f = PCA_atom(f, n_select_at; normalize = normalize_at, fname_plot_at=fname_plot_at)
     #F = extract_mol_features(f)
     F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin) # the one with separated atomtype
-    F = PCA_mol(F, n_select_mol; normalize = normalize_mol)
+    F = PCA_mol(F, n_select_mol; normalize = normalize_mol, fname_plot_mol=fname_plot_mol)
     return F
 end
 
