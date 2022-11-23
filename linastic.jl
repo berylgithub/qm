@@ -205,11 +205,14 @@ function PCA_atom(f, n_select; normalize=true, callplot=false)
     S ./= N
     # covariance matrix:
     C = S - s*s'
-    #C = (S - s*s') ./ (N - 1)
+    # correlation matrix:
+    D = diagm(1 ./ .√ C[diagind(C)])
+    C = D*C*D
     # spectral decomposition:
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
+    #display(v)
     # plot here:
     plot_ev(v, [1,10,20,30,40,50], "plot/log_eigenvalue_atom")
     #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
@@ -346,11 +349,17 @@ function PCA_mol(F, n_select; normalize=true)
     s = zeros(n_f); S = zeros(n_f, n_f)
     comp_mol_l!(s, S, F, N)
     s ./= N; S ./= N
-    C = S - s*s'
-
+    
+    C = S - s*s' # covariance matrix
+    # correlation matrix:
+    D = diagm(1 ./ .√ C[diagind(C)])
+    C = D*C*D
+    #display(C)
+    #display(C[diagind(C)])
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
+    display(v)
     #println("ev compute done")
     # plot here:
     plot_ev(v, Int.(round.(range(1, n_f, 20))), "plot/log_eigenvalue_mol")
