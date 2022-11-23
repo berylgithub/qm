@@ -282,11 +282,19 @@ end
 this separates each atomic features into block vectors: [H,C,N,O,F, n_x/n, 1/n],
 where 1/n is a scalar and x ∈ HCONF
 assume features and dataset are contiguous
+params:
+    - mode: features to be used: fsos, fbin
 """
-function extract_mol_features(f, dataset)
+function extract_mol_features(f, dataset; ft_sos=true, ft_bin=true)
     N, n_f0 = (length(f), size(f[1], 2))
-    n_f = n_f0*5*2 + (binomial(n_f0, 2)+n_f0)*5 # since the features are separated, ×2 since the includes also the quadratic, + binomial(n_f0, 2)*5 since it's the atomic combination
-    #n_mol_f = Int(2*n_f + n_f*(n_f - 1)/2) + 6 # 6 = 5 distinct type + 1 sum 
+    #n_f = n_f0*5*2 + (binomial(n_f0, 2)+n_f0)*5 # since the features are separated, ×2 since the includes also the quadratic, + binomial(n_f0, 2)*5 since it's the atomic combination
+    n_f = n_f0*5
+    if ft_sos
+        n_f *= 2
+    end
+    if ft_bin
+        n_f += ((binomial(n_f0, 2)+n_f0)*5)
+    end
     types = ["H", "C", "N", "O", "F"]
     F = zeros(N, n_f+6) #zeros(N, n_mol_f) #+6 for the tail features (the count of the atoms)
     # initialize Dicts:
@@ -294,17 +302,21 @@ function extract_mol_features(f, dataset)
     for typ in types
         fd[typ] = zeros(Float64, n_f0)
     end
-    fds = Dict() # sum of squares features
-    for typ in types
-        fds[typ] = zeros(Float64, n_f0)
-    end
-    fbin = Dict() # binomial feature matrix for each atom type
-    for typ in types
-        fbin[typ] = zeros(Float64, n_f0, n_f0)
-    end
     fs = Dict() # the atomic counts
     for typ in types
         fs[typ] = 0.
+    end
+    if ft_sos
+        fds = Dict() # sum of squares features
+        for typ in types
+            fds[typ] = zeros(Float64, n_f0)
+        end
+    end
+    if ft_bin
+        fbin = Dict() # binomial feature matrix for each atom type
+        for typ in types
+            fbin[typ] = zeros(Float64, n_f0, n_f0)
+        end
     end
     # compute feature for each mol:
     for l ∈ eachindex(f) 
@@ -313,23 +325,43 @@ function extract_mol_features(f, dataset)
         # compute features for each atom:
         for i ∈ eachindex(atoms)
             fd[atoms[i]] += f[l][i,:]
-            fds[atoms[i]] += (f[l][i,:] .^ 2)
-            fbin[atoms[i]] += (f[l][i,:]*f[l][i,:]') # compute the upper triangular matrix (binomial features) only from the summed ACSF features
+            if ft_sos
+                fds[atoms[i]] += (f[l][i,:] .^ 2)
+            end
+            if ft_bin
+                fbin[atoms[i]] += (f[l][i,:]*f[l][i,:]') # compute the upper triangular matrix (binomial features) only from the summed ACSF features
+            end
             fs[atoms[i]] += 1.0 # count the number of atoms
         end
         # concat manual, cleaner:
         fd_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"])
-        fds_at = vcat(fds["H"], fds["C"], fds["N"], fds["O"], fds["F"])
-        fbin_at = vcat(fbin["H"][triu!(trues(n_f0, n_f0))], fbin["C"][triu!(trues(n_f0, n_f0))], fbin["N"][triu!(trues(n_f0, n_f0))], fbin["O"][triu!(trues(n_f0, n_f0))], fbin["F"][triu!(trues(n_f0, n_f0))])
         fs_at = vcat(fs["H"], fs["C"], fs["N"], fs["O"], fs["F"]) ./ n_atom # N_X/N
+        if ft_sos
+            fds_at = vcat(fds["H"], fds["C"], fds["N"], fds["O"], fds["F"])
+        end
+        if ft_bin
+            fbin_at = vcat(fbin["H"][triu!(trues(n_f0, n_f0))], fbin["C"][triu!(trues(n_f0, n_f0))], fbin["N"][triu!(trues(n_f0, n_f0))], fbin["O"][triu!(trues(n_f0, n_f0))], fbin["F"][triu!(trues(n_f0, n_f0))])
+        end
         # combine everything:
-        F[l,:] = vcat(fd_at, fds_at, fbin_at, fs_at, 1/n_atom)
+        z = fd_at
+        if ft_sos
+            z = vcat(z, fds_at)
+        end
+        if ft_bin
+            z = vcat(z, fbin_at)
+        end
+        z = vcat(z, fs_at, 1/n_atom)
+        F[l,:] = z
         # reset dicts:
         for typ in types
             fd[typ] .= 0.
-            fds[typ] .= 0.
             fs[typ] = 0.
-            fbin[typ] .= 0.
+            if ft_sos
+                fds[typ] .= 0.
+            end
+            if ft_bin
+                fbin[typ] .= 0.
+            end
         end
     end
     #display(dataset[1])
