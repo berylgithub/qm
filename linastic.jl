@@ -1,4 +1,4 @@
-using LinearAlgebra, Statistics, Distributions, Plots, LaTeXStrings
+using LinearAlgebra, Statistics, Distributions, Plots, LaTeXStrings, DataFrames
 
 """
 placeholder for linear algebra and statistics operations, if RoSemi is overcrowded, or when the need arises
@@ -206,7 +206,7 @@ function PCA_atom(f, n_select; normalize=true, callplot=false)
     # covariance matrix:
     C = S - s*s'
     # correlation matrix:
-    D = diagm(1 ./ .√ C[diagind(C)])
+    D = diagm(1. ./ .√ C[diagind(C)])
     C = D*C*D
     # spectral decomposition:
     e = eigen(C)
@@ -350,16 +350,15 @@ function PCA_mol(F, n_select; normalize=true)
     comp_mol_l!(s, S, F, N)
     s ./= N; S ./= N
     
-    C = S - s*s' # covariance matrix
+    #C = S - s*s' # covariance matrix
     # correlation matrix:
-    D = diagm(1 ./ .√ C[diagind(C)])
-    C = D*C*D
-    #display(C)
-    #display(C[diagind(C)])
+    #= D = diagm(1. ./ .√ C[diagind(C)])
+    C = D*C*D =#
+    C = cor(F) # more accurate than the D*C*D somehow
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
-    display(v)
+    #display(v)
     #println("ev compute done")
     # plot here:
     plot_ev(v, Int.(round.(range(1, n_f, 20))), "plot/log_eigenvalue_mol")
