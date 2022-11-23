@@ -421,10 +421,10 @@ end
 """
 caller for PCA_atom up to PCA_mol
 """
-function feature_extractor(f, dataset, n_select_at, n_select_mol; normalize_at=true, normalize_mol=true)
+function feature_extractor(f, dataset, n_select_at, n_select_mol; normalize_at=true, normalize_mol=true, ft_sos=true, ft_bin=true)
     f = PCA_atom(f, n_select_at; normalize = normalize_at)
     #F = extract_mol_features(f)
-    F = extract_mol_features(f, dataset) # the one with separated atomtype
+    F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin) # the one with separated atomtype
     F = PCA_mol(F, n_select_mol; normalize = normalize_mol)
     return F
 end
