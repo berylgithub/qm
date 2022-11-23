@@ -216,7 +216,7 @@ end
 full data setup, in contrast to each molecule data setup, INCLUDES PCA!.
 takes in the data indices (relative to the qm9 dataset).
 """
-function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, feature_file; universe_size=1_000)
+function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, feature_file; universe_size=1_000, ft_sos=true, ft_bin=true)
     println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
@@ -224,7 +224,7 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         dataset = load("data/qm9_dataset.jld")["data"]
         # PCA:
         F = load(feature_file)["data"] # pre-extracted atomic features
-        F = feature_extractor(F, dataset, n_af, n_mf)
+        F = feature_extractor(F, dataset, n_af, n_mf, ft_sos=ft_sos, ft_bin=ft_bin)
         F = F[data_indices, :]
         dataset = dataset[data_indices] # slice dataset
         display(dataset)
@@ -242,6 +242,16 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
     save("data/$foldername/distances.jld", "data", distances)
     save("data/$foldername/spline.jld", "data", ϕ)
     save("data/$foldername/dspline.jld", "data", dϕ)
+    # write data setup info:
+    n_data = length(data_indices)
+    strlist = string.([n_data, n_af, n_mf, n_basis+3, num_centers, ft_sos, ft_bin]) # n_basis + 3 by definition
+    open("data/$foldername/setup_info.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
     println("data setup is finished in ",t,"s")
 end
 
