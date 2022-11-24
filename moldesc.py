@@ -1,27 +1,32 @@
-import numpy as np
+from ase.io import read
 from ase.build import molecule
+from ase import Atoms
+
 from dscribe.descriptors import SOAP
-from dscribe.descriptors import CoulombMatrix
 
-# Define atomic structures
-samples = [molecule("H2O"), molecule("NO2"), molecule("CO2")]
+# Let's use ASE to create atomic structures as ase.Atoms objects.
+#structure1 = read("water.xyz")
+structure2 = molecule("H2O")
+structure3 = Atoms(symbols=["H", "C", "O", "N"], positions=[[0., 0., 0.], [1.128, 0., 0.], [2.5, 1.128, 0.], [-3., -1.5, 0.2]])
 
-# Setup descriptors
-cm_desc = CoulombMatrix(n_atoms_max=3, permutation="sorted_l2")
-soap_desc = SOAP(species=["C", "H", "O", "N"], rcut=5, nmax=8, lmax=6, crossover=True)
+structures = [structure2, structure3]
+species = set()
+for structure in structures:
+    species.update(structure.get_chemical_symbols())
 
-# Create descriptors as numpy arrays or sparse arrays
-water = samples[1]
-print(water)
-coulomb_matrix = cm_desc.create(water)
-soap = soap_desc.create(water, positions=[0])
-print(soap.shape)
-# Easy to use also on multiple systems, can be parallelized across processes
-coulomb_matrices = cm_desc.create(samples)
-coulomb_matrices = cm_desc.create(samples, n_jobs=3)
-oxygen_indices = [np.where(x.get_atomic_numbers() == 8)[0] for x in samples]
-oxygen_soap = soap_desc.create(samples, oxygen_indices, n_jobs=3)
+print(species)
 
-# Some descriptors also allow calculating derivatives with respect to atomic
-# positions
-der, des = soap_desc.derivatives(samples, method="auto", return_descriptor=True)
+soap = SOAP(
+    species=species,
+    periodic=False,
+    rcut=5,
+    nmax=8,
+    lmax=4,
+    average="off",
+    sparse=False
+)
+
+feature_vectors = soap.create(structures, n_jobs=1)
+print(len(feature_vectors), feature_vectors[1].shape)
+
+# save numpy array to files, each mol = 1 file:
