@@ -79,10 +79,10 @@ batches = []
 c = range(0, blength)
 for i in c:
     n = i*bsize
-    batches.append(range(n, n+bsize))
-bend = batches[-1][-1]+1
+    batches.append([n, n+bsize])
+bend = batches[-1][-1]
 bendsize = ndata - (blength*bsize)
-batches.append(range(bend, bend+bendsize))
+batches.append([bend, bend+bendsize+2])
 print(batches)
 
 outfolder = "data/SOAP/"
@@ -91,11 +91,11 @@ if not exists(outfolder):
 
 for i, batch in enumerate(batches):
     print("batch number ",i)
-    feature_vectors = soap.create(structures[batch], n_jobs=4) # batch
+    feature_vectors = soap.create(structures[batch[0]:batch[1]], n_jobs=4) # batch
     feature_vectors = np.array(feature_vectors)
 
     # save numpy array to files, each mol = 1 file:
-    for i, mol in enumerate(mols[batch]): # batch
+    for i, mol in enumerate(mols[batch[0]:batch[1]]): # batch
         np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
 
 print("elapsed time = ", time.time()-start, "s")
