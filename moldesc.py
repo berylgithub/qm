@@ -54,9 +54,9 @@ for mol in mols:
     print(mol["filename"])
     structures.append(Atoms(symbols=mol["symbols"], positions = mol["coords"]))
 
-species = set()
-for structure in structures:
-    species.update(structure.get_chemical_symbols())
+species = set(["H", "C", "N", "O", "F"])
+#for structure in structures:
+#    species.update(structure.get_chemical_symbols())
 
 print(species)
 
@@ -70,16 +70,32 @@ soap = SOAP(
     sparse=False
 )
 
-feature_vectors = soap.create(structures, n_jobs=4)
-print(len(feature_vectors), feature_vectors[0].shape)
-feature_vectors = np.array(feature_vectors)
+# batch here:
+ndata= len(onlyfiles)
+bsize = 10000
+blength = ndata // bsize
 
-# save numpy array to files, each mol = 1 file:
+batches = []
+c = range(0, blength)
+for i in c:
+    n = i*bsize
+    batches.append(range(n, n+bsize))
+bend = batches[-1][-1]+1
+bendsize = ndata - (blength*bsize)
+batches.append(range(bend, bend+bendsize))
+print(batches)
+
 outfolder = "data/SOAP/"
 if not exists(outfolder):
     makedirs(outfolder)
 
-for i, mol in enumerate(mols):
-    np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
+for i, batch in enumerate(batches):
+    print("batch number ",i)
+    feature_vectors = soap.create(structures[batch], n_jobs=4) # batch
+    feature_vectors = np.array(feature_vectors)
+
+    # save numpy array to files, each mol = 1 file:
+    for i, mol in enumerate(mols[batch]): # batch
+        np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
 
 print("elapsed time = ", time.time()-start, "s")
