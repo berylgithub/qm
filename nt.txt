@@ -28,3 +28,7 @@ Nqm9	nK	nU	nf	ns	MAE	||Aθ-b||^2	max(MAD(U))	use_MAD	t_inter	t_solver	t_pred  ma
 
 try: 
 {4, 5, 6} n_af using corr matrix (instead of cov matrix) for the sums only, and try with the rest of the features from the best n_af (also the eigenvalues plots).
+
+SOAP extraction time = 524.7424840927124 s
+Filesize = 6GB
+feature length = 1950
