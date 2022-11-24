@@ -1,37 +1,63 @@
+from warnings import catch_warnings
 from ase.io import read
 from ase.build import molecule
 from ase import Atoms
 import numpy as np
+from os import listdir, makedirs
+from os.path import isfile, join, exists
 
 from dscribe.descriptors import SOAP
 
-def extract_atoms():
-    folder = "data/qm9/"
-    filedir= folder + "dsgdb9nsd_000001.xyz"
+
+
+def extract_atoms(folderdir, filedir):
+    #folder = "data/qm9/"
+    #filedir= folder + "dsgdb9nsd_000001.xyz"
     # loop this guy:
-    with open(filedir,'r') as f:
+    fpath = folderdir+filedir
+    with open(fpath,'r') as f:
         strlist = f.readlines()
         n_atom = int(strlist[0])
-        print(strlist[2:2+n_atom])
         atoms = strlist[2:2+n_atom]
         symbols = []
         coords = np.zeros((n_atom, 3))
-        atomdata = {"n_atom":n_atom, "symbols": [], "coords": np.zeros((n_atom, 3))}
+        atomdata = {"filename":filedir, "n_atom":n_atom, "symbols": [], "coords": np.zeros((n_atom, 3))}
         for i, atom in enumerate(atoms):
             atomstr = atom.split("\t")
             atomtype = atomstr[0]
             coord = np.array([float(c) for c in atomstr[1:4]])
             atomdata["coords"][i] = coord
             atomdata["symbols"].append(atomtype)
-        print(atomdata)
-    return None
+    return atomdata
+
+
+mypath = "data/qm9/"
+onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+print(mypath+onlyfiles[0])
+
+# extract coords here:
+mols = []
+errfiles = []
+for f in sorted(onlyfiles[0:10]):
+    try:
+        mols.append(extract_atoms(mypath, f))
+    except:
+        errfiles.append(f)
+
+with open("data/qm9_error_soap.txt", "w") as f:
+    for errf in errfiles:
+        f.write(errf+"\n")
+
+print(sorted(onlyfiles[0:10]))
+print(extract_atoms(mypath, "dsgdb9nsd_000010.xyz"))
 
 # Let's use ASE to create atomic structures as ase.Atoms objects.
 #structure1 = read("data/qm9/dsgdb9nsd_000001.xyz")
-structure2 = molecule("H2O")
-structure3 = Atoms(symbols=["H", "C", "O", "N"], positions = np.array([[0., 0., 0.], [1.128, 0., 0.], [2.5, 1.128, 0.], [-3., -1.5, 0.2]]))
+structures = []
+for mol in mols:
+    print(mol["filename"])
+    structures.append(Atoms(symbols=mol["symbols"], positions = mol["coords"]))
 
-structures = [structure2, structure3]
 species = set()
 for structure in structures:
     species.update(structure.get_chemical_symbols())
@@ -51,8 +77,11 @@ soap = SOAP(
 feature_vectors = soap.create(structures, n_jobs=1)
 print(len(feature_vectors), feature_vectors[0].shape)
 feature_vectors = np.array(feature_vectors)
-print(feature_vectors[0].shape)
+
 # save numpy array to files, each mol = 1 file:
+outfolder = "data/SOAP/"
+if not exists(outfolder):
+    makedirs(outfolder)
 
-
-extract_atoms()
+for i, mol in enumerate(mols):
+    np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
