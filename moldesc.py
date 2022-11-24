@@ -5,7 +5,7 @@ from ase import Atoms
 import numpy as np
 from os import listdir, makedirs
 from os.path import isfile, join, exists
-
+import time
 from dscribe.descriptors import SOAP
 
 
@@ -33,12 +33,12 @@ def extract_atoms(folderdir, filedir):
 
 mypath = "data/qm9/"
 onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-print(mypath+onlyfiles[0])
 
 # extract coords here:
+start = time.time() # timer
 mols = []
 errfiles = []
-for f in sorted(onlyfiles[0:10]):
+for f in sorted(onlyfiles):
     try:
         mols.append(extract_atoms(mypath, f))
     except:
@@ -48,11 +48,7 @@ with open("data/qm9_error_soap.txt", "w") as f:
     for errf in errfiles:
         f.write(errf+"\n")
 
-print(sorted(onlyfiles[0:10]))
-print(extract_atoms(mypath, "dsgdb9nsd_000010.xyz"))
 
-# Let's use ASE to create atomic structures as ase.Atoms objects.
-#structure1 = read("data/qm9/dsgdb9nsd_000001.xyz")
 structures = []
 for mol in mols:
     print(mol["filename"])
@@ -74,7 +70,7 @@ soap = SOAP(
     sparse=False
 )
 
-feature_vectors = soap.create(structures, n_jobs=1)
+feature_vectors = soap.create(structures, n_jobs=4)
 print(len(feature_vectors), feature_vectors[0].shape)
 feature_vectors = np.array(feature_vectors)
 
@@ -85,3 +81,5 @@ if not exists(outfolder):
 
 for i, mol in enumerate(mols):
     np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
+
+print("elapsed time = ", time.time()-start, "s")
