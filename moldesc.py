@@ -64,15 +64,15 @@ soap = SOAP(
     species=species,
     periodic=False,
     rcut=5,
-    nmax=6,
-    lmax=6,
-    average="off",
+    nmax=5,
+    lmax=5,
+    average="inner",
     sparse=False
 )
 
 # batch here:
 ndata= len(onlyfiles)
-bsize = 10000
+bsize = 1000
 blength = ndata // bsize
 
 batches = []
