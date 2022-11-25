@@ -116,6 +116,28 @@ function get_max_cellbound()
 end
 
 
+"""
+transform SOAP filetexts to binary
+"""
+function getSOAP()
+    path = "data/SOAP/"
+    files = readdir(path)
+    ndata = length(files)
+    nf = size(readdlm(path*files[1]), 1) # length o0f the feature
+    F = zeros(nf, ndata)
+    start = time()
+    @simd for i in eachindex(files)
+        println(files[i]," done!!")
+        @inbounds F[:, i] .= readdlm(path*files[i])
+    end
+    elapsed = time()-start
+    display(F)
+    display(Base.summarysize(F)*1e-6)
+    println("elapsed time = ", elapsed)
+    save("data/SOAP_mol.jld", "data", F') # transpose the matrix
+end
+
+
 function timeload()
     # took 2 minutes to load 130k data
     t = @elapsed begin
