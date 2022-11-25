@@ -227,11 +227,13 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         F = nothing
         plot_fname = "$foldername"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
         if length(molf_file) == 0 # if molecular feature file is not provided:
+            println("atomic ⟹ mol mode!")
             F = load(feature_file)["data"] # pre-extracted atomic features
             F = feature_extractor(F, dataset, n_af, n_mf, ft_sos=ft_sos, ft_bin=ft_bin, fname_plot_at=plot_fname, fname_plot_mol=plot_fname)
         else
+            println("mol only mode!")
             F = load(molf_file)["data"]
-            F = PCA_mol(F, n_mf, fname_plot_mol = molf_file)
+            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname)
         end
         F = F[data_indices, :]
         dataset = dataset[data_indices] # slice dataset
