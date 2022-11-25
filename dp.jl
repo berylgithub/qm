@@ -137,6 +137,38 @@ function getSOAP()
     save("data/SOAP_mol.jld", "data", F') # transpose the matrix
 end
 
+function table_results(foldername)
+    sheader = ["n_data", "n_af", "n_mf", "n_basis", "num_centers", "ft_sos", "ft_bin"]
+    rheader = ["Nqm9", "nK", "nU", "n_feature", "n_basis", "MAE", "RMSD", "max(MAD)", "t_ab", "t_ls", "t_batch"]
+    outheader = ["nK", "nU", "n_af", "n_mf", "n_basis", "MAE", "ft_sos", "ft_bin", "t_solver", "t_pred"]
+    setup_info = readdlm("data/$foldername/setup_info.txt", '\t', '\n')
+    res_info = readdlm("result/$foldername/err_$foldername.txt", '\t', '\n')
+    #display(setup_info)
+    #display(res_info)
+    out = Dict()
+    out["nK"] = res_info[:, 2]
+    out["nU"] = res_info[:, 3]
+    out["n_af"] = setup_info[:, 2]
+    out["n_mf"] = res_info[:, 4]
+    out["n_basis"] = res_info[:, 5]
+    out["MAE"] = res_info[:, 6]
+    out["ft_sos"] = setup_info[:, 6]
+    out["ft_bin"] = setup_info[:, 7]
+    out["t_solver"] = round.(res_info[:, 11])
+    out["t_pred"] = round.(res_info[:, 12])
+    #display(out)
+    open("result/$foldername/output_table.txt","w") do io
+        str = ""
+        for i ∈ eachindex(outheader)
+            str *= outheader[i]*"\t"
+        end
+        print(io, str*"\n")
+    end
+    open("result/$foldername/output_table.txt","a") do io
+        writedlm(io, [out["nK"] out["nU"] out["n_af"] out["n_mf"] out["n_basis"] out["MAE"] out["ft_sos"] out["ft_bin"] out["t_solver"] out["t_pred"]])
+    end
+end
+
 
 function timeload()
     # took 2 minutes to load 130k data
