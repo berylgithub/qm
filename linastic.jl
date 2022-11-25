@@ -378,9 +378,12 @@ params:
 """
 function PCA_mol(F, n_select; normalize=true, fname_plot_mol="")
     N, n_f = size(F)
-    s = zeros(n_f); S = zeros(n_f, n_f)
-    comp_mol_l!(s, S, F, N)
-    s ./= N; S ./= N
+    s = zeros(n_f); #S = zeros(n_f, n_f)
+    #comp_mol_l!(s, S, F, N)
+    for i ∈ 1:N
+        s .= s .+ F[i, :]
+    end
+    s ./= N; #S ./= N
     
     #C = S - s*s' # covariance matrix
     # correlation matrix:
