@@ -273,10 +273,10 @@ using this, (\refeq{eq:delta}) can be re-arranged into
 \begin{equation}
 	\label{eq:delta_split}
 	\begin{split}
-		\Delta_{jK}(w)&= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} \right)/ S_K - \big(E_j + \sum_l \psi_{jl}\big)}{\alpha_j} \\
+		\Delta_{jK}(w)&= \frac{\D \big(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} \big)/ S_K - \big(E_j + \sum_l \psi_{jl}\big)}{\alpha_j} \\
 		&= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{jl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
 		&= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{jk}\psi_{kl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
-		&= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \left(E_j - \sum_k\frac{E_k}{\gamma_k}\right)/\alpha_j,
+		&= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \big(E_j - \sum_k\frac{E_k}{\gamma_k}\big)/\alpha_j,
 	\end{split}
 \end{equation}
 where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
