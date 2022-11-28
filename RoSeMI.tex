@@ -58,9 +58,13 @@ The very first piece which needs to be computed is the collection of molecular f
 		\label{eq:pca_atom_start}
 		C = S - ss^\top. \\			
 	\end{equation}
-	Select the eigenvectors such that they correspond to the $n_{af}$ largest eigenvalues. They are obtained by first doing the spectral decomposition of the covariance matrix
+	The correlation matrix can be formed by
 	\begin{equation}
-		C = Q\Lambda Q^\top,
+		C' := DCD, ~~ D = \text{Diag}(1\sqrt{C_{ii}})
+	\end{equation}
+	Select the eigenvectors such that they correspond to the $n_{af}$ largest eigenvalues. They are obtained by first doing the spectral decomposition of the correlation matrix
+	\begin{equation}
+		C' = Q\Lambda Q^\top,
 	\end{equation}
 	where $\Lambda$ is the diagonal matrix containing the $k$th eigenvalue $\Lambda_{kk}$ and $Q$ is the matrix containing the $k$th eigenvector $Q_{:k}$, then we permute the columns of $Q$ and the diagonal entries $\lambda_i$ of $\Lambda$ such that
 	\begin{equation}
@@ -95,23 +99,52 @@ The very first piece which needs to be computed is the collection of molecular f
 	
 \subsection{Molecular feature selection}
 \begin{itemize}
-    \item For each molecule containing $n_\text{atom}$ number of atoms, the molecular features are the symmetrized atomic features, which are computed by
+    \item $l$th molecule contains $n^l_\text{atom}$ number of atoms and a set of atom types $P = \{\text{H}, \text{C}, \text{O}, ...\}$ with cardinality $n^l_\text{type}$,
+	the molecular features are computed by
         \begin{equation}
 			\label{eq:acsf}
             \begin{split}
-                s^l &= \sum_i f^l_{i:}, \\
-                S^l &= \sum_i f^l_{i:}(f^l_{i:})^\top,
+                s^l_{j} &= \sum_{m \in M_j} f^l_{m:}, \\
+                %S^l &= \sum_i f^l_{i:}(f^l_{i:})^\top,
             \end{split}
         \end{equation}
-        since $S^l$ is a symmetric matrix, only the upper triangular and the diagonal entries are needed, we re-arrange them together with $\hat{s}^l$ into a vector
-        \begin{equation}
-			F_l := [s^l_1, s^l_2, ..., S^l_{11}, S^l_{12}, ... ] \in \mathbb{R}^{1 \times n_f^\text{mol}},
+		where $M_j$ is the set of index which contains the row positions of atom type $j \in P$ in the $f^l$ matrix. 
+		Furthermore we add
+		\begin{equation}
+			N_j = |M_j|,
+		\end{equation}
+		combined into
+		\begin{equation}
+			\hat{N} = [N_\text{H}, N_\text{C}, N_\text{O},..., 1/n^l_\text{atom}].
+		\end{equation}
+		The feature vector of the $l$th molecule becomes
+		\begin{equation}
+			F_l := [s^l_{j}, \hat{N} ] \in \mathbb{R}^{1 \times n_f^\text{mol}}, \forall j \in P,
         \end{equation}
-    	of size
-    	\begin{equation}
-    		n_f^\text{mol} := n_f(n_f-1)/2 + 2n_f.
+		where
+		\begin{equation}
+    		n_f^\text{mol} := 5n_f + 6,
     	\end{equation}
-    	This defines the fingerprint matrix $F \in \mathbb{R}^{N \times n_f}$.
+		in most cases this is a sufficiently good feature vector for fitting.
+		
+		Additional features can be introduced, such as the sum of squares
+		\begin{equation}
+			\hat{s}^l_j = \sum_{m \in M_j} (f^l_{m:})^2;
+		\end{equation}
+		the binomial feature
+		\begin{equation}
+			S^l_j = s^l_j(s^l_j)^\top;
+		\end{equation}
+		since $S^l_j$ is a symmetric matrix, only the upper triangular and the diagonal entries are needed. 
+		Hence if we include both the sum of squares and the binomial features
+		\begin{equation}
+			F_l := [s^l_{j}, \hat{s}^l_{j}, S^l_j, \hat{N} ] \in \mathbb{R}^{1 \times n_f^\text{mol}}, \forall j \in P,
+		\end{equation}
+        where
+		\begin{equation}
+			n_f^\text{mol} := \frac{5}{2}(n_f^2+n_f)+6,
+		\end{equation}
+    	this defines the fingerprint matrix $F \in \mathbb{R}^{N \times n_f}$.
     \item Do feature selection by using PCA in a similar manner as (\refeq{eq:pca_atom_start}) -- (\refeq{eq:pca_atom_end}) to take the subset of the columns of $W$, this can be done by the following:
 	    \begin{equation}
 			\label{eq:pca_mol_start}
@@ -125,9 +158,13 @@ The very first piece which needs to be computed is the collection of molecular f
 		\begin{equation}
 			C = S - ss^\top, \\			
 		\end{equation}
-		compute the spectral decomposition of the covariance matrix
+		compute the correlation matrix
 		\begin{equation}
-			C = Q\Lambda Q^\top,
+			C' := DCD, ~~ D = \text{Diag}(1\sqrt{C_{ii}}),
+		\end{equation}
+		and its spectral decomposition
+		\begin{equation}
+			C' = Q\Lambda Q^\top,
 		\end{equation}
 		permute the columns of $Q$ and the entries of $\Lambda$ such that
 		\begin{equation}
@@ -166,7 +203,7 @@ Store $F$, the storage should be bounded by $O(N)$ for most cases unless much mo
 
 
 \section{Data selection}
-The set of indices which refers to data points with known energies (or training data points) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $M = |K| = 100$. The flow of the data selection is as the following:
+The set of indices which refers to data points with known energies (or training data points) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $M = |K| = 100$, here we pick $N = |T| $ . The flow of the data selection is as the following:
 \begin{itemize}
 	\item Compute and store distance matrix $D$ given $F$
 	\begin{equation}
