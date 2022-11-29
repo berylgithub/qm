@@ -133,7 +133,7 @@ The very first piece which needs to be computed is the collection of molecular f
 		\end{equation}
 		the binomial feature
 		\begin{equation}
-			S^l_j = s^l_j(s^l_j)^\top;
+			S^l_j = \sum_{m \in M_j} f^l_{m:}(f^l_{m:})^\top;
 		\end{equation}
 		since $S^l_j$ is a symmetric matrix, only the upper triangular and the diagonal entries are needed. 
 		Hence if we include both the sum of squares and the binomial features
@@ -197,29 +197,37 @@ The very first piece which needs to be computed is the collection of molecular f
 	\end{equation}
 \end{itemize}
 
-\subsection{Timing and memory usage}
-\at{add formula and numerical table -- for different choices of $n_{af}, n_{mf}$}
-Store $F$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
+
+\section{Splines}
+The splines are used to increase the dimension of the feature space; with sufficient number of splines for each feature, it will lead to linearly separated data points.
+\begin{itemize}
+	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $F_{ij}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $F$):
+	\begin{equation}
+		\label{eq:spline}
+		\begin{split}
+			\Phi := \beta(F) \in \mathbb{R}^{n_\text{data} \times L}, \\
+			\Phi' := \beta'(F) \in \mathbb{R}^{n_\text{data} \times L}.
+		\end{split}
+	\end{equation}
+	where $n_L = n_fn_s$ and $n_s$ is the number of splines for each feature.
+\end{itemize}
+
 
 
 \section{Data selection}
-The set of indices which refers to data points with known energies (or training data points) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $n_K = |K| = 100$, here we pick $N = |T| $ . The flow of the data selection is as the following:
+The set of indices which refers to data points with known energies (or centers) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $n_K = |K| = 100$. Here we pick $N = |T| > n_K$ centers as a hyperparameter. The flow of the data selection is as the following:
 \begin{itemize}
-	\item Compute and store distance matrix $D$ given $F$
+	\item Compute and store the set of indices $K$ and the corresponding matrix of distances $D \in \mathbb{R}^{N_\text{QM9} \times N}$ by farthest-minimum-distance algorithm \at{cite Eldar} given $F$, $B$ and $N$.
 	\begin{equation}
-		D := f_{\text{dist}}(B, F) \in \mathbb{R}^{n_\text{data} \times n_\text{data}},
+		(T, D) := f_{\text{fmd}}(F, B, M),
 	\end{equation}
-	where $D$ is symmetric with zero diagonal \at{might be necessary to be stored in sparse (reduces the matrix size, instead of $n \times n$ it becomes $n(n-1)/2$) for full computation of 134k molecules}, and $B$ is a matrix which transforms the feature space (currently $B := I$). The distance between two data points of index $k$ and $m$ can also be defined by
+	in which the distance between two data points of index $k$ and $m$ is defined by
 	\begin{equation}
-		D_k(F_{m,:}) := \|F_{m,:} - F_{k,:}\|^2_B := \|B(F_{m,:} - F_{k,:})\|^2_2
+		D_k(F_{m:}) := \|F_{m:} - F_{k:}\|^2_B := \|B(F_{m:} - F_{k:})\|^2_2.
 	\end{equation}
-	\item Compute and store the set of indices $K$ by farthest-minimum-distance algorithm \at{cite Eldar} given $D$, $B$ and $M$.
+	From this, we can obtain one data point which belongs to the set $T$ by indexing
 	\begin{equation}
-		K := f_{\text{fmd}}(D, B, M),
-	\end{equation}
-	for example, we can obtain one data point which belongs to the training set by indexing
-	\begin{equation}
-		w_k := F_{k,:}, \text{ for } k \in K.
+		w_k := F_{k:}, \text{ for } k \in T.
 	\end{equation}
 \end{itemize}
 
@@ -273,25 +281,25 @@ using this, (\refeq{eq:delta}) can be re-arranged into
 \begin{equation}
 	\label{eq:delta_split}
 	\begin{split}
-		\Delta_{jK}(w)&= \frac{\D \big(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} \big)/ S_K - \big(E_j + \sum_l \psi_{jl}\big)}{\alpha_j} \\
+		\Delta_{jK}(w)&= \frac{\D \Big(\sum_{k\in K} \frac{E_k + \sum_l \psi_{kl}}{D_k} \Big)/ S_K - \Big(E_j + \sum_l \psi_{jl}\Big)}{\alpha_j} \\
 		&= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\psi_{jl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
 		&= \sum_k \frac{E_k}{\gamma_k\alpha_j} + \sum_{kl} \frac{\psi_{kl}}{\gamma_k\alpha_j} - \sum_{l} \frac{\delta_{jk}\psi_{kl}}{\alpha_j} - \frac{E_j}{\alpha_j}\\
-		&= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \big(E_j - \sum_k\frac{E_k}{\gamma_k}\big)/\alpha_j,
+		&= \sum_{kl} \frac{\psi_{kl} (1-\gamma_k\delta_{jk})}{\gamma_k\alpha_j} - \Big(E_j - \sum_k\frac{E_k}{\gamma_k}\Big)/\alpha_j,
 	\end{split}
 \end{equation}
 where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
 \begin{equation}
 	\begin{split}
-		\Delta_{jK}(w_m) &= \sum_{k,l} A_{jm, kl} \theta_{kl} - b_{jm}, \\
+		\Delta_{jK}(w_m) &= \sum_{kl} A_{jm, kl} \theta_{kl} - b_{jm}, \\
 		&= A_{jm,:}\theta - b_{jm} = (A\theta - b)_{jm}
 	\end{split}	
 \end{equation}
 where
 \begin{equation}
-	\begin{split}
-		A_{jm, kl} &= \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
-		b_{jm} &= \left(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\right)/\alpha_j(w_m).
-	\end{split}
+	A_{jm, kl} = \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
+\end{equation}
+\begin{equation}
+	b_{jm} = \Big(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\Big)/\alpha_j(w_m).
 \end{equation}
 
 
@@ -302,41 +310,52 @@ where
 
 \section{Intermediate values}
 \label{sec:intermediate}
-Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $F, D$ and $K$:
+Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $F, D$, $T$, $\Phi$ and $\Phi'$:
 \begin{itemize}
-	\item Compute the set of indices of the data points with unknown energy (or the test set):
+	\item Determine the set of labels of the initial trial points
 	\begin{equation}
-		T := \{1,2,...,n_\text{data}\} \setminus K.
+		K \subset T,
+	\end{equation}
+	for example, we can take the first 100 labels of $T$ as $K$.
+	\item Compute the set of labels of the unsupervised data points
+	\begin{equation}
+		U := T \setminus K.
+	\end{equation}
+	\item Compute the set of of labels of the data points for evaluation
+	\begin{equation}
+		W := \{1,2,...,N_\text{QM9}\} \setminus K.
 	\end{equation}
 	\item Compute intermediate values:
 	\begin{equation}
 		\label{eq:intermediate}
 		\begin{split}
-			S_K &\in \mathbb{R}^{T} := S_K(F_{m,:}) \text{ for } m \in T,\\
-			\gamma &\in \mathbb{R}^{T \times M} := \gamma_k(F_{m,:}) \text{ for } k \in K, m \in T, \\
+			S_K &\in \mathbb{R}^{n_U} := S_K(F_{m:}) \text{ for } m \in U,\\
+			\gamma &\in \mathbb{R}^{n_U \times n_K} := \gamma_k(F_{m:}) \text{ for } k \in K, m \in U, \\
 			\alpha &:= \gamma - 1.
 		\end{split}
 	\end{equation}
-	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $F_{i,j}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $F$ for the computation of the spline and its derivative):
-	\begin{equation}
-		\begin{split}
-			\Phi := \beta(F) \in \mathbb{R}^{n_\text{data} \times L}, \\
-			\Phi' := \beta'(F) \in \mathbb{R}^{n_\text{data} \times L}.
-		\end{split}
-	\end{equation}
-	where $L = n_fn_b$ and $n_b$ is the number of splines for each feature.
-	\item Compute
+	where $n_U = |U|.$
+	\item Given the splines in (\ref{eq:spline}), compute
 	\begin{equation} % ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(F[t,m]-F[t,k])
-		\phi_{m, kl} := \Phi_{m,l} - \Phi_{k,l} - \Phi'_{k,l}(F_{m,t}-F_{k,t}) \quad \text{for } m \in T, \text{ }k \in K, \text{ }l = 1,...,L,
+		\phi_{m, kl} := \Phi_{ml} - \Phi_{kl} - \Phi'_{kl}(F_{mt}-F_{kt}) \quad \text{for } m \in U, \text{ }k \in K, \text{ }l = 1,...,n_L,
 	\end{equation}
 	where
 	\begin{equation}
 		\begin{split}
-			\hat{t} &:= l \text{ mod } n_f, \\
-			t &\leftarrow \hat{t} = 0 \text{ ? } n_f : \hat{t},
+			%t &\leftarrow \hat{t} = 0 \text{ ? } n_f : \hat{t},
+			t = 
+			\begin{cases}
+				n_f,  & \text{if } \hat{t} = 0 \\
+				\hat{t}, & \text{otherwise}
+			\end{cases}
+			~~ 
 		\end{split}
 	\end{equation}
-	this results in matrix $\phi$ where the block column is indexed by $k,l$ indices.
+	with
+	\begin{equation}
+		\hat{t} := l \text{ mod } n_f,
+	\end{equation}
+	this makes sure the desired column is indexed, since $\phi_b'(w)$ is only non zero at the $t$th column position. This results in matrix $\phi$ where the block column is indexed by $k,l$ indices.
 \end{itemize}
 
 \section{Fitting the model}
@@ -355,12 +374,12 @@ For storage efficiency, it is desirable to not explicitly form the data matrix $
 We can alleviate the storage problem by writing a routine for computing $Au$ where $u$ is a variable vector, hence instead of having a matrix with $\mathcal{O}(M^2NL)$ storage we would have a vector with only $\mathcal{O}(N)$ storage. 
 This can be done by augmenting the first sum of the last line of (\refeq{eq:delta_split}) with the pre-computed intermediate values in (\refeq{eq:intermediate}):
 \begin{equation}
-	Au = \sum_{kl} \frac{\phi_{m, kl} u_{kl} (1-\gamma_{m, k}\delta_{jk})}{\gamma_{m,k}\alpha_{m,j}},
+	Au = \sum_{kl} \frac{\phi_{m, kl} u_{kl} (1-\gamma_{m k}\delta_{jk})}{\gamma_{mk}\alpha_{mj}},
 \end{equation}
 Here, CGLS \at{cite Hestenes} method is used to minimize the objective function in (\refeq{eq:min}). The memory-less form of CGLS requires not only $Au$ but also $A^\top v$ routine, which is
 \begin{equation}
 	\begin{split}
-		A^\top v = \sum_{jm} \frac{\phi_{m, kl} v_{jm} (1-\gamma_{m, k}\delta_{jk})}{\gamma_{m,k}\alpha_{m,j}}.
+		A^\top v = \sum_{jm} \frac{\phi_{m, kl} v_{jm} (1-\gamma_{m k}\delta_{jk})}{\gamma_{mk}\alpha_{mj}}.
 	\end{split}
 \end{equation}
 Given the $Au$ and $A^\top v$ routine, and $b$, the CGLS is called as follows \at{cite Krylov.jl and LinearOperators.jl}:
@@ -371,6 +390,14 @@ Given the $Au$ and $A^\top v$ routine, and $b$, the CGLS is called as follows \a
 	\end{split}
 \end{equation*}
 where $y$ is an arbitrary vector and itmax is the maximum number of iteration.
+
+
+\section{Program flow}
+
+
+\subsection{Timing and memory usage}
+\at{add formula and numerical table -- for different choices of $n_{af}, n_{mf}$}
+Store $F$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
 
 \section{Numerical experiments}
 Currently, all experiments are run on several hand-picked compounds, where each compound has $n_\text{data} \geq 250$. 
