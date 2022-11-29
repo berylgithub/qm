@@ -19,6 +19,9 @@
 \usepackage{algpseudocode}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
 \usepackage{caption}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{xparse}
 \captionsetup[table]{skip=10pt} % table skip
 
 %macros
@@ -31,6 +34,10 @@
 \def\at#1{[*** \att #1 ***]}  % text needing attention
 \def\spc{\hspace*{0.5cm}}
 
+\NewDocumentCommand{\codeword}{v}{%
+	\texttt{\textcolor{blue}{#1}}%
+}
+\lstset{language=C,keywordstyle={\bfseries \color{blue}}}
 
 
 \title{RoSeMI: Robust Shepard model for interpolation}
@@ -41,6 +48,7 @@
 
 
 \section{Feature extraction}
+\label{sec:feature}
 The very first piece which needs to be computed is the collection of molecular features. The feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
 \subsection{Atomic feature selection}
 \begin{itemize}
@@ -215,6 +223,7 @@ The splines are used to increase the dimension of the feature space; with suffic
 
 
 \section{Data selection}
+\label{sec:data}
 The set of indices which refers to data points with known energies (or centers) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $n_K = |K| = 100$. Here we pick $N = |T| > n_K$ centers as a hyperparameter. The flow of the data selection is as the following:
 \begin{itemize}
 	\item Compute and store the set of indices $K$ and the corresponding matrix of distances $D \in \mathbb{R}^{N_\text{QM9} \times N}$ by farthest-minimum-distance algorithm \at{cite Eldar} given $F$, $B$ and $N$.
@@ -232,6 +241,7 @@ The set of indices which refers to data points with known energies (or centers) 
 \end{itemize}
 
 \section{The model}
+\label{sec:model}
 The generalized Shepard model has the form of 
 \begin{equation}
 	\label{eq:shepard}
@@ -355,7 +365,7 @@ Several intermediate values need to be computed and stored in the random access 
 	\begin{equation}
 		\hat{t} := l \text{ mod } n_f,
 	\end{equation}
-	this makes sure the desired column is indexed, since $\phi_b'(w)$ is only non zero at the $t$th column position. This results in matrix $\phi$ where the block column is indexed by $k,l$ indices.
+	this makes sure the correct column is indexed, since $\phi_b'(w)$ is only non zero at the $t$th column position. This results in matrix $\phi$ where the block column is indexed by $k,l$ indices.
 \end{itemize}
 
 \section{Fitting the model}
@@ -363,12 +373,11 @@ A good prediction model is reflected by small MAD or RMSD, hence a minimization 
 \begin{equation}
     \label{eq:min}
     \begin{split}
-        \min |K| \sum_m \text{RMSD}_K(w_m)^2 &= \min \sum_m \sum_j \Delta_{jK}(w_m)^2 \\
-        &= \min \sum_{jm} \left( A\theta - b\right)_{jm}^2 \\
-        f_{\text{obj}} &:= \min \|A \theta - b\|_2^2,
+        f_{\text{obj}}(\theta):= |K| \sum_m \text{RMSD}_K(w_m)^2 = \sum_m \sum_j \Delta_{jK}(w_m)^2 = \sum_{jm} \left( A\theta - b\right)_{jm}^2
+         = \|A \theta - b\|_2^2,
     \end{split}
 \end{equation}
-the data matrix $A$ with $MN$ rows and $ML$ columns where $N = |T|$, the coefficient vector $\theta$, and the target vector $b$.
+where $A$ is the data matrix defined in section (\ref{sec:model}) with $n_Kn_U$ rows and $n_Kn_L$ columns, $\theta$ is the coefficient vector, and $b$ is the target vector.
 
 For storage efficiency, it is desirable to not explicitly form the data matrix $A$, since it grows quickly with more data points included in the training set $K$ and testing set $T$. 
 We can alleviate the storage problem by writing a routine for computing $Au$ where $u$ is a variable vector, hence instead of having a matrix with $\mathcal{O}(M^2NL)$ storage we would have a vector with only $\mathcal{O}(N)$ storage. 
@@ -389,11 +398,26 @@ Given the $Au$ and $A^\top v$ routine, and $b$, the CGLS is called as follows \a
 		\theta &\leftarrow \text{CGLS}(\text{op}, b, \text{itmax}),
 	\end{split}
 \end{equation*}
-where $y$ is an arbitrary vector and itmax is the maximum number of iteration.
+where $y$ is an arbitrary sized vector of real numbers (in Julia, $y$ can be initialized by \codeword{y = Vector{Float64}()}) and \codeword{itmax} is the maximum number of iteration.
 
 
-\section{Program flow}
+\section{Program structure}
+The main program is divided into two main subprograms: data setup and fitter. Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}), except for the raw feature extraction, which is done only once for each feature set (for example, the extraction of ACSF upon QM9 dataset is only done once). In general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. Meanwhile the fitter subprogram computes everything which depend on $\theta$ or set of index $T$.
 
+\subsection{Data setup subprogram}
+The data setup function abstraction is
+\begin{equation*}
+	(F, T, D, \phi, \phi') \leftarrow \codeword{data_setup(indices}, n_{af}, n_{mf}, n_s, N, \codeword{feature_file}, \codeword{feature_mode})	
+\end{equation*}
+where \codeword{indices} is the set of labels which will be included, in case of full QM9 dataset then \codeword{indices = 1:133885}; \codeword{feature_file} is a string which indicates the file path of a file containing the atomic feature set computed on all of the QM9 data points; \codeword{feature_mode} is a list of boolean which indicates the inclusion of sums of squares or binomial features, e.g., \codeword{feature_mode = [true, false]} means only the sums of squares will be added to the molecular features. The flow of the data setup subprogram is:
+\begin{itemize}
+	\item $F \leftarrow$ \codeword{PCA_atom(feature_file,} $n_{af}$\codeword{)}
+	\item $F \leftarrow$ \codeword{extract_mol_feature(}$F$\codeword{, feature_mode)}
+	\item $F \leftarrow$ \codeword{PCA_mol(}$F, n_{mf}$\codeword{)}
+	\item $(\phi, \phi') \leftarrow$ \codeword{extract_bspline(}$F$\codeword{)} 
+	\item $(T, D) \leftarrow$ \codeword{get_centers(}$F, N$\codeword{)}
+\end{itemize}
+	
 
 \subsection{Timing and memory usage}
 \at{add formula and numerical table -- for different choices of $n_{af}, n_{mf}$}
