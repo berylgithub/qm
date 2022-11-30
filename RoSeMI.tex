@@ -22,6 +22,7 @@
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage{xparse}
+\usepackage{textcomp}
 
 \captionsetup[table]{skip=10pt} % table skip
 
@@ -231,7 +232,7 @@ The very first piece which needs to be computed is the collection of molecular f
 
 
 \section{Splines}
-The splines are used to increase the dimension of the feature space; with sufficient number of splines for each feature, it will lead to linearly separated data points.
+The splines (bspline) are used to increase the dimension of the feature space; with sufficient number of splines for each feature, it will lead to linearly separated data points.
 \begin{itemize}
 	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $F_{ij}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $F$):
 	\begin{equation}
@@ -252,7 +253,7 @@ The splines are used to increase the dimension of the feature space; with suffic
 		\label{fig:dspline}
 		\centering
 		\includegraphics[scale=0.55]{plot/df.png}
-		\caption{The derivative of the bspline with $n_s = 8$.}
+		\caption{The derivative of bspline with $n_s = 8$.}
 	\end{figure}
 \end{itemize}
 
@@ -369,7 +370,7 @@ Several intermediate values need to be computed and stored in the random access 
 	\end{equation}
 	\item Compute the set of of labels of the data points for evaluation
 	\begin{equation}
-		W := \{1,2,...,N_\text{QM9}\} \setminus K.
+		W := \{1,2,...,n_\text{data}\} \setminus K.
 	\end{equation}
 	\item Compute intermediate values:
 	\begin{equation}
@@ -461,7 +462,7 @@ Given the set of files from section (\ref{sub:data}), the fitter function abstra
 \begin{equation}
 	(\theta, \codeword{info}) \leftarrow \codeword{fitter(data_dir, t_limit, batchsize)}
 \end{equation}
-where \codeword{data_dir} is a string that refers to the path which contains the files resulted from the data setup subprogram, \codeword{t_limit} is the solver time limit (in second), \codeword{batchsize} is an integer representing the size of mini-batch of several variables, in some cases the total memory usage of the system is over 8GB (typical Random Access Memory (RAM) size of modern computers) hence mini-batching is necessary. On the output side, \codeword{info} contains the MAE, list of timings, and list of hyperparameters used for fitting (e.g., $n_{af}, n_{mf},$ etc). The processes executed in the fitter are:
+where \codeword{data_dir} is a string that refers to the path which contains the files resulted from the data setup subprogram, \codeword{t_limit} is the solver time limit (in second), \codeword{batchsize} is an integer representing the size of mini-batch of several variables, in some cases the total memory usage of the system is over 8GB (typical Random Access Memory (RAM) size of modern computers) hence mini-batching is necessary. On the output side, \codeword{info} contains the fitting errors, list of timings, and list of fitting hyperparameters (e.g., $n_{af}, n_{mf},$ etc). The processes executed in the fitter are:
 \begin{enumerate}
 	\item Compute variables for fitting:
 	\begin{enumerate}
@@ -490,71 +491,64 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 		\item $\text{MAE} \leftarrow \codeword{get_MAE(}V_K, E)$
 		\item $\text{MAD} \leftarrow \codeword{get_MAD(}V_K, E, D, \theta, \phi, S_K, K, U\codeword{)}$, where MAD is a vector of length $n_U$. Note that the variables used to compute the MAD are the ones from step 1 (for fitting), not the ones from step 3.
 	\end{enumerate}
-
 \end{enumerate}
 
-\subsection{Timing and memory usage}
-\at{add formula and numerical table -- for different choices of $n_{af}, n_{mf}$}
-Store $F$, the storage should be bounded by $O(N)$ for most cases unless much more features are needed (although currently from experiment this causes overfitting).
 
 \section{Numerical experiments}
-Currently, all experiments are run on several hand-picked compounds, where each compound has $n_\text{data} \geq 250$. 
-Each fitting is limited to each compound type. The CGLS used is set to 500 maximum iteration for each fitting, and only returns the parameter vector $\theta$ at the end.
-The true error is described by the mean absolute error (MAE)
+The numerical experiments are based on a set of main hyperparameters:
 \begin{equation}
-	\text{MAE} := \frac{1}{N}\sum_m|E_{m} - V_K(w_m)|.
+	N = 300,~~ n_K = 100, ~~ n_f = 28, ~~ n_s = 5, ~~ n_L = n_fn_s = 140,
 \end{equation}
-The result of the fitting for each compound is shown in table \ref{tab:exp}. The pre-computation time column refers only to the computation time of the intermediate values in section \ref{sec:intermediate}. 
+which are then extended in a \textit{binary search} manner. Each \codeword{data_setup()} process roughly takes around 300s. The fitting is done using \codeword{CGLS()} with $\codeword{itmax} = 500$ and $\codeword{t_limit} = 900$s, by using only the functions to compute $Au$ and $A^\top v$ as the input variable. Currently active learning scheme has not been tested.
 
-Extensive experiments for H7C8N1 compound were also done to observe the effect of the features and bases, which is shown in table \ref{tab:exp_2}. Given a feature vector $F \in \mathbb{R}^{n_f} $ after PCA process (\refeq{eq:pca_1})-(\refeq{eq:pca_8}) and before scaling (hence actually $F:=W_{i,:}$), the binomial features refers to
+The hardware and software specification used for the experiments are:
+\begin{itemize}
+	\item Processors: 4 $\times$ Intel\textregistered Core i5-4670S CPU @3.10 GHz
+	\item Memory: 7.7 GB of RAM
+	\item Programming language: Julia 1.7.3
+\end{itemize}
+
+\subsection{Fitting results}
+\label{subsec:fitting}
+The true error of the fitting is described by the mean absolute error (MAE)
 \begin{equation}
-	B_{p} := F_{j}F_{k} ~ \text{ for } j<k, ~ p = 1,...,n_f(n_f-1)/2,
+	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - V_K(w_m)|.
 \end{equation}
-then the feature vectors are concatenated such that
-\begin{equation}
-	\hat{F} \leftarrow [F, B] \in \mathbb{R}^{n_f+n_f(n_f-1)/2},
-\end{equation}
-the "sum" variant refers to $F := F_S$ choice, and "sum(squared)" refers to $F := F_Q$ choice as in (\refeq{eq:acsf}). Then the feature vectors are scaled afterwards following (\refeq{eq:scale_1}) and (\refeq{eq:scale_2}).
+Several hand-picked fitting experiment results with the lowest MAE are shown in table \ref{tab:exp}.
 
 
-\begin{table}[h]
-	\caption{Fitting for various compounds.}
-	\label{tab:exp}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
-	\hline
-	\textbf{Compound} & \textbf{$M$} & \textbf{$N$} & \textbf{$n_f$} & \textbf{$n_b$} & \textbf{MAE (kcal/mol)} & \textbf{$f_\text{obj}$} & \textbf{\begin{tabular}[c]{@{}c@{}}Pre-comp.\\  time (s)\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}CGLS \\ time (s)\end{tabular}} \\ \hline
-	H6C5N4            & 100          & 150          & 40             & 15             & 8.298e+00               & 4.334e-08               & 0.395                                                                  & 1636.52                                                           \\ \hline
-	H6C5O3            & 100          & 150          & 40             & 15             & 7.199e+00               & 4.145e-08               & 0.399                                                                  & 1615.242                                                          \\ \hline
-	H6C5O4            & 100          & 150          & 40             & 15             & 7.008e+00               & 3.167e-08               & 0.395                                                                  & 1623.974                                                          \\ \hline
-	H6C6O2            & 100          & 150          & 40             & 15             & 7.225e+00               & 5.235e-08               & 0.606                                                                  & 1641.69                                                           \\ \hline
-	H6C6O3            & 100          & 150          & 40             & 15             & 8.963e+00               & 5.501e-08               & 0.507                                                                  & 1614.349                                                          \\ \hline
-	H6C7N2            & 100          & 150          & 40             & 15             & 6.605e+00               & 5.583e-08               & 0.391                                                                  & 1630.287                                                          \\ \hline
-	H6C7O2            & 100          & 150          & 40             & 15             & 7.67e+00                & 5.28e-08                & 0.581                                                                  & 1616.849                                                          \\ \hline
-	H7C6N3            & 100          & 150          & 40             & 15             & 5.229e+00               & 3.513e-08               & 0.395                                                                  & 1628.509                                                          \\ \hline
-	H7C8N1            & 100          & 150          & 40             & 15             & 7.442e+00               & 6.475e-08               & 0.4                                                                    & 1620.605                                                          \\ \hline
-	H10C9             & 100          & 150          & 40             & 15             & 8.849e+00               & 2.347e-08               & 0.416                                                                  & 1632.832                                                          \\ \hline
-	H12C8             & 100          & 150          & 40             & 15             & 6.719e+00               & 6.701e-09               & 0.417                                                                  & 1631.973                                                          \\ \hline
-	H12C9             & 100          & 150          & 40             & 15             & 8.793e+00               & 8.396e-09               & 0.592                                                                  & 1629.829                                                          \\ \hline
-	H16C9             & 100          & 150          & 40             & 15             & 1.05e+01                & 1.082e-10               & 0.428                                                                  & 1655.233                                                          \\ \hline
+\begin{table}[H]
+	\centering
+	\caption{Selected fitting experiment results. Here $N_\text{QM9} = 133628$, $n_K = 100$, and $n_U = 200$ for all of the experiments. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} indicates the time spent by CGLS; and \textbf{t\_pred} indicates the energy prediction time}
+	\begin{tabular}{|l|l|l|l|l|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{$n_{af}$}} & \multicolumn{1}{c|}{\textbf{$n_{mf}$}} & \multicolumn{1}{c|}{\textbf{$n_s$}} & \multicolumn{1}{c|}{\textbf{MAE (kcal/mol)}} & \multicolumn{1}{c|}{\textbf{ft\_sos}} & \multicolumn{1}{c|}{\textbf{ft\_bin}} & \multicolumn{1}{c|}{\textbf{t\_solver}} & \multicolumn{1}{c|}{\textbf{t\_pred}} \\ \hline
+		4                                    & 18                                  & 5                                      & 2335.67069                        & 0                                     & 0                                     & 409.0                                   & 93.0                                  \\ \hline
+		4                                    & 19                                  & 5                                      & 2413.86345                        & 0                                     & 0                                     & 445.0                                   & 113.0                                 \\ \hline
+		4                                    & 26                                  & 5                                      & 2623.45732                        & 0                                     & 0                                     & 566.0                                   & 160.0                                 \\ \hline
+		4                                    & 23                                  & 5                                      & 2647.25459                        & 1                                     & 0                                     & 529.0                                   & 136.0                                 \\ \hline
+		6                                    & 28                                  & 5                                      & 2651.13104                        & 0                                     & 0                                     & 623.0                                   & 179.0                                 \\ \hline
 	\end{tabular}
+	\label{tab:exp}
 \end{table}
 
-\begin{table}[h]
-	\caption{Fitting for H7C8N1 compound only, with varied features and bases.}
-	\label{tab:exp_2}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
-	\hline
-	\textbf{$M$} & \textbf{$N$} & \textbf{$n_f$} & \textbf{$n_b$} & \textbf{\begin{tabular}[c]{@{}c@{}}MAE \\ (kcal/mol)\end{tabular}} & \textbf{$f_\text{obj}$} & \textbf{\begin{tabular}[c]{@{}c@{}}Pre-comp.\\ time (s)\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}CGLS\\ time (s)\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}feature \\ type\end{tabular}}          \\ \hline
-	100          & 150          & 24             & 8              & 6.079e+00                                                          & 1.208e-06               & 0.123                                                                 & 591.844                                                          & default                                                                   \\ \hline
-	100          & 150          & 28             & 8              & 4.529e+00                                                          & 5.199e-07               & 0.142                                                                 & 747.534                                                          & default                                                                   \\ \hline
-	100          & 150          & 21             & 8              & 6.862e+00                                                          & 2.107e-06               & 0.105                                                                 & 517.05                                                           & default                                                                   \\ \hline
-	100          & 150          & 21             & 8              & 1.287e+01                                                          & 5.631e-05               & 0.112                                                                 & 513.35                                                           & \begin{tabular}[c]{@{}c@{}}binomial(\\ PCA(sum))\end{tabular}          \\ \hline
-	100          & 150          & 21             & 8              & 9.516e+00                                                          & 1.099e-04               & 0.099                                                                 & 523.964                                                          & \begin{tabular}[c]{@{}c@{}}binomial(\\ PCA(sum(squared)))\end{tabular} \\ \hline
-	100          & 150          & 102            & 8              & 8.177e+00                                                          & 6.956e-09               & 0.643                                                                 & 2333.708                                                         & default                                                                   \\ \hline
-	100          & 150          & 102            & 15             & 1.963e+01                                                          & 1.32e-09                & 1.162                                                                 & 4122.527                                                         & default                                                                   \\ \hline
-	100          & 150          & 40             & 15             & 7.442e+00                                                          & 6.475e-08               & 0.401                                                                 & 1620.606                                                         & default                                                                   \\ \hline
-	\end{tabular}
-	\end{table}
+\subsection{Memory usage}
+The computation of fitting and prediction of QM9 challenge is resource-demanding, hence we need to allocate variables responsibly such that the OS does not throw an out-of-memory exception. The first ingredient is to approximate the size of data structures allocated within the program in megabytes (MB) order of magnitude; assuming the data structure holds \codeword{Float64} entries (which is the most common data type for numerical operations and is also the most memory consuming) this can be done by a general formula
+\begin{equation}
+	\codeword{mem_usage} = (8\times 10^{-6}) \times \prod_{i}\codeword{size(data_structure, i)}, \text{ for } i = 1,2,...
+\end{equation}
+where \codeword{size(data_structure, i)} returns the number of entries of the $i$th dimension of a data structure. For example, the distance matrix $D \in \mathbb{R}^{133628 \times 300}$ with \codeword{Float64} data type, then
+\begin{equation}
+	(8\times 10^{-6}) \times 133628 \times 300 = 320.7072 \text{ MB},
+\end{equation}
+using Julia this can be confirmed easily by calling \codeword{Base.summarysize(D)*1e-6}, which gives the same result up to some roundoff error.
+
+The variable which has the largest memory usage from the experiment in the last row of table \ref{tab:exp} (experiment with largest hyperparameters)  is the block matrix $\phi$  for prediction, with
+\begin{equation}
+	(8\times 10^{-6}) \times 133628 \times 100 \times 140 = 14966.336 \text{ MB} = 14.9 \text{ GB}
+\end{equation}
+memory size. Hence mini-batching is necessary, with \codeword{batchsize = 10_000}, for each mini-batch loop the size of $\phi$ becomes $1/13$ of its actual size which is around 1GB, this fits to the 7.7 GB memory limitation. 
+
 
 \iffalse
 ========= some comments========== \\
