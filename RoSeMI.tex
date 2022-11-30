@@ -103,7 +103,18 @@ The very first piece which needs to be computed is the collection of molecular f
 	\begin{equation}
 		f^l_{ij} \leftarrow (f^l_{ij} - \underbar{$f$}_j)/ (\overline{f}_j - \underbar{$f$}_j), \text{ for } j = 1,..., n_f^\text{select}.
 	\end{equation}
-	
+	\begin{figure}[h]
+		\label{fig:PCA_atom_rat}
+		\centering
+		\includegraphics[scale=0.55]{plot/eigenvalue_atom_exp_all_1_4_18_false_false_ratio.png}
+		\caption{The ratio of each eigenvalue against the largest eigenvalue, obtained from the PCA of ACSF on atomic level.}
+	\end{figure}
+	\begin{figure}[H]
+		\label{fig:PCA_atom_dist}
+		\centering
+		\includegraphics[scale=0.55]{plot/eigenvalue_atom_exp_all_1_4_18_false_false_distribution.png}
+		\caption{$\mu_i := \sum_{i\geq k} \lambda_i \text{ for } k = 1,2,...,n_f$, obtained from the PCA of ACSF on atomic level. This shows the distribution of the eigenvalues when $i$ amount of the (sorted) eigenvalues are dropped.}
+	\end{figure}
 \end{itemize}
 	
 \subsection{Molecular feature selection}
@@ -204,6 +215,18 @@ The very first piece which needs to be computed is the collection of molecular f
 	\begin{equation}
 		F_{:j} \leftarrow (F_{:j} - \underbar{$F$}_{j})/ (\overline{F}_{j} - \underbar{$F$}_{j}), \text{ for } j = 1,2,..., n_{mf}.
 	\end{equation}
+	\begin{figure}[h]
+		\label{fig:PCA_mol_rat}
+		\centering
+		\includegraphics[scale=0.55]{plot/eigenvalue_mol_exp_all_1_4_18_false_false_ratio.png}
+		\caption{The ratio of each eigenvalue against the largest eigenvalue with hyperparameter $n_{af} = 4$, obtained from the PCA of ACSF on molecular level.}
+	\end{figure}
+	\begin{figure}[H]
+		\label{fig:PCA_mol_dist}
+		\centering
+		\includegraphics[scale=0.55]{plot/eigenvalue_mol_exp_all_1_4_18_false_false_distribution.png}
+		\caption{The distribution of the eigenvalues with hyperparameter $n_{af} = 4$. Obtained from the PCA of ACSF on molecular level.}
+	\end{figure}
 \end{itemize}
 
 
@@ -219,6 +242,18 @@ The splines are used to increase the dimension of the feature space; with suffic
 		\end{split}
 	\end{equation}
 	where $n_L = n_fn_s$ and $n_s$ is the number of splines for each feature.
+	\begin{figure}[h]
+		\label{fig:spline}
+		\centering
+		\includegraphics[scale=0.55]{plot/f.png}
+		\caption{The bspline with $n_s = 8$.}
+	\end{figure}
+	\begin{figure}[H]
+		\label{fig:dspline}
+		\centering
+		\includegraphics[scale=0.55]{plot/df.png}
+		\caption{The derivative of the bspline with $n_s = 8$.}
+	\end{figure}
 \end{itemize}
 
 
@@ -444,7 +479,7 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 		\item $\codeword{op} \leftarrow \codeword{LinearOperators(}y, Au, A^\top v \codeword{)}$
 		\item $\theta \leftarrow \codeword{CGLS(op, b, itmax, t_limit)}$
 	\end{enumerate}
-	\item Energy prediction computed in mini-batches in terms of the row numbers, i.e., for any vectors or matrices, the maximum row size is \codeword{batchsize}; e.g., $S_K$ vector for prediction has $N_\text{QM9}$ row size by default, however when computed in mini-batches, $S_K$ has \codeword{batchsize} rows for each mini-batch loop, where the total number of loops is $(N_\text{QM9} \div \codeword{batchsize}) + n$ where $n=0$ if $N_\text{QM9} \mod \codeword{batchsize} = 0$ and $n=1$ otherwise.
+	\item Energy prediction is computed in mini-batches in terms of the row numbers, i.e., for any vectors or matrices, the maximum row size is \codeword{batchsize}; e.g., $S_K$ vector for prediction has $N_\text{QM9}$ row size by default, however when computed in mini-batches, $S_K$ has \codeword{batchsize} rows for each mini-batch loop, where the total number of loops is $(N_\text{QM9} \div \codeword{batchsize}) + n$ where $n=0$ if $N_\text{QM9} \mod \codeword{batchsize} = 0$ and $n=1$ otherwise.
 	\begin{enumerate}
 		\item $S_K \leftarrow\codeword{compute_SK(}D, K, W\codeword{)}$
 		\item $\phi \leftarrow \codeword{compute_phi(}\Phi, \Phi', F, K, W\codeword{)}$
