@@ -146,11 +146,11 @@ function table_results(foldername)
     #display(setup_info)
     #display(res_info)
     out = Dict()
-    out["nK"] = res_info[:, 2]
-    out["nU"] = res_info[:, 3]
+    out["nK"] = Integer.(res_info[:, 2])
+    out["nU"] = Integer.(res_info[:, 3])
     out["n_af"] = setup_info[:, 2]
-    out["n_mf"] = res_info[:, 4]
-    out["n_basis"] = res_info[:, 5]
+    out["n_mf"] = Integer.(res_info[:, 4])
+    out["n_basis"] = Integer.(res_info[:, 5])
     out["MAE"] = res_info[:, 6]
     out["ft_sos"] = setup_info[:, 6]
     out["ft_bin"] = setup_info[:, 7]
