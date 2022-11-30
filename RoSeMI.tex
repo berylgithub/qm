@@ -22,6 +22,7 @@
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage{xparse}
+
 \captionsetup[table]{skip=10pt} % table skip
 
 %macros
@@ -402,22 +403,60 @@ where $y$ is an arbitrary sized vector of real numbers (in Julia, $y$ can be ini
 
 
 \section{Program structure}
-The main program is divided into two main subprograms: data setup and fitter. Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}), except for the raw feature extraction, which is done only once for each feature set (for example, the extraction of ACSF upon QM9 dataset is only done once). In general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. Meanwhile the fitter subprogram computes everything which depend on $\theta$ or set of index $T$.
+The main program is divided into two main subprograms: data setup and fitter. Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}), except for the raw feature extraction, which is done only once for each feature set (for example, the extraction of ACSF upon QM9 dataset is only done once). In general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. Meanwhile the fitter subprogram computes everything which depend on $\theta$ or set $T$.
 
 \subsection{Data setup subprogram}
+\label{sub:data}
 The data setup function abstraction is
 \begin{equation*}
-	(F, T, D, \phi, \phi') \leftarrow \codeword{data_setup(indices}, n_{af}, n_{mf}, n_s, N, \codeword{feature_file}, \codeword{feature_mode})	
+	(F, T, D, \phi, \phi') \leftarrow \codeword{data_setup(indices}, n_{af}, n_{mf}, n_s, N, \codeword{feature_file}, \codeword{feature_mode}),
 \end{equation*}
 where \codeword{indices} is the set of labels which will be included, in case of full QM9 dataset then \codeword{indices = 1:133885}; \codeword{feature_file} is a string which indicates the file path of a file containing the atomic feature set computed on all of the QM9 data points; \codeword{feature_mode} is a list of boolean which indicates the inclusion of sums of squares or binomial features, e.g., \codeword{feature_mode = [true, false]} means only the sums of squares will be added to the molecular features. The flow of the data setup subprogram is:
-\begin{itemize}
+\begin{enumerate}
 	\item $F \leftarrow$ \codeword{PCA_atom(feature_file,} $n_{af}$\codeword{)}
 	\item $F \leftarrow$ \codeword{extract_mol_feature(}$F$\codeword{, feature_mode)}
 	\item $F \leftarrow$ \codeword{PCA_mol(}$F, n_{mf}$\codeword{)}
-	\item $(\phi, \phi') \leftarrow$ \codeword{extract_bspline(}$F$\codeword{)} 
+	\item $(\phi, \phi') \leftarrow$ \codeword{extract_bspline(}$F, n_s$\codeword{)} 
 	\item $(T, D) \leftarrow$ \codeword{get_centers(}$F, N$\codeword{)}
-\end{itemize}
-	
+\end{enumerate}
+
+\subsection{Fitter subprogram}
+\label{sub:}
+Given the set of files from section (\ref{sub:data}), the fitter function abstraction is simplyh
+\begin{equation}
+	(\theta, \codeword{info}) \leftarrow \codeword{fitter(data_dir, t_limit, batchsize)}
+\end{equation}
+where \codeword{data_dir} is a string that refers to the path which contains the files resulted from the data setup subprogram, \codeword{t_limit} is the solver time limit (in second), \codeword{batchsize} is an integer representing the size of mini-batch of several variables, in some cases the total memory usage of the system is over 8GB (typical Random Access Memory (RAM) size of modern computers) hence mini-batching is necessary. On the output side, \codeword{info} contains the MAE, list of timings, and list of hyperparameters used for fitting (e.g., $n_{af}, n_{mf},$ etc). The processes executed in the fitter are:
+\begin{enumerate}
+	\item Compute variables for fitting:
+	\begin{enumerate}
+		\item $K \leftarrow $\codeword{select_centers(}$T$\codeword{)}
+		\item $U \leftarrow T \setminus K$
+		\item $W \leftarrow \{1,2,.., n_\text{data}\} \setminus K$ 
+		\item $S_K \leftarrow\codeword{compute_SK(}D, K, U\codeword{)}$
+		\item $\gamma \leftarrow \codeword{compute_gamma(}D, S_K, K, U\codeword{)}$
+		\item $\alpha \leftarrow \gamma .- 1$
+		\item $\phi \leftarrow \codeword{compute_phi(}\Phi, \Phi', F, K, U\codeword{)}$
+	\end{enumerate}
+	\item Fitting:
+	\begin{enumerate}
+		\item $b \leftarrow \codeword{compute_b(}E, \gamma, \alpha, K)$, where $E$ is a vector of energies.
+		\item $\codeword{op} \leftarrow \codeword{LinearOperators(}y, Au, A^\top v \codeword{)}$
+		\item $\theta \leftarrow \codeword{CGLS(op, b, itmax, t_limit)}$
+	\end{enumerate}
+	\item Energy prediction computed in mini-batches in terms of the row numbers, i.e., for any vectors or matrices, the maximum row size is \codeword{batchsize}; e.g., $S_K$ vector for prediction has $N_\text{QM9}$ row size by default, however when computed in mini-batches, $S_K$ has \codeword{batchsize} rows for each mini-batch loop, where the total number of loops is $(N_\text{QM9} \div \codeword{batchsize}) + n$ where $n=0$ if $N_\text{QM9} \mod \codeword{batchsize} = 0$ and $n=1$ otherwise.
+	\begin{enumerate}
+		\item $S_K \leftarrow\codeword{compute_SK(}D, K, W\codeword{)}$
+		\item $\phi \leftarrow \codeword{compute_phi(}\Phi, \Phi', F, K, W\codeword{)}$
+		\item $V_K \leftarrow \codeword{predict(}\theta, E, D, \phi, S_K, K, W\codeword{)}$
+	\end{enumerate}
+	\item Compute the errors:
+	\begin{enumerate}
+		\item $\text{MAE} \leftarrow \codeword{get_MAE(}V_K, E)$
+		\item $\text{MAD} \leftarrow \codeword{get_MAD(}V_K, E, D, \theta, \phi, S_K, K, U\codeword{)}$, where MAD is a vector of length $n_U$. Note that the variables used to compute the MAD are the ones from step 1 (for fitting), not the ones from step 3.
+	\end{enumerate}
+
+\end{enumerate}
 
 \subsection{Timing and memory usage}
 \at{add formula and numerical table -- for different choices of $n_{af}, n_{mf}$}
