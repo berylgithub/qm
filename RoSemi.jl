@@ -728,8 +728,8 @@ end
 compute the first sigma of the features by taking the mean of ||w-w'||^2
 for all w s.t. it doesnt double count and excludes diagonal
 """
-function get_sigma(F)
-    c = 1
+function get_sigma2(F)
+    c = 0
     ∑ = 0.
     for i ∈ axes(F, 1)
         for j ∈ axes(F, 1)
