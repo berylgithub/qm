@@ -516,6 +516,33 @@ function fit_🌹(foldername, bsize, tlimit; mad = false)
 end
 
 """
+gaussian kernel mode
+"""
+function fit_gauss(foldername, bsize, tlimit)
+    println("FITTING: $foldername")
+    # input files:
+    path = "data/$foldername/"
+    mkpath("result/$foldername")
+    file_dataset = path*"dataset.jld"
+    file_finger = path*"features.jld"
+    #file_distance = path*"distances.jld"
+    file_centers = path*"center_ids.jld"
+    #file_spline = path*"spline.jld"
+    #file_dspline = path*"dspline.jld"
+    files = [file_dataset, file_finger, file_centers]
+    dataset, F, Tidx = [load(f)["data"] for f in files]
+    F = F' # always transpose ?
+    E = map(d -> d["energy"], dataset)
+    # compute indices:
+    n_data = length(dataset); n_feature = size(F, 1);
+    Midx = Tidx[1:100] # 🌸 for now
+    Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
+    Widx = setdiff(1:n_data, Midx) # for evaluation 
+    # compute hyperparams: ...
+    
+end
+
+"""
 automatically generate data and fit based on list of molname, n_data, n_feature,M, and universe_size saved in json file 
 """
 function autofit_🌹() 
