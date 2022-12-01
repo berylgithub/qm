@@ -711,6 +711,28 @@ MAE := ∑i|ΔE_i|
 ==================================
 """
 
+"""
+==================================
+Kernel Ridge Regression models start here!
+"""
+
+function comp_gaussian_kernel(f1, f2, σ)
+    return exp(-norm(f1 - f2)^2 / (2*σ^2) )
+end
+
+function comp_gaussian(x, σ)
+    return exp.(-x / (2*σ^2))
+end
+
+
+"""
+==================================
+"""
+
+function test_gaussian()
+    
+end
+
 
 function test_spline()
     M = 5
