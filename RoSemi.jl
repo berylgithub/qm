@@ -715,28 +715,27 @@ MAE := ∑i|ΔE_i|
 ==================================
 Kernel Ridge Regression models start here!
 """
-
-function comp_gaussian_kernel(f1, f2, σ)
-    return exp(-norm(f1 - f2)^2 / (2*σ^2) )
-end
-
 function comp_gaussian(x, σ)
     return exp.(-x / (2*σ^2))
 end
 
+function comp_gaussian_elem(f1, f2, σ2)
+    return exp(-norm(f1 - f2)^2 / (2*σ2) )
+end
+
 """
-compute the first sigma of the features by taking the mean of ||w-w'||^2
-for all w s.t. it doesnt double count and excludes diagonal
+compute the first sigma^2 of the features by taking the mean of ||w-w'||^2
+for all w (s.t. it doesnt double count and excludes diagonal ?)
 """
 function get_sigma2(F)
     c = 0
     ∑ = 0.
     for i ∈ axes(F, 1)
         for j ∈ axes(F, 1)
-            if i < j
-                ∑ += (norm(F[i,:] - F[j, :])^2)
-                c += 1
-            end
+            #if i < j
+            ∑ += (norm(F[i,:] - F[j, :])^2)
+            c += 1
+            #end
         end
     end
     return ∑/c
@@ -744,11 +743,33 @@ end
 
 
 """
+generate a gaussian kernel given feature matrix
+"""
+function comp_gaussian_kernel(F, σ2)
+    s = size(F, 1)
+    K = zeros(s, s) # symmetric matrix
+    for i ∈ axes(F, 1)
+        for j ∈ axes(F, 1)
+            if j ≥ i
+                K[j, i] = comp_gaussian_elem(F[j,:], F[i,:], σ2)
+            else
+                K[j, i] = K[i, j]
+            end
+        end
+    end
+    return K
+end
+
+"""
 ==================================
 """
 
 function test_gaussian()
-    
+    F = load("data/exp_all_1/features.jld")["data"]
+    F10 = F[1:10, :]
+    σ2 =  get_sigma2(F10)
+    vecsize = size(F10, 1)
+    K = comp_gaussian_kernel(F10, σ2)
 end
 
 
