@@ -719,6 +719,7 @@ function comp_gaussian(x, σ)
     return exp.(-x / (2*σ^2))
 end
 
+# this is also used for prediction
 function comp_gaussian_elem(f1, f2, σ2)
     return exp(-norm(f1 - f2)^2 / (2*σ2) )
 end
