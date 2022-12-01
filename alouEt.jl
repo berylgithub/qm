@@ -266,6 +266,20 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
 end
 
 """
+this takes a very long time to finish, jsutified as a part of data setup
+"""
+function compute_sigma2(foldername)
+    F = load("data/$foldername/features.jld")["data"]
+    display(F)
+    t = @elapsed begin
+        σ2 = get_sigma2(F)    
+    end
+    save("data/$foldername/sigma2.jld", "data", σ2)
+    println("sigma computation time = ", t)
+end
+
+
+"""
 main fitter function, assemble LS -> fit -> save to file
 to avoid clutter in main function, called within fitting iters
 
@@ -527,10 +541,11 @@ function fit_KRR(foldername, bsize, tlimit)
     file_finger = path*"features.jld"
     #file_distance = path*"distances.jld"
     file_centers = path*"center_ids.jld"
+    file_σ2 = path*"sigma2.jld"
     #file_spline = path*"spline.jld"
     #file_dspline = path*"dspline.jld"
-    files = [file_dataset, file_finger, file_centers]
-    dataset, F, Tidx = [load(f)["data"] for f in files]
+    files = [file_dataset, file_finger, file_centers, file_σ2]
+    dataset, F, Tidx, σ2 = [load(f)["data"] for f in files]
     E = map(d -> d["energy"], dataset)
     # compute indices:
     n_data = length(dataset);
@@ -539,7 +554,7 @@ function fit_KRR(foldername, bsize, tlimit)
     Widx = setdiff(1:n_data, Midx) # for evaluation 
     # compute hyperparams: ...
     t_pre = @elapsed begin
-        σ2 =  get_sigma2(F)   
+        #σ2 =  get_sigma2(F)   
         F_train = F[Midx, :]
         K = comp_gaussian_kernel(F_train, σ2) 
     end
