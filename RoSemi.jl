@@ -724,6 +724,24 @@ function comp_gaussian(x, σ)
     return exp.(-x / (2*σ^2))
 end
 
+"""
+compute the first sigma of the features by taking the mean of ||w-w'||^2
+for all w s.t. it doesnt double count and excludes diagonal
+"""
+function get_sigma(F)
+    c = 1
+    ∑ = 0.
+    for i ∈ axes(F, 1)
+        for j ∈ axes(F, 1)
+            if i < j
+                ∑ += (norm(F[i,:] - F[j, :])^2)
+                c += 1
+            end
+        end
+    end
+    return ∑/c
+end
+
 
 """
 ==================================
