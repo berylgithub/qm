@@ -518,7 +518,7 @@ end
 """
 gaussian kernel mode
 """
-function fit_gauss(foldername, bsize, tlimit)
+function fit_KRR(foldername, bsize, tlimit)
     println("FITTING: $foldername")
     # input files:
     path = "data/$foldername/"
@@ -531,15 +531,27 @@ function fit_gauss(foldername, bsize, tlimit)
     #file_dspline = path*"dspline.jld"
     files = [file_dataset, file_finger, file_centers]
     dataset, F, Tidx = [load(f)["data"] for f in files]
-    F = F' # always transpose ?
     E = map(d -> d["energy"], dataset)
     # compute indices:
-    n_data = length(dataset); n_feature = size(F, 1);
+    n_data = length(dataset);
     Midx = Tidx[1:100] # 🌸 for now
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx) # for evaluation 
     # compute hyperparams: ...
-    
+    t_pre = @elapsed begin
+        σ2 =  get_sigma2(F)   
+        F_train = F[Midx, :]
+        K = comp_gaussian_kernel(F_train, σ2) 
+    end
+    display(K)
+    # do LS:
+    start = time()
+    θ, stat = cgls(K, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    # check MAE of training data only:
+    errors = abs.(K*θ - E[Midx]) .* 627.503
+    display(errors)
+    MAE = sum(errors)/length(errors)
+    println("pre-computation time is ",t_pre, ", MAEtrain=",MAE)
 end
 
 """
