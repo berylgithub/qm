@@ -35,3 +35,9 @@ feature length = 1950
 SOAP data setup: 1274s
 
 implement kernel ridge regression from FCHL18
+
+02.12.2023:
+- retry the sigma comptation using only 500 x 100 data, and also store the norms, and the sigma must give a nice number (rounded, but sigma0 is fine to be floating point)
+- try using the atomic features formula instead of the molecular features
+- put the timing and storage to the pdf
+
