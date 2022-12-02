@@ -571,7 +571,6 @@ function fit_KRR(foldername, bsize, tlimit)
     # check MAE of training data only:
     errors = abs.(K*θ - E[Midx]) .* 627.503
     MAE = sum(errors)/length(errors)
-    println("pre-computation time is ",t_pre, ", MAEtrain=",MAE)
     # prediction:
     t_pred = @elapsed begin
         K_pred = get_norms(F, Widx, Midx)
@@ -582,6 +581,7 @@ function fit_KRR(foldername, bsize, tlimit)
     display(errors)
     MAE = sum(errors)/length(errors)
     println([σ0, σ2])
+    println("pre-computation time is ",t_pre, ", MAEtrain=",MAE)
     println("MAE of Nqm9 = ",MAE, ", with t_pred = ", t_pred)
 end
 
