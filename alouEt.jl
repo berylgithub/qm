@@ -563,13 +563,19 @@ function fit_KRR(foldername, bsize, tlimit)
     # do LS:
     start = time()
     θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    display(stat)
     # check MAE of training data only:
     errors = abs.(K*θ - E[Midx]) .* 627.503
-    display(norm(errors - predict_KRR(F, θ, Midx, Midx, σ2)))
     MAE = sum(errors)/length(errors)
     println("pre-computation time is ",t_pre, ", MAEtrain=",MAE)
+    E_pred = predict_KRR(F, θ, Midx, Midx, σ2)
     # prediction:
-    
+    t_pred = @elapsed begin
+        E_pred = predict_KRR(F, θ, Widx, Midx, σ2)
+    end
+    errors = abs.(E_pred - E[Widx]) .* 627.503
+    MAE = sum(errors)/length(errors)
+    println("MAE of Nqm9 = ",MAE, ", with t_pred = ", t_pred)
 end
 
 """
