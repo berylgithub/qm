@@ -541,22 +541,26 @@ function fit_KRR(foldername, bsize, tlimit)
     file_finger = path*"features.jld"
     #file_distance = path*"distances.jld"
     file_centers = path*"center_ids.jld"
-    file_σ2 = path*"sigma2.jld"
+    #file_σ2 = path*"sigma2.jld"
     #file_spline = path*"spline.jld"
     #file_dspline = path*"dspline.jld"
-    files = [file_dataset, file_finger, file_centers, file_σ2]
-    dataset, F, Tidx, σ2 = [load(f)["data"] for f in files]
+    files = [file_dataset, file_finger, file_centers]
+    dataset, F, Tidx = [load(f)["data"] for f in files]
     E = map(d -> d["energy"], dataset)
     # compute indices:
     n_data = length(dataset);
-    Midx = Tidx[1:100] # 🌸 for now
+    K_indexer = 1:100 # 🌸 temporary selection
+    Midx = Tidx[K_indexer] 
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx) # for evaluation 
     # compute hyperparams: ...
     t_pre = @elapsed begin
-        #σ2 =  get_sigma2(F)   
-        F_train = F[Midx, :]
-        K = comp_gaussian_kernel(F_train, σ2) 
+        Norms = get_norms(F, Tidx, Midx)
+        σ0 =  get_sigma0(Norms)
+        scaler = 1. # 🌸 hyperparameter   
+        σ2 = scaler * σ0
+        comp_gaussian_kernel!(Norms, σ2) # generate the kernel
+        K = Norms[K_indexer, K_indexer] # since the norm matrix' entries are changed
     end
     display(K)
     println("pre-computation time is ",t_pre)
@@ -568,10 +572,11 @@ function fit_KRR(foldername, bsize, tlimit)
     errors = abs.(K*θ - E[Midx]) .* 627.503
     MAE = sum(errors)/length(errors)
     println("pre-computation time is ",t_pre, ", MAEtrain=",MAE)
-    E_pred = predict_KRR(F, θ, Midx, Midx, σ2)
     # prediction:
     t_pred = @elapsed begin
-        E_pred = predict_KRR(F, θ, Widx, Midx, σ2)
+        K_pred = get_norms(F, Widx, Midx)
+        comp_gaussian_kernel!(K_pred, σ2)
+        E_pred = K_pred*θ
     end
     errors = abs.(E_pred - E[Widx]) .* 627.503
     MAE = sum(errors)/length(errors)
