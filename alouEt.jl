@@ -579,7 +579,9 @@ function fit_KRR(foldername, bsize, tlimit)
         E_pred = K_pred*θ
     end
     errors = abs.(E_pred - E[Widx]) .* 627.503
+    display(errors)
     MAE = sum(errors)/length(errors)
+    println([σ0, σ2])
     println("MAE of Nqm9 = ",MAE, ", with t_pred = ", t_pred)
 end
 
