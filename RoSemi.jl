@@ -767,8 +767,10 @@ function get_norms(F, Tidx, Midx)
     rows = length(Tidx); cols = length(Midx)
     norms = zeros(rows, cols)
     for i ∈ eachindex(Midx)
+        k = Midx[i]
         for j ∈ eachindex(Tidx) 
-            norms[j, i] = norm(F[j,:] - F[i, :])^2
+            l = Tidx[j]
+            norms[j, i] = norm(F[l,:] - F[k, :])^2
         end
     end
     return norms
