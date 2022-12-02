@@ -760,6 +760,26 @@ function get_sigma2(F)
     return ∑/c
 end
 
+"""
+more specific σ computation (only T × K order of computations)
+"""
+function get_norms(F, Tidx, Midx)
+    rows = length(Tidx); cols = length(Midx)
+    norms = zeros(rows, cols)
+    for i ∈ eachindex(Midx)
+        for j ∈ eachindex(Tidx) 
+            norms[j, i] = norm(F[j,:] - F[i, :])^2
+        end
+    end
+    return norms
+end
+
+"""
+σ0 = <||f_i - f_j||^2>
+"""
+function get_sigma0(Norms)
+    return sum(Norms)/length(Norms)
+end
 
 """
 generate a gaussian kernel given feature matrix
@@ -777,6 +797,13 @@ function comp_gaussian_kernel(F, σ2)
         end
     end
     return K
+end
+
+"""
+compute gaussian kernel given norm matrix
+"""
+function comp_gaussian_kernel!(Norms, σ2)
+    Norms .= exp.(-Norms/(2*σ2))
 end
 
 """
