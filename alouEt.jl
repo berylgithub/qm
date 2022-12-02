@@ -559,14 +559,17 @@ function fit_KRR(foldername, bsize, tlimit)
         K = comp_gaussian_kernel(F_train, σ2) 
     end
     display(K)
+    println("pre-computation time is ",t_pre)
     # do LS:
     start = time()
-    θ, stat = cgls(K, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     # check MAE of training data only:
     errors = abs.(K*θ - E[Midx]) .* 627.503
-    display(errors)
+    display(norm(errors - predict_KRR(F, θ, Midx, Midx, σ2)))
     MAE = sum(errors)/length(errors)
     println("pre-computation time is ",t_pre, ", MAEtrain=",MAE)
+    # prediction:
+    
 end
 
 """

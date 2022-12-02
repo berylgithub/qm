@@ -732,11 +732,14 @@ prediction given the indices of W (eval data)
 function predict_KRR(F, θ, Widx, Midx, σ2)
     n_pred = length(Widx)
     E = zeros(n_pred)
-    @simd for i ∈ Widx
-        @simd for j ∈ Midx
-            @inbounds E[i] += comp_gaussian_elem(F[i,:],F[j,:],σ2)*θ[j]
+    @simd for i ∈ eachindex(Widx)
+        l = Widx[i]
+        @simd for j ∈ eachindex(Midx)
+            k = Midx[j]
+            E[i] += (comp_gaussian_elem(F[l,:],F[k,:],σ2)*θ[j])
         end
     end
+    return E
 end
 
 """
