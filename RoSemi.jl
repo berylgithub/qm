@@ -817,6 +817,7 @@ function norms_at(Fk, Fl)
             c += 1
         end
     end
+    return y
 end
 
 
