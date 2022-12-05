@@ -813,7 +813,7 @@ function norms_at(Fk, Fl)
     c = 1
     for i ∈ axes(Fk, 1)
         for j ∈ axes(Fl, 1)
-            y[c] = norm(Fk[i,:] - Fl[j, :])^2
+            y[c] = norm((@view Fk[i,:]) - @view(Fl[j, :]))^2
             c += 1
         end
     end
@@ -838,7 +838,29 @@ function get_norms_at(f, Tidx, Midx)
     return norms
 end
 
+"""
+get the σ0 out of the atomic features, with input Matrix{Vector{Float64}}
+there are 2 versions:
+    - mean of total sum 
+    - mean of mean (currently used)
+"""
+function get_sigma0_at(Norms)
+    #= s = 0.; n = 0
+    for i ∈ eachindex(Norms)
+        s += sum(Norms[i])
+        n += length(Norms[i])
+    end
+    return s/n =#
+    return mean(map(a -> mean(a), Norms)) # second ver
+end
 
+function comp_gaussian_kernel_at(Norms, σ2)
+    K = zeros(size(Norms, 1), size(Norms, 2))
+    for i ∈ eachindex(Norms)
+        K[i] = sum(exp.(-Norms[i]/(2*σ2))) # sum of gaussian of atom
+    end
+    return K
+end
 """
 === end of Atomic gaussian model ===
 """
