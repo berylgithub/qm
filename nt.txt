@@ -43,3 +43,9 @@ implement kernel ridge regression from FCHL18
 
 05.12.2023:
 - the MAE of QM9 doesn't match with lilienfields' paper??
+
+05.12.2023:
+atomic gaussian:
+- sum = 40588
+- mean = 23911
+- mean full feature (no PCA) = 25039
