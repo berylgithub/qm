@@ -41,3 +41,5 @@ implement kernel ridge regression from FCHL18
 - try using the atomic features formula instead of the molecular features
 - put the timing and storage to the pdf
 
+05.12.2023:
+- the MAE of QM9 doesn't match with lilienfields' paper??
