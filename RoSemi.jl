@@ -760,6 +760,12 @@ function get_sigma2(F)
     return ∑/c
 end
 
+
+
+"""
+===== Molecular gaussian model =====
+"""
+
 """
 more specific σ computation (only T × K order of computations)
 """
@@ -784,6 +790,60 @@ function get_sigma0(Norms)
 end
 
 """
+compute gaussian kernel given norm matrix
+"""
+function comp_gaussian_kernel!(Norms, σ2)
+    Norms .= exp.(-Norms/(2*σ2))
+end
+
+"""
+=== end of molgauss model ===
+"""
+
+"""
+=== Atomic gaussian model ===
+"""
+
+"""
+compute the sum of gaussian of atomic features given F_l and F_k
+"""
+function norms_at(Fk, Fl)
+    nk = size(Fk, 1); nl = size(Fl, 1)
+    y = zeros(nk*nl)
+    c = 1
+    for i ∈ axes(Fk, 1)
+        for j ∈ axes(Fl, 1)
+            y[c] = norm(Fk[i,:] - Fl[j, :])^2
+            c += 1
+        end
+    end
+end
+
+
+"""
+compute the atomic norms, store it in a Matrix of Vectors: 
+    Matrix{Vector{Float64}} where length(Vector) = n_atom^l, size(Matrix) = |Tidx| × |Midx|
+"""
+function get_norms_at(f, Tidx, Midx)
+    rows = length(Tidx); cols = length(Midx)
+    norms = Matrix{Vector{Float64}}(undef, rows, cols)
+    for i ∈ eachindex(Midx)
+        k = Midx[i]
+        for j ∈ eachindex(Tidx)
+            l = Tidx[j]
+            norms[j, i] = norms_at(f[k], f[l])
+        end
+    end
+    return norms
+end
+
+
+"""
+=== end of Atomic gaussian model ===
+"""
+
+"""
+UNUSED! only for comparison of correctness
 generate a gaussian kernel given feature matrix
 """
 function comp_gaussian_kernel(F, σ2)
@@ -799,13 +859,6 @@ function comp_gaussian_kernel(F, σ2)
         end
     end
     return K
-end
-
-"""
-compute gaussian kernel given norm matrix
-"""
-function comp_gaussian_kernel!(Norms, σ2)
-    Norms .= exp.(-Norms/(2*σ2))
 end
 
 """
