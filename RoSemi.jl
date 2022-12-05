@@ -857,7 +857,7 @@ end
 function comp_gaussian_kernel_at(Norms, σ2)
     K = zeros(size(Norms, 1), size(Norms, 2))
     for i ∈ eachindex(Norms)
-        K[i] = sum(exp.(-Norms[i]/(2*σ2))) # sum of gaussian of atom
+        K[i] = mean(exp.(-Norms[i]/(2*σ2))) # sum of gaussian of atom
     end
     return K
 end
