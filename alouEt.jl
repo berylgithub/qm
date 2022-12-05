@@ -228,14 +228,17 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         plot_fname = "$foldername"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
         if length(molf_file) == 0 # if molecular feature file is not provided:
             println("atomic ⟹ mol mode!")
-            F = load(feature_file)["data"] # pre-extracted atomic features
-            F = feature_extractor(F, dataset, n_af, n_mf, ft_sos=ft_sos, ft_bin=ft_bin, fname_plot_at=plot_fname, fname_plot_mol=plot_fname)
+            f = load(feature_file)["data"] # pre-extracted atomic features
+            f = PCA_atom(f, n_af; fname_plot_at=plot_fname)
+            F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
+            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname)
+            #F = feature_extractor(F, dataset, n_af, n_mf, ft_sos=ft_sos, ft_bin=ft_bin, fname_plot_at=plot_fname, fname_plot_mol=plot_fname)
         else
             println("mol only mode!")
             F = load(molf_file)["data"]
             F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname)
         end
-        F = F[data_indices, :]
+        F = F[data_indices, :]; f = f[data_indices]
         dataset = dataset[data_indices] # slice dataset
         display(dataset)
         # compute bspline:
@@ -247,7 +250,8 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         # save files:
     end
     save("data/$foldername/dataset.jld", "data", dataset)
-    save("data/$foldername/features.jld", "data", F)
+    save("data/$foldername/features_atom.jld", "data", f) # atomic features
+    save("data/$foldername/features.jld", "data", F) # molecular features
     save("data/$foldername/center_ids.jld", "data", center_ids)
     save("data/$foldername/distances.jld", "data", distances)
     save("data/$foldername/spline.jld", "data", ϕ)
@@ -538,7 +542,7 @@ function fit_KRR(foldername, bsize, tlimit)
     path = "data/$foldername/"
     mkpath("result/$foldername")
     file_dataset = path*"dataset.jld"
-    file_finger = path*"features.jld"
+    file_finger = path*"features_atom.jld" #file_finger = path*"features.jld"
     #file_distance = path*"distances.jld"
     file_centers = path*"center_ids.jld"
     #file_σ2 = path*"sigma2.jld"
@@ -553,14 +557,23 @@ function fit_KRR(foldername, bsize, tlimit)
     Midx = Tidx[K_indexer] 
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx) # for evaluation 
-    # compute hyperparams: ...
-    t_pre = @elapsed begin
+    # compute hyperparams (MOLECULAR GAUSSIAN MODE!): # ⭐
+    #= t_pre = @elapsed begin
         Norms = get_norms(F, Tidx, Midx)
         σ0 =  get_sigma0(Norms)
         scaler = 1. # 🌸 hyperparameter   
         σ2 = scaler * σ0
         comp_gaussian_kernel!(Norms, σ2) # generate the kernel
         K = Norms[K_indexer, K_indexer] # since the norm matrix' entries are changed
+    end =#
+    # ATOMIC GAUSSIAN MODE: # ⭐
+    t_pre = @elapsed begin
+        Norms = get_norms_at(F, Tidx, Midx)
+        σ0 =  get_sigma0_at(Norms)
+        scaler = 1. # 🌸 hyperparameter   
+        σ2 = scaler * σ0
+        K = comp_gaussian_kernel_at(Norms, σ2) # generate the kernel
+        K = K[K_indexer, K_indexer] # since the norm matrix' entries are changed
     end
     display(K)
     println("pre-computation time is ",t_pre)
@@ -571,10 +584,16 @@ function fit_KRR(foldername, bsize, tlimit)
     # check MAE of training data only:
     errors = abs.(K*θ - E[Midx]) .* 627.503
     MAEtrain = sum(errors)/length(errors)
-    # prediction:
-    t_pred = @elapsed begin
+    # prediction (MOL GAUSS MODE!!):
+    #= t_pred = @elapsed begin
         K_pred = get_norms(F, Widx, Midx)
         comp_gaussian_kernel!(K_pred, σ2)
+        E_pred = K_pred*θ
+    end =#
+    # ATOM GAUSS MODE:
+    t_pred = @elapsed begin
+        K_pred = get_norms_at(F, Widx, Midx)
+        K_pred = comp_gaussian_kernel_at(K_pred, σ2)
         E_pred = K_pred*θ
     end
     errors = abs.(E_pred - E[Widx]) .* 627.503
