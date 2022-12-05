@@ -590,10 +590,21 @@ function fit_KRR(foldername, bsize, tlimit)
         comp_gaussian_kernel!(K_pred, σ2)
         E_pred = K_pred*θ
     end =#
-    # ATOM GAUSS MODE:
+    # ATOM GAUSS MODE, need batch:
+    Nqm9 = length(Widx)
+    blength = Nqm9 ÷ bsize # number of batch iterations
+    batches = kl_indexer(blength, bsize)
+    bend = batches[end][end]
+    bendsize = Nqm9 - (blength*bsize)
+    push!(batches, bend+1 : bend + bendsize)
     t_pred = @elapsed begin
-        K_pred = get_norms_at(F, Widx, Midx)
-        K_pred = comp_gaussian_kernel_at(K_pred, σ2)
+        K_pred = zeros(Nqm9, length(Midx))
+        for batch in batches[1:end-1]
+            #K_pred[batch, :] .= get_norms_at(F, Widx[batch], Midx)
+            K_pred[batch, :] .= comp_gaussian_kernel_at(get_norms_at(F, Widx[batch], Midx), σ2)
+        end
+        #K_pred[batches[end], :] .= get_norms_at(F, Widx[batches[end]], Midx)
+        K_pred[batches[end], :] .= comp_gaussian_kernel_at(get_norms_at(F, Widx[batches[end]], Midx), σ2)
         E_pred = K_pred*θ
     end
     errors = abs.(E_pred - E[Widx]) .* 627.503
