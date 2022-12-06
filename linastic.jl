@@ -622,5 +622,5 @@ function get_feature_sensitivity(file_f, files_fs)
     display(MAE_mat)
     println("elapsed = ",t)
     MAEs = mean(MAE_mat, dims=1)
-    return MAEs # vector of length n_f 
+    return vec(MAEs) # vector of length n_f 
 end
