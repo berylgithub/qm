@@ -216,7 +216,7 @@ function extract_ACSF_array(infile, outfile)
     tcomp = @elapsed begin # start timer
         for i ∈ 1:n_data # loop dataset
             # generate atom datastructure:
-            coord = transpose(dataset[i]["coordinates"])
+            coord = transpose(dataset[i]["coordinates"]) .+ 1e-2 # perturb
             n_atom = dataset[i]["n_atom"]
             # compute descriptor:
             at = Atoms(coord,
