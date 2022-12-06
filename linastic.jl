@@ -619,6 +619,7 @@ function get_feature_sensitivity(file_f, files_fs)
         end
     end
     MAE_mat = reduce(hcat, errors)' # matrix of size N × n_af
+    display(MAE_mat)
     println("elapsed = ",t)
     MAEs = mean(MAE_mat, dims=1)
     return MAEs # vector of length n_f 
