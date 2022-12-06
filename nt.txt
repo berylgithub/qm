@@ -51,3 +51,9 @@ atomic gaussian:
 - sum = 40588
 - mean = 23911
 - mean full feature (no PCA) = 25039
+
+06.12.2023:
+Improving the feature quality:
+- compute the MAE := max(|\delta f|)/N, this is the sensitivity
+- compute the covariance from actual f (store for multiple usage), divide using sensitivity as the diagonals
+-  
