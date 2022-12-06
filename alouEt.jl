@@ -217,7 +217,8 @@ full data setup, in contrast to each molecule data setup, INCLUDES PCA!.
 takes in the data indices (relative to the qm9 dataset).
 if molf_file  is not empty then there will be no atomic feature extractions, only PCA on molecular level
 """
-function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, feature_file; universe_size=1_000, ft_sos=true, ft_bin=true, molf_file = "")
+function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, feature_file; 
+                    universe_size=1_000, ft_sos=true, ft_bin=true, molf_file = "", cov_file = "", sensitivity_file = "")
     println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
@@ -229,7 +230,13 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         if length(molf_file) == 0 # if molecular feature file is not provided:
             println("atomic ⟹ mol mode!")
             f = load(feature_file)["data"] # pre-extracted atomic features
-            f = PCA_atom(f, n_af; fname_plot_at=plot_fname)
+            if isempty(cov_file)
+                f = PCA_atom(f, n_af; fname_plot_at=plot_fname)
+            else
+                C = load(cov_file)["data"]
+                σ = load(sensitivity_file)["data"]
+                f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname)
+            end
             F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
             F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname)
             #F = feature_extractor(F, dataset, n_af, n_mf, ft_sos=ft_sos, ft_bin=ft_bin, fname_plot_at=plot_fname, fname_plot_mol=plot_fname)
