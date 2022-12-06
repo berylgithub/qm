@@ -176,7 +176,7 @@ params:
     ;
     - callplot is for personal use only
 """
-function PCA_atom(f, n_select; normalize=true, fname_plot_at="")
+function PCA_atom(f, n_select; normalize=true, fname_plot_at="", save_cov=false)
     # cut number of features:
     N, n_f = (length(f), size(f[1], 2))
     # compute mean vector:
@@ -205,9 +205,12 @@ function PCA_atom(f, n_select; normalize=true, fname_plot_at="")
     S ./= N
     # covariance matrix:
     C = S - s*s'
+    if save_cov
+        save("data/covariance_matrix_atomic.jld", "data", C)
+    end
     # correlation matrix:
     D = diagm(1. ./ .√ C[diagind(C)])
-    C = D*C*D
+    C = D*C*D # the diagonals are the sensitivity
     # spectral decomposition:
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
@@ -227,6 +230,67 @@ function PCA_atom(f, n_select; normalize=true, fname_plot_at="")
     #display(v)
     Q = Q[:, 1:n_select]
     #display(norm(C-Q*diagm(v)*Q'))
+    f_new = Vector{Matrix{Float64}}(undef, N)
+    @simd for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        temp_A = zeros(n_atom, n_select)
+        @simd for i ∈ 1:n_atom
+            temp_A[i,:] .= Q'*(f[l][i,:] - s)
+        end
+        f_new[l] = temp_A
+    end
+    # normalize
+    if normalize
+        maxs = map(f_el -> maximum(f_el, dims=1), f_new); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+        mins = map(f_el -> minimum(f_el, dims=1), f_new); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+        @simd for l ∈ 1:N
+            n_atom = size(f[l], 1)
+            @simd for i ∈ 1:n_atom
+                f_new[l][i,:] .= (f_new[l][i,:] .- mins) ./ (maxs .- mins) 
+            end
+        end
+    end
+    return f_new
+end
+
+
+"""
+PCA given covariance matrix C, sensitivity vector σ, and atomic features f
+"""
+function PCA_atom(f, n_select, C, σ; normalize=true, fname_plot_at="")
+    # # correlation matrix:
+    #D = diagm(1. ./ .√ C[diagind(C)])
+    #σ = C[diagind(C)]
+    D = diagm(1. ./ .√σ)
+    C = D*C*D # the diagonals are the sensitivity
+    # spectral decomposition:
+    e = eigen(C)
+    v = e.values # careful of numerical overflow and errors!!
+    Q = e.vectors
+    # compute mean of the features:
+    N, n_f = (length(f), size(f[1], 2))
+    # compute mean vector:
+    s = zeros(n_f); ∑ = zeros(n_f)
+    @simd for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        @simd for i ∈ 1:n_atom
+            ∑ .= ∑ .+ f[l][i,:] 
+        end
+        ∑ .= ∑ ./ n_atom
+        s .= s .+ ∑
+        fill!(∑, 0.) # reset
+    end
+    s ./= N
+    # plot here:
+    plot_ev(v, [1,10,20,30,40,50], "plot/eigenvalue_atom_"*fname_plot_at)
+    # sort from largest eigenvalue instead:
+    sidx = sortperm(v, rev=true)
+    v = v[sidx]
+    Q = Q[:, sidx]
+    # select eigenvalues:
+    v = v[1:n_select]
+    #display(v)
+    Q = Q[:, 1:n_select]
     f_new = Vector{Matrix{Float64}}(undef, N)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
@@ -535,4 +599,13 @@ function extract_binomial_feature(m)
         W_new[:, m+i] .= W_pca[:, b_ind[i, 1]] .* W_pca[:, b_ind[i, 2]]
     end
     save("data/ACSF_PCA_bin_$n_f.jld", "data", W_new)
+end
+
+
+"""
+compute feature sensitivity given 
+"""
+function get_feature_sensitivity(f, fs)
+
+    
 end

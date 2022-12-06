@@ -56,4 +56,3 @@ atomic gaussian:
 Improving the feature quality:
 - compute the MAE := max(|\delta f|)/N, this is the sensitivity
 - compute the covariance from actual f (store for multiple usage), divide using sensitivity as the diagonals
--  
