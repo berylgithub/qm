@@ -570,7 +570,7 @@ function fit_KRR(foldername, bsize, tlimit)
     t_pre = @elapsed begin
         Norms = get_norms_at(F, Tidx, Midx)
         σ0 =  get_sigma0_at(Norms)
-        scaler = 50. # 🌸 hyperparameter   
+        scaler = 10. # 🌸 hyperparameter   
         σ2 = scaler * σ0
         K = comp_gaussian_kernel_at(Norms, σ2) # generate the kernel
         K = K[K_indexer, K_indexer] # since the norm matrix' entries are changed
@@ -579,7 +579,7 @@ function fit_KRR(foldername, bsize, tlimit)
     println("pre-computation time is ",t_pre)
     # do LS:
     start = time()
-    θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, atol=1e-3, rtol=1e-3, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     display(stat)
     # check MAE of training data only:
     errors = abs.(K*θ - E[Midx]) .* 627.503
