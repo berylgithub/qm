@@ -579,7 +579,7 @@ function fit_KRR(foldername, bsize, tlimit)
     println("pre-computation time is ",t_pre)
     # do LS:
     start = time()
-    θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, atol=1e-3, rtol=1e-3, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, atol=√eps(1e-3), rtol=√eps(1e-3), callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     display(stat)
     # check MAE of training data only:
     errors = abs.(K*θ - E[Midx]) .* 627.503
