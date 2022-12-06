@@ -570,7 +570,7 @@ function fit_KRR(foldername, bsize, tlimit)
     t_pre = @elapsed begin
         Norms = get_norms_at(F, Tidx, Midx)
         σ0 =  get_sigma0_at(Norms)
-        scaler = 1. # 🌸 hyperparameter   
+        scaler = 50. # 🌸 hyperparameter   
         σ2 = scaler * σ0
         K = comp_gaussian_kernel_at(Norms, σ2) # generate the kernel
         K = K[K_indexer, K_indexer] # since the norm matrix' entries are changed
