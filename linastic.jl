@@ -603,9 +603,21 @@ end
 
 
 """
-compute feature sensitivity given 
+compute feature sensitivity given actual f and several perturbed f (fs)
 """
-function get_feature_sensitivity(f, fs)
-
-    
+function get_feature_sensitivity(file_f, files_fs)
+    f = load(file_f)["data"]
+    f_ps = [load(fil)["data"] for fil in files_fs]
+    errors = Vector{Vector{Float64}}()
+    for i ∈ eachindex(f)[1:10]
+        for j ∈ axes(f[i], 1) # for each atom:
+            errs = [abs.(f[i][j, :] - f_p[i][j, :]) for f_p in f_ps]
+            maxerr = max.(errs...)
+            push!(errors, maxerr)
+        end
+    end
+    MAE_mat = reduce(hcat, errors)' # matrix of size N × n_af
+    display(MAE_mat)
+    MAEs = mean(MAE_mat, dims=1)
+    return MAEs # vector of length n_f 
 end
