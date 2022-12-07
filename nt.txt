@@ -45,7 +45,7 @@ implement kernel ridge regression from FCHL18
 - the MAE of QM9 doesn't match with lilienfields' paper??
 
 05.12.2023:
-- mol gaussian: 1800
+- mol gaussian: 1800, atomic PCA by MAE -> mol PCA standard : 2239.269684670436
 - RoSeMI: 1700
 atomic gaussian:
 - sum = 40588
