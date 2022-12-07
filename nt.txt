@@ -51,6 +51,7 @@ atomic gaussian:
 - sum = 40588
 - mean = 23911
 - mean full feature (no PCA) = 25039
+- mean scaled by MAE = 22229
 
 06.12.2023:
 Improving the feature quality:

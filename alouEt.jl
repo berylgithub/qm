@@ -549,7 +549,7 @@ function fit_KRR(foldername, bsize, tlimit)
     path = "data/$foldername/"
     mkpath("result/$foldername")
     file_dataset = path*"dataset.jld"
-    file_finger = path*"features_atom.jld" #file_finger = path*"features.jld"
+    file_finger = path*"features.jld" # file_finger = path*"features_atom.jld" #
     #file_distance = path*"distances.jld"
     file_centers = path*"center_ids.jld"
     #file_σ2 = path*"sigma2.jld"
@@ -565,40 +565,40 @@ function fit_KRR(foldername, bsize, tlimit)
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx) # for evaluation 
     # compute hyperparams (MOLECULAR GAUSSIAN MODE!): # ⭐
-    #= t_pre = @elapsed begin
+    t_pre = @elapsed begin
         Norms = get_norms(F, Tidx, Midx)
         σ0 =  get_sigma0(Norms)
         scaler = 1. # 🌸 hyperparameter   
         σ2 = scaler * σ0
         comp_gaussian_kernel!(Norms, σ2) # generate the kernel
         K = Norms[K_indexer, K_indexer] # since the norm matrix' entries are changed
-    end =#
+    end
     # ATOMIC GAUSSIAN MODE: # ⭐
-    t_pre = @elapsed begin
+   #=  t_pre = @elapsed begin
         Norms = get_norms_at(F, Tidx, Midx)
         σ0 =  get_sigma0_at(Norms)
-        scaler = 10. # 🌸 hyperparameter   
+        scaler = 1. # 🌸 hyperparameter   
         σ2 = scaler * σ0
         K = comp_gaussian_kernel_at(Norms, σ2) # generate the kernel
         K = K[K_indexer, K_indexer] # since the norm matrix' entries are changed
-    end
+    end =#
     display(K)
     println("pre-computation time is ",t_pre)
     # do LS:
     start = time()
-    θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, atol=√eps(1e-3), rtol=√eps(1e-3), callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     display(stat)
     # check MAE of training data only:
     errors = abs.(K*θ - E[Midx]) .* 627.503
     MAEtrain = sum(errors)/length(errors)
     # prediction (MOL GAUSS MODE!!):
-    #= t_pred = @elapsed begin
+    t_pred = @elapsed begin
         K_pred = get_norms(F, Widx, Midx)
         comp_gaussian_kernel!(K_pred, σ2)
         E_pred = K_pred*θ
-    end =#
+    end
     # ATOM GAUSS MODE, need batch:
-    Nqm9 = length(Widx)
+    #= Nqm9 = length(Widx)
     blength = Nqm9 ÷ bsize # number of batch iterations
     batches = kl_indexer(blength, bsize)
     bend = batches[end][end]
@@ -613,7 +613,7 @@ function fit_KRR(foldername, bsize, tlimit)
         #K_pred[batches[end], :] .= get_norms_at(F, Widx[batches[end]], Midx)
         K_pred[batches[end], :] .= comp_gaussian_kernel_at(get_norms_at(F, Widx[batches[end]], Midx), σ2)
         E_pred = K_pred*θ
-    end
+    end =#
     errors = abs.(E_pred - E[Widx]) .* 627.503
     display(errors)
     MAE = sum(errors)/length(errors)
