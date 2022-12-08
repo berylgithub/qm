@@ -47,6 +47,7 @@ implement kernel ridge regression from FCHL18
 05.12.2023:
 - mol gaussian: 1800, atomic PCA by MAE -> mol PCA standard : 2239.269684670436
 - RoSeMI: 1700
+- NN (with architecture similar to ACSF paper), lowest = 1000
 atomic gaussian:
 - sum = 40588
 - mean = 23911
