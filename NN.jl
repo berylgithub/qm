@@ -1,4 +1,4 @@
-using Flux, Plots
+using Flux, Plots, ProgressMeter
 
 function test_NN()
     # generate data:
@@ -7,7 +7,10 @@ function test_NN()
     A = A .* reshape(rand(Float32, size(A, 2)), size(A));
 
     # model:
-    model = Dense(1 => 1)
+    model = Chain(
+        Dense(1 => 10, relu),   # activation function inside layer
+        Dense(10 => 1)
+        )
     pars = Flux.params(model)
     opt = Flux.Adam(0.01)
 

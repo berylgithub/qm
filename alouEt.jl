@@ -1,4 +1,5 @@
 using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3, DelimitedFiles
+using Flux
 """
 contains all tests and experiments
 """
@@ -620,6 +621,71 @@ function fit_KRR(foldername, bsize, tlimit)
     println([σ0, σ2])
     println("pre-computation time is ",t_pre, ", MAEtrain=",MAEtrain)
     println("MAE of Nqm9 = ",MAE, ", with t_pred = ", t_pred)
+end
+
+function fit_NN(foldername)
+    println("FITTING: $foldername")
+    # input files:
+    path = "data/$foldername/"
+    mkpath("result/$foldername")
+    file_dataset = path*"dataset.jld"
+    file_finger = path*"features.jld"
+    file_centers = path*"center_ids.jld"
+    files = [file_dataset, file_finger, file_centers]
+    dataset, F, Tidx = [load(f)["data"] for f in files]
+    E = map(d -> d["energy"], dataset)
+    # compute indices:
+    n_data = length(dataset);
+    K_indexer = 1:100 # 🌸 temporary selection
+    Midx = Tidx[K_indexer] 
+    Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
+    Widx = setdiff(1:n_data, Midx) # for evaluation 
+    
+    # data setup:
+    F = F' # transpose since flux takes data in column
+    nf = size(F, 1)
+    display(nf)
+    x_train = F[:, Midx]
+    E_train = reduce(hcat, E[Midx])
+    loader = Flux.DataLoader((x_train, E_train))
+
+    x_test = F[:, Widx]
+    E_test = reduce(hcat, E[Widx])
+
+    # model:
+    model = Chain(
+        Dense(nf => 15, relu),   # activation function inside layer
+        Dense(15 => 1)
+        )
+    pars = Flux.params(model)
+    opt = Flux.Adam(0.01)
+
+    # optimize:
+    losses = []
+    @showprogress for epoch in 1:1_000
+        for (x, y) in loader
+            loss, grad = Flux.withgradient(pars) do
+                # Evaluate model and loss inside gradient context:
+                y_hat = model(x)
+                Flux.mse(y_hat, y)
+            end
+            Flux.update!(opt, pars, grad)
+            push!(losses, loss)  # logging, outside gradient context
+        end
+    end
+    display(losses)
+    E_pred = vec(model(x_train))
+    errors = abs.(E_pred - E[Midx]) .* 627.503
+    display(errors)
+    MAE_train = sum(errors)/length(errors)
+    display(MAE_train)
+
+    # pred Nqm9:
+    E_pred = vec(model(x_test))
+    errors = abs.(E_pred - E[Widx]) .* 627.503
+    MAE = sum(errors)/length(errors)
+    display(MAE)
+
 end
 
 """
