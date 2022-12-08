@@ -644,7 +644,6 @@ function fit_NN(foldername)
     # data setup:
     F = F' # transpose since flux takes data in column
     nf = size(F, 1)
-    display(nf)
     x_train = F[:, Midx]
     E_train = reduce(hcat, E[Midx])
     loader = Flux.DataLoader((x_train, E_train))
