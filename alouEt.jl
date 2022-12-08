@@ -652,8 +652,8 @@ function fit_NN(foldername)
 
     # model:
     model = Chain(
-        Dense(nf => 15, relu),   # activation function inside layer
-        Dense(15 => 1)
+        Dense(nf => 10, relu),   # activation function inside layer
+        Dense(10 => 1)
         )
     pars = Flux.params(model)
     opt = Flux.Adam(0.01)
