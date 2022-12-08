@@ -650,7 +650,6 @@ function fit_NN(foldername)
     loader = Flux.DataLoader((x_train, E_train))
 
     x_test = F[:, Widx]
-    E_test = reduce(hcat, E[Widx])
 
     # model:
     model = Chain(
@@ -662,21 +661,23 @@ function fit_NN(foldername)
 
     # optimize:
     losses = []
-    @showprogress for epoch in 1:1_000
-        for (x, y) in loader
-            loss, grad = Flux.withgradient(pars) do
-                # Evaluate model and loss inside gradient context:
-                y_hat = model(x)
-                Flux.mse(y_hat, y)
+    t = @elapsed begin
+        @showprogress for epoch in 1:1_000
+            for (x, y) in loader
+                loss, grad = Flux.withgradient(pars) do
+                    # Evaluate model and loss inside gradient context:
+                    y_hat = model(x)
+                    Flux.mse(y_hat, y)
+                end
+                Flux.update!(opt, pars, grad)
+                push!(losses, loss)  # logging, outside gradient context
             end
-            Flux.update!(opt, pars, grad)
-            push!(losses, loss)  # logging, outside gradient context
         end
     end
     display(losses)
     E_pred = vec(model(x_train))
     errors = abs.(E_pred - E[Midx]) .* 627.503
-    display(errors)
+    display([E_pred, E[Midx]])
     MAE_train = sum(errors)/length(errors)
     display(MAE_train)
 
@@ -684,8 +685,8 @@ function fit_NN(foldername)
     E_pred = vec(model(x_test))
     errors = abs.(E_pred - E[Widx]) .* 627.503
     MAE = sum(errors)/length(errors)
-    display(MAE)
-
+    display([E_pred, E[Widx]])
+    println("pred Nqm9 MAE = ",MAE, " training time = ", t)
 end
 
 """
