@@ -342,8 +342,12 @@ function extract_mol_features(f)
     return F
 end
 
-
-
+"""
+divider to avoid NaNs
+"""
+function dividenan(x, a)
+    return isnan((x ./ a)[1]) ? zeros(length(x)) : x ./ a   
+end
 
 """
 this separates each atomic features into block vectors: [H,C,N,O,F, n_x/n, 1/n],
@@ -405,7 +409,7 @@ function extract_mol_features(f, dataset; ft_sos=true, ft_bin=true, sum_mode=0)
         if sum_mode == 0 # standard sum mode
             fd_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"])
         elseif sum_mode == 1 # each atom type average
-            fd_at = vcat(fd["H"] ./ fs["H"], fd["C"] ./ fs["C"], fd["N"] ./ fs["N"], fd["O"] ./ fs["O"], fd["F"] ./ fs["F"])
+            fd_at = vcat(dividenan(fd["H"], fs["H"]), dividenan(fd["C"], fs["C"]), dividenan(fd["N"], fs["N"]), dividenan(fd["O"], fs["O"]), dividenan(fd["F"], fs["F"]))
         else # average of whole atoms
             fd_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"]) ./ (fs["H"] + fs["C"] + fs["N"] + fs["O"] + fs["F"])
         end
