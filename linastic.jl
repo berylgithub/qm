@@ -342,6 +342,9 @@ function extract_mol_features(f)
     return F
 end
 
+
+
+
 """
 this separates each atomic features into block vectors: [H,C,N,O,F, n_x/n, 1/n],
 where 1/n is a scalar and x ∈ HCONF
@@ -349,7 +352,7 @@ assume features and dataset are contiguous
 params:
     - mode: features to be used: fsos, fbin
 """
-function extract_mol_features(f, dataset; ft_sos=true, ft_bin=true)
+function extract_mol_features(f, dataset; ft_sos=true, ft_bin=true, sum_mode=0)
     N, n_f0 = (length(f), size(f[1], 2))
     #n_f = n_f0*5*2 + (binomial(n_f0, 2)+n_f0)*5 # since the features are separated, ×2 since the includes also the quadratic, + binomial(n_f0, 2)*5 since it's the atomic combination
     n_f = n_f0*5
@@ -398,7 +401,15 @@ function extract_mol_features(f, dataset; ft_sos=true, ft_bin=true)
             fs[atoms[i]] += 1.0 # count the number of atoms
         end
         # concat manual, cleaner:
-        fd_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"])
+        ## sum modes:
+        if sum_mode == 0 # standard sum mode
+            fd_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"])
+        elseif sum_mode == 1 # each atom type average
+            fd_at = vcat(fd["H"] ./ fs["H"], fd["C"] ./ fs["C"], fd["N"] ./ fs["N"], fd["O"] ./ fs["O"], fd["F"] ./ fs["F"])
+        else # average of whole atoms
+            fd_at = vcat(fd["H"], fd["C"], fd["N"], fd["O"], fd["F"]) ./ (fs["H"] + fs["C"] + fs["N"] + fs["O"] + fs["F"])
+        end
+        # count of atoms:    
         fs_at = vcat(fs["H"], fs["C"], fs["N"], fs["O"], fs["F"]) ./ n_atom # N_X/N
         if ft_sos
             fds_at = vcat(fds["H"], fds["C"], fds["N"], fds["O"], fds["F"])
