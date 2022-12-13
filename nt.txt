@@ -36,15 +36,15 @@ SOAP data setup: 1274s
 
 implement kernel ridge regression from FCHL18
 
-02.12.2023:
+02.12.2022:
 - retry the sigma comptation using only 500 x 100 data, and also store the norms, and the sigma must give a nice number (rounded, but sigma0 is fine to be floating point)
 - try using the atomic features formula instead of the molecular features
 - put the timing and storage to the pdf
 
-05.12.2023:
+05.12.2022:
 - the MAE of QM9 doesn't match with lilienfields' paper??
 
-05.12.2023:
+05.12.2022:
 - mol gaussian: 1800, atomic PCA by MAE -> mol PCA standard : 2239.269684670436
 - RoSeMI: 1700
 - NN (with architecture similar to ACSF paper), lowest = 1000
@@ -54,7 +54,11 @@ atomic gaussian:
 - mean full feature (no PCA) = 25039
 - mean scaled by MAE = 22229
 
-06.12.2023:
+06.12.2022:
 Improving the feature quality:
 - compute the MAE := max(|\delta f|)/N, this is the sensitivity
 - compute the covariance from actual f (store for multiple usage), divide using sensitivity as the diagonals
+
+12.12.2022:
+3.42 kcal/mol schnet w/ 1k training 500 eval
+14.3 kcal/mol 100 train

@@ -11,15 +11,15 @@ qm9data = QM9('./qm9.db', load_only=[QM9.U0], remove_uncharacterized=True) # alr
 
 train, val, test = spk.train_test_split(
         data=qm9data,
-        num_train=1000,
-        num_val=500,
+        num_train=100,
+        num_val=10,
         split_file=os.path.join(qm9tut, "split.npz"),
     )
 
 print(len(test))
 
-train_loader = spk.AtomsLoader(train, batch_size=100, shuffle=True)
-val_loader = spk.AtomsLoader(val, batch_size=100)
+train_loader = spk.AtomsLoader(train, batch_size=50, shuffle=True)
+val_loader = spk.AtomsLoader(val, batch_size=1)
 
 atomrefs = qm9data.get_atomref(QM9.U0)
 print('U0 of hyrogen:', '{:.2f}'.format(atomrefs[QM9.U0][1][0]), 'eV')
@@ -82,7 +82,7 @@ trainer = trn.Trainer(
     validation_loader=val_loader,
 )
 
-device = "cuda" # change to 'cpu' if gpu is not available
+device = "cpu" # change to 'cpu' if gpu is not available
 n_epochs = 200 # takes about 10 min on a notebook GPU. reduces for playing around
 trainer.train(device=device, n_epochs=n_epochs)
 
