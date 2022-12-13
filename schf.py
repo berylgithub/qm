@@ -32,6 +32,8 @@ sch_feat = spk.representation.SchNet(
     cutoff=4., cutoff_network=spk.nn.cutoff.CosineCutoff, return_intermediate = True
 )
 
+# the initialization doesn't even work :
+#wacsf = spk.representation.SymmetryFunctions(n_radial=22, n_angular=5, zetas={1}, cutoff=spk.nn.cutoff.CosineCutoff, cutoff_radius=5.0, centered=False, crossterms=False, elements=frozenset({1, 6, 7, 8, 9}), sharez=True, trainz=False, initz='weighted', len_embedding=5, pairwise_elements=False)
 
 for batch in fulldata:
     f = sch_feat.forward(batch)
