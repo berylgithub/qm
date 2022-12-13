@@ -21,6 +21,9 @@ print(len(test))
 train_loader = spk.AtomsLoader(train, batch_size=50, shuffle=True)
 val_loader = spk.AtomsLoader(val, batch_size=1)
 
+for batch in train_loader:
+    print(batch[QM9.U0])
+
 atomrefs = qm9data.get_atomref(QM9.U0)
 print('U0 of hyrogen:', '{:.2f}'.format(atomrefs[QM9.U0][1][0]), 'eV')
 print('U0 of carbon:', '{:.2f}'.format(atomrefs[QM9.U0][6][0]), 'eV')
