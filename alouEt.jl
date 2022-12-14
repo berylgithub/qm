@@ -577,11 +577,48 @@ function fit_🌹(foldername, bsize, tlimit; mad = false)
     end
 end
 
+
+"""
+naive linear least squares, take whatever feature extracted
+"""
+function fit_LLS(foldername, bsize, tlimit)
+    println("FITTING LLS: $foldername")
+    # file loaders:
+    path = "data/$foldername/"
+    mkpath("result/$foldername")
+    file_dataset = path*"dataset.jld"
+    file_finger = path*"features.jld" 
+    file_centers = path*"center_ids.jld"
+    files = [file_dataset, file_finger, file_centers]
+    dataset, F, Tidx = [load(f)["data"] for f in files]
+    E = map(d -> d["energy"], dataset)
+    # compute indices:
+    n_data = length(dataset);
+    K_indexer = 1:100 # 🌸 temporary selection
+    Midx = Tidx[K_indexer] 
+    Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
+    Widx = setdiff(1:n_data, Midx) # for evaluation 
+    A = F[Midx, :] # construct the data matrix
+    start = time()
+    θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    # check MAE of training data only:
+    errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
+    MAEtrain = sum(errors)/length(errors)
+    println("MAE train = ",MAEtrain)
+
+    E_pred = F[Widx, :]*θ # pred, should be fast
+    errors = abs.(E_pred - E[Widx]) .* 627.503 # in kcal/mol
+    display(errors)
+    MAE = sum(errors)/length(errors)
+    println("MAE of Nqm9 = ",MAE)
+end
+
+
 """
 gaussian kernel mode
 """
 function fit_KRR(foldername, bsize, tlimit)
-    println("FITTING: $foldername")
+    println("FITTING KRR: $foldername")
     # input files:
     path = "data/$foldername/"
     mkpath("result/$foldername")
