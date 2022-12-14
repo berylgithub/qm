@@ -62,3 +62,6 @@ Improving the feature quality:
 12.12.2022:
 3.42 kcal/mol schnet w/ 1k training 500 eval
 14.3 kcal/mol 100 train
+
+14.12.2022:
+23 kcal/mol 100 train with just atomcount as features, with linear leastsquares solver
