@@ -450,6 +450,36 @@ function extract_mol_features(f, dataset; ft_sos=true, ft_bin=true, sum_mode=0)
     return F
 end
 
+
+"""
+molecular feature ONLY from atomic counts
+"""
+function get_atom_counts(dataset)
+    types = ["H", "C", "N", "O", "F"]
+    N = length(dataset)
+    F = zeros(length(types), N) # output, transposed
+    fs = Dict() # the atomic counts
+    for typ in types
+        fs[typ] = 0.
+    end
+    for l ∈ eachindex(dataset)
+        # compute feature:
+        n_atom = dataset[l]["n_atom"]
+        atoms = dataset[l]["atoms"] # vector of list of atoms
+        for i ∈ eachindex(atoms)
+            fs[atoms[i]] += 1.0 # count the number of atoms
+        end
+        # fill feature:
+        F[:, l] = vcat(fs["H"], fs["C"], fs["N"], fs["O"], fs["F"])
+        # reset dicts:
+        for typ in types
+            fs[typ] = 0.
+        end
+    end
+    return transpose(F) # back to row dominant
+end
+
+
 """
 PCA for molecule (matrix data type)
 params:
