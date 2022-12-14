@@ -591,7 +591,7 @@ end
 """
 naive linear least squares, take whatever feature extracted
 """
-function fit_LLS(foldername, bsize, tlimit)
+function fit_LLS(foldername, bsize, tlimit; reduced_E = false, train_labels = Vector{Int64}()::Vector{Int64})
     println("FITTING LLS: $foldername")
     # file loaders:
     path = "data/$foldername/"
@@ -606,7 +606,9 @@ function fit_LLS(foldername, bsize, tlimit)
     n_data = length(dataset);
     K_indexer = 1:100 # 🌸 temporary selection
     Midx = Tidx[K_indexer] 
-    Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
+    if !isempty(train_labels)
+        Midx = train_labels
+    end
     Widx = setdiff(1:n_data, Midx) # for evaluation 
     A = F[Midx, :] # construct the data matrix
     start = time()
@@ -620,14 +622,13 @@ function fit_LLS(foldername, bsize, tlimit)
     errors = abs.(E_pred - E[Widx]) .* 627.503 # in kcal/mol
     MAE = sum(errors)/length(errors)
     println("MAE of Nqm9 = ",MAE)
-    return F*θ # this computes the new energy for the reduced energy later # remove this later 
+    return F*θ # this computes the sum of atomic energies, used for the reduced energy later # remove this later 
 end
-
 
 """
 gaussian kernel mode
 """
-function fit_KRR(foldername, bsize, tlimit)
+function fit_KRR(foldername, bsize, tlimit; reduced_E = false, train_labels = Vector{Int64}()::Vector{Int64})
     println("FITTING KRR: $foldername")
     # input files:
     path = "data/$foldername/"
@@ -777,6 +778,44 @@ function fit_NN(foldername)
     MAE = sum(errors)/length(errors)
     display([E_pred, E[Widx]])
     println("pred Nqm9 MAE = ",MAE, " training time = ", t)
+end
+
+"""
+this first fits the atomic reference energy, then fits model as usual
+currently excludes the active training
+"""
+function fit_🌹_and_atom(foldername, bsize, tlimit)
+    println("FITTING LLS: $foldername")
+    # file loaders:
+    println("FITTING: $foldername")
+    # input files:
+    path = "data/$foldername/"
+    mkpath("result/$foldername")
+    file_dataset = path*"dataset.jld"
+    file_atomref = path*"atomref_features.jld" # feature to compute atomic reference energy, precomputed once, most likely won't change thorughout the experiments
+    file_finger = path*"features.jld" # feature for model
+    file_distance = path*"distances.jld"
+    file_centers = path*"center_ids.jld"
+    file_spline = path*"spline.jld"
+    file_dspline = path*"dspline.jld"
+    files = [file_dataset, file_atomref, file_finger, file_distance, file_centers, file_spline, file_dspline]
+    dataset, F_atom, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files]
+    
+    # index computation:
+    
+    # compute atomic reference energies:
+    
+
+
+#=     strlist = string.(vcat(MAE, θ)) # concat the MAE with the atomic ref energies
+    open("result/$foldername/result_info.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+    save() # save also the reduced energy =#
 end
 
 """
