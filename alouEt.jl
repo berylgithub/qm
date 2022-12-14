@@ -608,9 +608,9 @@ function fit_LLS(foldername, bsize, tlimit)
 
     E_pred = F[Widx, :]*θ # pred, should be fast
     errors = abs.(E_pred - E[Widx]) .* 627.503 # in kcal/mol
-    display(errors)
     MAE = sum(errors)/length(errors)
     println("MAE of Nqm9 = ",MAE)
+    return F*θ # this computes the new energy for the reduced energy later # remove this later 
 end
 
 
@@ -689,11 +689,19 @@ function fit_KRR(foldername, bsize, tlimit)
         E_pred = K_pred*θ
     end =#
     errors = abs.(E_pred - E[Widx]) .* 627.503
-    display(errors)
+    display(E_pred)
     MAE = sum(errors)/length(errors)
     println([σ0, σ2])
     println("pre-computation time is ",t_pre, ", MAEtrain=",MAEtrain)
     println("MAE of Nqm9 = ",MAE, ", with t_pred = ", t_pred)
+
+    # for reduced energy, remove later!:
+    fullidx = 1:n_data
+    K = get_norms(F, fullidx, Midx)
+    comp_gaussian_kernel!(K, σ2)
+    E_pred = K*θ
+    display(E_pred[Widx])
+    return E_pred
 end
 
 function fit_NN(foldername)
