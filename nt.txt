@@ -64,4 +64,14 @@ Improving the feature quality:
 14.3 kcal/mol 100 train
 
 14.12.2022:
-23 kcal/mol 100 train with just atomcount as features, with linear leastsquares solver
+23 kcal/mol 100 train with just atomcount as features, with linear leastsquares solver, more details:
+  L1: 23.4
+  L2: 23.3
+  K1: 540.08
+  K2: 540.04
+
+! refit the shepard model:
+* using 100 points obtained from L1 (do not recompute!!)
+* E[Midx] -= EL1[Midx]
+* predict using the model trained from the E[all\Midx] += EL1[all\Midx] to the prediction
+* compute error, the error should be reduced
