@@ -219,13 +219,13 @@ full data setup, in contrast to each molecule data setup, INCLUDES PCA!.
 takes in the data indices (relative to the qm9 dataset).
 if molf_file  is not empty then there will be no atomic feature extractions, only PCA on molecular level
 """
-function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, feature_file; 
+function data_setup(foldername, file_dataset, data_indices, n_af, n_mf, n_basis, num_centers, feature_file; 
                     universe_size=1_000, ft_sos=true, ft_bin=true, molf_file = "", cov_file = "", sensitivity_file = "")
     println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
         # load dataset:
-        dataset = load("data/qm9_dataset.jld")["data"]
+        dataset = load(file_dataset)["data"]
         # PCA:
         F = nothing
         plot_fname = "$foldername"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
