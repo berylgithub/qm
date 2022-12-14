@@ -1,5 +1,6 @@
 using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3, DelimitedFiles
-using Flux
+using Flux, ProgressMeter
+
 """
 contains all tests and experiments
 """
@@ -288,6 +289,41 @@ function compute_sigma2(foldername)
     end
     save("data/$foldername/sigma2.jld", "data", σ2)
     println("sigma computation time = ", t)
+end
+
+"""
+this only compute the number of atoms fo each type as feature, and do fmd on it to get the centers
+"""
+function mini_data_setup(foldername, file_dataset, data_indices, n_basis, num_centers; universe_size=1_000)
+    t = @elapsed begin
+        path = mkpath("data/$foldername")
+        dataset = load(file_dataset)["data"]   # load dataset
+        F = get_atom_counts(dataset) #  get the atomcounts
+        dataset = dataset[data_indices] # slice
+        F = F[data_indices, :]
+        # compute bspline:
+        ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
+        # get centers:
+        center_ids, distances = set_cluster(F, num_centers, universe_size=universe_size)
+        display(center_ids)
+    end
+    save("data/$foldername/dataset.jld", "data", dataset)
+    save("data/$foldername/features.jld", "data", F) # molecular features
+    save("data/$foldername/center_ids.jld", "data", center_ids)
+    save("data/$foldername/distances.jld", "data", distances)
+    save("data/$foldername/spline.jld", "data", ϕ)
+    save("data/$foldername/dspline.jld", "data", dϕ)
+    # write data setup info:
+    n_data = length(data_indices)
+    strlist = string.([n_data, n_basis+3, num_centers]) # n_basis + 3 by definition
+    open("data/$foldername/setup_info.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+    println("data setup is finished in ",t,"s")
 end
 
 
