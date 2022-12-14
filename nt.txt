@@ -75,3 +75,11 @@ Improving the feature quality:
 * E[Midx] -= EL1[Midx]
 * predict using the model trained from the E[all\Midx] += EL1[all\Midx] to the prediction
 * compute error, the error should be reduced
+
+! do loop exp:
+* LLS using training energies from ROSEMI's features:
+  - record the atomic reference energies (the thetas := [E_H, E_C, E_N, E_O, E_F]) (*)
+* Refit ROSEMI (or any other models) using the reference energies:
+  - compute the mean absolute value of E_red := E_l - A*theta, or E_l - n_a*theta_a, (*)
+  - compute MAE of ROSEMI fitted using reduced energy: predict the E_red of all QM9 then add E_pred = E_red + n_a*theta_a (*)
+(*) means record the values
