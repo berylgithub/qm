@@ -334,7 +334,7 @@ to avoid clutter in main function, called within fitting iters
 outputs:
     - indexes of n-maximum MAD
 """
-function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false)
+function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false, Er=Vector{Float64}()::Vector{Float64})
     N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
     nL = size(ϕ, 1); n_basis = nL/n_feature
     println(typeof(Nqm9))
@@ -406,6 +406,10 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
         VK_fin[batches[end]] .= VK
         VK = VK_fin # swap
+    end
+    display(VK)
+    if !isempty(Er) # check if the energy for fitting were reduced
+       VK .+= Er[Widx] 
     end
     println("batchpred time = ",t_batch)
 
@@ -523,7 +527,7 @@ end
 fit overloader, for custom data indices, 
 and new indexing mode: fitted with data from w ∈ T ∉ K (unsupervised), where centers = T, hence the centers should be larger than previous one now (>100)
 """
-function fit_🌹(foldername, bsize, tlimit; mad = false)
+function fit_🌹(foldername, bsize, tlimit; mad = false, reduced_E = false)
     println("FITTING: $foldername")
     # input files:
     path = "data/$foldername/"
@@ -536,8 +540,10 @@ function fit_🌹(foldername, bsize, tlimit; mad = false)
     file_dspline = path*"dspline.jld"
     files = [file_dataset, file_finger, file_distance, file_centers, file_spline, file_dspline]
     dataset, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files]
+    
     F = F' # always transpose
     E = map(d -> d["energy"], dataset)
+
     # set empty vars:
     MADmax_idxes = nothing; Midx = nothing; Widx = nothing 
     thresh = 0.9 # .9 kcal/mol desired acc 🌸
@@ -573,7 +579,11 @@ function fit_🌹(foldername, bsize, tlimit; mad = false)
         Midx = Tidx[1:100] # 🌸 for now
         Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
         Widx = setdiff(1:n_data, Midx) # for evaluation 
-        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize, tlimit) #
+        if reduced_E # if we use the reduced energy, then subtract the energy for training
+            Er = load("data/energy_reducer.jld", "data")
+            E[Midx] .-= Er["L1"][Midx] # we take L1 recipe for now 
+        end
+        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize, tlimit; Er = Er["L1"]) #
     end
 end
 
