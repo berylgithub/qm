@@ -654,7 +654,7 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_fea
     end
     if !isempty(Er) # check if the energy for fitting were reduced
         E_pred .+= Er[Widx] 
-     end
+    end
     errors = abs.(E_pred - E[Widx]) .* 627.503
     MAE = sum(errors)/length(errors)
     println([σ0, σ2])
@@ -756,6 +756,62 @@ function fit_KRR(foldername, bsize, tlimit; reduced_E = false, train_labels = Ve
     E_pred = K*θ
     display(E_pred[Widx])
     return E_pred
+end
+
+function fitter_NN(F, E, Midx, Widx, foldername; Er = Vector{Float64}()::Vector{Float64})
+    nK = length(Midx); Nqm9 = length(Widx); nf = size(F, 1)
+    x_train = F[:, Midx]
+    E_train = reduce(hcat, E[Midx])
+    loader = Flux.DataLoader((x_train, E_train))
+
+    x_test = F[:, Widx]
+
+    # model:
+    model = Chain(
+        Dense(nf => 10, relu),   # activation function inside layer
+        Dense(10 => 1)
+        )
+    pars = Flux.params(model)
+    opt = Flux.Adam(0.01)
+
+    # optimize:
+    losses = []
+    t = @elapsed begin
+        @showprogress for epoch in 1:1_000
+            for (x, y) in loader
+                loss, grad = Flux.withgradient(pars) do
+                    # Evaluate model and loss inside gradient context:
+                    y_hat = model(x)
+                    Flux.mse(y_hat, y)
+                end
+                Flux.update!(opt, pars, grad)
+                push!(losses, loss)  # logging, outside gradient context
+            end
+        end
+    end
+    E_pred = vec(model(x_train))
+    errors = abs.(E_pred - E[Midx]) .* 627.503
+    MAE_train = sum(errors)/length(errors)
+    display(MAE_train)
+
+    # pred Nqm9:
+    E_pred = vec(model(x_test))
+    if !isempty(Er) # check if the energy for fitting were reduced
+        E_pred .+= Er[Widx] 
+    end
+    errors = abs.(E_pred - E[Widx]) .* 627.503
+    MAE = sum(errors)/length(errors)
+    display([E_pred, E[Widx]])
+    println("pred Nqm9 MAE = ",MAE, " training time = ", t)
+    # save info to file
+    strlist = string.([MAE, Nqm9, nK, nf])
+    open("result/$foldername/err_$foldername.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
 end
 
 function fit_NN(foldername)
@@ -893,7 +949,7 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI")
     elseif model == "KRR" 
         fitter_KRR(F', E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_feature; Er = Ed["atomic_energies"])
     elseif model == "NN"
-    
+        fitter_NN(F, E, Midx, Widx, foldername; Er = Ed["atomic_energies"])
     elseif model == "LLS"
 
     end
