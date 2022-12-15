@@ -430,7 +430,8 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     # save all errors foreach iters:
     data = [MAE, RMSD, MADs[sidxes[end]]]
     matsize = [Nqm9, nK, nU, n_feature, n_basis]
-    strlist = vcat(string.(matsize), [lstrip(@sprintf "%16.8e" s) for s in data], string(get_mad), string.([t_ab, t_ls, t_batch]))
+    #strlist = vcat(string.(matsize), [lstrip(@sprintf "%16.8e" s) for s in data], string(get_mad), string.([t_ab, t_ls, t_batch]))
+    strlist = string.(vcat(MAE, matsize, [t_ab, t_ls, t_batch]))
     open("result/$mol_name/err_$mol_name.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -655,7 +656,6 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_fea
         E_pred .+= Er[Widx] 
      end
     errors = abs.(E_pred - E[Widx]) .* 627.503
-    display(E_pred)
     MAE = sum(errors)/length(errors)
     println([σ0, σ2])
     println("pre-computation time is ",t_pre, ", MAEtrain=",MAEtrain)
@@ -827,7 +827,7 @@ end
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
-function fit_🌹_and_atom(foldername, bsize, tlimit; model="rosemi")
+function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI")
     # file loaders:
     println("FITTING: $foldername")
     # input files:
@@ -885,10 +885,10 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="rosemi")
         for s ∈ strlist
             str*=s*"\t"
         end
-        print(io, str*"\t")
+        print(io, str)
     end
     # model fitting:
-    if model=="rosemi"
+    if model=="ROSEMI"
         MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize, tlimit; Er = Ed["atomic_energies"])
     elseif model == "KRR" 
         fitter_KRR(F', E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_feature; Er = Ed["atomic_energies"])
