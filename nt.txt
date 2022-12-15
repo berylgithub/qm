@@ -69,6 +69,7 @@ Improving the feature quality:
   L2: 23.3
   K1: 540.08
   K2: 540.04
+23.8 kcal/mol: fit atomref w/ 100 E -> use reduced E for ROSEMi fit with 100 E.
 
 ! refit the shepard model:
 * using 100 points obtained from L1 (do not recompute!!)
