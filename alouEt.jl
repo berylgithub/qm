@@ -337,7 +337,6 @@ outputs:
 function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false, Er=Vector{Float64}()::Vector{Float64})
     N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
     nL = size(ϕ, 1); n_basis = nL/n_feature
-    println(typeof(Nqm9))
     println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])   
 
     # !!!! using LinearOperators !!!:
@@ -627,6 +626,51 @@ end
 """
 gaussian kernel mode
 """
+function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_feature; Er = Vector{Float64}()::Vector{Float64})
+    nK = length(Midx); Nqm9 = length(Widx)
+    t_pre = @elapsed begin
+        Norms = get_norms(F, Tidx, Midx)
+        σ0 =  get_sigma0(Norms)
+        scaler = 1. # 🌸 hyperparameter   
+        σ2 = scaler * σ0
+        comp_gaussian_kernel!(Norms, σ2) # generate the kernel
+        K = Norms[K_indexer, K_indexer] # since the norm matrix' entries are changed
+    end
+    display(K)
+    println("pre-computation time is ",t_pre)
+    # do LS:
+    start = time()
+    θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    display(stat)
+    # check MAE of training data only:
+    errors = abs.(K*θ - E[Midx]) .* 627.503
+    MAEtrain = sum(errors)/length(errors)
+    # prediction (MOL GAUSS MODE!!):
+    t_pred = @elapsed begin
+        K_pred = get_norms(F, Widx, Midx)
+        comp_gaussian_kernel!(K_pred, σ2)
+        E_pred = K_pred*θ
+    end
+    if !isempty(Er) # check if the energy for fitting were reduced
+        E_pred .+= Er[Widx] 
+     end
+    errors = abs.(E_pred - E[Widx]) .* 627.503
+    display(E_pred)
+    MAE = sum(errors)/length(errors)
+    println([σ0, σ2])
+    println("pre-computation time is ",t_pre, ", MAEtrain=",MAEtrain)
+    println("MAE of Nqm9 = ",MAE, ", with t_pred = ", t_pred)
+    # save info to file
+    strlist = string.([MAE, Nqm9, nK, n_feature])
+    open("result/$foldername/err_$foldername.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+end
+
 function fit_KRR(foldername, bsize, tlimit; reduced_E = false, train_labels = Vector{Int64}()::Vector{Int64})
     println("FITTING KRR: $foldername")
     # input files:
@@ -783,7 +827,7 @@ end
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
-function fit_🌹_and_atom(foldername, bsize, tlimit)
+function fit_🌹_and_atom(foldername, bsize, tlimit; model="rosemi")
     # file loaders:
     println("FITTING: $foldername")
     # input files:
@@ -809,7 +853,6 @@ function fit_🌹_and_atom(foldername, bsize, tlimit)
     A = F_atom[Midx, :] # construct the data matrix
     start = time()
     θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
-    # check MAE of training data only:
     errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
     MAEtrain = sum(errors)/length(errors)
     println("atomic MAE train = ",MAEtrain)
@@ -828,13 +871,32 @@ function fit_🌹_and_atom(foldername, bsize, tlimit)
         end
         print(io, str*"\n")
     end
+    # reduced energy data structure:
     Ed = Dict()
     Ed["theta"] = θ # or the atom reference energy
     Ed["atomic_energies"] = E_atom # sum of the atom ref energy
     save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
     # fit ROSEMI (or main model):
     E[Midx] .-= E_atom[Midx] # reduce training energy
-    MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize, tlimit; Er = Ed["atomic_energies"])
+    # write model header string:
+    strlist = [model]
+    open("result/$foldername/err_$foldername.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\t")
+    end
+    # model fitting:
+    if model=="rosemi"
+        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize, tlimit; Er = Ed["atomic_energies"])
+    elseif model == "KRR" 
+        fitter_KRR(F', E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_feature; Er = Ed["atomic_energies"])
+    elseif model == "NN"
+    
+    elseif model == "LLS"
+
+    end
 end
 
 """
