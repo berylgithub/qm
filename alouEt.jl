@@ -590,6 +590,34 @@ end
 """
 naive linear least squares, take whatever feature extracted
 """
+function fitter_LLS(F, E, Midx, Widx, foldername, tlimit; Er = Vector{Float64}()::Vector{Float64})
+    nK = length(Midx); Nqm9 = length(Widx); n_f = size(F, 2)
+    A = F[Midx, :] # construct the data matrix
+    start = time()
+    θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    # check MAE of training data only:
+    errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
+    MAEtrain = sum(errors)/length(errors)
+    println("MAE train = ",MAEtrain)
+
+    E_pred = F[Widx, :]*θ # pred, should be fast
+    if !isempty(Er) # check if the energy for fitting were reduced
+        E_pred .+= Er[Widx] 
+    end
+    errors = abs.(E_pred - E[Widx]) .* 627.503 # in kcal/mol
+    MAE = sum(errors)/length(errors)
+    println("MAE of Nqm9 = ",MAE)
+    # save info to file
+    strlist = string.([MAE, Nqm9, nK, n_f])
+    open("result/$foldername/err_$foldername.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+end
+
 function fit_LLS(foldername, bsize, tlimit; reduced_E = false, train_labels = Vector{Int64}()::Vector{Int64})
     println("FITTING LLS: $foldername")
     # file loaders:
@@ -886,6 +914,7 @@ currently excludes the active training
 function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI")
     # file loaders:
     println("FITTING: $foldername")
+    println("model type = ", model)
     # input files:
     path = "data/$foldername/"
     mkpath("result/$foldername")
@@ -949,9 +978,9 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI")
     elseif model == "KRR" 
         fitter_KRR(F', E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_feature; Er = Ed["atomic_energies"])
     elseif model == "NN"
-        fitter_NN(F, E, Midx, Widx, foldername; Er = Ed["atomic_energies"])
+        fitter_NN(F, E, Midx, Widx, foldername; Er = Ed["atomic_energies"]) # no tlimit yet, but mostly dont really matter
     elseif model == "LLS"
-
+        fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"])
     end
 end
 
