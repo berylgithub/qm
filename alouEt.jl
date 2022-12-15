@@ -407,7 +407,6 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         VK_fin[batches[end]] .= VK
         VK = VK_fin # swap
     end
-    display(VK)
     if !isempty(Er) # check if the energy for fitting were reduced
        VK .+= Er[Widx] 
     end
@@ -781,11 +780,10 @@ function fit_NN(foldername)
 end
 
 """
-this first fits the atomic reference energy, then fits model as usual
+this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
 function fit_🌹_and_atom(foldername, bsize, tlimit)
-    println("FITTING LLS: $foldername")
     # file loaders:
     println("FITTING: $foldername")
     # input files:
@@ -800,22 +798,43 @@ function fit_🌹_and_atom(foldername, bsize, tlimit)
     file_dspline = path*"dspline.jld"
     files = [file_dataset, file_atomref, file_finger, file_distance, file_centers, file_spline, file_dspline]
     dataset, F_atom, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files]
-    
+    F = F'; E = map(d -> d["energy"], dataset)
     # index computation:
-    
+    n_data = length(dataset); n_feature = size(F, 1);
+    K_indexer = 1:100 # 🌸 temporary selection
+    Midx = Tidx[K_indexer] 
+    Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
+    Widx = setdiff(1:n_data, Midx)
     # compute atomic reference energies:
-    
-
-
-#=     strlist = string.(vcat(MAE, θ)) # concat the MAE with the atomic ref energies
-    open("result/$foldername/result_info.txt","a") do io
+    A = F_atom[Midx, :] # construct the data matrix
+    start = time()
+    θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    # check MAE of training data only:
+    errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
+    MAEtrain = sum(errors)/length(errors)
+    println("atomic MAE train = ",MAEtrain)
+    E_pred = F_atom[Widx, :]*θ
+    errors = abs.(E_pred - E[Widx]) .* 627.503 # in kcal/mol
+    MAE = sum(errors)/length(errors)
+    println("atomic MAE of Nqm9 = ",MAE)
+    E_atom = F_atom*θ # the sum of atomic energies
+    E_red_mean = mean(abs.(E - E_atom)) .* 627.503 # mean of reduced energy
+    # save MAE and atomref energies to file
+    strlist = string.(vcat(MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
+    open("result/$foldername/atomref_info.txt","a") do io
         str = ""
         for s ∈ strlist
             str*=s*"\t"
         end
         print(io, str*"\n")
     end
-    save() # save also the reduced energy =#
+    Ed = Dict()
+    Ed["theta"] = θ # or the atom reference energy
+    Ed["atomic_energies"] = E_atom # sum of the atom ref energy
+    save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
+    # fit ROSEMI (or main model):
+    E[Midx] .-= E_atom[Midx] # reduce training energy
+    MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize, tlimit; Er = Ed["atomic_energies"])
 end
 
 """
