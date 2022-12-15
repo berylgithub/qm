@@ -84,3 +84,14 @@ Improving the feature quality:
   - compute the mean absolute value of E_red := E_l - A*theta, or E_l - n_a*theta_a, (*)
   - compute MAE of ROSEMI fitted using reduced energy: predict the E_red of all QM9 then add E_pred = E_red + n_a*theta_a (*)
 (*) means record the values
+
+15.12.2022:
+atomref info, MAE in kcal/mol while the rest are in Hartree:
+
+	MAE	E_H	E_C	E_N	E_O	E_F
+	21.2	-0.6	-38.07	-54.74	-75.22	-99.86
+
+Shephard fitting info, MAE in kcal/mol:
+
+	MAE nK  nU	n_af	n_mf	n_basis	
+	23.7  100 200	4	18	5	
