@@ -581,20 +581,21 @@ The hardware and software specification used for the experiments are:
 
 \subsection{Fitting results}
 \label{subsec:fitting}
-The true error of the fitting is described by the mean absolute error (MAE)
+The true error of the fitting is described by the mean absolute error (MAE) of the energies
 \begin{equation}
 	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - \hat{E}_m|,
 \end{equation}
-where $\hat{E}$ is the vector of predicted energies. 
-Several hand-picked fitting experiment results with the lowest MAE are shown in table \ref{tab:exp}.
+where $\hat{E}$ is the vector of predicted energies. Here $N_\text{QM9} = 133628$, $n_K = 100$, $n_U = 200$, and $N = 300$ for all of the experiments. 
 
+\subsubsection{Shepard model}
+Several hand-picked fitting experiment results of the with the lowest MAE are shown in table \ref{tab:exp}.
 
 \begin{table}[H]
 	\centering
-	\caption{Selected fitting experiment results. Here $N_\text{QM9} = 133628$, $n_K = 100$, and $n_U = 200$ for all of the experiments. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} indicates the time spent by CGLS; and \textbf{t\_pred} indicates the energy prediction time. MAE is the mean absolute error of the energies in kcal/mol.}
+	\caption{Selected fitting experiment results. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} is the time spent by CGLS; and \textbf{t\_pred} is the energy prediction time. MAE is in kcal/mol.}
 	\begin{tabular}{|l|l|l|l|l|l|l|l|}
 		\hline
-		\multicolumn{1}{|c|}{\textbf{$n_{af}$}} & \multicolumn{1}{c|}{\textbf{$n_{mf}$}} & \multicolumn{1}{c|}{\textbf{$n_s$}} & \multicolumn{1}{c|}{\textbf{MAE}} & \multicolumn{1}{c|}{\textbf{ft\_sos}} & \multicolumn{1}{c|}{\textbf{ft\_bin}} & \multicolumn{1}{c|}{\textbf{t\_solver}} & \multicolumn{1}{c|}{\textbf{t\_pred}} \\ \hline
+		\multicolumn{1}{|c|}{\textbf{$n_{af}$}} & \multicolumn{1}{c|}{\textbf{$n_{mf}$}} & \multicolumn{1}{c|}{\textbf{$n_s$}} &\multicolumn{1}{c|}{\textbf{MAE}} & \multicolumn{1}{c|}{\textbf{ft\_sos}} & \multicolumn{1}{c|}{\textbf{ft\_bin}} & \multicolumn{1}{c|}{\textbf{t\_solver}} & \multicolumn{1}{c|}{\textbf{t\_pred}} \\ \hline
 		4                                    & 18                                  & 5                                      & 2335                        & 0                                     & 0                                     & 409                                   & 93                                  \\ \hline
 		4                                    & 19                                  & 5                                      & 2413                        & 0                                     & 0                                     & 445                                   & 113                                 \\ \hline
 		4                                    & 26                                  & 5                                      & 2623                        & 0                                     & 0                                     & 566                                   & 160                                 \\ \hline
@@ -603,6 +604,9 @@ Several hand-picked fitting experiment results with the lowest MAE are shown in 
 	\end{tabular}
 	\label{tab:exp}
 \end{table}
+
+\subsubsection{Fitting with reduced energies}
+
 
 \subsection{Memory usage}
 The computation of fitting and prediction of QM9 challenge is resource-demanding, hence we need to allocate variables responsibly such that the OS does not throw an out-of-memory exception. The first ingredient is to approximate the size of data structures allocated within the program in megabytes (MB) order of magnitude; assuming the data structure holds \codeword{Float64} entries (which is the most common data type for numerical operations and is also the most memory consuming) this can be done by a general formula
