@@ -70,8 +70,26 @@ The very first piece which needs to be computed is the collection of molecular f
 	\end{equation}
 	The correlation matrix can be formed by
 	\begin{equation}
-		C' := DCD, ~~ D = \text{Diag}(1\sqrt{C_{ii}}).
+		C' := DCD, ~~ D = \text{Diag}(1/\sqrt{C_{ii}});
 	\end{equation}
+	alternatively, we can use the sensitivity of the atomic features as the scaling factor
+	\begin{equation}
+		D = \text{Diag}(1/\sigma_j),
+	\end{equation}
+	where the sensitivity vector's entries are
+	\begin{equation}
+		\sigma_j = \frac{1}{\sum_l n^l_\text{atom}}\sum_{li} (d_k)^l_{ij},
+	\end{equation}
+	where
+	\begin{equation}
+		(d_k)^l_{ij} := \max |f^l_{ij} - (\hat{f}_k)^l_{ij}|~~\text{ for }k = 1,2,...,
+	\end{equation}
+	where $\hat{f_k}$ is the set of perturbed atomic features, obtained by perturbing the atomic coordinates randomly
+	\begin{equation}
+		x \leftarrow x \pm 0.01,
+	\end{equation}
+	and using the perturbed coordinates to extract the atomic features $\hat{f}_k$.
+
 	Select the eigenvectors such that they correspond to the $n_{af}$ largest eigenvalues. They are obtained by first doing the spectral decomposition of the correlation matrix
 	\begin{equation}
 		C' = Q\Lambda Q^\top,
@@ -261,7 +279,7 @@ The splines (bspline) are used to increase the dimension of the feature space; w
 
 \section{Data selection}
 \label{sec:data}
-The set of indices which refers to data points with known energies (or centers) $K$ is chosen by the farthest-distance-algorithm variations, where the imposed challenge is $n_K = |K| = 100$. Here we pick $N = |T| > n_K$ centers as a hyperparameter. The flow of the data selection is as the following:
+The set of indices which refers to data points with known energies (or centers) $K$ is chosen by the farthest-distance-algorithm variations, where the challenge imposes $n_K = |K| = 100$. Here we pick $N = |T| > n_K$ centers as a hyperparameter. The flow of the data selection is as the following:
 \begin{itemize}
 	\item Compute and store the set of indices $K$ and the corresponding matrix of distances $D \in \mathbb{R}^{N_\text{QM9} \times N}$ by farthest-minimum-distance algorithm \at{cite Eldar} given $F$, $B$ and $N$.
 	\begin{equation}
@@ -354,7 +372,7 @@ where
 
 \subsection{Gaussian kernel}
 \label{subsec:gaussian}
-Let $A$ be the data matrix, then if it is constructed by the Gaussian kernel
+Let $A$ be the data matrix, if it is constructed by the Gaussian kernel then
 \begin{equation}
 	\label{eq:gaussian}
 	A_{ij} = \text{exp}(-\|w_{i:} - w_{j:}\|^2 / 2\sigma),
@@ -367,12 +385,23 @@ where $c \in \mathbb{R}$ is a hyperparameter, and
 \begin{equation}
 	\sigma_0 = \frac{1}{Nn_K}\sum_{i \in T, j \in K}\text{exp}(-\|w_{i:} - w_{j:}\|^2).
 \end{equation} 
-
-\subsection{Neural network}
-\label{subsec:NN}
+The target vector is the energies indexed by $K$:
+\begin{equation}
+	\label{eq:lineartargetvector}
+	b_i := E_{i \in K}.
+\end{equation}
 
 \subsection{Linear least squares}
 \label{subsec:LLS}
+The linear least squares (LLS) model simply uses the feature matrix as the data matrix, hence
+\begin{equation}
+	A_{ij} := F_{i\in K, j},
+\end{equation}
+with the target vector in (\ref{eq:lineartargetvector}).
+
+\subsection{Neural network}
+\label{subsec:NN}
+\at{insert standard neural network formula here}
 
 
 \iffalse
@@ -430,6 +459,7 @@ Several intermediate values need to be computed and stored in the random access 
 \end{itemize}
 
 \section{Fitting the model}
+\subsection{Shepard model}
 A good prediction model is reflected by small MAD or RMSD, hence a minimization routine is required. In order to solve the minimzation problem, a linear sysem or least squares formulation is needed. For example, if the RMSD is chosen as the objective function then the problem formulation would be
 \begin{equation}
     \label{eq:min}
@@ -460,6 +490,19 @@ Given the $Au$ and $A^\top v$ routine, and $b$, the CGLS is called as follows \a
 	\end{split}
 \end{equation*}
 where $y$ is an arbitrary sized vector of real numbers (in Julia, $y$ can be initialized by \codeword{y = Vector{Float64}()}) and \codeword{itmax} is the maximum number of iteration.
+\subsection{Linear models}
+The Gaussian kernel and linear least squares can be fitted in a straightforward manner, the linear system is
+\begin{equation}
+	A \theta = b,
+\end{equation}
+this can be implemented simply by
+\begin{equation*}
+	\theta \leftarrow \codeword{CGLS(}A, b,\codeword{itmax)},
+\end{equation*}
+we construct the $A$ explicitly here since it is cheap and fast to compute with only a maximum of 100 row size.
+
+\subsection{Neural network}
+
 
 
 \section{Program structure}
@@ -471,7 +514,7 @@ The data setup function abstraction is
 \begin{equation*}
 	(F, T, D, \phi, \phi') \leftarrow \codeword{data_setup(indices}, n_{af}, n_{mf}, n_s, N, \codeword{feature_file}, \codeword{feature_mode}),
 \end{equation*}
-where \codeword{indices} is the set of labels which will be included, in case of full QM9 dataset then \codeword{indices = 1:133885}; \codeword{feature_file} is a string which indicates the file path of a file containing the atomic feature set computed on all of the QM9 data points; \codeword{feature_mode} is a list of boolean which indicates the inclusion of sums of squares or binomial features, e.g., \codeword{feature_mode = [true, false]} means only the sums of squares will be added to the molecular features. The flow of the data setup subprogram is:
+where \codeword{indices} is the set of labels which will be included, in case of full QM9 dataset then \codeword{indices} = $1:N_\text{QM9}$; \codeword{feature_file} is a string which indicates the file path of a file containing the atomic feature set computed on all of the QM9 data points; \codeword{feature_mode} is a list of boolean which indicates the inclusion of sums of squares or binomial features, e.g., \codeword{feature_mode = [true, false]} means only the sums of squares will be added to the molecular features. The flow of the data setup subprogram is:
 \begin{enumerate}
 	\item $F \leftarrow$ \codeword{PCA_atom(feature_file,} $n_{af}$\codeword{)}
 	\item $F \leftarrow$ \codeword{extract_mol_feature(}$F$\codeword{, feature_mode)}
@@ -504,7 +547,7 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 		\item $\codeword{op} \leftarrow \codeword{LinearOperators(}y, Au, A^\top v \codeword{)}$
 		\item $\theta \leftarrow \codeword{CGLS(op, b, itmax, t_limit)}$
 	\end{enumerate}
-	\item Energy prediction is computed in mini-batches in terms of the row numbers, i.e., for any vectors or matrices, the maximum row size is \codeword{batchsize}; e.g., $S_K$ vector for prediction has $N_\text{QM9}$ row size by default, however when computed in mini-batches, $S_K$ has \codeword{batchsize} rows for each mini-batch loop, where the total number of loops is $(N_\text{QM9} \div \codeword{batchsize}) + n$ where $n=0$ if $N_\text{QM9} \mod \codeword{batchsize} = 0$ and $n=1$ otherwise.
+	\item Energy prediction is computed in mini-batches in terms of the row numbers, i.e., for any vectors or matrices, the maximum row size is \codeword{batchsize}; e.g., $S_K$ vector for prediction has $N_\text{QM9}$ row size by default, however when computed in mini-batches, $S_K$ has \codeword{batchsize} rows for each mini-batch loop, where the total number of loops is $\codeword{ceil}(N_\text{QM9}/\codeword{batchsize})$.
 	\begin{enumerate}
 		\item $S_K \leftarrow\codeword{compute_SK(}D, K, W\codeword{)}$
 		\item $\phi \leftarrow \codeword{compute_phi(}\Phi, \Phi', F, K, W\codeword{)}$
@@ -521,9 +564,11 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 \section{Numerical experiments}
 The numerical experiments are based on a set of main hyperparameters:
 \begin{equation}
-	N = 300,~~ n_K = 100, ~~ n_f = 28, ~~ n_s = 5, ~~ n_L = n_fn_s = 140,
+	N = 300,~~ n_K = 100, ~~ n_f = 28, ~~ n_s = 5, ~~ n_L = n_fn_s = 140, ~~ \codeword{t_limit} = 900 \text{seconds}
 \end{equation}
-which are then extended in a \textit{binary search} manner. Each \codeword{data_setup()} process roughly takes around 300s. The fitting is done using \codeword{CGLS()} with $\codeword{itmax} = 500$ and $\codeword{t_limit} = 900$s, by using only the functions to compute $Au$ and $A^\top v$ as the input variable. Currently active learning scheme has not been tested.
+which are then extended in a \textit{binary search} manner. Each \codeword{data_setup()} process roughly takes around 300s. 
+The fitting is done using \codeword{CGLS()} with $\codeword{itmax} = 500$; specifically for the Shepard model, it requires the functions to compute $Au$ and $A^\top v$ as the input variable. 
+Currently active learning scheme has not been tested.
 
 The hardware and software specification used for the experiments are:
 \begin{itemize}
@@ -543,15 +588,15 @@ Several hand-picked fitting experiment results with the lowest MAE are shown in 
 
 \begin{table}[H]
 	\centering
-	\caption{Selected fitting experiment results. Here $N_\text{QM9} = 133628$, $n_K = 100$, and $n_U = 200$ for all of the experiments. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} indicates the time spent by CGLS; and \textbf{t\_pred} indicates the energy prediction time}
+	\caption{Selected fitting experiment results. Here $N_\text{QM9} = 133628$, $n_K = 100$, and $n_U = 200$ for all of the experiments. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} indicates the time spent by CGLS; and \textbf{t\_pred} indicates the energy prediction time. MAE is the mean absolute error of the energies in kcal/mol.}
 	\begin{tabular}{|l|l|l|l|l|l|l|l|}
 		\hline
-		\multicolumn{1}{|c|}{\textbf{$n_{af}$}} & \multicolumn{1}{c|}{\textbf{$n_{mf}$}} & \multicolumn{1}{c|}{\textbf{$n_s$}} & \multicolumn{1}{c|}{\textbf{MAE (kcal/mol)}} & \multicolumn{1}{c|}{\textbf{ft\_sos}} & \multicolumn{1}{c|}{\textbf{ft\_bin}} & \multicolumn{1}{c|}{\textbf{t\_solver}} & \multicolumn{1}{c|}{\textbf{t\_pred}} \\ \hline
-		4                                    & 18                                  & 5                                      & 2335.67069                        & 0                                     & 0                                     & 409.0                                   & 93.0                                  \\ \hline
-		4                                    & 19                                  & 5                                      & 2413.86345                        & 0                                     & 0                                     & 445.0                                   & 113.0                                 \\ \hline
-		4                                    & 26                                  & 5                                      & 2623.45732                        & 0                                     & 0                                     & 566.0                                   & 160.0                                 \\ \hline
-		4                                    & 23                                  & 5                                      & 2647.25459                        & 1                                     & 0                                     & 529.0                                   & 136.0                                 \\ \hline
-		6                                    & 28                                  & 5                                      & 2651.13104                        & 0                                     & 0                                     & 623.0                                   & 179.0                                 \\ \hline
+		\multicolumn{1}{|c|}{\textbf{$n_{af}$}} & \multicolumn{1}{c|}{\textbf{$n_{mf}$}} & \multicolumn{1}{c|}{\textbf{$n_s$}} & \multicolumn{1}{c|}{\textbf{MAE}} & \multicolumn{1}{c|}{\textbf{ft\_sos}} & \multicolumn{1}{c|}{\textbf{ft\_bin}} & \multicolumn{1}{c|}{\textbf{t\_solver}} & \multicolumn{1}{c|}{\textbf{t\_pred}} \\ \hline
+		4                                    & 18                                  & 5                                      & 2335                        & 0                                     & 0                                     & 409                                   & 93                                  \\ \hline
+		4                                    & 19                                  & 5                                      & 2413                        & 0                                     & 0                                     & 445                                   & 113                                 \\ \hline
+		4                                    & 26                                  & 5                                      & 2623                        & 0                                     & 0                                     & 566                                   & 160                                 \\ \hline
+		4                                    & 23                                  & 5                                      & 2647                        & 1                                     & 0                                     & 529                                   & 136                                 \\ \hline
+		6                                    & 28                                  & 5                                      & 2651                        & 0                                     & 0                                     & 623                                   & 179                                 \\ \hline
 	\end{tabular}
 	\label{tab:exp}
 \end{table}
@@ -571,7 +616,7 @@ The variable which has the largest memory usage from the experiment in the last 
 \begin{equation}
 	(8\times 10^{-6}) \times 133628 \times 100 \times 140 = 14966.336 \text{ MB} = 14.9 \text{ GB}
 \end{equation}
-memory size. Hence mini-batching is necessary, with \codeword{batchsize = 10_000}, for each mini-batch loop the size of $\phi$ becomes $1/13$ of its actual size which is around 1GB, this fits to the 7.7 GB memory limitation. 
+memory size. Hence mini-batching is necessary, with \codeword{batchsize = 10_000}, for each mini-batch loop the size of $\phi$ becomes $1/13$ of its actual size which is around 1GB. 
 
 
 \iffalse
