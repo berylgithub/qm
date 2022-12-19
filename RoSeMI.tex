@@ -54,7 +54,7 @@
 The very first piece which needs to be computed is the collection of molecular features. The feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
 \subsection{Atomic feature selection}
 \begin{itemize}
-	\item Compute the atomic features using ACSF (\at{cite Behler}). This gives a row vector $f^l_{i:}$ with length $n^\text{atom}_f = 51$ for each atom $i$ in a molecule $l$. Apply this to all molecules in the dataset, hence there are a total of $N$ ACSF matrices $f^l$.
+	\item Compute the atomic features using ACSF (\at{cite Behler}). This gives a row vector $f^l_{i:}$ with length $n^\text{atom}_f = 51$ for each atom $i$ in a molecule $l$. Apply this to all molecules in the dataset, hence there are a total of $N_\text{QM9}$ ACSF matrices $f^l$.
 	\item In order to select the most relevant features, we do the \textbf{principal component analysis} (PCA), first by computing the mean vectors and the matrix $S$ by
 	\begin{equation}
 		\begin{split}
@@ -70,7 +70,7 @@ The very first piece which needs to be computed is the collection of molecular f
 	\end{equation}
 	The correlation matrix can be formed by
 	\begin{equation}
-		C' := DCD, ~~ D = \text{Diag}(1\sqrt{C_{ii}})
+		C' := DCD, ~~ D = \text{Diag}(1\sqrt{C_{ii}}).
 	\end{equation}
 	Select the eigenvectors such that they correspond to the $n_{af}$ largest eigenvalues. They are obtained by first doing the spectral decomposition of the correlation matrix
 	\begin{equation}
@@ -279,6 +279,9 @@ The set of indices which refers to data points with known energies (or centers) 
 
 \section{The model}
 \label{sec:model}
+
+\subsection{Shepard model}
+\label{subsec:shepard}
 The generalized Shepard model has the form of 
 \begin{equation}
 	\label{eq:shepard}
@@ -349,6 +352,27 @@ where
 	b_{jm} = \Big(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\Big)/\alpha_j(w_m).
 \end{equation}
 
+\subsection{Gaussian kernel}
+\label{subsec:gaussian}
+Let $A$ be the data matrix, then if it is constructed by the Gaussian kernel
+\begin{equation}
+	\label{eq:gaussian}
+	A_{ij} = \text{exp}(-\|w_{i:} - w_{j:}\|^2 / 2\sigma),
+\end{equation}
+where
+\begin{equation}
+	\sigma = c\sigma_0,
+\end{equation}
+where $c \in \mathbb{R}$ is a hyperparameter, and
+\begin{equation}
+	\sigma_0 = \frac{1}{Nn_K}\sum_{i \in T, j \in K}\text{exp}(-\|w_{i:} - w_{j:}\|^2).
+\end{equation} 
+
+\subsection{Neural network}
+\label{subsec:NN}
+
+\subsection{Linear least squares}
+\label{subsec:LLS}
 
 
 \iffalse
