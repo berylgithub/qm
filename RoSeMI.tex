@@ -78,11 +78,11 @@ The very first piece which needs to be computed is the collection of molecular f
 	\end{equation}
 	where the sensitivity vector's entries are
 	\begin{equation}
-		\sigma_j = \frac{1}{\sum_l n^l_\text{atom}}\sum_{li} (d_k)^l_{ij},
+		\sigma_j = \frac{1}{\sum_l n^l_\text{atom}}\sum_{li} d^l_{ij},
 	\end{equation}
 	where
 	\begin{equation}
-		(d_k)^l_{ij} := \max |f^l_{ij} - (\hat{f}_k)^l_{ij}|~~\text{ for }k = 1,2,...,
+		d^l_{ij} := \max |f^l_{ij} - (\hat{f}_k)^l_{ij}|~~\text{ for }k = 1,2,...,
 	\end{equation}
 	where $\hat{f_k}$ is the set of perturbed atomic features, obtained by perturbing the atomic coordinates randomly
 	\begin{equation}
@@ -410,6 +410,8 @@ with the target vector in (\ref{eq:lineartargetvector}).
 
 \section{Intermediate values}
 \label{sec:intermediate}
+
+\subsection{Shepard model}
 Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $F, D$, $T$, $\Phi$ and $\Phi'$:
 \begin{itemize}
 	\item Determine the set of labels of the initial trial points
@@ -491,7 +493,7 @@ Given the $Au$ and $A^\top v$ routine, and $b$, the CGLS is called as follows \a
 \end{equation*}
 where $y$ is an arbitrary sized vector of real numbers (in Julia, $y$ can be initialized by \codeword{y = Vector{Float64}()}) and \codeword{itmax} is the maximum number of iteration.
 \subsection{Linear models}
-The Gaussian kernel and linear least squares can be fitted in a straightforward manner, the linear system is
+The Gaussian kernel and LLS models can be fitted in a straightforward manner, the linear system is
 \begin{equation}
 	A \theta = b,
 \end{equation}
@@ -499,7 +501,7 @@ this can be implemented simply by
 \begin{equation*}
 	\theta \leftarrow \codeword{CGLS(}A, b,\codeword{itmax)},
 \end{equation*}
-we construct the $A$ explicitly here since it is cheap and fast to compute with only a maximum of 100 row size.
+$A$ is constructed explicitly here since it is cheap and fast to compute with only a maximum of 100 row size.
 
 \subsection{Neural network}
 
@@ -564,7 +566,7 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 \section{Numerical experiments}
 The numerical experiments are based on a set of main hyperparameters:
 \begin{equation}
-	N = 300,~~ n_K = 100, ~~ n_f = 28, ~~ n_s = 5, ~~ n_L = n_fn_s = 140, ~~ \codeword{t_limit} = 900 \text{seconds}
+	N = 300,~~ n_K = 100, ~~ n_f = 28, ~~ n_s = 5, ~~ n_L = n_fn_s = 140, ~~ \codeword{t_limit} = 900
 \end{equation}
 which are then extended in a \textit{binary search} manner. Each \codeword{data_setup()} process roughly takes around 300s. 
 The fitting is done using \codeword{CGLS()} with $\codeword{itmax} = 500$; specifically for the Shepard model, it requires the functions to compute $Au$ and $A^\top v$ as the input variable. 
@@ -581,8 +583,9 @@ The hardware and software specification used for the experiments are:
 \label{subsec:fitting}
 The true error of the fitting is described by the mean absolute error (MAE)
 \begin{equation}
-	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - V_K(w_m)|.
+	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - \hat{E}_m|,
 \end{equation}
+where $\hat{E}$ is the vector of predicted energies. 
 Several hand-picked fitting experiment results with the lowest MAE are shown in table \ref{tab:exp}.
 
 
@@ -608,13 +611,18 @@ The computation of fitting and prediction of QM9 challenge is resource-demanding
 \end{equation}
 where \codeword{size(data_structure, i)} returns the number of entries of the $i$th dimension of a data structure. For example, the distance matrix $D \in \mathbb{R}^{133628 \times 300}$ with \codeword{Float64} data type, then
 \begin{equation}
-	(8\times 10^{-6}) \times 133628 \times 300 = 320.7072 \text{ MB},
+	B_NX := B_N \times 300 = 320.7072 \text{ MB},
 \end{equation}
-using Julia this can be confirmed easily by calling \codeword{Base.summarysize(D)*1e-6}, which gives the same result up to some roundoff error.
+where
+\begin{equation}
+	B_N := (8\times 10^{-6}) \times 133628 \approx 1.069
+\end{equation}
+is the storage needed for $N$ entries of \codeword{Float64} in MB.
+Using Julia this can be confirmed easily by calling \codeword{Base.summarysize(D)*1e-6}, which gives the same result up to some roundoff error.
 
 The variable which has the largest memory usage from the experiment in the last row of table \ref{tab:exp} (experiment with largest hyperparameters)  is the block matrix $\phi$  for prediction, with
 \begin{equation}
-	(8\times 10^{-6}) \times 133628 \times 100 \times 140 = 14966.336 \text{ MB} = 14.9 \text{ GB}
+	B_NXY := B_N \times 100 \times 140 = 14966.336 \text{ MB} = 14.9 \text{ GB}
 \end{equation}
 memory size. Hence mini-batching is necessary, with \codeword{batchsize = 10_000}, for each mini-batch loop the size of $\phi$ becomes $1/13$ of its actual size which is around 1GB. 
 
