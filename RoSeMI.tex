@@ -398,7 +398,7 @@ where
 Let $A$ be the data matrix, if it is constructed by the Gaussian kernel then
 \begin{equation}
 	\label{eq:gaussian}
-	A_{ij} = \text{exp}(-\|w_{i:} - w_{j:}\|^2 / 2\sigma),
+	A_{ij} = \text{exp}(-\|w_{i:} - w_{j:}\|^2 / 2\sigma), ~~\text{for }i \in K, j \in K,
 \end{equation}
 where
 \begin{equation}
@@ -418,6 +418,7 @@ The target vector is the energies indexed by $K$:
 \label{subsec:LLS}
 The linear least squares (LLS) model simply uses the feature matrix as the data matrix, hence
 \begin{equation}
+	\label{eq:lls}
 	A_{ij} := F_{i\in K, j},
 \end{equation}
 with the target vector in (\ref{eq:lineartargetvector}).
@@ -527,7 +528,7 @@ this can be implemented simply by
 $A$ is constructed explicitly here since it is cheap and fast to compute with only a maximum of 100 row size.
 
 \subsection{Neural network}
-
+\at{standard neural network fitting procedure}
 
 
 \section{Program structure}
@@ -611,11 +612,12 @@ The true error of the fitting is described by the mean absolute error (MAE) of t
 where $\hat{E}$ is the vector of predicted energies. Here $N_\text{QM9} = 133628$, $n_K = 100$, $n_U = 200$, and $N = 300$ for all of the experiments. 
 
 \subsubsection{Shepard model}
-Several hand-picked fitting experiment results of the with the lowest MAE are shown in table \ref{tab:exp}.
+\label{subsubsec:shepard}
+Several hand-picked fitting experiment results of the with the lowest MAE are shown in table \ref{tab:shepard_exp}.
 
 \begin{table}[H]
 	\centering
-	\caption{Selected fitting experiment results. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} is the time spent by CGLS; and \textbf{t\_pred} is the energy prediction time. MAE is in kcal/mol.}
+	\caption{Selected fitting experiment results. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} is the time spent by CGLS; and \textbf{t\_pred} is the energy prediction time. \textbf{MAE} is in kcal/mol.}
 	\begin{tabular}{|l|l|l|l|l|l|l|l|}
 		\hline
 		\multicolumn{1}{|c|}{\textbf{$n_{af}$}} & \multicolumn{1}{c|}{\textbf{$n_{mf}$}} & \multicolumn{1}{c|}{\textbf{$n_s$}} &\multicolumn{1}{c|}{\textbf{MAE}} & \multicolumn{1}{c|}{\textbf{ft\_sos}} & \multicolumn{1}{c|}{\textbf{ft\_bin}} & \multicolumn{1}{c|}{\textbf{t\_solver}} & \multicolumn{1}{c|}{\textbf{t\_pred}} \\ \hline
@@ -625,11 +627,58 @@ Several hand-picked fitting experiment results of the with the lowest MAE are sh
 		4                                    & 23                                  & 5                                      & 2647                        & 1                                     & 0                                     & 529                                   & 136                                 \\ \hline
 		6                                    & 28                                  & 5                                      & 2651                        & 0                                     & 0                                     & 623                                   & 179                                 \\ \hline
 	\end{tabular}
-	\label{tab:exp}
+	\label{tab:shepard_exp}
 \end{table}
 
 \subsubsection{Fitting with reduced energies}
+\label{subsubsec:ered}
+Fitting the reduced molecular energy serves to reduce the molecular energy fitting difficulty by decreasing the order of magnitude of the fitted energy, since by default the molecular energy itself is quite large (e.g., the internal energy at $0$ Kelvin $U_0$ of QM9 molecules are between $\mathcal{O}(100)$ to $\mathcal{O}(1000)$ in Hartree unit). We can obtain the reduced energy of a molecule by removing the sum of atomic energies in each molecule
+\begin{equation}
+	E^\text{red} = E - \sum_{j \in P} N_j E^\text{atom}_j,
+\end{equation}
+where $P$ is a set of atom types, $N_j$ is the count of the atom type $j$ within a fixed molecule, and $E^\text{atom}_j$ is the the energy of atom type $j$.
 
+The atomic energy itself can be obtained by fitting a LLS model. For QM9 challenge, (\ref{eq:lls}) can be used to obtain the atomic energies, explicitly by defining
+\begin{equation}
+	\begin{split}
+		A_{i:} &:= [N^i_\text{H}, N^i_\text{C}, N^i_\text{O}, N^i_\text{N}, N^i_\text{F}], \\
+		\theta &:= [E^\text{atom}_\text{H}, E^\text{atom}_\text{C}, E^\text{atom}_\text{O}, E^\text{atom}_\text{N}, E^\text{atom}_\text{F}], \\
+		b_i &:= E_i, \\
+		\text{for }i &\in K.
+	\end{split}
+\end{equation}
+Using the set of index $K$ obtained in the same way as the one in the first row of table \ref{tab:shepard_exp}, the result of the atomic energies fitting is shown in table \ref{tab:atomic_exp}. The MAE from fitting the atomic energies is in fact refers to the mean absolute value of the $E_\text{red}$ of all molecules in the QM9 dataset itself.
+
+\begin{table}[H]
+	\centering
+	\caption{Result of fitting for atomic energies. \textbf{MAE} and the energies are in kcal/mol.}
+	\begin{tabular}{|l|l|l|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{MAE}} & \multicolumn{1}{c|}{$E^\text{atom}_\text{H}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{C}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{O}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{N}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{F}$} \\ \hline
+		21.2  &	-376.5  & -23888.9 & -34349.3 & -47200.6 & -62662.2 \\ \hline
+	\end{tabular}
+	\label{tab:atomic_exp}
+\end{table}
+
+The fitting experiments with $E_\text{red}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. Note that after prediction, the MAE is computed from
+\begin{equation}
+	\text{MAE} = \frac{1}{N_{QM9}} \sum_{m \in W} |E_m - (\hat{E}_m + E_m^\text{red})|,
+\end{equation}
+hence it recovers the original order of magnitude of the energies.
+
+\begin{table}[H]
+	\centering
+	\caption{Fitting using reduced energy $E_\text{red}$. RoSeMI refers to the Shepard model, KRR refers to the Gaussian kernel model, LLS is the linear least squares model, and NN is the neural network model. \textbf{MAE} is in kcal/mol.}
+	\begin{tabular}{|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{model}} & \multicolumn{1}{|c|}{\textbf{MAE}} \\ \hline
+		RoSeMI & 23.7 \\ \hline
+		KRR & 21.3 \\ \hline
+		NN & 21.1 \\ \hline
+		LLS & 19.4 \\ \hline
+	\end{tabular}
+	\label{tab:red_exp}
+\end{table}
 
 \subsection{Memory usage}
 The computation of fitting and prediction of QM9 challenge is resource-demanding, hence we need to allocate variables responsibly such that the OS does not throw an out-of-memory exception. The first ingredient is to approximate the size of data structures allocated within the program in megabytes (MB) order of magnitude; assuming the data structure holds \codeword{Float64} entries (which is the most common data type for numerical operations and is also the most memory consuming) this can be done by a general formula
@@ -647,7 +696,7 @@ where
 is the storage needed for $N$ entries of \codeword{Float64} in MB.
 Using Julia this can be confirmed easily by calling \codeword{Base.summarysize(D)*1e-6}, which gives the same result up to some roundoff error.
 
-The variable which has the largest memory usage from the experiment in the last row of table \ref{tab:exp} (experiment with largest hyperparameters)  is the block matrix $\phi$  for prediction, with
+The variable which has the largest memory usage from the experiment in the last row of table \ref{tab:shepard_exp} (experiment with largest hyperparameters)  is the block matrix $\phi$  for prediction, with
 \begin{equation}
 	B_NXY := B_N \times 100 \times 140 = 14966.336 \text{ MB} = 14.9 \text{ GB}
 \end{equation}
