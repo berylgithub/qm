@@ -72,7 +72,7 @@ The very first piece which needs to be computed is the collection of molecular f
 	\begin{equation}
 		C' := DCD, ~~ D = \text{Diag}(1/\sqrt{C_{ii}});
 	\end{equation}
-	alternatively, we can use the sensitivity of the atomic features as the scaling factor
+	alternatively, the sensitivity of the atomic features is viable as the scaling factor
 	\begin{equation}
 		D = \text{Diag}(1/\sigma_j),
 	\end{equation}
@@ -82,7 +82,7 @@ The very first piece which needs to be computed is the collection of molecular f
 	\end{equation}
 	where
 	\begin{equation}
-		d^l_{ij} := \max |f^l_{ij} - (\hat{f}_k)^l_{ij}|~~\text{ for }k = 1,2,...,
+		d^l_{ij} := \max_k |f^l_{ij} - (\hat{f}_k)^l_{ij}|~~\text{ for }k = 1,2,...,
 	\end{equation}
 	where $\hat{f_k}$ is the set of perturbed atomic features, obtained by perturbing the atomic coordinates randomly
 	\begin{equation}
@@ -105,7 +105,7 @@ The very first piece which needs to be computed is the collection of molecular f
 	Finally the transformed feature can be obtained by
 	\begin{equation}
 		\label{eq:pca_atom_end}
-		f^l_{i:} \leftarrow \hat{Q}^\top(f^l_{i:} - s), \text{ for }i = 1,2,...,N_\text{QM9}.
+		f^l_{i:} \leftarrow \hat{Q}^\top(f^l_{i:} - s), \text{ for }l = 1,2,...,N_\text{QM9}.
 	\end{equation}
 	\item Scale
 	\begin{equation}
@@ -135,7 +135,22 @@ The very first piece which needs to be computed is the collection of molecular f
 		\caption{$\mu_i := \sum_{i\geq k} \lambda_i \text{ for } k = 1,2,...,n_f$, obtained from the PCA of ACSF on atomic level. This shows the distribution of the eigenvalues when $i$ amount of the (sorted) eigenvalues are dropped.}
 	\end{figure}
 \end{itemize}
-	
+
+\subsubsection{Timing and storage}
+Features based on atomic symmetry functions in general has $\mathcal{O}(n_\text{atom}^2c)$ time complexity, where $c$ is a factor referring to the features extractor's method of computation (e.g., ACSF requires $c$ amount of radial symmetry function computations), as it is required to sweep through the atom and its neighbours each time an atomic symmetry quantity is queried. The resulting features of each atom is a vector with length $n_{af}$, therefore a molecule has an order of $\mathcal{O}(n_\text{atom}n_{af})$ storage complexity. In total for the QM9 challenge, each time an atomic feature extraction is queried, it has $\mathcal{O}(N_\text{QM9}n_\text{atom}^2c)$ time complexity and $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ storage complexity.
+
+In general, each query of PCA needs to sweep all entries of the feature matrix multiple times. Specific for atomic features, it can be broken down into:
+\begin{itemize}
+	\item Computing mean vector $s$ requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ time complexity and $\mathcal{O}(n_{af})$ storage complexity.
+	\item Symmetric matrix $S$ requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n^2_{af})$ time complexity and $\mathcal{O}(n^2_{af})$ storage requirement.
+	\item The covariance matrix can be computed by $\mathcal{O}(n^2_{af})$ order of operations given the mean vector $s$ and the symmetric matrix $S$, with also $\mathcal{O}(n^2_{af})$ storage complexity.
+	\item The correlation matrix can be computed by $\mathcal{O}(n^2_{af})$ order of operations given the covariance matrix $C$ and the scaling factors $D$, requires $\mathcal{O}(n^2_{af})$ storage.
+	\item Spectral decomposition of the symmetric matrix requires $\mathcal{O}(n^3_{af})$ time complexity and $\mathcal{O}(n^2_{af})$ storage.
+	\item Projecting the atomic features into lower dimensional space requires $\mathcal{O}(n^2_{af})$ time for each atom, hence for all of the QM9 molecules, it requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n^2_{af})$; the storage complexity is $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$.
+\end{itemize}
+Overall, in terms of the timing and storage, the raw atomic feature extraction itself should be the upper bound of the whole atomic feature processing block, since $c$ itself could also be a composition of many factors depending on the method of the feature extractor.
+
+
 \subsection{Molecular feature selection}
 \begin{itemize}
     \item $l$th molecule contains $n^l_\text{atom}$ number of atoms and a set of atom types $P = \{\text{H}, \text{C}, \text{O}, ...\}$ with cardinality $n^l_\text{type}$,
@@ -216,7 +231,7 @@ The very first piece which needs to be computed is the collection of molecular f
 		Obtain the transformed feature by
 		\begin{equation}
 			\label{eq:pca_mol_end}
-			F_{l:} \leftarrow \hat{Q}^\top(F_{l:} - s), \text{ for }l = 1,2,...,N.
+			F_{l:} \leftarrow \hat{Q}^\top(F_{l:} - s), \text{ for }l = 1,2,...,N_\text{QM9}.
 		\end{equation}
 	\item Scale $F$ such that 
 	\begin{equation}
