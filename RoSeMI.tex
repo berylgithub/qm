@@ -137,7 +137,7 @@ The very first piece which needs to be computed is the collection of molecular f
 \end{itemize}
 
 \subsubsection{Timing and storage}
-Features based on atomic symmetry functions in general has $\mathcal{O}(n_\text{atom}^2c)$ time complexity, where $c$ is a factor referring to the features extractor's method of computation (e.g., ACSF requires $c$ amount of radial symmetry function computations), as it is required to sweep through the atom and its neighbours each time an atomic symmetry quantity is queried. The resulting features of each atom is a vector with length $n_{af}$, therefore a molecule has an order of $\mathcal{O}(n_\text{atom}n_{af})$ storage complexity. In total for the QM9 challenge, each time an atomic feature extraction is queried, it has $\mathcal{O}(N_\text{QM9}n_\text{atom}^2c)$ time complexity and $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ storage complexity.
+Features based on atomic symmetry functions in general has $\mathcal{O}(n_\text{atom}^2c)$ time complexity, where $c$ is a factor referring to the feature extractor's method of computation (e.g., ACSF requires $c$ amount of radial symmetry function computations), as it is required to sweep through the atom and its neighbours each time an atomic symmetry quantity is queried. The resulting features of each atom is a vector with length $n_{af}$, therefore a molecule has an order of $\mathcal{O}(n_\text{atom}n_{af})$ storage complexity. In total for the QM9 challenge, each time an atomic feature extraction is queried, it has $\mathcal{O}(N_\text{QM9}n_\text{atom}^2c)$ time complexity and $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ storage complexity.
 
 In general, each query of PCA needs to sweep all entries of the feature matrix multiple times. Specific for atomic features, it can be broken down into:
 \begin{itemize}
@@ -148,7 +148,7 @@ In general, each query of PCA needs to sweep all entries of the feature matrix m
 	\item Spectral decomposition of the symmetric matrix requires $\mathcal{O}(n^3_{af})$ time complexity and $\mathcal{O}(n^2_{af})$ storage.
 	\item Projecting the atomic features into lower dimensional space requires $\mathcal{O}(n^2_{af})$ time for each atom, hence for all of the QM9 molecules, it requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n^2_{af})$; the storage complexity is $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$.
 \end{itemize}
-Overall, in terms of the timing and storage, the raw atomic feature extraction itself should be the upper bound of the whole atomic feature processing block, since $c$ itself could also be a composition of many factors depending on the method of the feature extractor.
+Overall, in terms of the timing and storage, the raw atomic feature extraction itself should be the upper bound of the whole atomic feature processing block, since the factor $c$ itself could also be a composition of many factors depending on the method of the feature extractor.
 
 
 \subsection{Molecular feature selection}
@@ -262,6 +262,14 @@ Overall, in terms of the timing and storage, the raw atomic feature extraction i
 		\caption{The distribution of the eigenvalues with hyperparameter $n_{af} = 4$. Obtained from the PCA of ACSF on molecular level.}
 	\end{figure}
 \end{itemize}
+
+\subsubsection{Timing and storage}
+The timing breakdown of the molecular feature selection is as the following:
+\begin{itemize}
+	\item In the default setting, the molecular feature is only computed by the sums of the atomic features, for each molecule this has $\mathcal{O}(n_\text{atom} n_{af})$ order of operations, therefore for all molecules in the QM9 dataset the time complexity is $\mathcal{O}(N_\text{QM9}n_\text{atom} n_{af})$; the storage requirement is $\mathcal{O}(N_\text{QM9}n_{mf})$. 
+	\item Additional features which increase the complexity noticeably is the binomial feature, each binomial feature matrix takes $\mathcal{O}(n^2_{af})$ order of computation and $\mathcal{O}(n^2_{af})$ storage, for $N_\text{QM9}$ this becomes $\mathcal{O}(N_\text{QM9}n_\text{atom}n^2_{af})$ time and storage requirement.
+\end{itemize}
+For molecular features, the PCA has similar time and storage complexity to the atomic feature counterpart, the only differences are the initial mean vector $s$, the symmetric matrix $S$ computation, and the final projection, since the feature is now a vector with length $n_{mf}$ for each molecule in contrast to the atomic features with $\mathbb{R}^{n_\text{atom} \times n_{af}}$ matrix for each molecule.
 
 
 \section{Splines}
