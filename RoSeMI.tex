@@ -532,7 +532,7 @@ $A$ is constructed explicitly here since it is cheap and fast to compute with on
 
 
 \section{Program structure}
-The main program is divided into two main subprograms: data setup and fitter. Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}), except for the raw feature extraction, which is done only once for each feature set (for example, the extraction of ACSF upon QM9 dataset is only done once). In general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. Meanwhile the fitter subprogram computes everything which depend on $\theta$ or set $T$.
+The main program is divided into two main subprograms: data setup and fitter. Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}), except for the raw feature extraction, which is done only once for each feature set (for example, the extraction of ACSF upon QM9 dataset is only done once). In general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. Meanwhile the fitter subprogram computes everything which depend on $\theta$ or set $T$. The data setup subprogram is compatible with any types of model, while the fitter subprogram is specific for the Shepard model.
 
 \subsection{Data setup subprogram}
 \label{sub:data}
@@ -551,7 +551,7 @@ where \codeword{indices} is the set of labels which will be included, in case of
 
 \subsection{Fitter subprogram}
 \label{sub:}
-Given the set of files from section (\ref{sub:data}), the fitter function abstraction is simplyh
+Given the set of files from section (\ref{sub:data}), the fitter function abstraction is simply
 \begin{equation}
 	(\theta, \codeword{info}) \leftarrow \codeword{fitter(data_dir, t_limit, batchsize)}
 \end{equation}
@@ -611,7 +611,7 @@ The true error of the fitting is described by the mean absolute error (MAE) of t
 \end{equation}
 where $\hat{E}$ is the vector of predicted energies. Here $N_\text{QM9} = 133628$, $n_K = 100$, $n_U = 200$, and $N = 300$ for all of the experiments. 
 
-\subsubsection{Shepard model}
+\subsubsection{Fitting using Shepard model}
 \label{subsubsec:shepard}
 Several hand-picked fitting experiment results of the with the lowest MAE are shown in table \ref{tab:shepard_exp}.
 
@@ -660,7 +660,7 @@ Using the set of index $K$ obtained in the same way as the one in the first row 
 	\label{tab:atomic_exp}
 \end{table}
 
-The fitting experiments with $E_\text{red}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. Note that after prediction, the MAE is computed from
+The fitting experiments with $E_\text{red}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The KRR uses scaler $c=1$. The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. Note that after prediction, the MAE is computed from
 \begin{equation}
 	\text{MAE} = \frac{1}{N_{QM9}} \sum_{m \in W} |E_m - (\hat{E}_m + E_m^\text{red})|,
 \end{equation}

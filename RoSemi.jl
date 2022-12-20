@@ -903,20 +903,19 @@ function test_spline()
     n_data = Integer(100)
     x = [collect(LinRange(0., 1., 100)) collect(LinRange(0., 1., 100)) .+ 1]
     x = transpose(x)
-    display(x)
-    S = extract_bspline(x, M)
-    for i ∈ 1:n_finger
-        display(plot(vec(x[i,:]), S[i, :, :]))
-    end
     # flattened feature*basis:
     #S = extract_bspline(x, M; flatten=true)
 
     # spline using scalar mode, see if the result is the same (and test with AD):
     S, dϕ = extract_bspline_df(x, M)
     display(dϕ)
-    for i ∈ 1:n_finger
-        display(plot(vec(x[i,:]), S[i, :, :]))
-        display(plot(vec(x[i,:]), dϕ[i, :, :]))
+    for i ∈ [1]#1:n_finger
+        pf = plot(vec(x[i,:]), S[i, :, :], legend=false)
+        pdf = plot(vec(x[i,:]), dϕ[i, :, :], legend=false)
+        savefig(pf, "plot/f.png")
+        savefig(pdf, "plot/df.png")
+        display(pf)
+        display(pdf)
     end
     S, dϕ = extract_bspline_df(x, M; flatten = true, sparsemat=true)
     display(dϕ)
