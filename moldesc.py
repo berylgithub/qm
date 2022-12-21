@@ -119,13 +119,16 @@ def extract_FCHL():
     print(len(onlyfiles), onlyfiles[0]) """
 
     # extract features:
-    mols = [qml.Compound(xyz="data/qm9/dsgdb9nsd_000001.xyz"), qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")] 
-    for mol in mols:
-        mol.generate_fchl_representation(max_size=10, cut_distance=5.0)
-        print("new mol")
-        print(mol.representation, mol.representation.shape)
+    mol = qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")#, qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")
+    #for mol in mols:
+    n_atom_QM9 = 29
+    mol.generate_fchl_representation(max_size=n_atom_QM9, cut_distance=8.0, neighbors=n_atom_QM9) # neighbours is only used if it has periodic boundary
+    print("new mol")
+    print(mol.representation, mol.representation.shape)
+    print(mol.atomtypes)
 
-    # Dummy coordinates for a water molecule
+
+    """ # Dummy coordinates for a water molecule
     coordinates = np.array([[1.464, 0.707, 1.056],
                             [0.878, 1.218, 0.498],
                             [2.319, 1.126, 0.952]])
@@ -133,9 +136,10 @@ def extract_FCHL():
     # Oxygen, Hydrogen, Hydrogen
     nuclear_charges = np.array([8, 1, 1])
 
-    rep = generate_representation(coordinates, nuclear_charges)
+    rep = generate_representation(coordinates, nuclear_charges, max_size=29, neighbors=5)
 
     print(rep, rep.shape)
+ """
 
 # main:
 extract_FCHL()
