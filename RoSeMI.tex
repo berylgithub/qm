@@ -122,30 +122,30 @@ The very first piece which needs to be computed is the collection of molecular f
 	\begin{equation}
 		f^l_{ij} \leftarrow (f^l_{ij} - \underbar{$f$}_j)/ (\overline{f}_j - \underbar{$f$}_j), \text{ for } j = 1,..., n_f^\text{select}.
 	\end{equation}
-	\begin{figure}[h]
+	\begin{figure}[H]
 		\label{fig:PCA_atom_rat}
 		\centering
 		\includegraphics[scale=0.55]{plot/eigenvalue_atom_exp_all_1_4_18_false_false_ratio.png}
-		\caption{The ratio of each eigenvalue against the largest eigenvalue, obtained from the PCA of ACSF on atomic level.}
+		\caption{The ratio of each eigenvalue against the largest eigenvalue, obtained from the PCA of ACSF on the atomic level.}
 	\end{figure}
 	\begin{figure}[H]
 		\label{fig:PCA_atom_dist}
 		\centering
 		\includegraphics[scale=0.55]{plot/eigenvalue_atom_exp_all_1_4_18_false_false_distribution.png}
-		\caption{$\mu_i := \sum_{i\geq k} \lambda_i \text{ for } k = 1,2,...,n_f$, obtained from the PCA of ACSF on atomic level. This shows the distribution of the eigenvalues when $i$ amount of the (sorted) eigenvalues are dropped.}
+		\caption{$\mu_i := \sum_{i\geq k} \lambda_i \text{ for } k = 1,2,...,n_f$, obtained from the PCA of ACSF on the atomic level. This shows the distribution of the eigenvalues when $i$ amount of the (sorted) eigenvalues are dropped.}
 	\end{figure}
 \end{itemize}
 
 \subsubsection{Timing and storage}
-Features based on atomic symmetry functions in general has $\mathcal{O}(n_\text{atom}^2c)$ time complexity, where $c$ is a factor referring to the feature extractor's method of computation (e.g., ACSF requires $c$ amount of radial symmetry function computations), as it is required to sweep through the atom and its neighbours each time an atomic symmetry quantity is queried. The resulting features of each atom is a vector with length $n_{af}$, therefore a molecule has an order of $\mathcal{O}(n_\text{atom}n_{af})$ storage complexity. In total for the QM9 challenge, each time an atomic feature extraction is queried, it has $\mathcal{O}(N_\text{QM9}n_\text{atom}^2c)$ time complexity and $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ storage complexity.
+Features based on atomic symmetry functions in general has $\mathcal{O}(n_\text{atom}n_\text{cutoff}c)$ time complexity, where $c$ is a factor referring to the feature extractor's method of computation (e.g., ACSF requires $c$ amount of radial symmetry function computations), and $n_\text{cutoff}$ is the number of atoms included within the cutoff radius, as it is required to sweep through the atom and its neighbours within the cutoff radius each time an atomic symmetry quantity is queried. The resulting features of each atom is a vector with length $n_{af}$, therefore a molecule has an order of $\mathcal{O}(n_\text{atom}n_{af})$ storage complexity. In total for the QM9 challenge, each time an atomic feature extraction is queried, it has $\mathcal{O}(N_\text{QM9}n_\text{atom}n_\text{cutoff}c)$ time complexity and $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ storage complexity.
 
 In general, each query of PCA needs to sweep all entries of the feature matrix multiple times. Specific for atomic features, it can be broken down into:
 \begin{itemize}
-	\item Computing mean vector $s$ requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ time complexity and $\mathcal{O}(n_{af})$ storage complexity.
-	\item Symmetric matrix $S$ requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n^2_{af})$ time complexity and $\mathcal{O}(n^2_{af})$ storage requirement.
-	\item The covariance matrix can be computed by $\mathcal{O}(n^2_{af})$ order of operations given the mean vector $s$ and the symmetric matrix $S$, with also $\mathcal{O}(n^2_{af})$ storage complexity.
-	\item The correlation matrix can be computed by $\mathcal{O}(n^2_{af})$ order of operations given the covariance matrix $C$ and the scaling factors $D$, requires $\mathcal{O}(n^2_{af})$ storage.
-	\item Spectral decomposition of the symmetric matrix requires $\mathcal{O}(n^3_{af})$ time complexity and $\mathcal{O}(n^2_{af})$ storage.
+	\item Computing mean vector $s$ requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ time and $\mathcal{O}(n_{af})$ storage.
+	\item Symmetric matrix $S$ requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n^2_{af})$ time and $\mathcal{O}(n^2_{af})$ storage.
+	\item The covariance matrix can be computed with $\mathcal{O}(n^2_{af})$ operations given the mean vector $s$ and the symmetric matrix $S$, with also $\mathcal{O}(n^2_{af})$ storage complexity.
+	\item The correlation matrix can be computed by $\mathcal{O}(n^2_{af})$ operations given the covariance matrix $C$ and the scaling factors $D$, requires $\mathcal{O}(n^2_{af})$ storage.
+	\item Spectral decomposition of the symmetric matrix requires $\mathcal{O}(n^3_{af})$ time and $\mathcal{O}(n^2_{af})$ storage.
 	\item Projecting the atomic features into lower dimensional space requires $\mathcal{O}(n^2_{af})$ time for each atom, hence for all of the QM9 molecules, it requires $\mathcal{O}(N_\text{QM9}n_\text{atom}n^2_{af})$; the storage complexity is $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$.
 \end{itemize}
 Overall, in terms of the timing and storage, the raw atomic feature extraction itself should be the upper bound of the whole atomic feature processing block, since the factor $c$ itself could also be a composition of many factors depending on the method of the feature extractor.
@@ -273,7 +273,7 @@ For molecular features, the PCA has similar time and storage complexity to the a
 
 
 \section{Splines}
-The splines (bspline) are used to increase the dimension of the feature space; with sufficient number of splines for each feature, it will lead to linearly separated data points.
+The splines (\texttt{bspline}) are used to increase the dimension of the feature space; with sufficient number of splines for each feature, it will lead to linearly separated data points.
 \begin{itemize}
 	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $F_{ij}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $F$):
 	\begin{equation}
@@ -532,13 +532,22 @@ $A$ is constructed explicitly here since it is cheap and fast to compute with on
 
 
 \section{Program structure}
-The main program is divided into two main subprograms: data setup and fitter. Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}), except for the raw feature extraction, which is done only once for each feature set (for example, the extraction of ACSF upon QM9 dataset is only done once). In general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. Meanwhile the fitter subprogram computes everything which depend on $\theta$ or set $T$. The data setup subprogram is compatible with any types of model, while the fitter subprogram is specific for the Shepard model.
+The main program is divided into two main subprograms: feature exctraction, data setup and fitter. Feature extraction refers to any operations included in extracting the raw array of features (usually on the atomic level) given the geometrical information of the molecules (e.g., coordinates, nuclear charges, etc), this is usually only done once for each set of molecular geometries. Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}) except for the raw feature extraction; in general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. Meanwhile the fitter subprogram computes everything which depend on $\theta$ or set $T$. The feature extraction and data setup subprogram is compatible with any types of model, while the fitter subprogram is specific for the Shepard model.
+
+\subsection{Feature extraction}
+\label{sub:fe}
+Most of the feature extraction techniques for molecular geometries require similar set of inputs, e.g., the coordinates and nuclear charges; additionally with the list of hyperparameters. In most cases, each feature extraction technique is bundled within different libraries (and often on different programming languages); and usually each library wraps the molecular information in a different way, hence it is required to transform the raw molecular data into the the data structure demanded by the library. The abstraction of the feature extraction subprogram is
+\begin{enumerate}
+	\item $\codeword{mol_class} \leftarrow \codeword{transform_data(}x, Z, \codeword{mol_info)}$, where $x$ is a set of molecular coordinates, $Z$ is the set of nuclear charges and \codeword{mol_info} is a list of additional molecular information (which is usually not mandatory), such as the molecule name, number of atoms, etc.
+	\item $f \leftarrow \codeword{extract_feature(mol_class, params)}$, where \codeword{mol_class} is an object that contains all of the required molecular information for feature extraction, and \codeword{params} is a list of the required hyperparameters, e.g., ACSF requires the cutoff radius, level of symmetry, periodicity of the atomic system, etc.
+	\item $\codeword{save(feature_file,} f\codeword{)}$, where \codeword{feature_file} is a string describing the harddrive path to store the array $f$, this will be used for the \codeword{data_setup} process.
+\end{enumerate}
 
 \subsection{Data setup subprogram}
 \label{sub:data}
 The data setup function abstraction is
 \begin{equation*}
-	(F, T, D, \phi, \phi') \leftarrow \codeword{data_setup(indices}, n_{af}, n_{mf}, n_s, N, \codeword{feature_file}, \codeword{feature_mode}),
+	(F, T, D, \phi, \phi') \leftarrow \codeword{data_setup(indices}, n_{af}, n_{mf}, n_s, N, \codeword{feature_file}, \codeword{feature_mode)},
 \end{equation*}
 where \codeword{indices} is the set of labels which will be included, in case of full QM9 dataset then \codeword{indices} = $1:N_\text{QM9}$; \codeword{feature_file} is a string which indicates the file path of a file containing the atomic feature set computed on all of the QM9 data points; \codeword{feature_mode} is a list of boolean which indicates the inclusion of sums of squares or binomial features, e.g., \codeword{feature_mode = [true, false]} means only the sums of squares will be added to the molecular features. The flow of the data setup subprogram is:
 \begin{enumerate}
@@ -587,98 +596,14 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 \end{enumerate}
 
 
-\section{Numerical experiments}
-The numerical experiments are based on a set of main hyperparameters:
-\begin{equation}
-	N = 300,~~ n_K = 100, ~~ n_f = 28, ~~ n_s = 5, ~~ n_L = n_fn_s = 140, ~~ \codeword{t_limit} = 900
-\end{equation}
-which are then extended in a \textit{binary search} manner. Each \codeword{data_setup()} process roughly takes around 300s. 
-The fitting is done using \codeword{CGLS()} with $\codeword{itmax} = 500$; specifically for the Shepard model, it requires the functions to compute $Au$ and $A^\top v$ as the input variable. 
-Currently active learning scheme has not been tested.
 
+\section{Numerical experiments}
 The hardware and software specification used for the experiments are:
 \begin{itemize}
 	\item Processors: 4 $\times$ Intel\textregistered Core i5-4670S CPU @3.10 GHz
 	\item Memory: 7.7 GB of RAM
 	\item Programming language: Julia 1.7.3
 \end{itemize}
-
-\subsection{Fitting results}
-\label{subsec:fitting}
-The true error of the fitting is described by the mean absolute error (MAE) of the energies
-\begin{equation}
-	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - \hat{E}_m|,
-\end{equation}
-where $\hat{E}$ is the vector of predicted energies. Here $N_\text{QM9} = 133628$, $n_K = 100$, $n_U = 200$, and $N = 300$ for all of the experiments. 
-
-\subsubsection{Fitting using Shepard model}
-\label{subsubsec:shepard}
-Several hand-picked fitting experiment results of the with the lowest MAE are shown in table \ref{tab:shepard_exp}.
-
-\begin{table}[H]
-	\centering
-	\caption{Selected fitting experiment results. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} is the time spent by CGLS; and \textbf{t\_pred} is the energy prediction time. \textbf{MAE} is in kcal/mol.}
-	\begin{tabular}{|l|l|l|l|l|l|l|l|}
-		\hline
-		\multicolumn{1}{|c|}{\textbf{$n_{af}$}} & \multicolumn{1}{c|}{\textbf{$n_{mf}$}} & \multicolumn{1}{c|}{\textbf{$n_s$}} &\multicolumn{1}{c|}{\textbf{MAE}} & \multicolumn{1}{c|}{\textbf{ft\_sos}} & \multicolumn{1}{c|}{\textbf{ft\_bin}} & \multicolumn{1}{c|}{\textbf{t\_solver}} & \multicolumn{1}{c|}{\textbf{t\_pred}} \\ \hline
-		4                                    & 18                                  & 5                                      & 2335                        & 0                                     & 0                                     & 409                                   & 93                                  \\ \hline
-		4                                    & 19                                  & 5                                      & 2413                        & 0                                     & 0                                     & 445                                   & 113                                 \\ \hline
-		4                                    & 26                                  & 5                                      & 2623                        & 0                                     & 0                                     & 566                                   & 160                                 \\ \hline
-		4                                    & 23                                  & 5                                      & 2647                        & 1                                     & 0                                     & 529                                   & 136                                 \\ \hline
-		6                                    & 28                                  & 5                                      & 2651                        & 0                                     & 0                                     & 623                                   & 179                                 \\ \hline
-	\end{tabular}
-	\label{tab:shepard_exp}
-\end{table}
-
-\subsubsection{Fitting with reduced energies}
-\label{subsubsec:ered}
-Fitting the reduced molecular energy serves to reduce the molecular energy fitting difficulty by decreasing the order of magnitude of the fitted energy, since by default the molecular energy itself is quite large (e.g., the internal energy at $0$ Kelvin $U_0$ of QM9 molecules are between $\mathcal{O}(100)$ to $\mathcal{O}(1000)$ in Hartree unit). We can obtain the reduced energy of a molecule by removing the sum of atomic energies in each molecule
-\begin{equation}
-	E^\text{red} = E - \sum_{j \in P} N_j E^\text{atom}_j,
-\end{equation}
-where $P$ is a set of atom types, $N_j$ is the count of the atom type $j$ within a fixed molecule, and $E^\text{atom}_j$ is the the energy of atom type $j$.
-
-The atomic energy itself can be obtained by fitting a LLS model. For QM9 challenge, (\ref{eq:lls}) can be used to obtain the atomic energies, explicitly by defining
-\begin{equation}
-	\begin{split}
-		A_{i:} &:= [N^i_\text{H}, N^i_\text{C}, N^i_\text{O}, N^i_\text{N}, N^i_\text{F}], \\
-		\theta &:= [E^\text{atom}_\text{H}, E^\text{atom}_\text{C}, E^\text{atom}_\text{O}, E^\text{atom}_\text{N}, E^\text{atom}_\text{F}], \\
-		b_i &:= E_i, \\
-		\text{for }i &\in K.
-	\end{split}
-\end{equation}
-Using the set of index $K$ obtained in the same way as the one in the first row of table \ref{tab:shepard_exp}, the result of the atomic energies fitting is shown in table \ref{tab:atomic_exp}. The MAE from fitting the atomic energies is in fact refers to the mean absolute value of the $E_\text{red}$ of all molecules in the QM9 dataset itself.
-
-\begin{table}[H]
-	\centering
-	\caption{Result of fitting for atomic energies. \textbf{MAE} and the energies are in kcal/mol.}
-	\begin{tabular}{|l|l|l|l|l|l|}
-		\hline
-		\multicolumn{1}{|c|}{\textbf{MAE}} & \multicolumn{1}{c|}{$E^\text{atom}_\text{H}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{C}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{O}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{N}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{F}$} \\ \hline
-		21.2  &	-376.5  & -23888.9 & -34349.3 & -47200.6 & -62662.2 \\ \hline
-	\end{tabular}
-	\label{tab:atomic_exp}
-\end{table}
-
-The fitting experiments with $E_\text{red}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The KRR uses scaler $c=1$. The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. Note that after prediction, the MAE is computed from
-\begin{equation}
-	\text{MAE} = \frac{1}{N_{QM9}} \sum_{m \in W} |E_m - (\hat{E}_m + E_m^\text{red})|,
-\end{equation}
-hence it recovers the original order of magnitude of the energies.
-
-\begin{table}[H]
-	\centering
-	\caption{Fitting using reduced energy $E_\text{red}$. RoSeMI refers to the Shepard model, KRR refers to the Gaussian kernel model, LLS is the linear least squares model, and NN is the neural network model. \textbf{MAE} is in kcal/mol.}
-	\begin{tabular}{|l|l|}
-		\hline
-		\multicolumn{1}{|c|}{\textbf{model}} & \multicolumn{1}{|c|}{\textbf{MAE}} \\ \hline
-		RoSeMI & 23.7 \\ \hline
-		KRR & 21.3 \\ \hline
-		NN & 21.1 \\ \hline
-		LLS & 19.4 \\ \hline
-	\end{tabular}
-	\label{tab:red_exp}
-\end{table}
 
 \subsection{Memory usage}
 The computation of fitting and prediction of QM9 challenge is resource-demanding, hence we need to allocate variables responsibly such that the OS does not throw an out-of-memory exception. The first ingredient is to approximate the size of data structures allocated within the program in megabytes (MB) order of magnitude; assuming the data structure holds \codeword{Float64} entries (which is the most common data type for numerical operations and is also the most memory consuming) this can be done by a general formula
@@ -701,6 +626,96 @@ The variable which has the largest memory usage from the experiment in the last 
 	B_NXY := B_N \times 100 \times 140 = 14966.336 \text{ MB} = 14.9 \text{ GB}
 \end{equation}
 memory size. Hence mini-batching is necessary, with \codeword{batchsize = 10_000}, for each mini-batch loop the size of $\phi$ becomes $1/13$ of its actual size which is around 1GB. 
+
+
+\subsection{Fitting results}
+\label{subsec:fitting}
+The true error of the fitting is described by the mean absolute error (MAE) of the energies
+\begin{equation}
+	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - \hat{E}_m|,
+\end{equation}
+where $\hat{E}$ is the vector of predicted energies.
+
+\subsubsection{Fitting using Shepard model}
+\label{subsubsec:shepard}
+The initial set of the fixed hyperparameters across all experiments is:
+\begin{equation*}
+	N_\text{QM9} = 133628, ~~ N = 300,~~ n_K = 100, ~~\codeword{t_limit} = 900
+\end{equation*}
+and these hyperparameters are varied in a \textit{binary search} manner, with initial values:
+\begin{equation*}
+	n_{af} = 4,~~ n_f = 28, ~~ n_s = 5, ~~ n_L = n_fn_s = 140.
+\end{equation*}
+Each \codeword{data_setup()} process roughly takes around 300s. 
+The fitting is done using \codeword{CGLS()} with $\codeword{itmax} = 500$; it requires the functions to compute $Au$ and $A^\top v$ as the input variable. 
+Currently active learning scheme has not been tested. Several hand-picked fitting experiment results of the with the lowest MAE are shown in table \ref{tab:shepard_exp}.
+
+\begin{table}[H]
+	\centering
+	\caption{Selected fitting experiment results. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} is the time in seconds spent by CGLS; and \textbf{t\_pred} is the energy prediction time. \textbf{MAE} is in kcal/mol.}
+	\begin{tabular}{|l|l|l|l|l|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{$n_{af}$}} & \multicolumn{1}{c|}{\textbf{$n_{mf}$}} & \multicolumn{1}{c|}{\textbf{$n_s$}} &\multicolumn{1}{c|}{\textbf{MAE}} & \multicolumn{1}{c|}{\textbf{ft\_sos}} & \multicolumn{1}{c|}{\textbf{ft\_bin}} & \multicolumn{1}{c|}{\textbf{t\_solver}} & \multicolumn{1}{c|}{\textbf{t\_pred}} \\ \hline
+		4                                    & 18                                  & 5                                      & 2335                        & 0                                     & 0                                     & 409                                   & 93                                  \\ \hline
+		4                                    & 19                                  & 5                                      & 2413                        & 0                                     & 0                                     & 445                                   & 113                                 \\ \hline
+		4                                    & 26                                  & 5                                      & 2623                        & 0                                     & 0                                     & 566                                   & 160                                 \\ \hline
+		4                                    & 23                                  & 5                                      & 2647                        & 1                                     & 0                                     & 529                                   & 136                                 \\ \hline
+		6                                    & 28                                  & 5                                      & 2651                        & 0                                     & 0                                     & 623                                   & 179                                 \\ \hline
+	\end{tabular}
+	\label{tab:shepard_exp}
+\end{table}
+
+\subsubsection{Null model and reduced energies}
+\label{subsubsec:ered}
+The null model serves to reduce the molecular energy fitting difficulty by decreasing the order of magnitude of the fitted energy, since by default the molecular energy itself has a large order of magnitude (e.g., the internal energy at $0^{\circ}$ Kelvin $U_0$ of QM9 molecules are between $\mathcal{O}(100)$ to $\mathcal{O}(1000)$ in Hartree unit). We can obtain the reduced energy of a molecule by removing the sum of atomic energies in each molecule
+\begin{equation}
+	E^\text{null} = E - \sum_{j \in P} N_j E^\text{atom}_j,
+\end{equation}
+where $P$ is a set of atom types, $N_j$ is the count of the atom type $j$ within a fixed molecule, and $E^\text{atom}_j$ is the the energy of atom type $j$.
+
+The atomic energy itself can be obtained by fitting a LLS model. For QM9 challenge, (\ref{eq:lls}) can be used to obtain the atomic energies, explicitly by defining
+\begin{equation}
+	\begin{split}
+		A_{i:} &:= [N^i_\text{H}, N^i_\text{C}, N^i_\text{O}, N^i_\text{N}, N^i_\text{F}], \\
+		\theta &:= [E^\text{atom}_\text{H}, E^\text{atom}_\text{C}, E^\text{atom}_\text{O}, E^\text{atom}_\text{N}, E^\text{atom}_\text{F}], \\
+		b_i &:= E_i, \\
+		\text{for }i &\in K.
+	\end{split}
+\end{equation}
+Using the set of index $K$ obtained in the same way as the one in the first row of table \ref{tab:shepard_exp}, the result of the atomic energies fitting is shown in table \ref{tab:atomic_exp}. The MAE from fitting the atomic energies is in fact refers to the mean absolute value of the $E_\text{null}$ of all molecules in the QM9 dataset itself.
+
+\begin{table}[H]
+	\centering
+	\caption{Result of fitting for atomic energies. \textbf{MAE} and the energies are in kcal/mol.}
+	\begin{tabular}{|l|l|l|l|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{MAE}} & \multicolumn{1}{c|}{$E^\text{atom}_\text{H}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{C}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{O}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{N}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{F}$} \\ \hline
+		21.2  &	-379.341  & -23891.17 & -34348.998 & -47199.982 & -62661.071 \\ \hline
+	\end{tabular}
+	\label{tab:atomic_exp}
+\end{table}
+
+The fitting experiments with $E_\text{null}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The KRR uses scaler $c=1$. The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. Note that after prediction, the MAE is computed from
+\begin{equation}
+	\text{MAE} = \frac{1}{N_{QM9}} \sum_{m \in W} |E_m - (\hat{E}_m + E_m^\text{null})|,
+\end{equation}
+hence it recovers the original order of magnitude of the energies.
+
+\begin{table}[H]
+	\centering
+	\caption{Fitting result using $E_\text{null}$. Null model refers to the model used for computing the reduced energies, RoSeMI refers to the Shepard model, KRR refers to the Gaussian kernel model, LLS is the linear least squares model, and NN is the neural network model. \textbf{MAE} is in kcal/mol.}
+	\begin{tabular}{|l|l|}
+		\hline
+		\multicolumn{1}{|c|}{\textbf{model}} & \multicolumn{1}{|c|}{\textbf{MAE}} \\ \hline
+		Null & 21.2 \\ \hline
+		RoSeMI & 23.7 \\ \hline
+		KRR & 21.3 \\ \hline
+		NN & 21.1 \\ \hline
+		LLS & 19.4 \\ \hline
+	\end{tabular}
+	\label{tab:red_exp}
+\end{table}
+
 
 
 \iffalse
