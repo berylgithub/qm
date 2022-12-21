@@ -23,7 +23,7 @@
 \usepackage{listings}
 \usepackage{xparse}
 \usepackage{textcomp}
-
+\setcounter{section}{-1}
 \captionsetup[table]{skip=10pt} % table skip
 
 %macros
@@ -48,6 +48,19 @@
 \begin{document}
 \maketitle
 
+\section{Basic features}
+\label{sec:basic_feature}
+
+Here we describe several common techniques for extracting atomic features.
+\subsection{ACSF}
+Atom-centered symmetry functions (ACSF) (\at{cite Behler}) computes 4 symmetry functions for each atom, they are composed of radial and angular functions. ACSF only considers the set of atomic coordinates as the primary input. For each molecule $l$, ACSF returns a matrix with $(n^l_\text{atom}, n_{af})$ size, where $n^l_\text{atom}$ is the number of atoms in molecule $l$ and $n_{af}$ is the number of generated features. The hyperparameters include (but not limited to): cut-off radius (in Angstrom), width of the Gaussian, and damping scalar. In the default settings (without changing any hyperparameters) $n_{af} = 51$.
+
+\subsection{SOAP}
+\at{currently unused}
+
+
+\subsection{FCHL}
+Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al}. Essentially FCHL encodes radial distribution by the two-body term, and encodes the mean distances and angular information by three-body term. FCHL considers atomic coordinates and the nuclear charges as the primary inputs. For each molecule, FCHL returns an array of size $(\max_l n^l_\text{atom}, 5, n_\text{neigh})$, where $n_\text{neigh}$ is the number of atomic neighbours; almost in all cases $n_\text{neigh} = \max_l n^l_\text{atom}$, the only exception is when periodic boundary cell mode is used (usually for crystals). The hyperparameters are: cut-off radius (in Angstrom), number of neighbours, and periodic cells. For the QM9 dataset, FCHL returns an array with size $(133885, 29, 5, 29)$.
 
 \section{Feature extraction}
 \label{sec:feature}
@@ -595,7 +608,27 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 	\end{enumerate}
 \end{enumerate}
 
+\section{Hyperparameter space}
+\label{sec:hyperspace}
 
+We can construct the whole molecular fitting process from start to end by choosing many different possible combinations of hyperparameters. At the very fist step, we can choose the feature extraction method between \{ACSF, FCHL\}. During feature selection, there exist several possible choices of hyperparameters:
+\begin{itemize}
+	\item The choice for the scaling factor of the correlation matrix: the diagonals of the covariance matrix or the sensitivity vector. In the case of sensitivity vector, we can also choose how many perturbed features to be included.
+	\item Number of selected atomic features $n_{af} \in [1, n_{f}]\in \mathbb{Z}_{>0}$,
+	\item molecular feature extraction mode, whether to include: sum of squares, binomial features;
+	\item number of selected molecular features $n_{mf} \in [1, n_{f}]\in \mathbb{Z}_{>0}$,
+	\item number of splines $n_{s}\in \mathbb{Z}_{>0}$.
+\end{itemize}
+For data selection, the only hyperparameter is $N \in [1, N_\text{QM9}] \in \mathbb{Z}_{>0}$, which is the number of centers requested. 
+
+For model fitting, the model choice is \{RoSeMI, KRR, NN, LLS\}. The hyperparameter for KRR is the scaling factor $c \in \mathbb{R}$. For NN, there are several hyperparameters:
+\begin{itemize}
+	\item The number hidden layers $n_\text{HL} \in \mathbb{Z}_{>0}$,
+	\item the list of the hidden layers $n_\text{nodes} \in \mathbb{Z}^{1 \times n_{HL}}_{>0}$ ,
+	\item the choice of activation function for each node in each layer: ReLU, sigmoid, tanh, etc.
+\end{itemize}
+the NN can be optimized by several choices of optimization method: Adam, gradient descent, RMSProp, etc.
+Meanwhile RoSeMI, KRR, and LLS are solved by CGLS hence we have a choice of the maximum iteration \codeword{itmax} $\in \mathbb{Z}_{>0}$.
 
 \section{Numerical experiments}
 The hardware and software specification used for the experiments are:
