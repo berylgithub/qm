@@ -106,40 +106,40 @@ def extract_SOAP():
 
 def extract_FCHL():
     # file op:
-    """ fpath = "data/qm9_error.txt"
+    fpath = "data/qm9_error.txt"
     with open(fpath,'r') as f: # errorlist
         strlist = f.read()
         strlist = strlist.split("\n")
         errfiles = strlist[:-1]
-    print(errfiles)
 
     mypath = "data/qm9/"
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f)) and (f not in errfiles)]
-    onlyfiles = sorted(onlyfiles)[1:]
-    print(len(onlyfiles), onlyfiles[0]) """
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f)) and (f not in errfiles)] # remove errorfiles
+    onlyfiles = sorted(onlyfiles) #[1:] this is for nonubuntu
+    print(len(onlyfiles), onlyfiles[0])
 
-    # extract features:
-    mol = qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")#, qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")
-    #for mol in mols:
+    # extract coords here:
+    start = time.time() # timer
+    # make FCHL folder
+    feature_folder = "data/FCHL"
+    if not exists(feature_folder):
+        makedirs(feature_folder)
+    
     n_atom_QM9 = 29
-    mol.generate_fchl_representation(max_size=n_atom_QM9, cut_distance=8.0, neighbors=n_atom_QM9) # neighbours is only used if it has periodic boundary
-    print("new mol")
-    print(mol.representation, mol.representation.shape)
-    print(mol.atomtypes)
+    for f in sorted(onlyfiles):
+        # extract features:
+        mol = qml.Compound(xyz=mypath+f)#, qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")
+        mol.generate_fchl_representation(max_size=n_atom_QM9, cut_distance=8.0, neighbors=n_atom_QM9) # neighbours is only used if it has periodic boundary
+        print(mol.name)
+        
 
-
-    """ # Dummy coordinates for a water molecule
-    coordinates = np.array([[1.464, 0.707, 1.056],
-                            [0.878, 1.218, 0.498],
-                            [2.319, 1.126, 0.952]])
-
-    # Oxygen, Hydrogen, Hydrogen
-    nuclear_charges = np.array([8, 1, 1])
-
-    rep = generate_representation(coordinates, nuclear_charges, max_size=29, neighbors=5)
-
-    print(rep, rep.shape)
- """
+        # save each to nested folder, each file contains 5 x 29 matrix:
+        mol_folder = feature_folder+"/"+f # generate molecule folder
+        if not exists(mol_folder):
+            makedirs(mol_folder)
+        for i in range(n_atom_QM9):
+            atom_folder = mol_folder+"/"+str(i) # gen atom folder
+            np.savetxt(atom_folder+'.txt', mol.representation[i], delimiter='\t')
+    print("elapsed time = ", time.time()-start, "s")
 
 # main:
 extract_FCHL()
