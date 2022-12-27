@@ -137,6 +137,23 @@ function getSOAP()
     save("data/SOAP_mol.jld", "data", F') # transpose the matrix
 end
 
+function getFCHL()
+    natom = 29; nf = 5
+    path = "data/FCHL/"
+    mols = readdir(path) #mols = ["dsgdb9nsd_000003.xyz", "dsgdb9nsd_000004.xyz"] # these are folders
+    tail = ".txt"
+    F = zeros(length(mols), natom, nf, natom)
+    for l ∈ eachindex(mols)
+        println(mols[l], " completed!!")
+        for i ∈ (0:natom-1)
+            str = path*mols[l]*"/"*string(i)*tail
+            F[l, i+1, :, :] .= readdlm(str)
+        end
+    end
+    save("data/FCHL.jld", "data", F)
+end
+
+
 function table_results(foldername)
     sheader = ["n_data", "n_af", "n_mf", "n_basis", "num_centers", "ft_sos", "ft_bin"]
     rheader = ["Nqm9", "nK", "nU", "n_feature", "n_basis", "MAE", "RMSD", "max(MAD)", "t_ab", "t_ls", "t_batch"]
