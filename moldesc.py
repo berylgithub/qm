@@ -154,12 +154,13 @@ def train_FCHL():
     onlyfiles = sorted(onlyfiles)
     onlyfiles = np.array(onlyfiles)
 
+    # load energies:
+    E = np.loadtxt("data/energies.txt")
+    Nqm9 = len(E)
+
     # determine indices:
     idtrain = range(100)
     idtest = range(100, 1000)
-
-    # load energies:
-    E = np.loadtxt("data/energies.txt")
 
     # TRAINING REGIMENT
     # compute features in batch:
@@ -176,16 +177,29 @@ def train_FCHL():
     # generate kernels:
     Xtrain = np.array(Xtrain)
     sigmas = [2.5]
-    Ktrain = get_local_kernels(Xtrain, Xtrain, sigmas, cut_distance=8.0)
+    Ktrain = get_local_kernels(Xtrain, Xtrain, sigmas, cut_distance=cutoff)
     print(Ktrain.shape)
     # solve model:
     alpha = cho_solve(Ktrain[0], E[idtrain])
-    print(alpha, alpha.shape)
     Y = np.dot(Ktrain[0], alpha)
     print("MAEtrain = ", np.mean(np.abs(Y - E[idtrain]))*627.5)
 
     # TESTING REGIMENT:
-    #Ktest = get_local_kernels(Xtest, Xtrain, sigmas, cut_distance=8.0)
+    # compute features in batch:
+    Xtest = []
+    for f in onlyfiles[idtest]:
+        # extract features:
+        mol = qml.Compound(xyz=mypath+f)#, qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")
+        mol.generate_fchl_representation(max_size=n_atom_QM9, cut_distance=cutoff, neighbors=n_atom_QM9)
+        #print(mol.name)
+        Xtest.append(mol.representation)
+
+
+    Xtest = np.array(Xtest)
+    Ktest = get_local_kernels(Xtest, Xtrain, sigmas, cut_distance=cutoff)
+    # solve model:
+    Y = np.dot(Ktest[0], alpha)
+    print("MAEtest = ", np.mean(np.abs(Y - E[idtest]))*627.5)
 
 # main:
 train_FCHL()
