@@ -10,7 +10,8 @@ from ase import Atoms
 from dscribe.descriptors import SOAP """
 
 import qml
-from qml.fchl import generate_representation
+from qml.fchl import generate_representation, get_local_kernels
+from qml.math import cho_solve
 
 
 def extract_atoms(folderdir, filedir):
@@ -141,5 +142,50 @@ def extract_FCHL():
             np.savetxt(atom_folder+'.txt', mol.representation[i], delimiter='\t')
     print("elapsed time = ", time.time()-start, "s")
 
+def train_FCHL():
+    fpath = "data/qm9_error.txt"
+    with open(fpath,'r') as f: # errorlist
+        strlist = f.read()
+        strlist = strlist.split("\n")
+        errfiles = strlist[:-1]
+
+    mypath = "data/qm9/"
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f)) and (f not in errfiles)] # remove errorfiles
+    onlyfiles = sorted(onlyfiles)
+    onlyfiles = np.array(onlyfiles)
+
+    # determine indices:
+    idtrain = range(100)
+    idtest = range(100, 1000)
+
+    # load energies:
+    E = np.loadtxt("data/energies.txt")
+
+    # TRAINING REGIMENT
+    # compute features in batch:
+    n_atom_QM9 = 29
+    cutoff = 8.0
+    Xtrain = []
+    for f in onlyfiles[idtrain]:
+        # extract features:
+        mol = qml.Compound(xyz=mypath+f)#, qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")
+        mol.generate_fchl_representation(max_size=n_atom_QM9, cut_distance=cutoff, neighbors=n_atom_QM9) # neighbours is only used if it has periodic boundary
+        #print(mol.name)
+        Xtrain.append(mol.representation)
+
+    # generate kernels:
+    Xtrain = np.array(Xtrain)
+    sigmas = [2.5]
+    Ktrain = get_local_kernels(Xtrain, Xtrain, sigmas, cut_distance=8.0)
+    print(Ktrain.shape)
+    # solve model:
+    alpha = cho_solve(Ktrain[0], E[idtrain])
+    print(alpha, alpha.shape)
+    Y = np.dot(Ktrain[0], alpha)
+    print("MAEtrain = ", np.mean(np.abs(Y - E[idtrain]))*627.5)
+
+    # TESTING REGIMENT:
+    #Ktest = get_local_kernels(Xtest, Xtrain, sigmas, cut_distance=8.0)
+
 # main:
-extract_FCHL()
+train_FCHL()
