@@ -160,7 +160,7 @@ def train_FCHL():
 
     # determine indices:
     idtrain = range(100) # try using the centers later
-    idtest = range(100, 500)
+    idtest = range(100, Nqm9)
 
     # TRAINING REGIMENT
     # compute features :
@@ -187,7 +187,7 @@ def train_FCHL():
     # TESTING REGIMENT:
     # compute kernel in batch:
     ndata = len(idtest)
-    bsize = 47
+    bsize = 10000
     blength = ndata // bsize
 
     batches = []
@@ -198,8 +198,8 @@ def train_FCHL():
     bend = batches[-1][-1]
     bendsize = ndata - (blength*bsize)
     batches.append([bend, bend+bendsize+2])
-    print(batches)
 
+    start = time.time() # timer
     Ktest = np.array([])
     for i, batch in enumerate(batches):
         print("batch number ", i, "range", batch[0], batch[1])
@@ -212,30 +212,15 @@ def train_FCHL():
             Xtest.append(mol.representation)
         Xtest = np.array(Xtest)
         if Ktest.size == 0: # init kernel
-            Ktest = get_local_kernels(Xtest, Xtrain, sigmas, cut_distance=cutoff)[0]
+            Ktest = get_local_kernels(Xtest, Xtrain, sigmas, cut_distance=cutoff)[0] # slice the first dim
         else: # stack kernel
             Kbatch = get_local_kernels(Xtest, Xtrain, sigmas, cut_distance=cutoff)[0]
-            print(Kbatch.shape)
             Ktest = np.vstack((Ktest, Kbatch))
-        print(Xtest.shape, Ktest.shape)
-    print(Ktest.shape)
 
-    """ Xtest = []
-    start = time.time() # timer
-    for f in onlyfiles[idtest]:
-        # extract features:
-        mol = qml.Compound(xyz=mypath+f)#, qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")
-        mol.generate_fchl_representation(max_size=n_atom_QM9, cut_distance=cutoff, neighbors=n_atom_QM9)
-        #print(mol.name)
-        Xtest.append(mol.representation)
-    print("feature batch time = ", time.time()-start, "s")
+    Y = np.dot(Ktest, alpha)
+    print("batchpred t = ", time.time()-start, "s")
+    print("MAEtest = ", np.mean(np.abs(Y - E[idtest]))*627.5)
 
-    Xtest = np.array(Xtest)
-    start = time.time() # timer
-    Ktest = get_local_kernels(Xtest, Xtrain, sigmas, cut_distance=cutoff)
-    print("pred time = ", time.time()-start, "s")
-    Y = np.dot(Ktest[0], alpha)
-    print("MAEtest = ", np.mean(np.abs(Y - E[idtest]))*627.5) """
 
 # main:
 train_FCHL()
