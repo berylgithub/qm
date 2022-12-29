@@ -101,3 +101,12 @@ fitting info, MAE in kcal/mol:
 
 16.12.2022:
 - try: http://www.qmlcode.org/tutorial.html for FCHL feature
+
+29.12.2022:
+FCHL:
+- 100 train: 257 kcal/mol
+- 100 train center: 129 kcal/mol
+- 100 train center & reduced energy: 9.33706302295949 kcal/molecular
+
+batchpred t =  3849s for SAINT
+batchpred t = 11448s for OMP1
