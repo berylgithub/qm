@@ -157,10 +157,16 @@ def train_FCHL():
     # load energies:
     E = np.loadtxt("data/energies.txt")
     Nqm9 = len(E)
+    print(Nqm9)
 
+    # centers:
+    centers = np.loadtxt("data/centers.txt", dtype=int)
+    centers = centers[:100]
+    print(len(centers))
     # determine indices:
-    idtrain = range(100) # try using the centers later
-    idtest = range(100, Nqm9)
+    idtrain = centers
+    idtest = np.setdiff1d(list(range(Nqm9)), idtrain)
+    print(len(idtest))
 
     # TRAINING REGIMENT
     # compute features :
