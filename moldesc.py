@@ -162,11 +162,12 @@ def train_FCHL():
     # centers:
     centers = np.loadtxt("data/centers.txt", dtype=int)
     centers = centers[:100]
-    print(len(centers))
     # determine indices:
     idtrain = centers
     idtest = np.setdiff1d(list(range(Nqm9)), idtrain)
-    print(len(idtest))
+    # reduce energy:
+    E_red = np.loadtxt("data/atomic_energies.txt")
+    E[idtrain] = E[idtrain] - E_red[idtrain]
 
     # TRAINING REGIMENT
     # compute features :
@@ -188,6 +189,9 @@ def train_FCHL():
     # solve model:
     alpha = cho_solve(Ktrain[0], E[idtrain])
     Y = np.dot(Ktrain[0], alpha)
+    # return energy magnitude:
+    Y = Y + E_red[idtrain]
+    E[idtrain] = E[idtrain] + E_red[idtrain]
     print("MAEtrain = ", np.mean(np.abs(Y - E[idtrain]))*627.5)
 
     # TESTING REGIMENT:
@@ -224,6 +228,7 @@ def train_FCHL():
             Ktest = np.vstack((Ktest, Kbatch))
 
     Y = np.dot(Ktest, alpha)
+    Y = Y + E_red[idtest] # return energy magnitude
     print("batchpred t = ", time.time()-start, "s")
     print("MAEtest = ", np.mean(np.abs(Y - E[idtest]))*627.5)
 
