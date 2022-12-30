@@ -63,17 +63,6 @@ Atom-centered symmetry functions (ACSF) (\at{cite Behler}) computes 4 symmetry f
 Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al}. Essentially FCHL encodes radial distribution by the two-body term, and encodes the mean distances and angular information by three-body term. FCHL considers atomic coordinates and the nuclear charges as the primary inputs. For each molecule, FCHL returns an array of size $(\max_l n^l_\text{atom}, 5, n_\text{neigh})$, where $n_\text{neigh}$ is the number of atomic neighbours; almost in all cases $n_\text{neigh} = \max_l n^l_\text{atom}$, the only exception is when periodic boundary cell mode is used (usually for crystals). 
 The hyperparameters are: cut-off radius (in Angstrom), number of neighbours, and periodic cells boundaries. For the QM9 dataset, FCHL returns an array with size $(133885, 29, 5, 29)$.
 
-The data matrix of FCHL by default has the form of
-\begin{equation}
-	A_{ij} = \sum_{ij} A^\text{atom}(f^{\hat{l}}_i, f^l_j),
-\end{equation}
-where the atomic Gaussian kernel $A^\text{atom}$ is formed by
-\begin{equation}
-	A^\text{atom}(f^{\hat{l}}_i, f^l_j) = \delta_{Z_iZ_j} \text{ exp}\Big( - \frac{||f^{\hat{l}}_i - f^l_j ||^2_2}{2 \sigma^2} \Big)
-\end{equation}
-where $\delta$ is the Kronecker delta which depends on the nuclear charge $Z_i$ of atom $i$ and nuclear charge $Z_j$ of atom $j$. 
-For each pair of molecules, $A^\text{atom}$ is a sparse matrix with $\mathcal{O}(n_\text{atom}^2 - c)$ storage, where $c$ is the total number of occurence of $\delta_{Z_iZ_j} = 0$. 
-
 \section{Feature extraction}
 \label{sec:feature}
 The very first piece which needs to be computed is the collection of molecular features. The feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
@@ -423,7 +412,7 @@ where
 Let $A$ be the data matrix, if it is constructed by the Gaussian kernel then
 \begin{equation}
 	\label{eq:gaussian}
-	A_{ij} = \text{exp}(-\|w_{i:} - w_{j:}\|^2 / 2\sigma), ~~\text{for }i \in K, j \in K,
+	A_{ij} = \text{exp}\Big(-\frac{\|w_{i:} - w_{j:}\|^2}{2\sigma}\Big), ~~\text{for }i \in K, j \in K,
 \end{equation}
 where
 \begin{equation}
@@ -452,6 +441,17 @@ with the target vector in (\ref{eq:lineartargetvector}).
 \label{subsec:NN}
 \at{insert standard neural network formula here}
 
+\subsection{FCHL}
+The entries of FCHL's data matrix are
+\begin{equation}
+	A_{\hat{l}l} = \sum_{ij} A^\text{atom}(f^{\hat{l}}_i, f^l_j),
+\end{equation}
+where the atomic Gaussian kernel $A^\text{atom}$ is formed by
+\begin{equation}
+	A^\text{atom}(f^{\hat{l}}_i, f^l_j) = \delta_{Z_iZ_j} \text{ exp}\Big( - \frac{\|f^{\hat{l}}_i - f^l_j \|^2_2}{2 \sigma^2} \Big)
+\end{equation}
+where $\delta$ is the Kronecker delta which depends on the nuclear charge $Z_i$ of atom $i$ and nuclear charge $Z_j$ of atom $j$. 
+For each pair of molecules, $A^\text{atom}$ is a sparse matrix with $\mathcal{O}(n_\text{atom}^2 - c)$ storage, where $c$ is the total number of occurrences of $\delta_{Z_iZ_j} = 0$. 
 
 \iffalse
 &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
