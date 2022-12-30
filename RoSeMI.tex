@@ -51,24 +51,36 @@
 \section{Basic features}
 \label{sec:basic_feature}
 
-Here we describe several common techniques for extracting atomic features.
+Here we describe several common techniques for extracting atomic features. In general, each set of features results in an array data structure with $(n_\text{mol}, n^l_\text{atom}, n_{af})$. Typically this is stored in a vector of matrices, where each matrix has different row size, due to the possibility of each molecule having different number of atoms $n^l_\text{atom}$; meanwhile $n_{af}$ is always uniform across the array, it is possible that $n_{af}$ itself indexes a matrix, i.e., $n_{af} := n_\text{row} \times n_\text{col}$. 
+
 \subsection{ACSF}
-Atom-centered symmetry functions (ACSF) (\at{cite Behler}) computes 4 symmetry functions for each atom, they are composed of radial and angular functions. ACSF only considers the set of atomic coordinates as the primary input. For each molecule $l$, ACSF returns a matrix with $(n^l_\text{atom}, n_{af})$ size, where $n^l_\text{atom}$ is the number of atoms in molecule $l$ and $n_{af}$ is the number of generated features. The hyperparameters include (but not limited to): cut-off radius (in Angstrom), width of the Gaussian, and damping scalar. In the default settings (without changing any hyperparameters) $n_{af} = 51$.
+Atom-centered symmetry functions (ACSF) (\at{cite Behler}) computes 4 symmetry functions for each atom, they are composed of radial and angular functions. ACSF only considers the set of atomic coordinates as the primary input. For each molecule $l$, ACSF returns a matrix with $(n^l_\text{atom}, n_{af})$ size, where $n^l_\text{atom}$ is the number of atoms in molecule $l$ and $n_{af}$ is the number of generated features. The hyperparameters include (but not limited to) \at{this is based on the paper, in the Julia library \url{https://github.com/DescriptorZoo/ACSF.jl}, the default settings are unknown/currently unable to be changed}:
+\begin{itemize}
+	\item cut-off radius (in Angstrom),
+	\item width of the Gaussian,
+	\item damping scalar.
+\end{itemize}
+
 
 \subsection{SOAP}
 \at{currently unused}
 
 
 \subsection{FCHL}
-Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al}. Essentially FCHL encodes radial distribution by the two-body term, and encodes the mean distances and angular information by three-body term. FCHL considers atomic coordinates and the nuclear charges as the primary inputs. For each molecule, FCHL returns an array of size $(\max_l n^l_\text{atom}, 5, n_\text{neigh})$, where $n_\text{neigh}$ is the number of atomic neighbours; almost in all cases $n_\text{neigh} = \max_l n^l_\text{atom}$, the only exception is when periodic boundary cell mode is used (usually for crystals). 
-The hyperparameters are: cut-off radius (in Angstrom), number of neighbours, and periodic cells boundaries. For the QM9 dataset, FCHL returns an array with size $(133885, 29, 5, 29)$.
+Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al \url{https://aip.scitation.org/doi/10.1063/1.5126701}}. Essentially FCHL encodes radial distribution by the two-body term, and encodes the mean distances and angular information by three-body term. FCHL considers atomic coordinates and the nuclear charges as the primary inputs. For each molecule, FCHL returns an array of size $(\max_l n^l_\text{atom}, 5, n_\text{neigh})$, where $n_\text{neigh}$ is the number of atomic neighbours; almost in all cases $n_\text{neigh} = \max_l n^l_\text{atom}$, the only exception is when periodic boundary cell mode is used (usually for crystals). The hyperparameters are: 
+\begin{itemize}
+	\item cut-off radius (in Angstrom), the default is $r_\text{cutoff} = 5.0$,
+	\item number of neighbours, the default is $n_\text{neigh} = 23$,
+	\item periodic cells boundaries, the default is \codeword{pbc = None}.
+\end{itemize}
+For the QM9 dataset, FCHL returns an array with size $(133885, 29, 5, 29)$.
 
 \section{Feature extraction}
 \label{sec:feature}
 The very first piece which needs to be computed is the collection of molecular features. The feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
 \subsection{Atomic feature selection}
 \begin{itemize}
-	\item Compute the atomic features using ACSF (\at{cite Behler}). This gives a row vector $f^l_{i:}$ with length $n^\text{atom}_f = 51$ for each atom $i$ in a molecule $l$. Apply this to all molecules in the dataset, hence there are a total of $N_\text{QM9}$ ACSF matrices $f^l$.
+	\item Compute the atomic features, this gives a row vector $f^l_{i:}$ with length $n_{af}$ for each atom $i$ in a molecule $l$. Apply this to all molecules in the dataset, hence there are a total of $N_\text{QM9}$ matrices $f^l$.
 	\item In order to select the most relevant features, we do the \textbf{principal component analysis} (PCA), first by computing the mean vectors and the matrix $S$ by
 	\begin{equation}
 		\begin{split}
@@ -287,7 +299,8 @@ For molecular features, the PCA has similar time and storage complexity to the a
 
 
 \section{Splines}
-The splines (\texttt{bspline}) are used to increase the dimension of the feature space; with sufficient number of splines for each feature, it will lead to linearly separated data points.
+\label{sec:spline}
+Splines (\texttt{bspline}) are used to increase the dimension of the feature space; with sufficient number of splines for each feature, it will lead to linearly separated data points.
 \begin{itemize}
 	\item Compute the univariate splines $\beta$ and its derivative $\beta'$ given $F_{ij}$ for $i = 1,...,n_\text{data}$, $j = 1,...,n_f$ (vectorized over matrix $F$):
 	\begin{equation}
@@ -412,20 +425,20 @@ where
 Let $A$ be the data matrix, if it is constructed by the Gaussian kernel then
 \begin{equation}
 	\label{eq:gaussian}
-	A_{ij} = \text{exp}\Big(-\frac{\|w_{i:} - w_{j:}\|^2}{2\sigma}\Big), ~~\text{for }i \in K, j \in K,
+	A_{ij} = \text{exp}\Big(-\frac{\|w_{i:} - w_{j:}\|^2}{2\sigma}\Big),
 \end{equation}
-where
+where $i$ and $j$ index the query molecules (or data points)
 \begin{equation}
 	\sigma = c\sigma_0,
 \end{equation}
 where $c \in \mathbb{R}$ is a hyperparameter, and
 \begin{equation}
-	\sigma_0 = \frac{1}{Nn_K}\sum_{i \in T, j \in K}\text{exp}(-\|w_{i:} - w_{j:}\|^2).
+	\sigma_0 = \frac{1}{Nn_K}\sum_{ij}\text{exp}(-\|w_{i:} - w_{j:}\|^2).
 \end{equation} 
-The target vector is the energies indexed by $K$:
+The target vector is simply the energies:
 \begin{equation}
 	\label{eq:lineartargetvector}
-	b_i := E_{i \in K}.
+	b_i := E_i.
 \end{equation}
 
 \subsection{Linear least squares}
@@ -433,25 +446,23 @@ The target vector is the energies indexed by $K$:
 The linear least squares (LLS) model simply uses the feature matrix as the data matrix, hence
 \begin{equation}
 	\label{eq:lls}
-	A_{ij} := F_{i\in K, j},
+	A_{ij} := F_{ij},
 \end{equation}
-with the target vector in (\ref{eq:lineartargetvector}).
+where $i$ indexes the query molecule and $j$ indexes the feature column of $i$th molecule. Whereas the target vector is the same as (\ref{eq:lineartargetvector}).
 
 \subsection{Neural network}
 \label{subsec:NN}
 \at{insert standard neural network formula here}
 
 \subsection{FCHL}
-The entries of FCHL's data matrix are
+The entries of FCHL's data matrix are \at{\cite[Eq. (10)]{Faber et al} from \url{https://aip.scitation.org/doi/10.1063/1.5126701}}
 \begin{equation}
-	A_{\hat{l}l} = \sum_{ij} A^\text{atom}(f^{\hat{l}}_i, f^l_j),
+	A_{l' l} = \sum_P \sum_{Z^{l'}_i = P} \sum_{Z^{l}_j = P} A^\text{atom}(f^{l'}_i, f^l_j)
 \end{equation}
-where the atomic Gaussian kernel $A^\text{atom}$ is formed by
+where $P$ is the set of index of atom types, $Z_i^l$ is the nuclear charge of atom $i$ in molecule $l$, and the atomic Gaussian kernel function is \at{\cite[(26)]{Faber et al}}
 \begin{equation}
-	A^\text{atom}(f^{\hat{l}}_i, f^l_j) = \delta_{Z_iZ_j} \text{ exp}\Big( - \frac{\|f^{\hat{l}}_i - f^l_j \|^2_2}{2 \sigma^2} \Big)
+	A^\text{atom}(u, v) = \text{ exp}\Big( - \frac{\|u - v \|^2_2}{2 \sigma^2} \Big).
 \end{equation}
-where $\delta$ is the Kronecker delta which depends on the nuclear charge $Z_i$ of atom $i$ and nuclear charge $Z_j$ of atom $j$. 
-For each pair of molecules, $A^\text{atom}$ is a sparse matrix with $\mathcal{O}(n_\text{atom}^2 - c)$ storage, where $c$ is the total number of occurrences of $\delta_{Z_iZ_j} = 0$. 
 
 \iffalse
 &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
@@ -461,7 +472,7 @@ For each pair of molecules, $A^\text{atom}$ is a sparse matrix with $\mathcal{O}
 \label{sec:intermediate}
 
 \subsection{Shepard model}
-Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $F, D$, $T$, $\Phi$ and $\Phi'$:
+Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $F$ (from Section \ref{sec:feature}); $\Phi$ and $\Phi'$ (from Section \ref{sec:spline}); and $D$ and $T$ (from Section \ref{sec:data}):
 \begin{itemize}
 	\item Determine the set of labels of the initial trial points
 	\begin{equation}
@@ -557,7 +568,18 @@ $A$ is constructed explicitly here since it is cheap and fast to compute with on
 
 
 \section{Program structure}
-The main program is divided into two main subprograms: feature exctraction, data setup and fitter. Feature extraction refers to any operations included in extracting the raw array of features (usually on the atomic level) given the geometrical information of the molecules (e.g., coordinates, nuclear charges, etc), this is usually only done once for each set of molecular geometries. Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}) except for the raw feature extraction; in general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. Meanwhile the fitter subprogram computes everything which depend on $\theta$ or set $T$. The feature extraction and data setup subprogram is compatible with any types of model, while the fitter subprogram is specific for the Shepard model.
+The main program is divided into two main subprograms: feature exctraction, data setup and fitter. The feature extraction and data setup subprogram is compatible with any types of model, while the fitter subprogram is specific for the Shepard model. Each subprogram is defined by:
+\begin{itemize}
+	\item Feature extraction refers to any operations included in extracting the raw array of features (usually on the atomic level) given the geometrical information of the molecules (e.g., coordinates, nuclear charges, etc), this is usually only done once for each set of molecular geometries.
+	\item Data setup includes section (\ref{sec:feature}) up to section (\ref{sec:data}) except for the raw feature extraction; in general, everything that are independent of $\theta$ and the indexing from set $T$ are included into the data setup. 
+	\item The fitter subprogram computes everything which depend on $\theta$ or set $T$. 
+\end{itemize}
+
+ 
+
+
+
+
 
 \subsection{Feature extraction}
 \label{sub:fe}
@@ -639,8 +661,7 @@ For model fitting, the model choice is \{RoSeMI, KRR, NN, LLS\}. The hyperparame
 	\item the list of the hidden layers $n_\text{nodes} \in \mathbb{Z}^{1 \times n_{HL}}_{>0}$ ,
 	\item the choice of activation function for each node in each layer: ReLU, sigmoid, tanh, etc.
 \end{itemize}
-the NN can be optimized by several choices of optimization method: Adam, gradient descent, RMSProp, etc.
-Meanwhile RoSeMI, KRR, and LLS are solved by CGLS hence we have a choice of the maximum iteration \codeword{itmax} $\in \mathbb{Z}_{>0}$.
+the NN can be optimized by several choices of optimization method: Adam, gradient descent, RMSProp, etc. RoSeMI, KRR, and LLS are solved by CGLS hence we have a choice of the maximum number of iteration \codeword{itmax} $\in \mathbb{Z}_{>0}$.
 
 \section{Numerical experiments}
 The hardware and software specification used for the experiments are:
@@ -744,7 +765,7 @@ Using the set of index $K$ obtained in the same way as the one in the first row 
 
 The fitting experiments with $E_\text{null}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The KRR uses scaler $c=1$. The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. 
 
-For FCHL \at{cite Lilienfeld et al}, the feature extraction, fitting, and prediction is done using the quantum machine learning (QML) package \at{cite QML} in Python. The training set used is the same set $K$ as the other models, which is computed from the processed ACSF set of features, hence it is not the most accurate molecular centers relative to FCHL set of features.
+For FCHL \at{cite Lilienfeld et al}, the feature extraction, fitting, and prediction is done using the quantum machine learning (QML) package \at{cite QML \url{https://www.qmlcode.org}} in Python. The training set used is the same set $K$ as the other models, which is computed from the processed ACSF set of features, hence it is not the most accurate molecular centers relative to FCHL set of features.
 The hyperparameters used are: cutoff radius $r_\text{cut} = 8.0$ for both the FCHL feature extraction and the local kernel generation; and Gaussian scaler $\sigma = 32.0$ for the local kernel generation.
 
 For all models, after prediction, the MAE is computed from
