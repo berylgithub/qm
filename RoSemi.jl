@@ -885,6 +885,36 @@ function comp_gaussian_kernel(F, σ2)
 end
 
 """
+=====================
+FCHL
+"""
+
+"""
+vector or matrix u,v, scalar σ
+"""
+function comp_gauss_atom(u, v, σ)
+    return exp(-norm(u - v)^2/(2*σ^2))
+end
+
+"""
+atomic feature array fn of mol n, 
+list of atoms ln of mol n, 
+gaussian scaler scalar σ 
+"""
+function comp_FCHL_kernel_entry(f1, f2, l1, l2, σ)
+    entry = 0.
+    for i ∈ eachindex(l1)
+        for j ∈ eachindex(l2)
+            if l1[i] == l2[j] # manually set Kronecker delta using if else
+                d = comp_gauss_atom(f1[i, :, :], f2[j, :, :], σ)
+                entry += d
+            end
+        end
+    end
+    return entry
+end
+
+"""
 ==================================
 """
 
