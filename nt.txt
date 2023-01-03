@@ -107,6 +107,9 @@ FCHL:
 - 100 train: 257 kcal/mol
 - 100 train center: 129 kcal/mol
 - 100 train center & reduced energy: 9.33706302295949 kcal/molecular
-
 batchpred t =  3849s for SAINT
 batchpred t = 11448s for OMP1
+
+03.01.2023:
+not possible to implement FCHL Kernel in Julia, the python & fortran code is not 1:1 to the formula and is way too complicated,
+alternative: call py from Julia

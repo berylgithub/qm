@@ -907,6 +907,7 @@ function comp_FCHL_kernel_entry(f1, f2, l1, l2, σ)
         for j ∈ eachindex(l2)
             if l1[i] == l2[j] # manually set Kronecker delta using if else
                 d = comp_gauss_atom(f1[i, :, :], f2[j, :, :], σ)
+                #println(i," ", j, l1[i], l2[j], " ",d)
                 entry += d
             end
         end

@@ -1069,6 +1069,17 @@ function check_MAE()
     display(MAE_approx)
 end
 
+function test_FCHL()
+    dataset = load("data/qm9_dataset_old.jld", "data")
+    f = load("data/FCHL.jld", "data")
+    centers = vec(readdlm("data/centers.txt", Int))
+    E_null = vec(readdlm("data/atomic_energies.txt"))
+    K = centers[1:100]
+    A = comp_FCHL_kernel_entry(f[1, :, :, :], f[1, :, :, :], dataset[1]["atoms"], dataset[1]["atoms"], 32.)
+    display(A[1:5, 1:5])
+end
+
+
 """
 unused stuffs but probably needed later..
 """
