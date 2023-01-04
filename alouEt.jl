@@ -1,5 +1,6 @@
 using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3, DelimitedFiles
 using Flux, ProgressMeter
+using PyCall
 
 """
 contains all tests and experiments
@@ -1079,6 +1080,18 @@ function test_FCHL()
     display(A[1:5, 1:5])
 end
 
+"""
+test PyCall for QML
+"""
+
+function qml(x,y,z)
+    py"""
+    import numpy as np
+    def fones(x,y,z):
+        return np.ones((x,y,z))
+    """
+    xs = py"fones"(x,y,z)
+end
 
 """
 unused stuffs but probably needed later..
