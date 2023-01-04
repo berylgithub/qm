@@ -900,13 +900,15 @@ end
 atomic feature array fn of mol n, 
 list of atoms ln of mol n, 
 gaussian scaler scalar σ 
+
+this needs to be processed differently, since FCHL contains edge features
 """
 function comp_FCHL_kernel_entry(f1, f2, l1, l2, σ)
     entry = 0.
     for i ∈ eachindex(l1)
         for j ∈ eachindex(l2)
-            if l1[i] == l2[j] # manually set Kronecker delta using if else
-                d = comp_gauss_atom(f1[i, :, :], f2[j, :, :], σ)
+            if l1[i] == l2[j] # manually set Kronecker delta using if 
+                d = comp_gauss_atom(f1, f2, σ) # (matrix, matrix, scalar)
                 #println(i," ", j, l1[i], l2[j], " ",d)
                 entry += d
             end
