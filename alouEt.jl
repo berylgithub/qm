@@ -1084,13 +1084,47 @@ end
 test PyCall for QML
 """
 
-function qml(x,y,z)
+function qml(cutoff)
     py"""
     import numpy as np
-    def fones(x,y,z):
-        return np.ones((x,y,z))
+    from os import listdir, makedirs
+    from os.path import isfile, join, exists
+    import time
+    from warnings import catch_warnings
+
+    import qml
+    from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
+    from qml.math import cho_solve
+    
+    def fchl(cutoff):
+        print(cutoff)
+        fpath = "data/qm9_error.txt"
+        with open(fpath,'r') as f: # errorlist
+            strlist = f.read()
+            strlist = strlist.split("\n")
+            errfiles = strlist[:-1]
+
+        mypath = "data/qm9/"
+        onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f)) and (f not in errfiles)] # remove errorfiles
+        onlyfiles = sorted(onlyfiles) #[1:] this is for nonubuntu
+        print(len(onlyfiles), onlyfiles[0])
+
+        # extract coords here:
+        start = time.time() # timer
+        # make FCHL folder
+        feature_folder = "data/FCHL"
+        if not exists(feature_folder):
+            makedirs(feature_folder)
+        
+        n_atom_QM9 = 29
+        for f in sorted(onlyfiles)[:5]:
+            # extract features:
+            mol = qml.Compound(xyz=mypath+f)#, qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")
+            mol.generate_fchl_representation(max_size=n_atom_QM9, cut_distance=cutoff, neighbors=n_atom_QM9) # neighbours is only used if it has periodic boundary
+            print(mol.name)
     """
-    xs = py"fones"(x,y,z)
+    py"fchl"(cutoff)
+
 end
 
 """
