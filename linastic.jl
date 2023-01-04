@@ -669,3 +669,19 @@ function get_feature_sensitivity(file_f, files_fs)
     MAEs = mean(MAE_mat, dims=1)
     return vec(MAEs) # vector of length n_f 
 end
+
+"""
+self use function
+"""
+function process_FCHL()
+    dataset = load("data/qm9_dataset_old.jld", "data")
+    f = load("data/FCHL.jld", "data")
+    ndata = length(dataset)
+    fp = Vector{Array{Float64, 3}}(undef, ndata)
+    # drop zeros and placeholders (such as very large number):
+    for l ∈ eachindex(dataset)
+        natom = dataset[l]["n_atom"]
+        fp[l] = f[l, 1:natom, :, 1:natom]
+    end
+    save("data/FCHL.jld", "data", fp)
+end
