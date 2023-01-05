@@ -299,6 +299,11 @@ The timing breakdown of the molecular feature selection is as the following:
 \end{itemize}
 For molecular features, the PCA has similar time and storage complexity to the atomic feature counterpart, the only differences are the initial mean vector $s$, the symmetric matrix $S$ computation, and the final projection, since the feature is now a vector with length $n_{mf}$ for each molecule in contrast to the atomic features with $\mathbb{R}^{n_\text{atom} \times n_{af}}$ matrix for each molecule.
 
+\subsection{Feature transformation by message passing}
+The idea of \textit{message passing} is to make the atoms within molecule to be "aware" of each other's features.  
+The message passing techniques were first introduced by \at{cite Gilmer et al} in their Message Passing Neural Networks paper. 
+\dots
+A molecule is represented by undirected graph $G$ where the atoms are the nodes $v \in G$
 
 \section{Splines}
 \label{sec:spline}
@@ -784,7 +789,7 @@ For all models, after prediction, the MAE is computed from
 	\text{MAE} = \frac{1}{N_{QM9}} \sum_{m \in W} |E_m - (\hat{E}_m + E_m^\text{null})|,
 \end{equation}
 hence it recovers the original order of magnitude of the energies.
-
+\at{need to update the table with more verbose row, column, and entries}
 \begin{table}[H]
 	\centering
 	\caption{Fitting result using $E^\text{red}$ as target. Null model refers to the model used for predicting $E^\text{atom}$, RoSeMI refers to the Shepard model, KRR refers to the Gaussian kernel model, LLS is the linear least squares model, NN is the neural network model, and FCHL is the FCHL set of features fitted using Gaussian kernel. \textbf{MAE} is in kcal/mol.}
