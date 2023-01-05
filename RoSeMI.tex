@@ -48,7 +48,7 @@
 \begin{document}
 \maketitle
 
-\section{Basic features}
+\section{Basic atomic features}
 \label{sec:basic_feature}
 
 Here we describe several common techniques for extracting atomic features. In general, each set of features results in an array data structure with $(n_\text{mol}, n^l_\text{atom}, n_{af})$. Typically this is stored in a vector of matrices, where each matrix has different row size, due to the possibility of each molecule having different number of atoms $n^l_\text{atom}$; meanwhile $n_{af}$ is always uniform across the array, it is possible that $n_{af}$ itself indexes a matrix, i.e., $n_{af} := n_\text{row} \times n_\text{col}$. 
@@ -60,14 +60,14 @@ Atom-centered symmetry functions (ACSF) (\at{cite Behler}) computes 4 symmetry f
 	\item width of the Gaussian,
 	\item damping scalar.
 \end{itemize}
-
+Given the default settings, the output gives $n_{af} = 51$.
 
 \subsection{SOAP}
 \at{currently unused}
 
 
 \subsection{FCHL}
-Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al \url{https://aip.scitation.org/doi/10.1063/1.5126701}}. Essentially FCHL encodes radial distribution by the two-body term, and encodes the mean distances and angular information by three-body term. FCHL considers atomic coordinates and the nuclear charges as the primary inputs. For each molecule, FCHL returns an array of size $(\max_l n^l_\text{atom}, 5, n_\text{neigh})$, where $n_\text{neigh}$ is the number of atomic neighbours; almost in all cases $n_\text{neigh} = \max_l n^l_\text{atom}$, the only exception is when periodic boundary cell mode is used (usually for crystals). The hyperparameters are: 
+Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al \url{https://aip.scitation.org/doi/10.1063/1.5126701}}. Essentially FCHL encodes radial distribution by the two-body term, and encodes the mean distances and angular information by three-body term. FCHL considers atomic coordinates and the nuclear charges as the primary inputs. For each molecule, FCHL returns an array of size $(\max_l n^l_\text{atom}, 5, n_\text{neigh})$, where $n_\text{neigh}$ is the number of atomic neighbours; almost in all cases $n_\text{neigh} = \max_l n^l_\text{atom}$, the only exception is when periodic boundary cell mode is used (for crystals). The hyperparameters are: 
 \begin{itemize}
 	\item cut-off radius (in Angstrom), the default is $r_\text{cutoff} = 5.0$,
 	\item number of neighbours, the default is $n_\text{neigh} = 23$,
@@ -77,10 +77,12 @@ For the QM9 dataset, FCHL returns an array with size $(133885, 29, 5, 29)$.
 
 \section{Feature extraction}
 \label{sec:feature}
-The very first piece which needs to be computed is the collection of molecular features. The feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
+The very first piece which needs to be computed is the array of atomic features. 
+The molecular feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
+The molecular feature matrix often can be obtained through processing the array of atomic features.
+The atomic features is often in the form of row vector $f^l_{i}$ with length $n_{af}$ for each atom $i$ in a molecule $l$.
 \subsection{Atomic feature selection}
 \begin{itemize}
-	\item Compute the atomic features, this gives a row vector $f^l_{i:}$ with length $n_{af}$ for each atom $i$ in a molecule $l$. Apply this to all molecules in the dataset, hence there are a total of $N_\text{QM9}$ matrices $f^l$.
 	\item In order to select the most relevant features, we do the \textbf{principal component analysis} (PCA), first by computing the mean vectors and the matrix $S$ by
 	\begin{equation}
 		\begin{split}
@@ -311,6 +313,7 @@ Splines (\texttt{bspline}) are used to increase the dimension of the feature spa
 		\end{split}
 	\end{equation}
 	where $n_L = n_fn_s$ and $n_s$ is the number of splines for each feature.
+	\at{add labels to the plots}
 	\begin{figure}[h]
 		\label{fig:spline}
 		\centering
@@ -329,7 +332,7 @@ Splines (\texttt{bspline}) are used to increase the dimension of the feature spa
 
 \section{Data selection}
 \label{sec:data}
-The set of indices which refers to data points with known energies (or centers) $K$ is chosen by the farthest-distance-algorithm variations, where the challenge imposes $n_K = |K| = 100$. Here we pick $N = |T| > n_K$ centers as a hyperparameter. The flow of the data selection is as the following:
+The set of indices which refers to data points with known energies (or centers) $K$ is chosen by the farthest-distance-algorithm variations, one of which is the \textbf{usequence}. The QM9 challenge imposes $n_K = |K| = 100$. Here we pick $N = |T| > n_K$ centers as a hyperparameter. The flow of the data selection is as the following:
 \begin{itemize}
 	\item Compute and store the set of indices $K$ and the corresponding matrix of distances $D \in \mathbb{R}^{N_\text{QM9} \times N}$ by farthest-minimum-distance algorithm \at{cite Eldar} given $F$, $B$ and $N$.
 	\begin{equation}
@@ -425,7 +428,7 @@ where
 Let $A$ be the data matrix, if it is constructed by the Gaussian kernel then
 \begin{equation}
 	\label{eq:gaussian}
-	A_{ij} = \text{exp}\Big(-\frac{\|w_{i:} - w_{j:}\|^2}{2\sigma}\Big),
+	A_{ij} = \text{exp}\Big(-\frac{\|w_{i:} - w_{j:}\|^2_2}{2\sigma^2}\Big),
 \end{equation}
 where $i$ and $j$ index the query molecules (or data points)
 \begin{equation}
@@ -433,7 +436,7 @@ where $i$ and $j$ index the query molecules (or data points)
 \end{equation}
 where $c \in \mathbb{R}$ is a hyperparameter, and
 \begin{equation}
-	\sigma_0 = \frac{1}{Nn_K}\sum_{ij}\text{exp}(-\|w_{i:} - w_{j:}\|^2).
+	\sigma_0 = \frac{1}{Nn_K}\sum_{ij}\|w_{i:} - w_{j:}\|^2_2.
 \end{equation} 
 The target vector is simply the energies:
 \begin{equation}
@@ -449,20 +452,23 @@ The linear least squares (LLS) model simply uses the feature matrix as the data 
 	A_{ij} := F_{ij},
 \end{equation}
 where $i$ indexes the query molecule and $j$ indexes the feature column of $i$th molecule. Whereas the target vector is the same as (\ref{eq:lineartargetvector}).
+\at{revision regarding to the stuffs that are solved by LLS}
 
 \subsection{Neural network}
 \label{subsec:NN}
 \at{insert standard neural network formula here}
 
-\subsection{FCHL}
-The entries of FCHL's data matrix are \at{\cite[Eq. (10)]{Faber et al} from \url{https://aip.scitation.org/doi/10.1063/1.5126701}}
+\subsection{Atomic Gaussian kernel}
+The entries of the data matrix for the atomic Gaussian kernel are \at{\cite[Eq. (10)]{Faber et al} from \url{https://aip.scitation.org/doi/10.1063/1.5126701}}
 \begin{equation}
+	\label{eq:gaussian_atom}
 	A_{l' l} = \sum_P \sum_{Z^{l'}_i = P} \sum_{Z^{l}_j = P} A^\text{atom}(f^{l'}_i, f^l_j)
 \end{equation}
-where $P$ is the set of index of atom types, $Z_i^l$ is the nuclear charge of atom $i$ in molecule $l$, and the atomic Gaussian kernel function is \at{\cite[(26)]{Faber et al}}
+where $P$ is the set of index of atom types, $Z_i^l$ is the nuclear charge of atom $i$ in molecule $l$, and the atomic Gaussian kernel function is \at{\cite[Eq. (26)]{Faber et al}}
 \begin{equation}
 	A^\text{atom}(u, v) = \text{ exp}\Big( - \frac{\|u - v \|^2_2}{2 \sigma^2} \Big).
 \end{equation}
+where $\sigma \in \mathbb{R}$ is a hyperparameter, typically $\sigma = 2^k$ where $k \in \mathbb{Z}_{\geq 0}$.
 
 \iffalse
 &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
@@ -553,11 +559,11 @@ Given the $Au$ and $A^\top v$ routine, and $b$, the CGLS is called as follows \a
 \end{equation*}
 where $y$ is an arbitrary sized vector of real numbers (in Julia, $y$ can be initialized by \codeword{y = Vector{Float64}()}) and \codeword{itmax} is the maximum number of iteration.
 \subsection{Linear models}
-The Gaussian kernel and LLS models can be fitted in a straightforward manner, the linear system is
+The Gaussian kernels and LLS models can be fitted in a straightforward manner, the linear system is
 \begin{equation}
 	A \theta = b,
 \end{equation}
-this can be implemented simply by
+where for Gaussian kernel $A$ is defined in (\ref{eq:gaussian}); for atomic Gaussian kernel, $A$ is defined in (\ref{eq:gaussian_atom}); meanwhile for LLS, $A$ is defined in (\ref{eq:lls}); $b$ is the target vector defined in (\ref{eq:lineartargetvector}); and $\theta$ is the coefficient vector. This can be implemented simply by
 \begin{equation*}
 	\theta \leftarrow \codeword{CGLS(}A, b,\codeword{itmax)},
 \end{equation*}
@@ -648,12 +654,12 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 We can construct the whole molecular fitting process from start to end by choosing many different possible combinations of hyperparameters. At the very fist step, we can choose the feature extraction method between \{ACSF, FCHL\}. During feature selection, there exist several possible choices of hyperparameters:
 \begin{itemize}
 	\item The choice for the scaling factor of the correlation matrix: the diagonals of the covariance matrix or the sensitivity vector. In the case of sensitivity vector, we can also choose how many perturbed features to be included.
-	\item Number of selected atomic features $n_{af} \in [1, n_{f}]\in \mathbb{Z}_{>0}$,
+	\item Number of selected atomic features $n_{af} \in [1 .. n_{f}]$,
 	\item molecular feature extraction mode, whether to include: sum of squares, binomial features;
-	\item number of selected molecular features $n_{mf} \in [1, n_{f}]\in \mathbb{Z}_{>0}$,
+	\item number of selected molecular features $n_{mf} \in [1 .. n_{f}]$,
 	\item number of splines $n_{s}\in \mathbb{Z}_{>0}$.
 \end{itemize}
-For data selection, the only hyperparameter is $N \in [1, N_\text{QM9}] \in \mathbb{Z}_{>0}$, which is the number of centers requested. 
+For data selection, the only hyperparameter is $N \in [1 : N_\text{QM9}] \subseteq \mathbb{Z}_{>0}$, which is the number of centers requested. 
 
 For model fitting, the model choice is \{RoSeMI, KRR, NN, LLS\}. The hyperparameter for KRR is the scaling factor $c \in \mathbb{R}$. For NN, there are several hyperparameters:
 \begin{itemize}
@@ -733,10 +739,14 @@ Currently active learning scheme has not been tested. Several hand-picked fittin
 
 \subsubsection{Null model and reduced energies}
 \label{subsubsec:ered}
-The null model serves to reduce the molecular energy fitting difficulty by decreasing the order of magnitude of the fitted energy, since by default the molecular energy itself has a large order of magnitude (e.g., the internal energy at $0^{\circ}$ Kelvin $U_0$ of QM9 molecules are between $\mathcal{O}(100)$ to $\mathcal{O}(1000)$ in Hartree unit). We can obtain the reduced energy of a molecule by removing the sum of atomic energies in each molecule
+The null model serves to reduce the molecular energy fitting difficulty by decreasing the order of magnitude of the fitted energy, since by default the molecular energy itself has a large order of magnitude (e.g., the internal energy at $0^{\circ}$ Kelvin $U_0$ of QM9 molecules are between $\mathcal{O}(100)$ to $\mathcal{O}(1000)$ in Hartree unit). We can obtain the reduced energy of a molecule by removing the null energy
 \begin{equation}
-	\label{eq:enull}
-	E^\text{null} = E - \sum_{j \in P} N_j E^\text{atom}_j,
+	\label{eq:ered}
+	E^\text{red} = E - E^\text{null},
+\end{equation}
+where the null energy is
+\begin{equation}
+	E^\text{null} = \sum_{j \in P} N_j E^\text{atom}_j,
 \end{equation}
 where $P$ is a set of atom types, $N_j$ is the count of the atom type $j$ within a fixed molecule, and $E^\text{atom}_j$ is the the energy of atom type $j$.
 
@@ -750,11 +760,12 @@ The atomic energy itself can be obtained by fitting a LLS model. For QM9 challen
 		\text{for }i &\in K.
 	\end{split}
 \end{equation}
-Using the set of index $K$ obtained in the same way as the one in the first row of table \ref{tab:shepard_exp}, the result of the atomic energies fitting is shown in table \ref{tab:atomic_exp}. The MAE from fitting the atomic energies is in fact refers to the mean absolute value of the $E_\text{null}$ of all molecules in the QM9 dataset itself.
+Using the set of index $K$ obtained in the same way as the one in the first row of table \ref{tab:shepard_exp}, the result of the atomic energies fitting with the molecular energies $E$ as the target is shown in table \ref{tab:atomic_exp}. 
+The MAE from fitting the atomic energies is in fact refers to the mean absolute value of the $E^\text{red}$ of all molecules in the QM9 dataset itself.
 
 \begin{table}[H]
 	\centering
-	\caption{Result of fitting for atomic energies. \textbf{MAE} and the energies are in kcal/mol.}
+	\caption{Result of fitting to predict the atomic energies. \textbf{MAE} and the energies are in kcal/mol.}
 	\begin{tabular}{|l|l|l|l|l|l|}
 		\hline
 		\multicolumn{1}{|c|}{\textbf{MAE}} & \multicolumn{1}{c|}{$E^\text{atom}_\text{H}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{C}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{O}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{N}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{F}$} \\ \hline
@@ -763,7 +774,7 @@ Using the set of index $K$ obtained in the same way as the one in the first row 
 	\label{tab:atomic_exp}
 \end{table}
 
-The fitting experiments with $E_\text{null}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The KRR uses scaler $c=1$. The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. 
+The fitting experiments with $E^\text{red}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The KRR uses scaler $c=1$. The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. 
 
 For FCHL \at{cite Lilienfeld et al}, the feature extraction, fitting, and prediction is done using the quantum machine learning (QML) package \at{cite QML \url{https://www.qmlcode.org}} in Python. The training set used is the same set $K$ as the other models, which is computed from the processed ACSF set of features, hence it is not the most accurate molecular centers relative to FCHL set of features.
 The hyperparameters used are: cutoff radius $r_\text{cut} = 8.0$ for both the FCHL feature extraction and the local kernel generation; and Gaussian scaler $\sigma = 32.0$ for the local kernel generation.
@@ -776,7 +787,7 @@ hence it recovers the original order of magnitude of the energies.
 
 \begin{table}[H]
 	\centering
-	\caption{Fitting result using $E_\text{null}$. Null model refers to the model used for computing the reduced energies, RoSeMI refers to the Shepard model, KRR refers to the Gaussian kernel model, LLS is the linear least squares model, NN is the neural network model, and FCHL is the FCHL set of features fitted using Gaussian kernel. \textbf{MAE} is in kcal/mol.}
+	\caption{Fitting result using $E^\text{red}$ as target. Null model refers to the model used for predicting $E^\text{atom}$, RoSeMI refers to the Shepard model, KRR refers to the Gaussian kernel model, LLS is the linear least squares model, NN is the neural network model, and FCHL is the FCHL set of features fitted using Gaussian kernel. \textbf{MAE} is in kcal/mol.}
 	\begin{tabular}{|l|l|}
 		\hline
 		\multicolumn{1}{|c|}{\textbf{model}} & \multicolumn{1}{|c|}{\textbf{MAE}} \\ \hline
