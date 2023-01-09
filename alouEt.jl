@@ -1,6 +1,5 @@
 using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3, DelimitedFiles
 using Flux, ProgressMeter
-using PyCall
 
 """
 contains all tests and experiments
