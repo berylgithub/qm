@@ -300,10 +300,53 @@ The timing breakdown of the molecular feature selection is as the following:
 For molecular features, the PCA has similar time and storage complexity to the atomic feature counterpart, the only differences are the initial mean vector $s$, the symmetric matrix $S$ computation, and the final projection, since the feature is now a vector with length $n_{mf}$ for each molecule in contrast to the atomic features with $\mathbb{R}^{n_\text{atom} \times n_{af}}$ matrix for each molecule.
 
 \subsection{Feature transformation by message passing}
-The idea of \textit{message passing} is to make the atoms within molecule to be "aware" of each other's features.  
+The idea of \textit{message passing} is to make the atoms within a molecule to be "aware" of each other's features.  
 The message passing techniques were first introduced by \at{cite Gilmer et al} in their Message Passing Neural Networks paper. 
 \dots
-A molecule is represented by undirected graph $G$ where the atoms are the nodes $v \in G$
+A molecule is represented by undirected graph $G$ where the atoms are the nodes $v \in G$ where it indexes the node features $x_v$; and the edges are the interactions between the atoms (whether it is covalently bonded or not), it is also possible for each edge to contain edge features $e_{vw}$. Here it is assumed that the graph is fully connected with respect to a certain cutoff $r_\text{cutoff}$ radius for each node.
+
+In general, there are three major phases for message passing transformation: \textbf{the aggregation phase, the update phase, and the readout phase}.
+The aggregation and update phases are run for $T$ time steps, and the readout phase is applied in the end.
+Suppose that $h_v^t$ is a hidden state which represents the features of node $v$ at time step $t$, we do an initialization at time step $t = 0$ as
+\begin{equation}
+	\label{eq:mpinit}
+	h_v^{(0)} := f_i^l, ~~ e_{vw}^{(0)} := r_{ij};
+\end{equation}
+then for each time step $t$, we do an aggregation phase,
+\begin{equation}
+	\label{eq:mpagg}
+	m^{t+1}_v = M_t(h_v^t, h_w^t, e_{vw}^t),~~ \text{for }v \in G,\text{ }w \in N(v),
+\end{equation}
+where $M_t$ is the aggregation function at time step $t$, it is assumed that $M_t$ is an invariant function with respect to the set of neighbours $N(v)$; one of the simplest example is
+\begin{equation}
+	\label{eq:mpaggex}
+	M_t(h_v^t, h_w^t, e_{vw}^t) := \frac{1}{|N(v)|}\sum_{w \in N(v)} \text{concat}\Big(h_w^t, e_{vw}^t\Big),
+\end{equation}
+which is just the mean of the neighbours' features, where $\text{concat}(\cdot, \cdot)$ is the concatenation. The update phase for the hidden states is defined by
+\begin{equation}
+	\label{eq:mpupdate}
+	h_v^{t+1} = U^t_h(h_v^t, m^{t+1}_v), ~~ e_{vw}^{t+1} = U^t_e(h_v^t, h_w^t, e_{vw}^t),
+\end{equation}
+where $U^t_h$ is an update function for hidden states at time step $t$, one of the most common example is
+\begin{equation}
+	\label{eq:mphupdateex}
+	U^t_h(h_v^t, m^{t+1}_v) := \sigma(W^tm^{t+1}_v), 
+\end{equation}
+where $\sigma$ is an activation function which takes in the product of the learned "weight" matrix $W^t$ at time step $t$ with the aggregated vector $m^{t+1}_v$; it is also possible to have a fixed quantities instead of a learned matrix \at{will nede to design the formula, or find a literature that do this} hence there exist minimal numbers of hyperparameters to be optimized. It is common to keep the edge features fixed throughout the time steps, i.e.,
+\begin{equation}
+	\label{eq:mpeupdateex}
+	U^t_e(h_v^t, h_w^t, e_{vw}^t) := e_{vw}^t,
+\end{equation}
+in some cases it is possible to use a learned function analogous to (\ref{eq:mphupdateex}) \at{need some literatures}. After $T$ time steps, the readout phase is defined by
+\begin{equation}
+	\label{eq:mpreadout}
+	f_i^l = R(h_v^T) ~~ \text{for }v \in G,
+\end{equation}
+where one of the simplest example is
+\begin{equation}
+	\label{eq:mpreadoutex}
+	R(h_v^T) := h_v^T ~~ \text{for }v \in G.
+\end{equation}
 
 \section{Splines}
 \label{sec:spline}
