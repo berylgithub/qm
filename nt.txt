@@ -116,3 +116,6 @@ alternative: call py from Julia
 
 04.01.2023:
 FCHL contains edge features, so the treatment should be different (look at the fortran code)
+
+10.01.2023:
+inject fortran code: get from github, edit the .f90 files, "pip install ." in the directory, no need to uninstall if there's any change, just do pip install again
