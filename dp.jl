@@ -119,7 +119,7 @@ end
 """
 transform SOAP filetexts to binary
 """
-function getSOAP()
+function getSOAPmol()
     path = "data/SOAP/"
     files = readdir(path)
     ndata = length(files)
@@ -155,9 +155,16 @@ end
 
 
 function getSOAP()
-    path = "data/SOAP/"
-    str = "dsgdb9nsd_000001.xyz.txt"
-    display(readdlm(path*str))
+    pth = "data/SOAP/"
+    #str = "dsgdb9nsd_000001.xyz.txt"
+    mols = readdir(pth)
+    nf = 165; nmol = length(mols)
+    f = Vector{Matrix{Float64}}(undef, nmol)
+    for l ∈ eachindex(mols) 
+        println(mols[l], " completed!!")
+        f[l] = readdlm(pth*mols[l])
+    end
+    save("data/SOAP.jld", "data", f)
 end
 
 function table_results(foldername)
