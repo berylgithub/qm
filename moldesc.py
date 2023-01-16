@@ -142,6 +142,7 @@ def extract_FCHL():
             np.savetxt(atom_folder+'.txt', mol.representation[i], delimiter='\t')
     print("elapsed time = ", time.time()-start, "s")
 
+
 def train_FCHL():
     fpath = "data/qm9_error.txt"
     with open(fpath,'r') as f: # errorlist
@@ -232,6 +233,34 @@ def train_FCHL():
     print("batchpred t = ", time.time()-start, "s")
     print("MAEtest = ", np.mean(np.abs(Y - E[idtest]))*627.5)
 
+def getatom_FCHL():
+    fpath = "data/qm9_error.txt"
+    with open(fpath,'r') as f: # errorlist
+        strlist = f.read()
+        strlist = strlist.split("\n")
+        errfiles = strlist[:-1]
+
+    mypath = "data/qm9/"
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f)) and (f not in errfiles)] # remove errorfiles
+    onlyfiles = sorted(onlyfiles)
+    onlyfiles = np.array(onlyfiles)
+
+    n_atom_QM9 = 29
+    Xtrain = []
+    for f in sorted(onlyfiles)[-2:-1]:
+        # extract features:
+        mol = qml.Compound(xyz=mypath+f)#, qml.Compound(xyz="data/qm9/dsgdb9nsd_000002.xyz")
+        mol.generate_fchl_representation(max_size=n_atom_QM9, cut_distance=8.0, neighbors=n_atom_QM9) # neighbours is only used if it has periodic boundary
+        Xtrain.append(mol.representation)
+        print(mol.name)
+    
+    Xtrain = np.array(Xtrain)
+    print(Xtrain[0, 0, :5, :5])
+    cutoff = 8.
+    sigmas = [32.]
+    Ktrain = get_local_kernels(Xtrain, Xtrain, sigmas, cut_distance=cutoff)
+
 
 # main:
-train_FCHL()
+#train_FCHL()
+getatom_FCHL()
