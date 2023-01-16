@@ -924,15 +924,18 @@ function fit_gaussatom(;tlimit=900)
     cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
     A = get_gaussian_kernel(f[Midx], f[Midx], [d["atoms"] for d in dataset[Midx]], [d["atoms"] for d in dataset[Midx]], cσ)
     start = time()
-    #θ, stat = cgls(A, E_train, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
-    θ = A\E_train
+    θ, stat = cgls(A, E_train, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    #θ = A\E_train
     # check MAE of training data only:
     E_pred = A*θ + E_atom[Midx] # return the magnitude
     errors = E_pred - E[Midx]
     MAEtrain = mean(abs.(errors)) .* 627.503 # in kcal/mol
     println("MAE train = ",MAEtrain)
     # pred ∀ data
-    A = get_gaussian_kernel(f[Widx], f[Midx], [d["atoms"] for d in dataset[Widx]], [d["atoms"] for d in dataset[Midx]], cσ)
+    t = @elapsed begin
+        A = get_gaussian_kernel(f[Widx], f[Midx], [d["atoms"] for d in dataset[Widx]], [d["atoms"] for d in dataset[Midx]], cσ)
+    end
+    println("kernel generation duration = ",t)
     E_pred = A*θ + E_atom[Widx]
     errors = E_pred - E[Widx]
     MAEtest = mean(abs.(errors)) .* 627.503 # in kcal/mol
