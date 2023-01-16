@@ -121,4 +121,5 @@ FCHL contains edge features, so the treatment should be different (look at the f
 inject fortran code: get from github, edit the .f90 files, "pip install ." in the directory, no need to uninstall if there's any change, just do pip install again
 
 16.01.2023:
-gaussian atom kernel w/ kronecker delta (without preprocessing the features), direct solve = 37 kcal/mol, CGLS =  
+gaussian atom kernel w/ kronecker delta (without preprocessing the features), direct solve = 37 kcal/mol, CGLS = 22.7 kcal/mol, t_pred = 907s
+ ====        w/o kronecker delta, CGLS =  29.9, t_pred= 2356s

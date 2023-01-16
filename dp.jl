@@ -154,6 +154,12 @@ function getFCHL()
 end
 
 
+function getSOAP()
+    path = "data/SOAP/"
+    str = "dsgdb9nsd_000001.xyz.txt"
+    display(readdlm(path*str))
+end
+
 function table_results(foldername)
     sheader = ["n_data", "n_af", "n_mf", "n_basis", "num_centers", "ft_sos", "ft_bin"]
     rheader = ["Nqm9", "nK", "nU", "n_feature", "n_basis", "MAE", "RMSD", "max(MAD)", "t_ab", "t_ls", "t_batch"]
