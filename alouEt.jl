@@ -1083,7 +1083,7 @@ end
 test PyCall for QML
 """
 
-function qml(cutoff)
+#= function qml(cutoff)
     py"""
     import numpy as np
     from os import listdir, makedirs
@@ -1124,7 +1124,7 @@ function qml(cutoff)
     """
     py"fchl"(cutoff)
 
-end
+end =#
 
 """
 unused stuffs but probably needed later..

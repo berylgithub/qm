@@ -886,35 +886,44 @@ end
 
 """
 =====================
-FCHL
+FCHL-ish kernels
 """
 
 """
-vector or matrix u,v, scalar σ
+compute the gaussian difference
+vector or matrix u,v, scalar cσ := 2*σ^2
 """
-function comp_gauss_atom(u, v, σ)
-    return exp(-norm(u - v)^2/(2*σ^2))
+function comp_gauss_atom(u, v, cσ)
+    return exp((-norm(u - v)^2)/cσ)
 end
 
 """
 atomic feature array fn of mol n, 
 list of atoms ln of mol n, 
 gaussian scaler scalar σ 
-
-this needs to be processed differently, since FCHL contains edge features
 """
-function comp_FCHL_kernel_entry(f1, f2, l1, l2, σ)
+function comp_atomic_gaussian_entry(f1, f2, l1, l2, cσ)
     entry = 0.
     for i ∈ eachindex(l1)
         for j ∈ eachindex(l2)
             if l1[i] == l2[j] # manually set Kronecker delta using if 
-                d = comp_gauss_atom(f1, f2, σ) # (matrix, matrix, scalar)
+                d = comp_gauss_atom(f1, f2, cσ) # (vector, vector, scalar)
                 #println(i," ", j, l1[i], l2[j], " ",d)
                 entry += d
             end
         end
     end
     return entry
+end
+
+"""
+return a matrix (length(F1), length(F2)),
+params:
+    - Fn: list of features of several molecules
+    - Ln: list of list of atoms
+"""
+function get_gaussian_kernel(F1, F2, L1, L2, σ)
+
 end
 
 """
