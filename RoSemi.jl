@@ -907,7 +907,7 @@ function comp_atomic_gaussian_entry(f1, f2, l1, l2, cσ)
     for i ∈ eachindex(l1)
         for j ∈ eachindex(l2)
             if l1[i] == l2[j] # manually set Kronecker delta using if 
-                d = comp_gauss_atom(f1, f2, cσ) # (vector, vector, scalar)
+                d = comp_gauss_atom(f1[i], f2[j], cσ) # (vector, vector, scalar)
                 #println(i," ", j, l1[i], l2[j], " ",d)
                 entry += d
             end
@@ -919,11 +919,18 @@ end
 """
 return a matrix (length(F1), length(F2)),
 params:
-    - Fn: list of features of several molecules
-    - Ln: list of list of atoms
+    - Fn: vector of atomic features of several molecules
+    - Ln: vector of list of atoms
 """
-function get_gaussian_kernel(F1, F2, L1, L2, σ)
-
+function get_gaussian_kernel(F1, F2, L1, L2, cσ)
+    nm1 = length(F1); nm2 = length(F2)
+    A = zeros(nm1, nm2)
+    for j ∈ eachindex(L2) # col
+        for i ∈ eachindex(L1) # row
+            A[i, j] = 
+        end
+    end
+    return A
 end
 
 """
