@@ -898,7 +898,7 @@ function comp_gauss_atom(u, v, cσ)
 end
 
 """
-atomic feature array fn of mol n, 
+atomic feature matrix fn of mol n, 
 list of atoms ln of mol n, 
 gaussian scaler scalar σ 
 """
@@ -907,7 +907,7 @@ function comp_atomic_gaussian_entry(f1, f2, l1, l2, cσ)
     for i ∈ eachindex(l1)
         for j ∈ eachindex(l2)
             if l1[i] == l2[j] # manually set Kronecker delta using if 
-                d = comp_gauss_atom(f1[i], f2[j], cσ) # (vector, vector, scalar)
+                d = comp_gauss_atom(f1[i, :], f2[j, :], cσ) # (vector, vector, scalar)
                 #println(i," ", j, l1[i], l2[j], " ",d)
                 entry += d
             end
@@ -923,11 +923,11 @@ params:
     - Ln: vector of list of atoms
 """
 function get_gaussian_kernel(F1, F2, L1, L2, cσ)
-    nm1 = length(F1); nm2 = length(F2)
+    nm1 = length(L1); nm2 = length(L2)
     A = zeros(nm1, nm2)
     for j ∈ eachindex(L2) # col
         for i ∈ eachindex(L1) # row
-            A[i, j] = 
+            A[i, j] = comp_atomic_gaussian_entry(F1[i], F2[j], L1[i], L2[j], cσ)
         end
     end
     return A
@@ -936,15 +936,6 @@ end
 """
 ==================================
 """
-
-function test_gaussian()
-    F = load("data/exp_all_1/features.jld")["data"]
-    F10 = F[1:10, :]
-    σ2 =  get_sigma2(F10)
-    vecsize = size(F10, 1)
-    K = comp_gaussian_kernel(F10, σ2)
-end
-
 
 function test_spline()
     M = 5

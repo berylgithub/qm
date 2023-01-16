@@ -908,6 +908,38 @@ function fit_NN(foldername)
 end
 
 """
+atomic gaussian fitting (FCHL-ish)
+"""
+function fit_gaussatom(;tlimit=900)
+    dataset = load("data/qm9_dataset_old.jld", "data")
+    f = load("data/ACSF_atom_old.jld", "data")
+    E = [d["energy"] for d in dataset]
+    E_atom = vec(readdlm("data/atomic_energies.txt"))
+    n_data = length(dataset)
+    Tidx = load("data/exp_reduced_L1/center_ids.jld", "data")
+    Midx = Tidx[1:100] # train
+    Widx = setdiff(1:n_data, Midx) # test
+    E_train = E[Midx] - E_atom[Midx] # fit to reduced energy
+    # fit gausatom:
+    cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
+    A = get_gaussian_kernel(f[Midx], f[Midx], [d["atoms"] for d in dataset[Midx]], [d["atoms"] for d in dataset[Midx]], cσ)
+    start = time()
+    #θ, stat = cgls(A, E_train, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    θ = A\E_train
+    # check MAE of training data only:
+    E_pred = A*θ + E_atom[Midx] # return the magnitude
+    errors = E_pred - E[Midx]
+    MAEtrain = mean(abs.(errors)) .* 627.503 # in kcal/mol
+    println("MAE train = ",MAEtrain)
+    # pred ∀ data
+    A = get_gaussian_kernel(f[Widx], f[Midx], [d["atoms"] for d in dataset[Widx]], [d["atoms"] for d in dataset[Midx]], cσ)
+    E_pred = A*θ + E_atom[Widx]
+    errors = E_pred - E[Widx]
+    MAEtest = mean(abs.(errors)) .* 627.503 # in kcal/mol
+    println("MAE test = ",MAEtest)
+end
+
+"""
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
