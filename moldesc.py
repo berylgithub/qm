@@ -4,10 +4,10 @@ from os.path import isfile, join, exists
 import time
 from warnings import catch_warnings
 
-""" from ase.io import read
+from ase.io import read
 from ase.build import molecule
 from ase import Atoms
-from dscribe.descriptors import SOAP """
+from dscribe.descriptors import SOAP
 
 import qml
 from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
@@ -67,10 +67,10 @@ def extract_SOAP():
     soap = SOAP(
         species=species,
         periodic=False,
-        rcut=5,
+        rcut=8.,
         nmax=5,
         lmax=5,
-        average="inner",
+        average="off", #"inner",
         sparse=False
     )
 
@@ -263,4 +263,5 @@ def getatom_FCHL():
 
 # main:
 #train_FCHL()
-getatom_FCHL()
+#getatom_FCHL()
+extract_SOAP()
