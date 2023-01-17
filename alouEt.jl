@@ -229,7 +229,7 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         # PCA:
         F = nothing
         sens_mode = false
-        plot_fname = "$foldername"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
+        plot_fname = "$foldername"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
         if length(molf_file) == 0 # if molecular feature file is not provided:
             println("atomic ⟹ mol mode!")
             f = load(feature_file)["data"] # pre-extracted atomic features
