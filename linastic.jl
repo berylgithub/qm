@@ -100,13 +100,13 @@ function plot_ev(v, tickslice, filename; rotate=false)
     #display(μs_nz)
     # plots:
     p = scatter(log10.(v_rev), xticks = (eachindex(v_rev)[tickslice], eachindex(v_rev)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"$log_{10}(\lambda_{i}/\lambda_1)$", legend = false, xtickfontsize=6)
-    display(p)
+    #display(p)
     savefig(p, filename*"_ratio.png")
 
     # replace tickslice here:
     tickslice = Int.(round.(range(1, length(μs_nz), 15)))
     p = scatter(log10.(μs_nz), xticks = (eachindex(μs_nz)[tickslice], eachindex(μs_nz)[tickslice]), yticks = (-10.0:0.), markershape = :cross, xlabel = L"$i$", ylabel = L"$log_{10}(\mu_{i}/\mu_1)$", legend = false, xtickfontsize=6)
-    display(p)
+    #display(p)
     savefig(p, filename*"_distribution.png")
 end
 
