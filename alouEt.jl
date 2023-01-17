@@ -910,24 +910,20 @@ end
 """
 atomic gaussian fitting (FCHL-ish)
 """
-function fit_gaussatom(;tlimit=900)
-    dataset = load("data/qm9_dataset_old.jld", "data")
-    f = load("data/SOAP.jld", "data") #"data/ACSF_atom_old.jld"
-    E = [d["energy"] for d in dataset]
-    E_atom = vec(readdlm("data/atomic_energies.txt"))
-    n_data = length(dataset)
-    Tidx = load("data/exp_reduced_L1/center_ids.jld", "data")
-    Midx = Tidx[1:100] # train
-    Widx = setdiff(1:n_data, Midx) # test
-    E_train = E[Midx] - E_atom[Midx] # fit to reduced energy
+function fitter_GAK(f, dataset, cσ, E, Midx, Widx, foldername, tlimit; Er = Vector{Float64}()::Vector{Float64})
+    nK = length(Midx); Nqm9 = length(Widx); n_f = size(F, 2)
     # fit gausatom:
-    cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
+    #cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
     A = get_gaussian_kernel(f[Midx], f[Midx], [d["atoms"] for d in dataset[Midx]], [d["atoms"] for d in dataset[Midx]], cσ)
     start = time()
-    θ, stat = cgls(A, E_train, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     #θ = A\E_train
     # check MAE of training data only:
-    E_pred = A*θ + E_atom[Midx] # return the magnitude
+    E_pred = A*θ # return the magnitude
+    if !isempty(Er)
+        E_pred .+= Er[Midx]
+        E[Midx] .+= Er[Midx]
+    end
     errors = E_pred - E[Midx]
     MAEtrain = mean(abs.(errors))*627.503 # in kcal/mol
     println("MAE train = ",MAEtrain)
@@ -935,11 +931,23 @@ function fit_gaussatom(;tlimit=900)
     t = @elapsed begin
         A = get_gaussian_kernel(f[Widx], f[Midx], [d["atoms"] for d in dataset[Widx]], [d["atoms"] for d in dataset[Midx]], cσ)
     end
-    println("kernel generation duration = ",t)
-    E_pred = A*θ + E_atom[Widx]
+    println("kernel pred t = ",t)
+    E_pred = A*θ
+    if !isempty(Er)
+        E_pred .+= Er[Widx]
+    end 
     errors = E_pred - E[Widx]
-    MAEtest = mean(abs.(errors)) .* 627.503 # in kcal/mol
+    MAEtest = mean(abs.(errors)) * 627.503 # in kcal/mol
     println("MAE test = ",MAEtest)
+    # save info to file
+    strlist = string.([MAE, Nqm9, nK, n_f])
+    open("result/$foldername/err_$foldername.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
 end
 
 """
@@ -997,7 +1005,6 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     Ed["theta"] = θ # or the atom reference energy
     Ed["atomic_energies"] = E_atom # sum of the atom ref energy
     save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
-    # fit ROSEMI (or main model):
     E[Midx] .-= E_atom[Midx] # reduce training energy
     # write model header string:
     strlist = [model]
@@ -1018,7 +1025,7 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     elseif model == "LLS"
         fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"])
     elseif model == "GAK"
-        fitter_GAK(f, cσ, E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"]) # takes atomic feature instead
+        fitter_GAK(f, dataset, cσ, E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"]) # takes atomic feature instead
     end
 end
 
