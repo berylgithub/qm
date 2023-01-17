@@ -912,7 +912,7 @@ atomic gaussian fitting (FCHL-ish)
 """
 function fit_gaussatom(;tlimit=900)
     dataset = load("data/qm9_dataset_old.jld", "data")
-    f = load("data/ACSF_atom_old.jld", "data")
+    f = load("data/SOAP.jld", "data") #"data/ACSF_atom_old.jld"
     E = [d["energy"] for d in dataset]
     E_atom = vec(readdlm("data/atomic_energies.txt"))
     n_data = length(dataset)
@@ -929,7 +929,7 @@ function fit_gaussatom(;tlimit=900)
     # check MAE of training data only:
     E_pred = A*θ + E_atom[Midx] # return the magnitude
     errors = E_pred - E[Midx]
-    MAEtrain = mean(abs.(errors)) .* 627.503 # in kcal/mol
+    MAEtrain = mean(abs.(errors))*627.503 # in kcal/mol
     println("MAE train = ",MAEtrain)
     # pred ∀ data
     t = @elapsed begin
@@ -946,7 +946,7 @@ end
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
-function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI")
+function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *(2. ^5)^2)
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
@@ -975,11 +975,12 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI")
     θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
     MAEtrain = sum(errors)/length(errors)
-    println("atomic MAE train = ",MAEtrain)
+    #println("atomic MAE train = ",MAEtrain)
     E_pred = F_atom[Widx, :]*θ
-    errors = abs.(E_pred - E[Widx]) .* 627.503 # in kcal/mol
-    MAE = sum(errors)/length(errors)
-    println("atomic MAE of Nqm9 = ",MAE)
+    #errors = abs.(E_pred - E[Widx]) .* 627.503 # in kcal/mol
+    errors = E_pred - E[Widx]
+    MAE = mean(abs.(errors))*627.503
+    println("atomic MAV = ",MAE)
     E_atom = F_atom*θ # the sum of atomic energies
     E_red_mean = mean(abs.(E - E_atom)) .* 627.503 # mean of reduced energy
     # save MAE and atomref energies to file
@@ -1016,6 +1017,8 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI")
         fitter_NN(F, E, Midx, Widx, foldername; Er = Ed["atomic_energies"]) # no tlimit yet, but mostly dont really matter
     elseif model == "LLS"
         fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"])
+    elseif model == "GAK"
+        fitter_GAK(f, cσ, E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"]) # takes atomic feature instead
     end
 end
 
