@@ -1,5 +1,5 @@
 using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3, DelimitedFiles
-using Flux, ProgressMeter
+using Flux, ProgressMeter, Dates
 
 """
 contains all tests and experiments
@@ -272,7 +272,7 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
     save("data/$foldername/dspline.jld", "data", dϕ)
     # write data setup info:
     n_data = length(data_indices)
-    strlist = string.([n_data, num_centers, feature_name, n_af, n_mf, sens_mode, ft_sos, ft_bin, n_basis+3, t]) # n_basis + 3 by definition
+    strlist = string.([Dates.now(), n_data, num_centers, feature_name, n_af, n_mf, sens_mode, ft_sos, ft_bin, n_basis+3, t]) # dates serves as readable uid, n_basis + 3 by definition
     open("data/$foldername/setup_info.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -945,7 +945,7 @@ function fitter_GAK(f, dataset, cσ, E, Midx, Widx, foldername, tlimit; Er = Vec
     MAEtest = mean(abs.(errors)) * 627.503 # in kcal/mol
     println("MAE test = ",MAEtest)
     # save info to file
-    strlist = string.([MAE, f_atom, Nqm9, nK, n_f])
+    strlist = string.([MAE, Nqm9, nK, n_f])
     open("result/$foldername/err_$foldername.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -1011,7 +1011,8 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
     E[Midx] .-= E_atom[Midx] # reduce training energy
     # write model header string:
-    strlist = [model]
+    uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
+    strlist = [uid, model]
     open("result/$foldername/err_$foldername.txt","a") do io
         str = ""
         for s ∈ strlist
