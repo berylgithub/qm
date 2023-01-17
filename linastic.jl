@@ -261,7 +261,7 @@ function PCA_atom(f, n_select, C, σ; normalize=true, fname_plot_at="")
     # # correlation matrix:
     #D = diagm(1. ./ .√ C[diagind(C)])
     #σ = C[diagind(C)]
-    D = diagm(σ) # i think it should be diagm(1/σ), since it's supposed to be divider
+    D = diagm(1. ./ σ) # i think it should be diagm(1/σ), since it's supposed to be divider
     C = D*C*D # the diagonals are the sensitivity
     # spectral decomposition:
     e = eigen(C)
