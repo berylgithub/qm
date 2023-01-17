@@ -228,8 +228,8 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         dataset = load(dataset_file)["data"]
         # PCA:
         F = nothing
-        plot_fname = "$foldername"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
         sens_mode = false
+        plot_fname = "$foldername"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
         if length(molf_file) == 0 # if molecular feature file is not provided:
             println("atomic ⟹ mol mode!")
             f = load(feature_file)["data"] # pre-extracted atomic features
@@ -258,11 +258,14 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         # get centers:
         center_ids, distances = set_cluster(F, num_centers, universe_size=universe_size)
         display(center_ids)
+        # copy pre-computed atomref features:
+        redf = load("data/atomref_features.jld", "data")
         # save files:
     end
     save("data/$foldername/dataset.jld", "data", dataset)
     save("data/$foldername/features_atom.jld", "data", f) # atomic features
     save("data/$foldername/features.jld", "data", F) # molecular features
+    save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
     save("data/$foldername/center_ids.jld", "data", center_ids)
     save("data/$foldername/distances.jld", "data", distances)
     save("data/$foldername/spline.jld", "data", ϕ)
@@ -987,7 +990,6 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     MAEtrain = sum(errors)/length(errors)
     #println("atomic MAE train = ",MAEtrain)
     E_pred = F_atom[Widx, :]*θ
-    #errors = abs.(E_pred - E[Widx]) .* 627.503 # in kcal/mol
     errors = E_pred - E[Widx]
     MAE = mean(abs.(errors))*627.503
     println("atomic MAV = ",MAE)
