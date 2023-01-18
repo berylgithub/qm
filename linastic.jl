@@ -282,7 +282,7 @@ function PCA_atom(f, n_select, C, σ; normalize=true, fname_plot_at="")
     end
     s ./= N
     # plot here:
-    plot_ev(v, [1,10,20,30,40,50], "plot/eigenvalue_atom_"*fname_plot_at)
+    plot_ev(v, Int.(round.(LinRange(1, n_f, n_select))), "plot/ev_atom_"*fname_plot_at)
     # sort from largest eigenvalue instead:
     sidx = sortperm(v, rev=true)
     v = v[sidx]
@@ -505,7 +505,7 @@ function PCA_mol(F, n_select; normalize=true, fname_plot_mol="")
     #display(v)
     #println("ev compute done")
     # plot here:
-    plot_ev(v, Int.(round.(range(1, n_f, 20))), "plot/eigenvalue_mol_"*fname_plot_mol)
+    plot_ev(v, Int.(round.(range(1, n_f, n_select))), "plot/ev_mol_"*fname_plot_mol)
 
     sidx = sortperm(v, rev=true)
     v = v[sidx] # temporary fix for the negative eigenvalue
