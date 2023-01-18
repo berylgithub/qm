@@ -220,7 +220,7 @@ takes in the data indices (relative to the qm9 dataset).
 if molf_file  is not empty then there will be no atomic feature extractions, only PCA on molecular level
 """
 function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
-                    universe_size=1_000, ft_sos=false, ft_bin=false, molf_file = "", cov_file = "", sensitivity_file = "")
+                    universe_size=1_000, normalize_atom = true, normalize_mol = true, ft_sos=false, ft_bin=false, molf_file = "", cov_file = "", sensitivity_file = "")
     println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
@@ -229,35 +229,41 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         # PCA:
         F = nothing
         sens_mode = false
-        plot_fname = "$foldername"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
+        uid = Dates.now() # generate uid
+        plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
         if length(molf_file) == 0 # if molecular feature file is not provided:
             println("atomic ⟹ mol mode!")
             f = load(feature_file)["data"] # pre-extracted atomic features
+            println("PCA atom starts!")
             if isempty(cov_file)
-                f = PCA_atom(f, n_af; fname_plot_at=plot_fname)
+                f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
             else
                 sens_mode = true
                 C = load(cov_file)["data"]
                 σ = load(sensitivity_file)["data"]
-                f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname)
+                f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
             end
+            println("PCA atom done!")
+            println("mol feature processing starts!")
             F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
-            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname)
-            #F = feature_extractor(F, dataset, n_af, n_mf, ft_sos=ft_sos, ft_bin=ft_bin, fname_plot_at=plot_fname, fname_plot_mol=plot_fname)
+            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol)
+            println("mol feature processing finished!")
         else
             println("mol only mode!")
+            println("mol feature processing starts!")
             F = load(molf_file)["data"]
             F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname)
+            println("mol feature processing finished!")
         end
         F = F[data_indices, :]; f = f[data_indices]
         dataset = dataset[data_indices] # slice dataset
-        display(dataset)
+        display(length(dataset))
         # compute bspline:
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
-        display(F)
+        display(size(F))
         # get centers:
         center_ids, distances = set_cluster(F, num_centers, universe_size=universe_size)
-        display(center_ids)
+        display(length(center_ids))
         # copy pre-computed atomref features:
         redf = load("data/atomref_features.jld", "data")
         # save files:
@@ -272,7 +278,8 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
     save("data/$foldername/dspline.jld", "data", dϕ)
     # write data setup info:
     n_data = length(data_indices)
-    strlist = string.([Dates.now(), n_data, num_centers, feature_name, n_af, n_mf, sens_mode, ft_sos, ft_bin, n_basis+3, t]) # dates serves as readable uid, n_basis + 3 by definition
+    machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
+    strlist = string.([uid, n_data, num_centers, feature_name, n_af, n_mf, ft_sos, ft_bin, normalize_atom, normalize_mol, sens_mode, n_basis+3, t, machine]) # dates serves as readable uid, n_basis + 3 by definition
     open("data/$foldername/setup_info.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -968,13 +975,14 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     mkpath("result/$foldername")
     file_dataset = path*"dataset.jld"
     file_atomref = path*"atomref_features.jld" # feature to compute atomic reference energy, precomputed once, most likely won't change thorughout the experiments
-    file_finger = path*"features.jld" # feature for model
+    file_finger = path*"features.jld" # mol feature for model
+    file_finger_atom = path*"features_atom.jld"
     file_distance = path*"distances.jld"
     file_centers = path*"center_ids.jld"
     file_spline = path*"spline.jld"
     file_dspline = path*"dspline.jld"
-    files = [file_dataset, file_atomref, file_finger, file_distance, file_centers, file_spline, file_dspline]
-    dataset, F_atom, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files]
+    files = [file_dataset, file_atomref, file_finger_atom, file_finger, file_distance, file_centers, file_spline, file_dspline]
+    dataset, F_atom, f, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files]
     F = F'; E = map(d -> d["energy"], dataset)
     # index computation:
     n_data = length(dataset); n_feature = size(F, 1);
