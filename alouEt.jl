@@ -922,7 +922,7 @@ end
 """
 atomic gaussian fitting (FCHL-ish)
 """
-function fitter_GAK(f, dataset, cσ, E, Midx, Widx, foldername, tlimit; Er = Vector{Float64}()::Vector{Float64})
+function fitter_GAK(F, f, dataset, cσ, E, Midx, Widx, foldername, tlimit; Er = Vector{Float64}()::Vector{Float64})
     nK = length(Midx); Nqm9 = length(Widx); n_f = size(F, 2)
     # fit gausatom:
     #cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
@@ -1038,7 +1038,7 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     elseif model == "LLS"
         fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"])
     elseif model == "GAK"
-        fitter_GAK(f, dataset, cσ, E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"]) # takes atomic feature instead
+        fitter_GAK(F', f, dataset, cσ, E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"]) # takes atomic feature instead
     end
 end
 
