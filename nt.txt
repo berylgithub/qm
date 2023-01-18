@@ -124,4 +124,4 @@ inject fortran code: get from github, edit the .f90 files, "pip install ." in th
 ACSF, gaussian atom kernel w/ kronecker delta (without preprocessing the features), direct solve = 37 kcal/mol, CGLS = 22.7 kcal/mol, t_pred = 907s
  ====        w/o kronecker delta, CGLS =  29.9, t_pred= 2356s
 SOAP, GAK, w/ kronecker delta, CGLS = 20.5 kcal/mol
-- w/ preprocessing data:
+SOAP, GAL, w/ kron, preproc data, 17.5 kcal/mol
