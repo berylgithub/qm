@@ -229,7 +229,7 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         # PCA:
         F = nothing
         sens_mode = false
-        uid = Dates.now() # generate uid
+        uid = replace(string(Dates.now()), ":" => ".") # generate uid
         plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
         if length(molf_file) == 0 # if molecular feature file is not provided:
             println("atomic ⟹ mol mode!")
@@ -982,7 +982,7 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     file_spline = path*"spline.jld"
     file_dspline = path*"dspline.jld"
     files = [file_dataset, file_atomref, file_finger_atom, file_finger, file_distance, file_centers, file_spline, file_dspline]
-    dataset, F_atom, f, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files]
+    dataset, F_atom, f, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files] #F_atom is for fitting energy reducer, f is atomic features for the molecular fitting
     F = F'; E = map(d -> d["energy"], dataset)
     # index computation:
     n_data = length(dataset); n_feature = size(F, 1);
@@ -995,7 +995,7 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     start = time()
     θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
-    MAEtrain = sum(errors)/length(errors)
+    #MAEtrain = sum(errors)/length(errors)
     #println("atomic MAE train = ",MAEtrain)
     E_pred = F_atom[Widx, :]*θ
     errors = E_pred - E[Widx]
@@ -1004,7 +1004,8 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     E_atom = F_atom*θ # the sum of atomic energies
     E_red_mean = mean(abs.(E - E_atom)) .* 627.503 # mean of reduced energy
     # save MAE and atomref energies to file
-    strlist = string.(vcat(MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
+    uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
+    strlist = string.(vcat(uid, MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
     open("result/$foldername/atomref_info.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -1019,8 +1020,7 @@ function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *
     save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
     E[Midx] .-= E_atom[Midx] # reduce training energy
     # write model header string:
-    uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
-    strlist = [uid, model]
+    strlist = string.(vcat(uid, model))
     open("result/$foldername/err_$foldername.txt","a") do io
         str = ""
         for s ∈ strlist

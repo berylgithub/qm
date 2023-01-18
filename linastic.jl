@@ -101,13 +101,13 @@ function plot_ev(v, tickslice, filename; rotate=false)
     # plots:
     p = scatter(log10.(v_rev), xticks = (eachindex(v_rev)[tickslice], eachindex(v_rev)[tickslice]), markershape = :cross, xlabel = L"$i$", ylabel = L"$log_{10}(\lambda_{i}/\lambda_1)$", legend = false, xtickfontsize=6)
     #display(p)
-    savefig(p, filename*"_ratio.png")
+    savefig(p, filename*"_rat.png")
 
     # replace tickslice here:
     tickslice = Int.(round.(range(1, length(μs_nz), 15)))
     p = scatter(log10.(μs_nz), xticks = (eachindex(μs_nz)[tickslice], eachindex(μs_nz)[tickslice]), yticks = (-10.0:0.), markershape = :cross, xlabel = L"$i$", ylabel = L"$log_{10}(\mu_{i}/\mu_1)$", legend = false, xtickfontsize=6)
     #display(p)
-    savefig(p, filename*"_distribution.png")
+    savefig(p, filename*"_dist.png")
 end
 
 """
@@ -217,7 +217,7 @@ function PCA_atom(f, n_select; normalize=true, fname_plot_at="", save_cov=false)
     Q = e.vectors
     #display(v)
     # plot here:
-    plot_ev(v, [1,10,20,30,40,50], "plot/eigenvalue_atom_"*fname_plot_at)
+    plot_ev(v, Int.(round.(LinRange(1, n_f, n_select))), "plot/ev_atom_"*fname_plot_at)
     #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
     display(sing) =#
     # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
