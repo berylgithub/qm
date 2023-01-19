@@ -61,15 +61,21 @@ Here we describe several common techniques for extracting atomic features. In ge
 \subsubsection{ACSF}
 Atom-centered symmetry functions (ACSF) (\at{cite Behler}) computes 4 symmetry functions for each atom, they are composed of radial and angular functions. ACSF only considers the set of atomic coordinates as the primary input. For each molecule $l$, ACSF returns a matrix with $(n^l_\text{atom}, n_{af})$ size, where $n^l_\text{atom}$ is the number of atoms in molecule $l$ and $n_{af}$ is the number of generated features. The hyperparameters include (but not limited to) \at{this is based on the paper, in the Julia library \url{https://github.com/DescriptorZoo/ACSF.jl}, the default settings are unknown/currently unable to be changed}:
 \begin{itemize}
-	\item cut-off radius (in Angstrom),
+	\item cut-off radius $r_\text{cut}$ (in Angstrom),
 	\item width of the Gaussian,
 	\item damping scalar.
 \end{itemize}
 Given the default settings, the output gives $n_{af} = 51$.
 
 \subsubsection{SOAP}
-
-
+Smooth overlap of atomic positions (SOAP) \at{recursive cite to dscribe py} encodes the atomic representation by expansion of Gaussian atomic density, based on spherical harmonics and radial basis functions.
+Overall, SOAP has similar idea and structure to ACSF. The hyperparameters include, but not limited to:
+\begin{itemize}
+	\item cut-off radius $r_\text{cut}$ (in Angstrom),
+	\item the number of radial basis functions $n_\text{rbf}$,
+	\item maximum degree of spherical harmonics $n_\text{sphere}$.
+\end{itemize} 
+The initial hyperparameters were set to $(r_\text{cut}, n_\text{rbf}, n_\text{sphere}) = (8.0, 2, 2)$, this gives $n_{af} = 165$.
 
 \subsubsection{FCHL}
 Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al \url{https://aip.scitation.org/doi/10.1063/1.5126701}}. Essentially FCHL encodes radial distribution by the two-body term, and encodes the mean distances and angular information by three-body term. FCHL considers atomic coordinates and the nuclear charges as the primary inputs. For each molecule, FCHL returns an array of size $(\max_l n^l_\text{atom}, 5, n_\text{neigh})$, where $n_\text{neigh}$ is the number of atomic neighbours; almost in all cases $n_\text{neigh} = \max_l n^l_\text{atom}$, the only exception is when periodic boundary cell mode is used (for crystals). The hyperparameters are: 
@@ -514,11 +520,17 @@ where $i$ indexes the query molecule and $j$ indexes the feature column of $i$th
 
 \subsection{Atomic Gaussian kernel}
 The entries of the data matrix for the atomic Gaussian kernel are \at{\cite[Eq. (10)]{Faber et al} from \url{https://aip.scitation.org/doi/10.1063/1.5126701}}
+\iffalse
 \begin{equation}
 	\label{eq:gaussian_atom}
 	A_{l' l} = \sum_P \sum_{Z^{l'}_i = P} \sum_{Z^{l}_j = P} A^\text{atom}(f^{l'}_i, f^l_j)
 \end{equation}
-where $P$ is the set of index of atom types, $Z_i^l$ is the nuclear charge of atom $i$ in molecule $l$, and the atomic Gaussian kernel function is \at{\cite[Eq. (26)]{Faber et al}}
+\fi
+\begin{equation}
+	\label{eq:gaussian_atom}
+	A_{l'l} = \sum_j \sum_i \delta_{Z_i^{l'}Z_j^{l}} A^\text{atom}(f_i^{l'}, f_j^l)
+\end{equation}
+where $Z_i^l$ is the nuclear charge of atom $i$ in molecule $l$, the Kronecker delta $\delta$ ensures that only the environment between the same atom types are compared; the atomic Gaussian kernel function is \at{\cite[Eq. (26)]{Faber et al}}
 \begin{equation}
 	A^\text{atom}(u, v) = \text{ exp}\Big( - \frac{\|u - v \|^2_2}{2 \sigma^2} \Big).
 \end{equation}
