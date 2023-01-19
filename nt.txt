@@ -125,3 +125,6 @@ ACSF, gaussian atom kernel w/ kronecker delta (without preprocessing the feature
  ====        w/o kronecker delta, CGLS =  29.9, t_pred= 2356s
 SOAP, GAK, w/ kronecker delta, CGLS = 20.5 kcal/mol
 SOAP, GAL, w/ kron, preproc data, 17.5 kcal/mol
+
+19.01.2023:
+for each experiment, "GC.gc()" garbage collector is necessary, such that it doesnt explode the ram
