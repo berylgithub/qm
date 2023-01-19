@@ -23,7 +23,9 @@
 \usepackage{listings}
 \usepackage{xparse}
 \usepackage{textcomp}
-\setcounter{section}{-1}
+\setcounter{section}{0}
+\setcounter{tocdepth}{4}
+\setcounter{secnumdepth}{4}
 \captionsetup[table]{skip=10pt} % table skip
 
 %macros
@@ -48,12 +50,15 @@
 \begin{document}
 \maketitle
 
-\section{Basic atomic features}
-\label{sec:basic_feature}
+\section{Feature extraction}
+\label{sec:feature_extraction}
 
+\subsection{Basic atomic features}
+\label{subsec:basic_atomic_features}
+The very first piece which needs to be computed is the array of atomic features. 
 Here we describe several common techniques for extracting atomic features. In general, each set of features results in an array data structure with $(n_\text{mol}, n^l_\text{atom}, n_{af})$. Typically this is stored in a vector of matrices, where each matrix has different row size, due to the possibility of each molecule having different number of atoms $n^l_\text{atom}$; meanwhile $n_{af}$ is always uniform across the array, it is possible that $n_{af}$ itself indexes a matrix, i.e., $n_{af} := n_\text{row} \times n_\text{col}$. 
 
-\subsection{ACSF}
+\subsubsection{ACSF}
 Atom-centered symmetry functions (ACSF) (\at{cite Behler}) computes 4 symmetry functions for each atom, they are composed of radial and angular functions. ACSF only considers the set of atomic coordinates as the primary input. For each molecule $l$, ACSF returns a matrix with $(n^l_\text{atom}, n_{af})$ size, where $n^l_\text{atom}$ is the number of atoms in molecule $l$ and $n_{af}$ is the number of generated features. The hyperparameters include (but not limited to) \at{this is based on the paper, in the Julia library \url{https://github.com/DescriptorZoo/ACSF.jl}, the default settings are unknown/currently unable to be changed}:
 \begin{itemize}
 	\item cut-off radius (in Angstrom),
@@ -62,11 +67,11 @@ Atom-centered symmetry functions (ACSF) (\at{cite Behler}) computes 4 symmetry f
 \end{itemize}
 Given the default settings, the output gives $n_{af} = 51$.
 
-\subsection{SOAP}
-\at{currently unused}
+\subsubsection{SOAP}
 
 
-\subsection{FCHL}
+
+\subsubsection{FCHL}
 Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al \url{https://aip.scitation.org/doi/10.1063/1.5126701}}. Essentially FCHL encodes radial distribution by the two-body term, and encodes the mean distances and angular information by three-body term. FCHL considers atomic coordinates and the nuclear charges as the primary inputs. For each molecule, FCHL returns an array of size $(\max_l n^l_\text{atom}, 5, n_\text{neigh})$, where $n_\text{neigh}$ is the number of atomic neighbours; almost in all cases $n_\text{neigh} = \max_l n^l_\text{atom}$, the only exception is when periodic boundary cell mode is used (for crystals). The hyperparameters are: 
 \begin{itemize}
 	\item cut-off radius (in Angstrom), the default is $r_\text{cutoff} = 5.0$,
@@ -75,13 +80,9 @@ Faber--Christensen--Huang--Lilienfeld (FCHL) \at{cite Faber et al \url{https://a
 \end{itemize}
 For the QM9 dataset, FCHL returns an array with size $(133885, 29, 5, 29)$.
 
-\section{Feature extraction}
+\subsection{Feature selection}
 \label{sec:feature}
-The very first piece which needs to be computed is the array of atomic features. 
-The molecular feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
-The molecular feature matrix often can be obtained through processing the array of atomic features.
-The atomic features is often in the form of row vector $f^l_{i}$ with length $n_{af}$ for each atom $i$ in a molecule $l$.
-\subsection{Atomic feature selection}
+\subsubsection{Atomic feature selection}
 \begin{itemize}
 	\item In order to select the most relevant features, we do the \textbf{principal component analysis} (PCA), first by computing the mean vectors and the matrix $S$ by
 	\begin{equation}
@@ -164,7 +165,7 @@ The atomic features is often in the form of row vector $f^l_{i}$ with length $n_
 	\end{figure}
 \end{itemize}
 
-\subsubsection{Timing and storage}
+\paragraph{Timing and storage}
 Features based on atomic symmetry functions in general has $\mathcal{O}(n_\text{atom}n_\text{cutoff}c)$ time complexity, where $c$ is a factor referring to the feature extractor's method of computation (e.g., ACSF requires $c$ amount of radial symmetry function computations), and $n_\text{cutoff}$ is the number of atoms included within the cutoff radius, as it is required to sweep through the atom and its neighbours within the cutoff radius each time an atomic symmetry quantity is queried. The resulting features of each atom is a vector with length $n_{af}$, therefore a molecule has an order of $\mathcal{O}(n_\text{atom}n_{af})$ storage complexity. In total for the QM9 challenge, each time an atomic feature extraction is queried, it has $\mathcal{O}(N_\text{QM9}n_\text{atom}n_\text{cutoff}c)$ time complexity and $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ storage complexity.
 
 In general, each query of PCA needs to sweep all entries of the feature matrix multiple times. Specific for atomic features, it can be broken down into:
@@ -179,7 +180,10 @@ In general, each query of PCA needs to sweep all entries of the feature matrix m
 Overall, in terms of the timing and storage, the raw atomic feature extraction itself should be the upper bound of the whole atomic feature processing block, since the factor $c$ itself could also be a composition of many factors depending on the method of the feature extractor.
 
 
-\subsection{Molecular feature selection}
+\subsubsection{Molecular feature selection}
+The molecular feature matrix $F \in \mathbb{R}^{N_\text{QM9} \times n_f}$ where $N_\text{QM9}$ is the number of molecules in the QM9 database and $n_f$ is the number of features, needs to be precomputed and stored in the non-volatile storage in order to avoid re-computation.
+The molecular feature matrix often can be obtained through processing the array of atomic features.
+The atomic features is often in the form of row vector $f^l_{i}$ with length $n_{af}$ for each atom $i$ in a molecule $l$.
 \begin{itemize}
     \item $l$th molecule contains $n^l_\text{atom}$ number of atoms and a set of atom types $P = \{\text{H}, \text{C}, \text{O}, ...\}$ with cardinality $n^l_\text{type}$,
 	the molecular features are computed by
@@ -291,7 +295,7 @@ Overall, in terms of the timing and storage, the raw atomic feature extraction i
 	\end{figure}
 \end{itemize}
 
-\subsubsection{Timing and storage}
+\paragraph{Timing and storage}
 The timing breakdown of the molecular feature selection is as the following:
 \begin{itemize}
 	\item In the default setting, the molecular feature is only computed by the sums of the atomic features, for each molecule this has $\mathcal{O}(n_\text{atom} n_{af})$ order of operations, therefore for all molecules in the QM9 dataset the time complexity is $\mathcal{O}(N_\text{QM9}n_\text{atom} n_{af})$; the storage requirement is $\mathcal{O}(N_\text{QM9}n_{mf})$. 
@@ -315,14 +319,15 @@ Suppose that $h_v^t$ is a hidden state which represents the features of node $v$
 then for each time step $t$, we do an aggregation phase,
 \begin{equation}
 	\label{eq:mpagg}
-	m^{t+1}_v = M_t(h_v^t, h_w^t, e_{vw}^t),~~ \text{for }v \in G,\text{ }w \in N(v),
+	m^{t+1}_v = \frac{1}{|N(v)|}\sum_{w \in N(v)} M_t(h_v^t, h_w^t, e_{vw}^t),~~ \text{for }v \in G
 \end{equation}
-where $M_t$ is the aggregation function at time step $t$, it is assumed that $M_t$ is an invariant function with respect to the set of neighbours $N(v)$; one of the simplest example is
+which is just the mean of the neighbours' features, where the aggregation function at time step $t$ is
 \begin{equation}
 	\label{eq:mpaggex}
-	M_t(h_v^t, h_w^t, e_{vw}^t) := \frac{1}{|N(v)|}\sum_{w \in N(v)} \text{concat}\Big(h_w^t, e_{vw}^t\Big),
+	M_t(h_v^t, h_w^t, e_{vw}^t) :=  \text{concat}\Big(h_v^t, h_w^t, e_{vw}^t\Big),
 \end{equation}
-which is just the mean of the neighbours' features, where $\text{concat}(\cdot, \cdot)$ is the concatenation. The update phase for the hidden states is defined by
+where $\text{concat}(\cdot, \cdot)$ is the concatenation. The sum ensures that $m^{t+1}_v$ is invariant with respect to the set of neighbours $N(v)$.
+The update phase for the hidden states is defined by
 \begin{equation}
 	\label{eq:mpupdate}
 	h_v^{t+1} = U^t_h(h_v^t, m^{t+1}_v), ~~ e_{vw}^{t+1} = U^t_e(h_v^t, h_w^t, e_{vw}^t),
@@ -332,20 +337,21 @@ where $U^t_h$ is an update function for hidden states at time step $t$, one of t
 	\label{eq:mphupdateex}
 	U^t_h(h_v^t, m^{t+1}_v) := \sigma(W^tm^{t+1}_v), 
 \end{equation}
-where $\sigma$ is an activation function which takes in the product of the learned "weight" matrix $W^t$ at time step $t$ with the aggregated vector $m^{t+1}_v$; it is also possible to have a fixed quantities instead of a learned matrix \at{will nede to design the formula, or find a literature that do this} hence there exist minimal numbers of hyperparameters to be optimized. It is common to keep the edge features fixed throughout the time steps, i.e.,
+where $\sigma$ is an activation function which takes in the product of the learned "weight" matrix $W^t$ at time step $t$ with the aggregated vector $m^{t+1}_v$; 
+it is also possible to have a fixed quantities instead of a learned matrix \at{will need to design the formula, or find a reference that do this} hence there exist minimal numbers of hyperparameters to be optimized. It is common to keep the edge features fixed throughout the time steps, i.e.,
 \begin{equation}
 	\label{eq:mpeupdateex}
 	U^t_e(h_v^t, h_w^t, e_{vw}^t) := e_{vw}^t,
 \end{equation}
-in some cases it is possible to use a learned function analogous to (\ref{eq:mphupdateex}) \at{need some literatures}. After $T$ time steps, the readout phase is defined by
+in some cases it is possible to use a learned function analogous to (\ref{eq:mphupdateex}) \at{need some references}. After $T$ time steps, the readout phase is defined by
 \begin{equation}
 	\label{eq:mpreadout}
 	f_i^l = R(h_v^T) ~~ \text{for }v \in G,
 \end{equation}
-where one of the simplest example is
+where $R$ is the readout function, one of the simplest example is
 \begin{equation}
 	\label{eq:mpreadoutex}
-	R(h_v^T) := h_v^T ~~ \text{for }v \in G.
+	R(h) := h.
 \end{equation}
 
 \section{Splines}
