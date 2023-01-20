@@ -217,7 +217,7 @@ function PCA_atom(f, n_select; normalize=true, fname_plot_at="", save_cov=false)
     Q = e.vectors
     #display(v)
     # plot here:
-    plot_ev(v, Int.(round.(LinRange(1, n_f, n_select))), "plot/ev_atom_"*fname_plot_at)
+    #plot_ev(v, Int.(round.(LinRange(1, n_f, n_select))), "plot/ev_atom_"*fname_plot_at)
     #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
     display(sing) =#
     # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
@@ -230,7 +230,7 @@ function PCA_atom(f, n_select; normalize=true, fname_plot_at="", save_cov=false)
     #display(v)
     Q = Q[:, 1:n_select]
     #display(norm(C-Q*diagm(v)*Q'))
-    f_new = Vector{Matrix{Float64}}(undef, N)
+    #= f_new = Vector{Matrix{Float64}}(undef, N)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         temp_A = zeros(n_atom, n_select)
@@ -238,19 +238,28 @@ function PCA_atom(f, n_select; normalize=true, fname_plot_at="", save_cov=false)
             temp_A[i,:] .= Q'*(f[l][i,:] - s)
         end
         f_new[l] = temp_A
+    end =#
+    # try memory efficient op, but more risky!:
+    @simd for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        temp_A = zeros(n_atom, n_select)
+        @simd for i ∈ 1:n_atom
+            temp_A[i,:] .= Q'*(f[l][i,:] - s)
+        end
+        f[l] = temp_A
     end
     # normalize
     if normalize
-        maxs = map(f_el -> maximum(f_el, dims=1), f_new); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
-        mins = map(f_el -> minimum(f_el, dims=1), f_new); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+        maxs = map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+        mins = map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
         @simd for l ∈ 1:N
             n_atom = size(f[l], 1)
             @simd for i ∈ 1:n_atom
-                f_new[l][i,:] .= (f_new[l][i,:] .- mins) ./ (maxs .- mins) 
+                f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
             end
         end
     end
-    return f_new
+    return f
 end
 
 
@@ -282,7 +291,7 @@ function PCA_atom(f, n_select, C, σ; normalize=true, fname_plot_at="")
     end
     s ./= N
     # plot here:
-    plot_ev(v, Int.(round.(LinRange(1, n_f, n_select))), "plot/ev_atom_"*fname_plot_at)
+    #plot_ev(v, Int.(round.(LinRange(1, n_f, n_select))), "plot/ev_atom_"*fname_plot_at)
     # sort from largest eigenvalue instead:
     sidx = sortperm(v, rev=true)
     v = v[sidx]
@@ -291,7 +300,7 @@ function PCA_atom(f, n_select, C, σ; normalize=true, fname_plot_at="")
     v = v[1:n_select]
     #display(v)
     Q = Q[:, 1:n_select]
-    f_new = Vector{Matrix{Float64}}(undef, N)
+    #= f_new = Vector{Matrix{Float64}}(undef, N)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         temp_A = zeros(n_atom, n_select)
@@ -299,15 +308,23 @@ function PCA_atom(f, n_select, C, σ; normalize=true, fname_plot_at="")
             temp_A[i,:] .= Q'*(f[l][i,:] - s)
         end
         f_new[l] = temp_A
+    end =#
+    @simd for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        temp_A = zeros(n_atom, n_select)
+        @simd for i ∈ 1:n_atom
+            temp_A[i,:] .= Q'*(f[l][i,:] - s)
+        end
+        f[l] = temp_A
     end
     # normalize
     if normalize
-        maxs = map(f_el -> maximum(f_el, dims=1), f_new); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
-        mins = map(f_el -> minimum(f_el, dims=1), f_new); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+        maxs = map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+        mins = map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
         @simd for l ∈ 1:N
             n_atom = size(f[l], 1)
             @simd for i ∈ 1:n_atom
-                f_new[l][i,:] .= (f_new[l][i,:] .- mins) ./ (maxs .- mins) 
+                f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
             end
         end
     end
@@ -505,7 +522,7 @@ function PCA_mol(F, n_select; normalize=true, fname_plot_mol="")
     #display(v)
     #println("ev compute done")
     # plot here:
-    plot_ev(v, Int.(round.(range(1, n_f, n_select))), "plot/ev_mol_"*fname_plot_mol)
+    #plot_ev(v, Int.(round.(range(1, n_f, n_select))), "plot/ev_mol_"*fname_plot_mol)
 
     sidx = sortperm(v, rev=true)
     v = v[sidx] # temporary fix for the negative eigenvalue
