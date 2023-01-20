@@ -127,4 +127,5 @@ SOAP, GAK, w/ kronecker delta, CGLS = 20.5 kcal/mol
 SOAP, GAL, w/ kron, preproc data, 17.5 kcal/mol
 
 19.01.2023:
-for each experiment, "GC.gc()" garbage collector is necessary, such that it doesnt explode the ram
+- for each experiment, "GC.gc()" garbage collector is necessary, such that it doesnt explode the ram
+! different Julia version gives different eigenvectors, the fitting result of OMP1 and SAINT is different!
