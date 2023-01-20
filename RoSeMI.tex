@@ -477,17 +477,18 @@ where $\delta_{jk}$ is the Kronecker delta. Hence if we pick $w = w_m$, then
 \end{equation}
 where
 \begin{equation}
+	\label{eq:rosemi_linear}
 	A_{jm, kl} = \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)},\\
 \end{equation}
 \begin{equation}
 	b_{jm} = \Big(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\Big)/\alpha_j(w_m).
 \end{equation}
 
-\subsection{Gaussian kernel}
+\subsection{Molecular Gaussian kernel}
 \label{subsec:gaussian}
 Let $A$ be the data matrix, if it is constructed by the Gaussian kernel then
 \begin{equation}
-	\label{eq:gaussian}
+	\label{eq:gaussian_mol}
 	A_{ij} = \text{exp}\Big(-\frac{\|w_{i:} - w_{j:}\|^2_2}{2\sigma^2}\Big),
 \end{equation}
 where $i$ and $j$ index the query molecules (or data points)
@@ -773,21 +774,15 @@ The true error of the fitting is described by the mean absolute error (MAE) of t
 	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - \hat{E}_m|,
 \end{equation}
 where $\hat{E}$ is the vector of predicted energies.
-
-\subsubsection{Fitting using Shepard model}
-\label{subsubsec:shepard}
 The initial set of the fixed hyperparameters across all experiments is:
 \begin{equation*}
-	N_\text{QM9} = 133628, ~~ N = 300,~~ n_K = 100, ~~\codeword{t_limit} = 900
-\end{equation*}
-and these hyperparameters are varied in a \textit{binary search} manner, with initial values:
-\begin{equation*}
-	n_{af} = 4,~~ n_f = 28, ~~ n_s = 5, ~~ n_L = n_fn_s = 140.
+	N_\text{QM9} = 133628, ~~ N = 300,~~ n_K = 100, ~~\codeword{t_limit} = 900.
 \end{equation*}
 Each \codeword{data_setup()} process roughly takes around 300s. 
-The fitting is done using \codeword{CGLS()} with $\codeword{itmax} = 500$; it requires the functions to compute $Au$ and $A^\top v$ as the input variable. 
-Currently active learning scheme has not been tested. Several hand-picked fitting experiment results of the with the lowest MAE are shown in table \ref{tab:shepard_exp}.
+The fitting is done using \codeword{CGLS()} with $\codeword{itmax} = 500$; Specifically for ROSEMI, it requires the functions to compute $Au$ and $A^\top v$ as the input variable. 
+Currently active learning scheme has not been tested.
 
+\iffalse
 \begin{table}[H]
 	\centering
 	\caption{Selected fitting experiment results. \textbf{ft\_sos} indicates the inclusion of sums of squares features meanwhile \textbf{ft\_bin} indicates the inclusion of binomial features; \textbf{t\_solver} is the time in seconds spent by CGLS; and \textbf{t\_pred} is the energy prediction time. \textbf{MAE} is in kcal/mol.}
@@ -802,6 +797,7 @@ Currently active learning scheme has not been tested. Several hand-picked fittin
 	\end{tabular}
 	\label{tab:shepard_exp}
 \end{table}
+\fi
 
 \subsubsection{Null model and reduced energies}
 \label{subsubsec:ered}
@@ -826,7 +822,7 @@ The atomic energy itself can be obtained by fitting a LLS model. For QM9 challen
 		\text{for }i &\in K.
 	\end{split}
 \end{equation}
-Using the set of index $K$ obtained in the same way as the one in the first row of table \ref{tab:shepard_exp}, the result of the atomic energies fitting with the molecular energies $E$ as the target is shown in table \ref{tab:atomic_exp}. 
+The set of index $K$ depends entirely from the set of features used, it affects the resulting atomic energies. The result of the atomic energies fitting with the lowest MAE with the molecular energies $E$ as the target is shown in table \ref{tab:atomic_exp}. 
 The MAE from fitting the atomic energies is in fact refers to the mean absolute value of the $E^\text{red}$ of all molecules in the QM9 dataset itself.
 
 \begin{table}[H]
@@ -835,39 +831,55 @@ The MAE from fitting the atomic energies is in fact refers to the mean absolute 
 	\begin{tabular}{|l|l|l|l|l|l|}
 		\hline
 		\multicolumn{1}{|c|}{\textbf{MAE}} & \multicolumn{1}{c|}{$E^\text{atom}_\text{H}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{C}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{O}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{N}$} & \multicolumn{1}{c|}{$E^\text{atom}_\text{F}$} \\ \hline
-		21.2  &	-379.341  & -23891.17 & -34348.998 & -47199.982 & -62661.071 \\ \hline
+		20.9  &	-379.318  & -23891.528 & -34349.643 & -47199.882 & -62659.836 \\ \hline
 	\end{tabular}
 	\label{tab:atomic_exp}
 \end{table}
 
-The fitting experiments with $E^\text{red}$ as the target are run using the best obtained feature set (first row of table \ref{tab:shepard_exp}) while varying the possible models (table \ref{tab:red_exp}). The KRR uses scaler $c=1$. The neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. 
+The fitting experiments with $E^\text{red}$ as the target are run by varying the models and the set of features, in total there are 70 experiment instances, 5 instances with the lowest MAE are shown in table \ref{tab:exp_reduced_energy_1}.
+The experiments with the lowest mean MAE using the same set of features to see the comparison of the models are shown in table \ref{tab:exp_reduced_energy_2}. Here the MAEs are computed from the original energies, since the predicted energies are actually the predicted reduced energies,
+\begin{equation}
+	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - (\hat{E}_m + E^\text{null}_m)|
+\end{equation}
 
-For FCHL \at{cite Lilienfeld et al}, the feature extraction, fitting, and prediction is done using the quantum machine learning (QML) package \at{cite QML \url{https://www.qmlcode.org}} in Python. The training set used is the same set $K$ as the other models, which is computed from the processed ACSF set of features, hence it is not the most accurate molecular centers relative to FCHL set of features.
+The models' hyperparameters are fixed across all experiments. ROSEMI uses $n_s = 6$, KRR uses scaler $c=1$, GAK uses $\sigma = 32.$; and the neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. 
+
+FCHL \at{cite Lilienfeld et al} is also independently tested, it results in 9.3 kcal/mol MAE. The feature extraction, fitting, and prediction is done using the quantum machine learning (QML) package \at{cite QML \url{https://www.qmlcode.org}} in Python. 
+The training set indices $K$ is computed from the processed ACSF set of features with $n_{af} = 4$ and $n_{mf} = 18$, hence it is not the most accurate molecular centers relative to FCHL set of features.
 The hyperparameters used are: cutoff radius $r_\text{cut} = 8.0$ for both the FCHL feature extraction and the local kernel generation; and Gaussian scaler $\sigma = 32.0$ for the local kernel generation.
 
-For all models, after prediction, the MAE is computed from
-\begin{equation}
-	\text{MAE} = \frac{1}{N_{QM9}} \sum_{m \in W} |E_m - (\hat{E}_m + E_m^\text{null})|,
-\end{equation}
-hence it recovers the original order of magnitude of the energies.
-\at{need to update the table with more verbose row, column, and entries}
+
 \begin{table}[H]
 	\centering
-	\caption{Fitting result using $E^\text{red}$ as target. Null model refers to the model used for predicting $E^\text{atom}$, RoSeMI refers to the Shepard model, KRR refers to the Gaussian kernel model, LLS is the linear least squares model, NN is the neural network model, and FCHL is the FCHL set of features fitted using Gaussian kernel. \textbf{MAE} is in kcal/mol.}
-	\begin{tabular}{|l|l|}
-		\hline
-		\multicolumn{1}{|c|}{\textbf{model}} & \multicolumn{1}{|c|}{\textbf{MAE}} \\ \hline
-		Null & 21.2 \\ \hline
-		RoSeMI & 23.7 \\ \hline
-		KRR & 21.3 \\ \hline
-		NN & 21.1 \\ \hline
-		LLS & 19.4 \\ \hline
-		FCHL & 9.3 \\ \hline
+	\caption{5 numerical experiments with the lowest \textbf{MAE} picked from 70 experiments.
+	The MAEs are in kcal/mol. KRR refers to (\ref{eq:gaussian_mol}), GAK refers to (\ref{eq:gaussian_atom}), and LLS refers to (\ref{eq:lls}).
+	$f$ is the type of atomic features, $n_{af}$ is the number of atomic features, $n_{mf}$ is the number of molecular features, $t_s$ is the solver time to train the model in seconds, and $t_p$ is the prediction time of $N_\text{qm9}$ molecules in seconds.}
+	\label{tab:exp_reduced_energy_1}
+	\begin{tabular}{|c|c|c|c|c|c|c|c|}
+	\hline
+	\textbf{MAE} & \textbf{\begin{tabular}[c]{@{}c@{}}Null \\ MAE\end{tabular}} & \textbf{model} & \textbf{$f$} & \textbf{$n_{af}$} & \textbf{$n_{mf}$} & \textbf{$t_s$} & \textbf{$t_p$} \\ \hline
+	16.7         & 20.9                                                         & KRR            & SOAP         & 75                & 40                   & 0.04           & 4.72           \\ \hline
+	17.0         & 20.9                                                         & GAK            & SOAP         & 75                & 40                   & 0.04           & 608.08         \\ \hline
+	17.5         & 21.6                                                         & GAK            & SOAP         & 29                & 20                   & 0.04           & 823.03         \\ \hline
+	18.0         & 21.5                                                         & LLS            & SOAP         & 50                & 40                   & 0.002          & 0.15           \\ \hline
+	18.1         & 22.3                                                         & GAK            & SOAP         & 50                & 10                   & 0.04           & 1168.78        \\ \hline
 	\end{tabular}
-	\label{tab:red_exp}
 \end{table}
 
-
+\begin{table}[H]
+	\centering
+	\caption{Numerical experiments with the lowest mean MAE across different models by fixing the set of features (first row of table \ref{tab:exp_reduced_energy_1}). ROSEMI refers to (\ref{eq:rosemi_linear}), NN refers to (\ref{eq:NN}).}
+	\label{tab:exp_reduced_energy_2}
+	\begin{tabular}{|c|c|c|c|}
+	\hline
+	\textbf{MAE} & \textbf{model} & \textbf{$t_s$} & \textbf{$t_p$} \\ \hline
+	16.7         & KRR            & 0.04           & 4.7            \\ \hline
+	17.0         & GAK            & 0.04           & 608.08         \\ \hline
+	19.4         & ROSEMI         & 641.7          & 152.8          \\ \hline
+	20.4         & LLS            & 0.002          & 0.4            \\ \hline
+	20.8         & NN             & 1.74           & 0.03           \\ \hline
+	\end{tabular}
+\end{table}
 
 \iffalse
 ========= some comments========== \\
