@@ -18,6 +18,18 @@ function f_distance(B, w, wk)
     return norm(B*(w-wk), 2)^2
 end
 
+"""
+specialized distances
+"""
+function fcenterdist(F, T)
+    D = zeros(size(F, 1), length(T))
+    for j ∈ axes(D, 2)
+        for i ∈ axes(D, 1)
+            D[i, j] = norm((@view F[i,:]) - (@view F[T[j], :]), 2)^2
+        end
+    end
+    return D
+end
 
 """
 compute D_k(w_l) and store it in file, O(n^2) algo
@@ -330,7 +342,10 @@ function eldar_cluster(coords, M; wbar = nothing, B = nothing, distance="default
     end
 end
 
-function usequence(N, d; prt=0)
+"""
+unused!!
+"""
+function usequence_unused(N, d; prt=0)
     #d, N = size(z)
     M=max(1000,N);
     z=rand(d,M);            # random reservoir of M vectors
@@ -375,7 +390,6 @@ function usequence(z::Matrix{Float64}, N::Int; rep=true)
     x=zeros(d,N);                           # storage for the sequence to be constructed, (dim, number of selected points)
     init_labels = Vector{Int}(M:-1:2)               # list of unused labels, the first one is always picked
     chosen_labels = Vector{Int}(undef, 0)          # final labels stored
-    nlabels = Vector{Int}(undef, 0) # to track new labels
 
     u, s = [zeros(M) for _ ∈ 1:2]           # initialize 2 empty vectors
     for k ∈ 1:N
