@@ -1,4 +1,4 @@
-using Plots, Statistics, LaTeXStrings, LinearAlgebra, Distributions, JLD
+using Plots, Statistics, LaTeXStrings, LinearAlgebra, Distributions, JLD, StatsBase, Random
 include("linastic.jl")
 """
 dummy distance between two coordinates, should use "Mahalanobis distance" later
@@ -369,12 +369,15 @@ end
 """
 overloader with z pre-generated
 """
-function usequence(z::Matrix{Float64}, N::Int; prt=0, rep=true)
+function usequence(z::Matrix{Float64}, N::Int; rep=true)
     d, M = size(z)
-    zerM=zeros(Int, M);        # for later vectorization
-    x=zeros(d,N);           # storage for the sequence to be constructed
+    zerM=zeros(Int, M);                     # for later vectorization
+    x=zeros(d,N);                           # storage for the sequence to be constructed, (dim, number of selected points)
+    init_labels = Vector{Int}(M:-1:2)               # list of unused labels, the first one is always picked
+    chosen_labels = Vector{Int}(undef, 0)          # final labels stored
+    nlabels = Vector{Int}(undef, 0) # to track new labels
 
-    u, s = [zeros(M) for _ ∈ 1:2]
+    u, s = [zeros(M) for _ ∈ 1:2]           # initialize 2 empty vectors
     for k ∈ 1:N
         # pick a vector from the reservoir
         if k == 1 
@@ -382,16 +385,29 @@ function usequence(z::Matrix{Float64}, N::Int; prt=0, rep=true)
         else 
             # find the reservoir vector with largest minimum distance
             # from the vectors already chosen
-            umax, j = findmax(u)
+            # check if j is already selected!:
+            #umax, j = findmax(u)
+            idc = findall(u .== maximum(u))
+            j = nothing
+            for id ∈ idc
+                if id ∉ chosen_labels
+                    j = id
+                    break
+                end
+            end
+            umax = u[j]
         end
-        x[:, k] = z[:,j] # change with label instead of the points
-
-        # update the reservoir
-        zj = rand(d,1)
+        #println(k, " ",j, " ",u)
+        x[:, k] = z[:,j] # update points
+        push!(chosen_labels, j) # and add to label
+        # update the reservoir, instead of rand, pick randomly from available set of integers:
+        #zj = rand(d,1)
+        new_j = sample(init_labels, 1)[1] # random sample
+        zj = z[:, new_j]
         if rep
             z[:, j] = zj
         end
-
+        #deleteat!(init_labels, findfirst(el -> el == new_j, init_labels)) # remove new_j from ids
         # update minimum squared distance vector 
         onk = ones(Int, k)
         if rep
@@ -404,7 +420,7 @@ function usequence(z::Matrix{Float64}, N::Int; prt=0, rep=true)
             u .= min.(u, s) # elemwisemin
         end
     end
-    return x # change with the sequence of labels instead of points
+    return x, chosen_labels # add labels return too
 end
 
 function test_grid()
@@ -476,19 +492,42 @@ end
 
 function test_usequence()
     # call usequence here:
-    N, d = (1000, 2)
-    M = max(1000, N)
-    z = rand(d, M)
+    #N, d = (10, 2)
+    #M = max(10, N)
+    #z = rand(d, M)
 
-    #= t_cl1 = @elapsed begin
-        center_ids, mean_point = eldar_cluster(z, M, distance="default", mode="fmd") # generate cluster centers
+    d = 2; N = 1000
+    z = Matrix{Float64}(undef, d, N) # a list of 2d coord arrays for testing
+    # fill fixed coords:
+    counter = 1
+    for i ∈ 1.:25. 
+        for j ∈ 1.:40.
+            z[1, counter] = i # dim1 
+            z[2, counter] = j # dim2
+            counter += 1
+        end
     end
-    pl = scatter([z[1, center_ids]], [z[2, center_ids]], makershape = :circle)
-    display(pl) =#
+
+    #perturb:
+    #Random.seed!(123)
+    z .+= rand(Uniform(-.15, .15), size(z))
+    z_init = copy(z) # actual data, since the data will be changed by usequence op
+
+    K = 15
+    t_cl1 = @elapsed begin
+        center_ids, mean_point = eldar_cluster(z, K, distance="default", mode="fmd") # generate cluster centers
+    end
+    pl = scatter([z_init[1, center_ids]], [z_init[2, center_ids]], makershape = :star, legend=false)
+    display(z)
+    display(pl)
     t_cl2 = @elapsed begin
-        x = usequence(z, N)
+        x, labels = usequence(z, K)
     end
+    display(z_init)
+    display([center_ids, labels])
     pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    display(pl)
+    pl = scatter(z_init[1,labels], z_init[2,labels], markershape = :circle, legend=false)
     display(pl)
     #display([t_cl1, t_cl2])
 end
