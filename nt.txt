@@ -131,3 +131,6 @@ SOAP, GAL, w/ kron, preproc data, 17.5 kcal/mol
 ! fix the Julia version, different Julia version gives different eigenvectors, the fitting result of OMP1 and SAINT is different!
 - to use random seed: call the seed before each random s.t. the numbers are reproducible
 - do experiments with different sets of K (see paper)
+
+24.01.2023:
+- usequence experiment: uniformly distributed data especially [0,1], gives the same selected points, even on lower dimensions

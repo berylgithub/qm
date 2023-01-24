@@ -394,6 +394,7 @@ function usequence(z::Matrix{Float64}, N::Int; rep=true)
     u, s = [zeros(M) for _ ∈ 1:2]           # initialize 2 empty vectors
     for k ∈ 1:N
         # pick a vector from the reservoir
+        idc = nothing
         if k == 1 
             j = 1
         else 
@@ -416,12 +417,12 @@ function usequence(z::Matrix{Float64}, N::Int; rep=true)
             end
             umax = u[j]
         end
-        #println(k, " ",j, " ",u)
         x[:, k] = z[:,j] # update points
         push!(chosen_labels, j) # and add to label
         # update the reservoir, instead of rand, pick randomly from available set of integers:
         #zj = rand(d,1)
         new_j = sample(init_labels, 1)[1] # random sample
+        #println(idc," ",new_j)
         zj = z[:, new_j]
         if rep
             z[:, j] = zj
@@ -515,12 +516,12 @@ function test_usequence()
     #M = max(10, N)
     #z = rand(d, M)
 
-    d = 2; N = 1000
+    d = 2; N = 10_000
     z = Matrix{Float64}(undef, d, N) # a list of 2d coord arrays for testing
     # fill fixed coords:
     counter = 1
-    for i ∈ 1.:25. 
-        for j ∈ 1.:40.
+    for i ∈ 1.:100. 
+        for j ∈ 1.:100.
             z[1, counter] = i # dim1 
             z[2, counter] = j # dim2
             counter += 1
@@ -532,23 +533,44 @@ function test_usequence()
     #z .+= rand(Uniform(-.15, .15), size(z))
     z_init = copy(z) # actual data, since the data will be changed by usequence op
 
-    K = 100
+    K = 10
     t_cl1 = @elapsed begin
         center_ids, mean_point = eldar_cluster(z, K, distance="default", mode="fmd") # generate cluster centers
     end
-    pl = scatter([z_init[1, center_ids]], [z_init[2, center_ids]], makershape = :star, legend=false)
+    #pl = scatter([z_init[1, center_ids]], [z_init[2, center_ids]], makershape = :star, legend=false)
     display(z)
-    display(pl)
+    #display(pl)
     t_cl2 = @elapsed begin
         x, labels = usequence(z, K)
     end
     display(z_init)
     display([center_ids, labels])
-    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
-    display(pl)
+    #pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    #display(pl)
     pl = scatter(z_init[1,labels], z_init[2,labels], markershape = :circle, legend=false)
     display(pl)
     #display([t_cl1, t_cl2])
+end
+
+function test_u2()
+    nf = 2; nd = 1000; k = 100
+    A = rand(nf, nd) # looks like this is uniformly distributed
+    #A .+= rand(1)
+    #A = rand(Uniform(1., 100.), nf, nd)
+    #A = (((A .- minimum(A)) ./ (maximum(A) .- minimum(A))) .* (10.75 - 1.5)) .+ 1.5  # change scaling
+    display(A)
+    Ks = []
+    for i ∈ 1:3
+        cpA = copy(A)
+        push!(Ks, usequence(cpA, k)[2])
+    end
+    display([Ks[1] Ks[2] Ks[3]])
+    println(Ks[1] == Ks[2], Ks[1] == Ks[3], Ks[2] == Ks[3])
+    pl = scatter(A[1,Ks[1]], A[2,Ks[1]], markershape = :circle, legend=false)
+    display(pl)
+    pl = scatter(A[1,Ks[2]], A[2,Ks[2]], markershape = :circle, legend=false)
+    display(pl)
+    # summary: uniformly distributed data especially [0,1], gives the same selected points, even on lower dimensions
 end
 
 function test_distances()
