@@ -402,12 +402,17 @@ function usequence(z::Matrix{Float64}, N::Int; rep=true)
             # check if j is already selected!:
             #umax, j = findmax(u)
             idc = findall(u .== maximum(u))
-            j = nothing
+            #= j = nothing
             for id ∈ idc
                 if id ∉ chosen_labels
                     j = id
                     break
                 end
+            end =#
+            # random sample until element not in chosen_label is found
+            j = sample(idc, 1)[1]
+            while j ∈ chosen_labels
+                j = sample(idc, 1)[1]
             end
             umax = u[j]
         end
@@ -524,10 +529,10 @@ function test_usequence()
 
     #perturb:
     #Random.seed!(123)
-    z .+= rand(Uniform(-.15, .15), size(z))
+    #z .+= rand(Uniform(-.15, .15), size(z))
     z_init = copy(z) # actual data, since the data will be changed by usequence op
 
-    K = 15
+    K = 100
     t_cl1 = @elapsed begin
         center_ids, mean_point = eldar_cluster(z, K, distance="default", mode="fmd") # generate cluster centers
     end
