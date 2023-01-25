@@ -383,6 +383,7 @@ end
 
 """
 overloader with z pre-generated
+z is reservoir NOT the whole input data, must hold |z| < N_data, to preserve randomness, init the reservoir with random points. 
 """
 function usequence(z::Matrix{Float64}, N::Int; rep=true)
     d, M = size(z)
