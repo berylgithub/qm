@@ -226,7 +226,7 @@ if molf_file  is not empty then there will be no atomic feature extractions, onl
 function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
                     universe_size=1_000, normalize_atom = true, normalize_mol = true, ft_sos=false, ft_bin=false, 
                     molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false)
-    println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
+    println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
         # load dataset:
@@ -987,13 +987,12 @@ end
 """
 fit the atomic energy for energy reducer
 """
-function fit_atom(foldername, file_dataset, file_atomref_features)
+function fit_atom(foldername, file_dataset, file_atomref_features, centers; uid="")
     dataset = load(file_dataset, "data")
     F_atom = load(file_atomref_features, "data")
     E = map(d -> d["energy"], dataset)
-    Tidx = load("data/$foldername/center_ids.jld")
     K_indexer = 1:100 # 🌸 temporary selection
-    Midx = Tidx[K_indexer] 
+    Midx = centers[K_indexer] 
     Widx = setdiff(1:n_data, Midx)
     # compute atomic reference energies:
     A = F_atom[Midx, :] # construct the data matrix
@@ -1004,12 +1003,14 @@ function fit_atom(foldername, file_dataset, file_atomref_features)
     #println("atomic MAE train = ",MAEtrain)
     E_pred = F_atom[Widx, :]*θ
     errors = E_pred - E[Widx]
-    MAE = mean(abs.(errors))*627.503
+    MAE = mean(abs.(errors))*627.503 # the mean absolute value of the reduced energy but for the test set only
     println("atomic MAV = ",MAE)
     E_atom = F_atom*θ # the sum of atomic energies
     E_red_mean = mean(abs.(E - E_atom)) .* 627.503 # mean of reduced energy
     # save MAE and atomref energies to file
-    uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
+    if isempty(uid)
+        uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
+    end
     strlist = string.(vcat(uid, MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
     open("result/$foldername/atomref_info.txt","a") do io
         str = ""
@@ -1036,16 +1037,16 @@ function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; model="ROSEM
     # input files:
     path = "data/$foldername/"
     mkpath("result/$foldername")
-    #file_dataset = path*"dataset.jld"
     file_atomref = path*"atomref_features.jld" # feature to compute atomic reference energy, precomputed once, most likely won't change thorughout the experiments
+    file_atom_E = "result/$foldername/atom_energies.jld" # atomic energies
     file_finger = path*"features.jld" # mol feature for model
     file_finger_atom = path*"features_atom.jld"
     file_distance = path*"distances.jld"
     file_centers = path*"center_ids.jld"
     file_spline = path*"spline.jld"
     file_dspline = path*"dspline.jld"
-    files = [file_dataset, file_atomref, file_finger_atom, file_finger, file_distance, file_centers, file_spline, file_dspline]
-    dataset, F_atom, f, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files] #F_atom is for fitting energy reducer, f is atomic features for the molecular fitting
+    files = [file_dataset, file_atomref, file_atom_E, file_finger_atom, file_finger, file_distance, file_centers, file_spline, file_dspline]
+    dataset, F_atom, E_dict, f, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files] #F_atom is for fitting energy reducer, f is atomic features for the molecular fitting
     println("data loading finished!")
     F = F'; E = map(d -> d["energy"], dataset)
     # index computation:
@@ -1054,35 +1055,9 @@ function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; model="ROSEM
     Midx = Tidx[K_indexer] 
     Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx)
-    # compute atomic reference energies:
-    A = F_atom[Midx, :] # construct the data matrix
-    start = time()
-    θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
-    errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
-    #MAEtrain = sum(errors)/length(errors)
-    #println("atomic MAE train = ",MAEtrain)
-    E_pred = F_atom[Widx, :]*θ
-    errors = E_pred - E[Widx]
-    MAE = mean(abs.(errors))*627.503
-    println("atomic MAV = ",MAE)
-    E_atom = F_atom*θ # the sum of atomic energies
-    E_red_mean = mean(abs.(E - E_atom)) .* 627.503 # mean of reduced energy
-    # save MAE and atomref energies to file
-    uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
-    strlist = string.(vcat(uid, MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
-    open("result/$foldername/atomref_info.txt","a") do io
-        str = ""
-        for s ∈ strlist
-            str*=s*"\t"
-        end
-        print(io, str*"\n")
-    end
-    # reduced energy data structure:
-    Ed = Dict()
-    Ed["theta"] = θ # or the atom reference energy
-    Ed["atomic_energies"] = E_atom # sum of the atom ref energy
-    save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
-    E[Midx] .-= E_atom[Midx] # reduce training energy
+    # reduce training energy:
+    E_atom = E_dict["atomic_energies"]
+    E[Midx] .-= E_atom[Midx]
     # write model header string:
     machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
     strlist = string.(vcat(uid, machine, model))
@@ -1104,7 +1079,7 @@ function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; model="ROSEM
     elseif model == "LLS"
         fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"])
     elseif model == "GAK"
-        fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; cσ=cσ, Er = Ed["atomic_energies"]) # takes atomic feature instead
+        fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; cσ=cσ, Er = Ed["atomic_energies"]) # takes atomic features instead
     end
 end
 
