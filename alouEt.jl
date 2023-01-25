@@ -223,8 +223,9 @@ full data setup, in contrast to each molecule data setup, INCLUDES PCA!.
 takes in the data indices (relative to the qm9 dataset).
 if molf_file  is not empty then there will be no atomic feature extractions, only PCA on molecular level
 """
-function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
-                    universe_size=1_000, normalize_atom = true, normalize_mol = true, ft_sos=false, ft_bin=false, molf_file = "", cov_file = "", sensitivity_file = "")
+function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
+                    universe_size=1_000, normalize_atom = true, normalize_mol = true, ft_sos=false, ft_bin=false, 
+                    molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false)
     println("data setup for n_data = ",length(data_indices),", atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
@@ -259,9 +260,8 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
             F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname)
             println("mol feature processing finished!")
         end
-        F = F[data_indices, :]; f = f[data_indices]
-        dataset = dataset[data_indices] # slice dataset
-        display(length(dataset))
+        #F = F[data_indices, :]; f = f[data_indices]
+        #dataset = dataset[data_indices] # slice dataset
         # compute bspline:
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
         display(size(F))
@@ -272,7 +272,7 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
         redf = load("data/atomref_features.jld", "data")
         # save files:
     end
-    save("data/$foldername/dataset.jld", "data", dataset)
+    #save("data/$foldername/dataset.jld", "data", dataset)
     save("data/$foldername/features_atom.jld", "data", f) # atomic features
     save("data/$foldername/features.jld", "data", F) # molecular features
     save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
@@ -281,7 +281,7 @@ function data_setup(foldername, data_indices, n_af, n_mf, n_basis, num_centers, 
     save("data/$foldername/spline.jld", "data", ϕ)
     save("data/$foldername/dspline.jld", "data", dϕ)
     # write data setup info:
-    n_data = length(data_indices)
+    n_data = length(dataset)
     machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
     strlist = string.([uid, n_data, num_centers, feature_name, n_af, n_mf, ft_sos, ft_bin, normalize_atom, normalize_mol, sens_mode, n_basis+3, t, machine]) # dates serves as readable uid, n_basis + 3 by definition
     open("data/$foldername/setup_info.txt","a") do io
@@ -975,17 +975,58 @@ function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; cσ = 2. *
 end
 
 """
+fit the atomic energy for energy reducer
+"""
+function fit_atom(foldername, file_dataset, file_atomref_features)
+    dataset = load(file_dataset, "data")
+    F_atom = load(file_atomref_features, "data")
+    E = map(d -> d["energy"], dataset)
+    Tidx = load("data/$foldername/center_ids.jld")
+    K_indexer = 1:100 # 🌸 temporary selection
+    Midx = Tidx[K_indexer] 
+    Widx = setdiff(1:n_data, Midx)
+    # compute atomic reference energies:
+    A = F_atom[Midx, :] # construct the data matrix
+    start = time()
+    θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
+    #MAEtrain = sum(errors)/length(errors)
+    #println("atomic MAE train = ",MAEtrain)
+    E_pred = F_atom[Widx, :]*θ
+    errors = E_pred - E[Widx]
+    MAE = mean(abs.(errors))*627.503
+    println("atomic MAV = ",MAE)
+    E_atom = F_atom*θ # the sum of atomic energies
+    E_red_mean = mean(abs.(E - E_atom)) .* 627.503 # mean of reduced energy
+    # save MAE and atomref energies to file
+    uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
+    strlist = string.(vcat(uid, MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
+    open("result/$foldername/atomref_info.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+    # reduced energy data structure:
+    Ed = Dict()
+    Ed["theta"] = θ # or the atom reference energy
+    Ed["atomic_energies"] = E_atom # sum of the atom ref energy
+    save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
+end
+
+"""
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
-function fit_🌹_and_atom(foldername, bsize, tlimit; model="ROSEMI", cσ = 2. *(2. ^5)^2, scaler=1.)
+function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; model="ROSEMI", cσ = 2. *(2. ^5)^2, scaler=1.)
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
     # input files:
     path = "data/$foldername/"
     mkpath("result/$foldername")
-    file_dataset = path*"dataset.jld"
+    #file_dataset = path*"dataset.jld"
     file_atomref = path*"atomref_features.jld" # feature to compute atomic reference energy, precomputed once, most likely won't change thorughout the experiments
     file_finger = path*"features.jld" # mol feature for model
     file_finger_atom = path*"features_atom.jld"
