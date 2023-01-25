@@ -1179,9 +1179,19 @@ function test_FCHL()
 end
 
 """
+
+"""
+function center_comp_driver()
+    limits = [51, 165]
+    nfpercent = [100, 80, 75, 60, 50, 40, 20] #% of features brought
+    data_setup("exp_reduced_energy", naf, nmf, 2, 300, "data/qm9_dataset_old.jld",
+                ff, fname; save_global_centers = true)
+end
+
+
+"""
 test PyCall for QML
 """
-
 #= function qml(cutoff)
     py"""
     import numpy as np
