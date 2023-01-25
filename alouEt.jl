@@ -280,6 +280,16 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
     save("data/$foldername/distances.jld", "data", distances)
     save("data/$foldername/spline.jld", "data", ϕ)
     save("data/$foldername/dspline.jld", "data", dϕ)
+    if save_global_centers # append centers to global directory
+        strings = string.(uid, center_ids)
+        open("data/centers.txt", "a") do io
+            str = ""
+            for s ∈ strings
+                str*=s*"\t"
+            end
+            print(io, str*"\n")
+        end
+    end
     # write data setup info:
     n_data = length(dataset)
     machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
