@@ -281,7 +281,7 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
     save("data/$foldername/spline.jld", "data", ϕ)
     save("data/$foldername/dspline.jld", "data", dϕ)
     if save_global_centers # append centers to global directory
-        strings = string.(uid, center_ids)
+        strings = string.(vcat(uid, center_ids))
         open("data/centers.txt", "a") do io
             str = ""
             for s ∈ strings
