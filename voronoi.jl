@@ -385,11 +385,10 @@ end
 overloader with z pre-generated
 z is reservoir NOT the whole input data, must hold |z| < N_data, to preserve randomness, init the reservoir with random points. 
 """
-function usequence(z::Matrix{Float64}, N::Int; rep=true)
+function usequence(z::Matrix{Float64}, init_labels::Vector{Int}, N::Int; rep=true)
     d, M = size(z)
     zerM=zeros(Int, M);                     # for later vectorization
     x=zeros(d,N);                           # storage for the sequence to be constructed, (dim, number of selected points)
-    init_labels = Vector{Int}(M:-1:2)               # list of unused labels, the first one is always picked
     chosen_labels = Vector{Int}(undef, 0)          # final labels stored
 
     u, s = [zeros(M) for _ ∈ 1:2]           # initialize 2 empty vectors
@@ -518,13 +517,13 @@ function test_usequence()
     #z = rand(d, M)
 
     d = 2; N = 10_000
-    z = Matrix{Float64}(undef, d, N) # a list of 2d coord arrays for testing
+    F = Matrix{Float64}(undef, d, N) # a list of 2d coord arrays for testing
     # fill fixed coords:
     counter = 1
     for i ∈ 1.:100. 
         for j ∈ 1.:100.
-            z[1, counter] = i # dim1 
-            z[2, counter] = j # dim2
+            F[1, counter] = i # dim1 
+            F[2, counter] = j # dim2
             counter += 1
         end
     end
@@ -532,23 +531,23 @@ function test_usequence()
     #perturb:
     #Random.seed!(123)
     #z .+= rand(Uniform(-.15, .15), size(z))
-    z_init = copy(z) # actual data, since the data will be changed by usequence op
+    F_init = copy(F) # actual data, since the data will be changed by usequence op
 
     K = 10
     t_cl1 = @elapsed begin
-        center_ids, mean_point = eldar_cluster(z, K, distance="default", mode="fmd") # generate cluster centers
+        center_ids, mean_point = eldar_cluster(F, K, distance="default", mode="fmd") # generate cluster centers
     end
     #pl = scatter([z_init[1, center_ids]], [z_init[2, center_ids]], makershape = :star, legend=false)
-    display(z)
+    display(F)
     #display(pl)
     t_cl2 = @elapsed begin
         x, labels = usequence(z, K)
     end
-    display(z_init)
+    display(F_init)
     display([center_ids, labels])
     #pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
     #display(pl)
-    pl = scatter(z_init[1,labels], z_init[2,labels], markershape = :circle, legend=false)
+    pl = scatter(F_init[1,labels], F_init[2,labels], markershape = :circle, legend=false)
     display(pl)
     #display([t_cl1, t_cl2])
 end
