@@ -277,12 +277,13 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
     save("data/$foldername/features_atom.jld", "data", f) # atomic features
     save("data/$foldername/features.jld", "data", F) # molecular features
     save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
-    save("data/$foldername/center_ids.jld", "data", centers[end]) # unless specified, save only the last
+    save("data/$foldername/center_ids.jld", "data", centers)
     save("data/$foldername/spline.jld", "data", ϕ)
     save("data/$foldername/dspline.jld", "data", dϕ)
     if save_global_centers # append centers to global directory
-        for center_ids ∈ centers
-            strings = string.(vcat(uid, center_ids))
+        for i ∈ eachindex(centers)
+            kid = "K"*string(i)
+            strings = string.(vcat(uid, kid, centers[i]))
             open("data/centers.txt", "a") do io
                 str = ""
                 for s ∈ strings
@@ -989,10 +990,13 @@ end
 """
 fit the atomic energy for energy reducer
 """
-function fit_atom(foldername, file_dataset, file_atomref_features, center_ids; tlimit = 900, uid="")
+function fit_atom(foldername, file_dataset, file_atomref_features; center_ids = [], tlimit = 900, uid="", kid="")
     dataset = load(file_dataset, "data"); n_data = length(dataset)
     F_atom = load(file_atomref_features, "data")
     E = map(d -> d["energy"], dataset)
+    if isempty(center_ids)
+        center_ids = load("data/$foldername/center_ids.jld", "data")[1]
+    end
     K_indexer = 1:100 # 🌸 temporary selection
     Midx = center_ids[K_indexer] 
     Widx = setdiff(1:n_data, Midx)
@@ -1013,7 +1017,10 @@ function fit_atom(foldername, file_dataset, file_atomref_features, center_ids; t
     if isempty(uid)
         uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
     end
-    strlist = string.(vcat(uid, MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
+    if isempty(kid)
+        kid = "K1"
+    end
+    strlist = string.(vcat(uid, kid, MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
     open("result/$foldername/atomref_info.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -1032,7 +1039,7 @@ end
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
-function fit_🌹_and_atom(foldername, file_dataset, center_ids, bsize, tlimit; model="ROSEMI", cσ = 2. *(2. ^5)^2, scaler=1.)
+function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; model="ROSEMI", cσ = 2. *(2. ^5)^2, scaler=1., center_ids=[], uid="", kid="")
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
@@ -1046,7 +1053,10 @@ function fit_🌹_and_atom(foldername, file_dataset, center_ids, bsize, tlimit; 
     file_dspline = path*"dspline.jld"
     files = [file_dataset, file_atom_E, file_finger_atom, file_finger, file_spline, file_dspline]
     dataset, E_dict, f, F, ϕ, dϕ = [load(f)["data"] for f in files] #F_atom is for fitting energy reducer, f is atomic features for the molecular fitting
-    D = fcenterdist(F, center_ids) # compute distances
+    if isempty(center_ids)
+        center_ids = load("data/$foldername/center_ids.jld", "data")[1]
+    end
+    D = fcenterdist(F, center_ids) # compute distances here, since it depends on the centers
     println("data loading finished!")
     F = F'; E = map(d -> d["energy"], dataset)
     # index computation:
@@ -1060,7 +1070,13 @@ function fit_🌹_and_atom(foldername, file_dataset, center_ids, bsize, tlimit; 
     E[Midx] .-= E_atom[Midx]
     # write model header string:
     machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
-    strlist = string.(vcat(uid, machine, model))
+    if isempty(uid)
+        uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
+    end
+    if isempty(kid)
+        kid = "K1"
+    end
+    strlist = string.(vcat(uid, kid, machine, model))
     open("result/$foldername/err_$foldername.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -1071,15 +1087,15 @@ function fit_🌹_and_atom(foldername, file_dataset, center_ids, bsize, tlimit; 
     # model fitting:
     println("fitting starts!")
     if model=="ROSEMI"
-        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, foldername, bsize, tlimit; Er = Ed["atomic_energies"])
+        MAE, MADmax_idxes = fitter(F, E, D, ϕ, dϕ, Midx, center_ids, Uidx, Widx, n_feature, foldername, bsize, tlimit; Er = E_atom)
     elseif model == "KRR" 
-        fitter_KRR(F', E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_feature; Er = Ed["atomic_energies"], scaler=scaler)
+        fitter_KRR(F', E, Midx, center_ids, Widx, K_indexer, foldername, tlimit, n_feature; Er = E_atom, scaler=scaler)
     elseif model == "NN"
-        fitter_NN(F, E, Midx, Widx, foldername; Er = Ed["atomic_energies"]) # no tlimit yet, but mostly dont really matter
+        fitter_NN(F, E, Midx, Widx, foldername; Er = E_atom) # no tlimit yet, but mostly dont really matter
     elseif model == "LLS"
-        fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = Ed["atomic_energies"])
+        fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = E_atom)
     elseif model == "GAK"
-        fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; cσ=cσ, Er = Ed["atomic_energies"]) # takes atomic features instead
+        fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; cσ=cσ, Er = E_atom) # takes atomic features instead
     end
 end
 
