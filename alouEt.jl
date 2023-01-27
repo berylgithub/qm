@@ -81,10 +81,9 @@ end
 """
 overloader, using matrix as input
 """
-function set_cluster(F::Matrix{Float64}, M; universe_size=1_000)
+function set_cluster(F::Matrix{Float64}, M::Int; universe_size=1_000, num_center_sets::Int = 1)
     N, L = size(F)
-    z = copy(F)
-    z = Matrix(transpose(z))
+    Ftran = Matrix(transpose(F))
     #F = F'
     #idx = 603 # the ith data point of the dataset, can be arbitrary technically, for now fix 603:= RoZeMi 🌹
     #idx = Int(round(idx/universe_size*N)) # relative idx
@@ -92,9 +91,12 @@ function set_cluster(F::Matrix{Float64}, M; universe_size=1_000)
     #B = Matrix{Float64}(I, L, L) # try with B = I #B = compute_B(C) 
     # generate centers (M) for training:
     #center_ids, mean_point, D = eldar_cluster(F, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd", get_distances=true) # generate cluster centers
-    _, center_ids = usequence(z, M)
-    D = fcenterdist(F, center_ids)
-    return center_ids, D
+    centers = []
+    for i ∈ 1:num_center_sets
+        _, center_ids = usequence(Ftran, M)
+        push!(centers, center_ids)
+    end
+    return centers
 end
 
 """
@@ -225,7 +227,7 @@ if molf_file  is not empty then there will be no atomic feature extractions, onl
 """
 function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
                     universe_size=1_000, normalize_atom = true, normalize_mol = true, ft_sos=false, ft_bin=false, 
-                    molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false)
+                    molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false, num_center_sets = 1)
     println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
@@ -266,8 +268,7 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
         display(size(F))
         # get centers:
-        center_ids, distances = set_cluster(F, num_centers, universe_size=universe_size)
-        display(length(center_ids))
+        centers = set_cluster(F, num_centers, universe_size=universe_size)
         # copy pre-computed atomref features:
         redf = load("data/atomref_features.jld", "data")
         # save files:
@@ -276,18 +277,19 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
     save("data/$foldername/features_atom.jld", "data", f) # atomic features
     save("data/$foldername/features.jld", "data", F) # molecular features
     save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
-    save("data/$foldername/center_ids.jld", "data", center_ids)
-    save("data/$foldername/distances.jld", "data", distances)
+    save("data/$foldername/center_ids.jld", "data", centers[end]) # unless specified, save only the last
     save("data/$foldername/spline.jld", "data", ϕ)
     save("data/$foldername/dspline.jld", "data", dϕ)
     if save_global_centers # append centers to global directory
-        strings = string.(vcat(uid, center_ids))
-        open("data/centers.txt", "a") do io
-            str = ""
-            for s ∈ strings
-                str*=s*"\t"
+        for center_ids ∈ centers
+            strings = string.(vcat(uid, center_ids))
+            open("data/centers.txt", "a") do io
+                str = ""
+                for s ∈ strings
+                    str*=s*"\t"
+                end
+                print(io, str*"\n")
             end
-            print(io, str*"\n")
         end
     end
     # write data setup info:
@@ -1030,30 +1032,28 @@ end
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
-function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; model="ROSEMI", cσ = 2. *(2. ^5)^2, scaler=1.)
+function fit_🌹_and_atom(foldername, file_dataset, center_ids, bsize, tlimit; model="ROSEMI", cσ = 2. *(2. ^5)^2, scaler=1.)
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
     # input files:
     path = "data/$foldername/"
     mkpath("result/$foldername")
-    file_atomref = path*"atomref_features.jld" # feature to compute atomic reference energy, precomputed once, most likely won't change thorughout the experiments
     file_atom_E = "result/$foldername/atom_energies.jld" # atomic energies
     file_finger = path*"features.jld" # mol feature for model
     file_finger_atom = path*"features_atom.jld"
-    file_distance = path*"distances.jld"
-    file_centers = path*"center_ids.jld"
     file_spline = path*"spline.jld"
     file_dspline = path*"dspline.jld"
-    files = [file_dataset, file_atomref, file_atom_E, file_finger_atom, file_finger, file_distance, file_centers, file_spline, file_dspline]
-    dataset, F_atom, E_dict, f, F, D, Tidx, ϕ, dϕ = [load(f)["data"] for f in files] #F_atom is for fitting energy reducer, f is atomic features for the molecular fitting
+    files = [file_dataset, file_atom_E, file_finger_atom, file_finger, file_spline, file_dspline]
+    dataset, E_dict, f, F, ϕ, dϕ = [load(f)["data"] for f in files] #F_atom is for fitting energy reducer, f is atomic features for the molecular fitting
+    D = fcenterdist(F, center_ids) # compute distances
     println("data loading finished!")
     F = F'; E = map(d -> d["energy"], dataset)
     # index computation:
     n_data = length(dataset); n_feature = size(F, 1);
     K_indexer = 1:100 # 🌸 temporary selection
-    Midx = Tidx[K_indexer] 
-    Uidx = setdiff(Tidx, Midx) # (U)nsupervised data
+    Midx = center_ids[K_indexer]
+    Uidx = setdiff(center_ids, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx)
     # reduce training energy:
     E_atom = E_dict["atomic_energies"]
