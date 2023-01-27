@@ -384,12 +384,18 @@ end
 """
 overloader with z pre-generated
 z is reservoir NOT the whole input data, must hold |z| < N_data, to preserve randomness, init the reservoir with random points. 
+params:
+    - z, reservoir matrix
+    - init_labels, absolute labels of the z matrix
+    - glob_labels, all labels ∖ init_labels
+    - N number of chosen labels (num of iter)
 """
-function usequence(z::Matrix{Float64}, init_labels::Vector{Int}, N::Int; rep=true)
+function usequence(z::Matrix{Float64}, F::Matrix{Float64}, init_labels::Vector{Int}, glob_labels::Vector{Int}, N::Int; rep=true)
     d, M = size(z)
     zerM=zeros(Int, M);                     # for later vectorization
     x=zeros(d,N);                           # storage for the sequence to be constructed, (dim, number of selected points)
     chosen_labels = Vector{Int}(undef, 0)          # final labels stored
+    abs_labels = Dict()     # absolute indices chosen to the actual data points ordering
 
     u, s = [zeros(M) for _ ∈ 1:2]           # initialize 2 empty vectors
     for k ∈ 1:N
@@ -403,29 +409,21 @@ function usequence(z::Matrix{Float64}, init_labels::Vector{Int}, N::Int; rep=tru
             # check if j is already selected!:
             #umax, j = findmax(u)
             idc = findall(u .== maximum(u))
-            #= j = nothing
-            for id ∈ idc
-                if id ∉ chosen_labels
-                    j = id
-                    break
-                end
-            end =#
             # random sample until element not in chosen_label is found
             j = sample(idc, 1)[1]
             while j ∈ chosen_labels
                 j = sample(idc, 1)[1]
             end
-            umax = u[j]
+            umax = u[j] # how to find out which absolute label this is??
         end
         x[:, k] = z[:,j] # update points
         push!(chosen_labels, j) # and add to label
         # update the reservoir, instead of rand, pick randomly from available set of integers:
-        #zj = rand(d,1)
-        new_j = sample(init_labels, 1)[1] # random sample
-        #println(idc," ",new_j)
-        zj = z[:, new_j]
+        new_j = sample(glob_labels, 1)[1] # random sample
+        zj = F[:, new_j]
         if rep
             z[:, j] = zj
+            abs_labels[j] = new_j
         end
         #deleteat!(init_labels, findfirst(el -> el == new_j, init_labels)) # remove new_j from ids
         # update minimum squared distance vector 
@@ -440,6 +438,9 @@ function usequence(z::Matrix{Float64}, init_labels::Vector{Int}, N::Int; rep=tru
             u .= min.(u, s) # elemwisemin
         end
     end
+    # transform chosen local labels into global labels:
+    display(chosen_labels)
+    display(abs_labels)
     return x, chosen_labels # add labels return too
 end
 
@@ -531,23 +532,28 @@ function test_usequence()
     #perturb:
     #Random.seed!(123)
     #z .+= rand(Uniform(-.15, .15), size(z))
-    F_init = copy(F) # actual data, since the data will be changed by usequence op
+    #F_init = copy(F) # actual data, since the data will be changed by usequence op
 
     K = 10
-    t_cl1 = @elapsed begin
-        center_ids, mean_point = eldar_cluster(F, K, distance="default", mode="fmd") # generate cluster centers
-    end
+    # t_cl1 = @elapsed begin
+    #     center_ids, mean_point = eldar_cluster(F, K, distance="default", mode="fmd") # generate cluster centers
+    # end
     #pl = scatter([z_init[1, center_ids]], [z_init[2, center_ids]], makershape = :star, legend=false)
     display(F)
     #display(pl)
+    glob_labels = Vector{Int}(1:size(F, 2))
+    init_labels = rand(1:size(F, 2), 500)
+    glob_labels = setdiff(glob_labels, init_labels) # exclude the selected initial points
+    z = F[:, init_labels]
+    display(z)
     t_cl2 = @elapsed begin
-        x, labels = usequence(z, K)
+        x, labels = usequence(z, glob_labels, K)
     end
     display(F_init)
     display([center_ids, labels])
-    #pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
-    #display(pl)
-    pl = scatter(F_init[1,labels], F_init[2,labels], markershape = :circle, legend=false)
+    pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
+    display(pl)
+    pl = scatter(F[1,labels], F[2,labels], markershape = :cross, legend=false)
     display(pl)
     #display([t_cl1, t_cl2])
 end
