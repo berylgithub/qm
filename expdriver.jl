@@ -11,7 +11,7 @@ function caller()
         for j ∈ eachindex(nmfs)
             nmf = nmfs[j]
             if nmf >= nafs[i] # the num of mol feature must be less than atom f
-                nmf = naf - rand(1:5, 1)[1]
+                nmf = nafs[i] - rand(1:5, 1)[1]
             end
             println(nafs[i]," ",nmf)
             data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/ACSF_atom.jld", "ACSF"; 
@@ -26,7 +26,7 @@ function caller()
         for j ∈ eachindex(nmfs)
             nmf = nmfs[j]
             if nmf >= nafs[i] # the num of mol feature must be less than atom f
-                nmf = naf - rand(1:5, 1)[1]
+                nmf = nafs[i] - rand(1:5, 1)[1]
             end
             println(nafs[i]," ",nmf)
             data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/SOAP.jld", "SOAP"; 
