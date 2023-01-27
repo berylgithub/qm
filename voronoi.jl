@@ -390,12 +390,19 @@ params:
     - glob_labels, all labels ∖ init_labels
     - N number of chosen labels (num of iter)
 """
-function usequence(z::Matrix{Float64}, F::Matrix{Float64}, init_labels::Vector{Int}, glob_labels::Vector{Int}, N::Int; rep=true)
+function usequence(F::Matrix{Float64}, N::Int; rep=true, reservoir_size=500)
+    glob_labels = Vector{Int}(1:size(F, 2))
+    init_labels = rand(1:size(F, 2), reservoir_size)
+    unused_labels = setdiff(glob_labels, init_labels) # exclude the selected initial points
+    z = F[:, init_labels]
+    abs_lb = Dict() # translates relative_index -> absolute_index
+    for i ∈ eachindex(init_labels)
+        abs_lb[i] = init_labels[i] 
+    end
     d, M = size(z)
     zerM=zeros(Int, M);                     # for later vectorization
     x=zeros(d,N);                           # storage for the sequence to be constructed, (dim, number of selected points)
     chosen_labels = Vector{Int}(undef, 0)          # final labels stored
-    abs_labels = Dict()     # absolute indices chosen to the actual data points ordering
 
     u, s = [zeros(M) for _ ∈ 1:2]           # initialize 2 empty vectors
     for k ∈ 1:N
@@ -406,24 +413,16 @@ function usequence(z::Matrix{Float64}, F::Matrix{Float64}, init_labels::Vector{I
         else 
             # find the reservoir vector with largest minimum distance
             # from the vectors already chosen
-            # check if j is already selected!:
             umax, j = findmax(u)
-            #= idc = findall(u .== maximum(u))
-            # random sample until element not in chosen_label is found
-            j = sample(idc, 1)[1]
-            while j ∈ chosen_labels
-                j = sample(idc, 1)[1]
-            end
-            umax = u[j] # how to find out which absolute label this is?? =#
         end
         x[:, k] = z[:,j] # update points
-        push!(chosen_labels, j) # and add to label
+        push!(chosen_labels, abs_lb[j]) # and add to label
         # update the reservoir, instead of rand, pick randomly from available set of integers:
-        new_j = sample(glob_labels, 1)[1] # random sample
+        new_j = sample(unused_labels, 1)[1] # random sample
         zj = F[:, new_j]
         if rep
             z[:, j] = zj
-            abs_labels[j] = new_j
+            abs_lb[j] = new_j
         end
         #deleteat!(init_labels, findfirst(el -> el == new_j, init_labels)) # remove new_j from ids
         # update minimum squared distance vector 
@@ -439,8 +438,6 @@ function usequence(z::Matrix{Float64}, F::Matrix{Float64}, init_labels::Vector{I
         end
     end
     # transform chosen local labels into global labels:
-    display(chosen_labels)
-    display(abs_labels)
     return x, chosen_labels # add labels return too
 end
 
@@ -539,20 +536,13 @@ function test_usequence()
     #     center_ids, mean_point = eldar_cluster(F, K, distance="default", mode="fmd") # generate cluster centers
     # end
     #pl = scatter([z_init[1, center_ids]], [z_init[2, center_ids]], makershape = :star, legend=false)
-    display(F)
     #display(pl)
-    glob_labels = Vector{Int}(1:size(F, 2))
-    init_labels = rand(1:size(F, 2), 500)
-    glob_labels = setdiff(glob_labels, init_labels) # exclude the selected initial points
-    z = F[:, init_labels]
-    display(z)
-    display(init_labels)
     t_cl2 = @elapsed begin
-        x, labels = usequence(z, F, init_labels, glob_labels, K)
+        x, chosen_labels = usequence(F, K; reservoir_size = 500)
     end
     pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
     display(pl)
-    pl = scatter(F[1,labels], F[2,labels], markershape = :circle, legend=false)
+    pl = scatter(F[1,chosen_labels[1:20]], F[2,chosen_labels[1:20]], markershape = :circle, legend=false)
     display(pl)
     #display([t_cl1, t_cl2])
 end
@@ -560,14 +550,10 @@ end
 function test_u2()
     nf = 2; nd = 1000; k = 100
     A = rand(nf, nd) # looks like this is uniformly distributed
-    #A .+= rand(1)
-    #A = rand(Uniform(1., 100.), nf, nd)
-    #A = (((A .- minimum(A)) ./ (maximum(A) .- minimum(A))) .* (10.75 - 1.5)) .+ 1.5  # change scaling
     display(A)
     Ks = []
     for i ∈ 1:3
-        cpA = copy(A)
-        push!(Ks, usequence(cpA, k)[2])
+        push!(Ks, usequence(A, k; reservoir_size = 200)[2])
     end
     display([Ks[1] Ks[2] Ks[3]])
     println(Ks[1] == Ks[2], Ks[1] == Ks[3], Ks[2] == Ks[3])
