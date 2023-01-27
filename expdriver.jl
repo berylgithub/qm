@@ -14,7 +14,7 @@ function caller()
                 nmf = nafs[i] - rand(1:5, 1)[1]
             end
             println(nafs[i]," ",nmf)
-            data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/ACSF_atom.jld", "ACSF"; 
+            data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/ACSF.jld", "ACSF"; 
                         save_global_centers = true, num_center_sets = 5)
         end
     end
