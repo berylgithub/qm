@@ -268,7 +268,7 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
         display(size(F))
         # get centers:
-        centers = set_cluster(F, num_centers, universe_size=universe_size)
+        centers = set_cluster(F, num_centers, universe_size=universe_size, num_center_sets=num_center_sets)
         # copy pre-computed atomref features:
         redf = load("data/atomref_features.jld", "data")
         # save files:
@@ -989,12 +989,12 @@ end
 """
 fit the atomic energy for energy reducer
 """
-function fit_atom(foldername, file_dataset, file_atomref_features, centers; uid="")
-    dataset = load(file_dataset, "data")
+function fit_atom(foldername, file_dataset, file_atomref_features, center_ids; tlimit = 900, uid="")
+    dataset = load(file_dataset, "data"); n_data = length(dataset)
     F_atom = load(file_atomref_features, "data")
     E = map(d -> d["energy"], dataset)
     K_indexer = 1:100 # 🌸 temporary selection
-    Midx = centers[K_indexer] 
+    Midx = center_ids[K_indexer] 
     Widx = setdiff(1:n_data, Midx)
     # compute atomic reference energies:
     A = F_atom[Midx, :] # construct the data matrix
