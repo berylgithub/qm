@@ -407,14 +407,14 @@ function usequence(z::Matrix{Float64}, F::Matrix{Float64}, init_labels::Vector{I
             # find the reservoir vector with largest minimum distance
             # from the vectors already chosen
             # check if j is already selected!:
-            #umax, j = findmax(u)
-            idc = findall(u .== maximum(u))
+            umax, j = findmax(u)
+            #= idc = findall(u .== maximum(u))
             # random sample until element not in chosen_label is found
             j = sample(idc, 1)[1]
             while j ∈ chosen_labels
                 j = sample(idc, 1)[1]
             end
-            umax = u[j] # how to find out which absolute label this is??
+            umax = u[j] # how to find out which absolute label this is?? =#
         end
         x[:, k] = z[:,j] # update points
         push!(chosen_labels, j) # and add to label
@@ -534,7 +534,7 @@ function test_usequence()
     #z .+= rand(Uniform(-.15, .15), size(z))
     #F_init = copy(F) # actual data, since the data will be changed by usequence op
 
-    K = 10
+    K = 100
     # t_cl1 = @elapsed begin
     #     center_ids, mean_point = eldar_cluster(F, K, distance="default", mode="fmd") # generate cluster centers
     # end
@@ -546,14 +546,13 @@ function test_usequence()
     glob_labels = setdiff(glob_labels, init_labels) # exclude the selected initial points
     z = F[:, init_labels]
     display(z)
+    display(init_labels)
     t_cl2 = @elapsed begin
-        x, labels = usequence(z, glob_labels, K)
+        x, labels = usequence(z, F, init_labels, glob_labels, K)
     end
-    display(F_init)
-    display([center_ids, labels])
     pl = scatter(x[1,:], x[2,:], markershape = :circle, legend=false)
     display(pl)
-    pl = scatter(F[1,labels], F[2,labels], markershape = :cross, legend=false)
+    pl = scatter(F[1,labels], F[2,labels], markershape = :circle, legend=false)
     display(pl)
     #display([t_cl1, t_cl2])
 end
