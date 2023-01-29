@@ -1,7 +1,7 @@
 include("alouEt.jl")
 
 function caller()
-    # FEEATURE EXTRACTION:
+#=     # FEEATURE EXTRACTION:
     foldername = "exp_reduced_energy"
     # ACSF:
     nafs = [40, 30, 20] 
@@ -16,6 +16,7 @@ function caller()
             println(nafs[i]," ",nmf)
             data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/ACSF.jld", "ACSF"; 
                         save_global_centers = true, num_center_sets = 5)
+            GC.gc()
         end
     end
     # SOAP:
@@ -31,15 +32,19 @@ function caller()
             println(nafs[i]," ",nmf)
             data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/SOAP.jld", "SOAP"; 
                         save_global_centers = true, num_center_sets = 5)
+            GC.gc()
         end
-    end
+    end =#
 
     # ATOM FITTING:
     uids = readdlm("data/centers.txt")[:, 1]
     kids = readdlm("data/centers.txt")[:, 2]
     center_sets = Int.(readdlm("data/centers.txt")[:, 3:end]) # a matrix (n_sets, n_centers) ∈ Int
+    display(center_sets)
     for i ∈ eachindex(uids)
+        println(uids[i]," ",kids[i])
         fit_atom("exp_reduced_energy", "data/qm9_dataset_old.jld", "data/atomref_features.jld";
-              center_ids=center_sets[i], uid=uids[i], kid=kids[i])
+              center_ids=center_sets[i, :], uid=uids[i], kid=kids[i])
+        GC.gc()
     end
 end
