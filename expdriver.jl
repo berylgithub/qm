@@ -117,6 +117,7 @@ function caller_fit()
         for model ∈ models
             fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld", 1_000, 900;
                             model=model, E_atom=E_null, center_ids=center, uid=uid, kid=kid)
+            GC.gc()
         end
     end
 end
