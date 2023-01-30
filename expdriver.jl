@@ -1,6 +1,6 @@
 include("alouEt.jl")
 
-function caller()
+function caller_ds()
 #=     # FEEATURE EXTRACTION:
     foldername = "exp_reduced_energy"
     # ACSF:
@@ -46,5 +46,72 @@ function caller()
         fit_atom("exp_reduced_energy", "data/qm9_dataset_old.jld", "data/atomref_features.jld";
               center_ids=center_sets[i, :], uid=uids[i], kid=kids[i])
         GC.gc()
+    end
+end
+
+
+function caller_fit()
+    # get the 10 best:
+    atom_info = readdlm("result/exp_reduced_energy/atomref_info.txt")[4:end, :] # the first 3 is excluded since theyr noise from prev exps
+    MAVs = Vector{Float64}(atom_info[:, 4])
+    sid = sortperm(MAVs) # indices from sorted MAV
+    best10 = atom_info[sid[1:10], :] # 10 best
+    display(best10)
+    # compute total atomic energy:
+    E_atom = Matrix{Float64}(best10[:, end-4:end]) # 5 length vector
+    E = vec(readdlm("data/energies.txt"))
+    f_atomref = load("data/atomref_features.jld", "data") # n × 5 matrix
+    ds = readdlm("data/exp_reduced_energy/setup_info.txt")
+    ds_uids = ds[:, 1] # vector of uids
+    centers_info = readdlm("data/centers.txt")
+    centers_uids = centers_info[:, 1]
+    centers_kids = centers_info[:, 2]
+    for k ∈ axes(best10, 1) # loop k foreach found best MAV
+        E_null = f_atomref*E_atom[k,:]
+        #MAV = mean(abs.(E - E_null))*627.5
+        id_look = best10[k, 1] # the uid that we want to find
+        id_k_look = best10[k, 2] # the uid of the center that we want to find
+        # look for the correct centers:
+        found_ids = []
+        for i ∈ eachindex(centers_uids)
+            if id_look == centers_uids[i]
+                push!(found_ids, i)
+            end 
+        end
+        #display(centers_info[found_ids, :])
+        # get the correct center id:
+        found_idx = nothing
+        for i ∈ eachindex(found_ids)
+            if id_k_look == centers_kids[found_ids[i]]
+                found_idx = i
+                break
+            end
+        end
+        #display(centers_info[found_ids[found_idx], :])
+        center = centers_info[found_ids[found_idx], 3:end]
+        #display(center)
+        # look for the correct hyperparameters:
+        found_idx = nothing
+        for i ∈ eachindex(ds_uids)
+            if id_look == ds_uids[i]
+                found_idx = i
+                break
+            end
+        end
+        featname, naf, nmf = ds[found_idx, [4, 5, 6]] # the data that we want to find
+        featfile = ""
+        if featname == "SOAP"
+            featfile = "data/SOAP.jld"
+        elseif featname == "ACSF"
+            featfile = "data/ACSF.jld"
+        end
+        uid = id_look
+        kid = id_look*"_"*best10[k, 2]
+        #println([uid," ",kid])
+        println([k, featname, naf, nmf, kid])
+        # test one ds and fit
+        data_setup("exp_reduced_energy", naf, nmf, 3, 300, "data/qm9_dataset_old.jld", featfile, featname)
+        fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld", 1_000, 900;
+                        model = "LLS", E_atom=E_null, center_ids=center, uid=uid, kid=kid)
     end
 end
