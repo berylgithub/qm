@@ -66,8 +66,9 @@ function caller_fit()
     centers_info = readdlm("data/centers.txt")
     centers_uids = centers_info[:, 1]
     centers_kids = centers_info[:, 2]
+    models = ["ROSEMI", "KRR", "NN", "LLS", "GAK"] # for model loop, |ds| × |models| = 50 exps
     for k ∈ axes(best10, 1) # loop k foreach found best MAV
-        E_null = f_atomref*E_atom[k,:]
+        E_null = f_atomref*E_atom[k,:] # Ax, where A := matrix of number of atoms, x = atomic energies
         #MAV = mean(abs.(E - E_null))*627.5
         id_look = best10[k, 1] # the uid that we want to find
         id_k_look = best10[k, 2] # the uid of the center that we want to find
@@ -111,7 +112,11 @@ function caller_fit()
         println([k, featname, naf, nmf, kid])
         # test one ds and fit
         data_setup("exp_reduced_energy", naf, nmf, 3, 300, "data/qm9_dataset_old.jld", featfile, featname)
-        fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld", 1_000, 900;
-                        model = "LLS", E_atom=E_null, center_ids=center, uid=uid, kid=kid)
+        GC.gc()
+        # loop the model:
+        for model ∈ models
+            fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld", 1_000, 900;
+                            model=model, E_atom=E_null, center_ids=center, uid=uid, kid=kid)
+        end
     end
 end
