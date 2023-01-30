@@ -1,5 +1,5 @@
-using Krylov, LsqFit, ReverseDiff, ForwardDiff, BenchmarkTools, Optim, Printf, JSON3, DelimitedFiles
-using Flux, ProgressMeter, Dates
+using Krylov, Flux, Printf, DelimitedFiles
+using ProgressMeter, Dates, BenchmarkTools 
 
 """
 contains all tests and experiments
@@ -1039,7 +1039,8 @@ end
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
-function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; model="ROSEMI", cσ = 2. *(2. ^5)^2, scaler=1., center_ids=[], uid="", kid="")
+function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; 
+                        model="ROSEMI", E_atom=[], cσ = 2. *(2. ^5)^2, scaler=1., center_ids=[], uid="", kid="")
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
@@ -1066,8 +1067,10 @@ function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; model="ROSEM
     Uidx = setdiff(center_ids, Midx) # (U)nsupervised data
     Widx = setdiff(1:n_data, Midx)
     # reduce training energy:
-    E_atom = E_dict["atomic_energies"]
-    E[Midx] .-= E_atom[Midx]
+    if isempty(E_atom)
+        E_atom = E_dict["atomic_energies"] # E_atom := E_null here
+    end
+    E[Midx] .-= E_atom[Midx] # a vector with length NQm9
     # write model header string:
     machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
     if isempty(uid)
