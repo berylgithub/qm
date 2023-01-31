@@ -23,6 +23,7 @@
 \usepackage{listings}
 \usepackage{xparse}
 \usepackage{textcomp}
+\usepackage[toc,page]{appendix}
 \setcounter{section}{0}
 \setcounter{tocdepth}{4}
 \setcounter{secnumdepth}{4}
@@ -836,6 +837,27 @@ The MAE from fitting the atomic energies is in fact refers to the mean absolute 
 	\label{tab:atomic_exp}
 \end{table}
 
+\begin{table}[H]
+	\centering
+	\caption{text}
+	\begin{tabular}{|c|c|c|c|c|c|c|}
+		\hline
+		$k$	& \textbf{MAE}	& $E^\text{atom}_H$	& $E^\text{atom}_C$	& $E^\text{atom}_O$	& $E^\text{atom}_N$	& $E^\text{atom}_F$	\\ \hline
+		52	& 19.933	& -0.604	& -38.072	& -54.75	& -75.223	& -99.861	\\ \hline
+		89	& 19.934	& -0.605	& -38.072	& -54.748	& -75.225	& -99.865	\\ \hline
+		43	& 19.934	& -0.604	& -38.073	& -54.747	& -75.224	& -99.867	\\ \hline
+		18	& 19.944	& -0.605	& -38.072	& -54.747	& -75.225	& -99.861	\\ \hline
+		77	& 19.953	& -0.604	& -38.073	& -54.747	& -75.225	& -99.883	\\ \hline
+		55	& 19.959	& -0.602	& -38.075	& -54.747	& -75.226	& -99.861	\\ \hline
+		37	& 19.985	& -0.605	& -38.072	& -54.747	& -75.224	& -99.862	\\ \hline
+		16	& 19.987	& -0.606	& -38.07	& -54.75	& -75.225	& -99.861	\\ \hline
+		17	& 19.989	& -0.604	& -38.073	& -54.748	& -75.223	& -99.868	\\ \hline
+		13	& 19.993	& -0.605	& -38.071	& -54.75	& -75.224	& -99.869	\\ \hline
+	\end{tabular}
+\end{table}
+
+
+
 The fitting experiments with $E^\text{red}$ as the target are run by varying the models and the set of features, in total there are 70 experiment instances, 5 instances with the lowest MAE are shown in table \ref{tab:exp_reduced_energy_1}.
 The experiments with the lowest mean MAE using the same set of features to see the comparison of the models are shown in table \ref{tab:exp_reduced_energy_2}. Here the MAEs are computed from the original energies, since the predicted energies are actually the predicted reduced energies,
 \begin{equation}
@@ -898,9 +920,56 @@ The hyperparameters used are: cutoff radius $r_\text{cut} = 8.0$ for both the FC
 		16.115	& 19.934	& GAK	& 89	& SOAP	& 25	& 23	& 0.039	& 864.44	\\ \hline
 		16.238	& 19.992	& KRR	& 13	& ACSF	& 40	& 30	& 0.04	& 8.73	\\ \hline
 		16.489	& 19.932	& GAK	& 52	& SOAP	& 75	& 72	& 0.044	& 586.46	\\ \hline
-		
 	\end{tabular}
 \end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{text}
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		\textbf{MAE}	& \textbf{model}	& $t_s$	& $t_p$	\\ \hline
+		18.94	& ROSEMI	& 919.566	& 461.119	\\ \hline
+		16.24	& KRR	& 0.04	& 8.725	\\ \hline
+		21.77	& NN	& 1.346	& 0.02	\\ \hline
+		15.15	& LLS	& 0.002	& 0.007	\\ \hline
+		12.78	& GAK	& 0.045	& 450.796	\\ \hline
+	\end{tabular}
+\end{table}
+
+\newpage
+\begin{appendices}
+\begin{table}[H]
+	\centering
+	\caption{text}
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		$k$	& $f$	& $n_{af}$	& $n_{mf}$	\\ \hline
+		1--5	& SOAP	& 20	& 10	\\ \hline
+		6--10	& ACSF	& 40	& 37	\\ \hline
+		11--15	& ACSF	& 40	& 30	\\ \hline
+		16--20	& ACSF	& 40	& 20	\\ \hline
+		21--25	& ACSF	& 30	& 25	\\ \hline
+		26--30	& ACSF	& 30	& 29	\\ \hline
+		31--35	& ACSF	& 30	& 20	\\ \hline
+		36--40	& ACSF	& 20	& 16	\\ \hline
+		41--45	& ACSF	& 20	& 16	\\ \hline
+		46--50	& ACSF	& 20	& 15	\\ \hline
+		51--55	& SOAP	& 75	& 72	\\ \hline
+		56--60	& SOAP	& 75	& 50	\\ \hline
+		61--65	& SOAP	& 75	& 25	\\ \hline
+		66--70	& SOAP	& 50	& 48	\\ \hline
+		71--75	& SOAP	& 50	& 45	\\ \hline
+		76--80	& SOAP	& 50	& 25	\\ \hline
+		81--85	& SOAP	& 25	& 22	\\ \hline
+		86--90	& SOAP	& 25	& 23	\\ \hline
+		91--95	& SOAP	& 25	& 22	\\ \hline
+	\end{tabular}
+\end{table}
+
+
+\end{appendices}
+
 
 \iffalse
 ========= some comments========== \\
