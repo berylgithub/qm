@@ -121,3 +121,20 @@ function caller_fit()
         end
     end
 end
+
+# script to write to latex table, given a Matrix{Any}
+#= open("result/result_table.tex", "w") do io
+    for i ∈ axes(round_table, 1)
+        str = ""
+        for j ∈ axes(round_table, 2)
+            str *= string(round_table[i, j])*"\t"*"& "
+        end
+        str = str[1:end-2]
+        str *= raw"\\ \hline"*"\n"
+        print(io, str)
+    end
+end
+ =#
+
+
+#16.7         & 20.9                                                         & KRR            & SOAP         & 75                & 40                   & 0.04           & 4.72           \\ \hline
