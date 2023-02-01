@@ -516,6 +516,9 @@ function PCA_mol(F, n_select; normalize=true, fname_plot_mol="")
     #= D = diagm(1. ./ .√ C[diagind(C)])
     C = D*C*D =#
     C = cor(F) # more accurate than the D*C*D somehow
+    # here should check for Infs or NaNs first
+    display(C)
+    display(findall(c -> (c == Inf)||isnan(c), C))
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
