@@ -134,3 +134,7 @@ SOAP, GAL, w/ kron, preproc data, 17.5 kcal/mol
 
 24.01.2023:
 - usequence experiment: uniformly distributed data especially [0,1], gives the same selected points, even on lower dimensions
+
+01.02.2023:
+- FCHL atom: removed 5 features since they give no covariance -> 140 length atomic features
+- Start the hyperparameter tuning with Morteza's DFO
