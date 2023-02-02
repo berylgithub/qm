@@ -115,12 +115,31 @@ function caller_fit()
         GC.gc()
         # loop the model:
         for model ∈ models
-            fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld", 1_000, 900;
+            fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld";
                             model=model, E_atom=E_null, center_ids=center, uid=uid, kid=kid)
             GC.gc()
         end
     end
 end
+
+
+"""
+big main function here, to tune hyperparameters by DFO
+"""
+function hyperparamopt()
+    # test "threading" loop:
+    start_t = time()
+    data = readdlm("test.txt")[1,1]
+    while true
+        sleep(0.5)
+        newdata = readdlm("test.txt")[1,1]
+        if data != newdata
+            data = newdata
+            println("new incoming data ", data)
+        end
+    end
+end
+
 
 # script to write to latex table, given a Matrix{Any}
 function writelatextable(table, filename)
