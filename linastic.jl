@@ -501,9 +501,25 @@ end
 PCA for molecule (matrix data type)
 params:
     - F, ∈Float64(N, n_f)
+    - cov test only for numerically unstable features (such as FCHL)
 """
-function PCA_mol(F, n_select; normalize=true, fname_plot_mol="")
+function PCA_mol(F, n_select; normalize=true, cov_test=true, fname_plot_mol="")
     N, n_f = size(F)
+    if cov_test
+        C = cov(F)
+        D = diagm(1. ./ .√ C[diagind(C)])
+        fids = findall(c -> (c == Inf)||isnan(c), D)
+        # remove features:
+        exids = [id[1] for id ∈ fids]
+        println("removed mol features:", exids)
+        newids = setdiff(1:n_f, exids)
+        F_new = zeros(N, length(newids))
+        for l ∈ 1:N
+            F_new[l, :] = F[l, newids]
+        end
+        F = F_new
+        n_f = size(F, 2)
+    end
     s = zeros(n_f); #S = zeros(n_f, n_f)
     #comp_mol_l!(s, S, F, N)
     for i ∈ 1:N
@@ -512,13 +528,10 @@ function PCA_mol(F, n_select; normalize=true, fname_plot_mol="")
     s ./= N; #S ./= N
     
     #C = S - s*s' # covariance matrix
+
     # correlation matrix:
-    #= D = diagm(1. ./ .√ C[diagind(C)])
-    C = D*C*D =#
     C = cor(F) # more accurate than the D*C*D somehow
     # here should check for Infs or NaNs first
-    display(C)
-    display(findall(c -> (c == Inf)||isnan(c), C))
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors

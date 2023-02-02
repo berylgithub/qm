@@ -259,7 +259,7 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
             println("mol only mode!")
             println("mol feature processing starts!")
             F = load(molf_file)["data"]
-            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname)
+            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, cov_test=feature_name=="FCHL" ? true : false)
             println("mol feature processing finished!")
         end
         #F = F[data_indices, :]; f = f[data_indices]
@@ -1039,8 +1039,9 @@ end
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
 """
-function fit_🌹_and_atom(foldername, file_dataset, bsize, tlimit; 
-                        model="ROSEMI", E_atom=[], cσ = 2. *(2. ^5)^2, scaler=1., center_ids=[], uid="", kid="")
+function fit_🌹_and_atom(foldername, file_dataset; 
+                        bsize=1_000, tlimit=900, model="ROSEMI", 
+                        E_atom=[], cσ = 2. *(2. ^5)^2, scaler=1., center_ids=[], uid="", kid="")
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
