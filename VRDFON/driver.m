@@ -31,30 +31,42 @@ init.n=2;              % problem dimension
 
 mintry(init);          % initialize mintry
 
-x=[-1 -1]';            % starting point 
-disp(x)
+%x=[-1 -1]';            % starting point 
 nfmax=1000;            % maximal number of function evaluations
 
 % The following loop may be replaced by an arbitrarily complex 
 % computing environment. 
 %for nf=1:nfmax,
-nf=1
-data = textread('../test.txt', "%s")
+% initial ops:
+data = textread('../params.txt', "%s");
+fdata = textread('../fun.txt', "%s");
+x = [str2double(data{2,1}) str2double(data{3,1})]' %initialize x
+f = str2double(fdata{2,1})
+x=mintry(x,f) % the solver
+uid = datestr(now(), 'yyyymmddHHMMSS');
+strout = strcat(num2str(uid),"\t",num2str(x(1)),"\t",num2str(x(2)));
+file_id = fopen('../params.txt', 'w');
+fputs(file_id, strout);
+fclose(file_id);
+nf = 1;
+% next ops:
 while true
-  f=(x(1)-1)^2+100*(x(2)-x(1)^2)^2; % evaluate Rosenbrock function at x
-  % in place of this comment one may wish to save the history, 
-  % and/or check stopping tests 
-  x=mintry(x,f); % the solver
-  newdata = textread('../test.txt', "%s");
-  if ~strcmp(newdata{1,1}, data{1,1})
-    data = newdata;
-    disp(data)
+  newdata = textread('../fun.txt', "%s");
+  if ~strcmp(newdata{1,1}, fdata{1,1}) % {1,1} is the uid
+    fdata = newdata
+    f = str2double(fdata{2,1});
+    x=mintry(x,f) % the solver
+    % write x to file:
+    uid = datestr(now(), 'yyyymmddHHMMSS');
+    strout = strcat(num2str(uid),"\t",num2str(x(1)),"\t",num2str(x(2)));
+    file_id = fopen('../params.txt', 'w');
+    fputs(file_id, strout);
+    fclose(file_id);
   end
   if nf == nfmax
     break
   end
-  nf += 1
-  disp(nf)
+  nf += 1;
   pause(1) # check new data for each second
 end
 %end;

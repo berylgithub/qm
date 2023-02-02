@@ -128,18 +128,34 @@ big main function here, to tune hyperparameters by DFO
 """
 function hyperparamopt()
     # test "threading" loop:
-    start_t = time()
-    data = readdlm("test.txt")[1,1]
+    data = nothing
     while true
-        sleep(0.5)
-        newdata = readdlm("test.txt")[1,1]
-        if data != newdata
+        newdata = readdlm("params.txt")
+        if (data === nothing) || (data[1,1] != newdata[1,1])
             data = newdata
             println("new incoming data ", data)
+            # do fitting:
+            x = data[1,2:end]
+            f = sum(x .^ 2)
+            # write result to file:
+            uid = replace(string(Dates.now()), ":" => ".")
+            writestringline(string.(vcat(uid, f)), "fun.txt")
         end
+        sleep(4)
     end
 end
 
+
+# script to write string given a vector{string}
+function writestringline(strinput, filename; mode="w")
+    open(filename, mode) do io
+        str = ""
+        for s ∈ strinput
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+end
 
 # script to write to latex table, given a Matrix{Any}
 function writelatextable(table, filename)
