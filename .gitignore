@@ -1,5 +1,7 @@
 data/
 plot/
+VRDFON/*
+!VRDFON/driver.m
 *.aux
 *.log
 *.pdf
