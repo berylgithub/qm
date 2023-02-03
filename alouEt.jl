@@ -1004,13 +1004,13 @@ function fit_atom(foldername, file_dataset, file_atomref_features; center_ids = 
     A = F_atom[Midx, :] # construct the data matrix
     start = time()
     θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
-    errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
-    #MAEtrain = sum(errors)/length(errors)
-    #println("atomic MAE train = ",MAEtrain)
+    errors = A*θ - E[Midx]
+    MAEtrain = mean(abs.(errors))*627.503
+    println("atomic MAE train = ",MAEtrain)
     E_pred = F_atom[Widx, :]*θ
     errors = E_pred - E[Widx]
     MAE = mean(abs.(errors))*627.503 # the mean absolute value of the reduced energy but for the test set only
-    println("atomic MAV = ",MAE)
+    println("atomic MAE test = ",MAE)
     E_atom = F_atom*θ # the sum of atomic energies
     E_red_mean = mean(abs.(E - E_atom)) .* 627.503 # mean of reduced energy
     # save MAE and atomref energies to file
@@ -1020,7 +1020,7 @@ function fit_atom(foldername, file_dataset, file_atomref_features; center_ids = 
     if isempty(kid)
         kid = "K1"
     end
-    strlist = string.(vcat(uid, kid, MAE, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
+    strlist = string.(vcat(uid, kid, MAEtrain, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
     open("result/$foldername/atomref_info.txt","a") do io
         str = ""
         for s ∈ strlist
