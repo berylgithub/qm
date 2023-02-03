@@ -63,11 +63,11 @@ while true
     fputs(file_id, strout);
     fclose(file_id);
   end
-  if nf == nfmax
-    break
-  end
+  %if nf == nfmax
+  %  break
+  %end
   nf += 1;
-  pause(1) # check new data for each second
+  pause(0.5) # check new data for each second
 end
 %end;
 [xbest,fbest,info]=mintry('show');

@@ -128,10 +128,18 @@ big main function here, to tune hyperparameters by DFO
 """
 function hyperparamopt()
     # test "threading" loop:
-    data = nothing
+    # initial fitting, initialize params and funs, replace with actual fitting:
+    uid = replace(string(Dates.now()), ":" => ".")
+    x = [100., 200.]
+    f = sum(x .^ 2)
+    data = Matrix{Any}(undef, 1,3)
+    data[1,1] = uid; data[1,2:end] = x 
+    writestringline(string.(vcat(uid, x)), "params.txt")
+    writestringline(string.(vcat(uid, f)), "fun.txt")
+    println("init done")
     while true
         newdata = readdlm("params.txt")
-        if (data === nothing) || (data[1,1] != newdata[1,1])
+        if data[1,1] != newdata[1,1]
             data = newdata
             println("new incoming data ", data)
             # do fitting:
@@ -141,7 +149,7 @@ function hyperparamopt()
             uid = replace(string(Dates.now()), ":" => ".")
             writestringline(string.(vcat(uid, f)), "fun.txt")
         end
-        sleep(4)
+        sleep(1)
     end
 end
 
