@@ -126,17 +126,26 @@ end
 """
 big main function here, to tune hyperparameters by DFO
 """
-function hyperparamopt()
+function hyperparamopt(;init=false)
     # test "threading" loop:
     # initial fitting, initialize params and funs, replace with actual fitting:
-    uid = replace(string(Dates.now()), ":" => ".")
-    x = [100., 200.]
-    f = sum(x .^ 2)
-    data = Matrix{Any}(undef, 1,3)
-    data[1,1] = uid; data[1,2:end] = x 
-    writestringline(string.(vcat(uid, x)), "params.txt")
-    writestringline(string.(vcat(uid, f)), "fun.txt")
-    println("init done")
+    if init
+        uid = replace(string(Dates.now()), ":" => ".")
+        x = [100., 200.]
+        f = sum(x .^ 2)
+        data = Matrix{Any}(undef, 1,3)
+        data[1,1] = uid; data[1,2:end] = x 
+        writestringline(string.(vcat(uid, x)), "params.txt")
+        writestringline(string.(vcat(uid, f)), "fun.txt")
+        println("init done")
+    else
+        data = readdlm("params.txt")
+        x = data[1,2:end]
+        f = sum(x .^ 2)
+        # write result to file:
+        uid = replace(string(Dates.now()), ":" => ".")
+        writestringline(string.(vcat(uid, f)), "fun.txt")
+    end
     while true
         newdata = readdlm("params.txt")
         if data[1,1] != newdata[1,1]
@@ -149,7 +158,7 @@ function hyperparamopt()
             uid = replace(string(Dates.now()), ":" => ".")
             writestringline(string.(vcat(uid, f)), "fun.txt")
         end
-        sleep(1)
+        sleep(0.3)
     end
 end
 

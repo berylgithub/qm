@@ -43,34 +43,51 @@ fdata = textread('../fun.txt', "%s");
 x = [str2double(data{2,1}) str2double(data{3,1})]' %initialize x
 f = str2double(fdata{2,1})
 x=mintry(x,f) % the solver
-uid = datestr(now(), 'yyyymmddHHMMSS');
-strout = strcat(num2str(uid),"\t",num2str(x(1)),"\t",num2str(x(2)));
+%uid = datestr(now(), 'yyyymmddHHMMSS'); % not good, since this only unique for each second
+uid = rand(1);
+strout = num2str(uid);
+for i=1:length(x)
+  strout = strcat(strout,"\t",num2str(x(i)));
+end
 file_id = fopen('../params.txt', 'w');
 fputs(file_id, strout);
 fclose(file_id);
 nf = 1;
 % next ops:
-while true
-  newdata = textread('../fun.txt', "%s");
-  if ~strcmp(newdata{1,1}, fdata{1,1}) % {1,1} is the uid
-    fdata = newdata
-    f = str2double(fdata{2,1});
-    x=mintry(x,f) % the solver
-    % write x to file:
-    uid = datestr(now(), 'yyyymmddHHMMSS');
-    strout = strcat(num2str(uid),"\t",num2str(x(1)),"\t",num2str(x(2)));
-    file_id = fopen('../params.txt', 'w');
-    fputs(file_id, strout);
-    fclose(file_id);
+unwind_protect
+  while true
+    newdata = textread('../fun.txt', "%s");
+    if ~strcmp(newdata{1,1}, fdata{1,1}) % {1,1} is the uid
+      fdata = newdata
+      f = str2double(fdata{2,1});
+      x=mintry(x,f) % the solver
+      % write x to file:
+      uid = rand(1);
+      strout = num2str(uid);
+      for i=1:length(x)
+        strout = strcat(strout,"\t",num2str(x(i)));
+      end
+      file_id = fopen('../params.txt', 'w');
+      fputs(file_id, strout);
+      fclose(file_id);
+    end
+    if nf == nfmax
+      break
+    end
+    nf += 1
+    pause(0.3) # check new data for each second
   end
-  %if nf == nfmax
-  %  break
-  %end
-  nf += 1;
-  pause(0.5) # check new data for each second
-end
-%end;
-[xbest,fbest,info]=mintry('show');
-     % This command may also be used inside the loop, 
-     % together with an appropiate conditional statement 
-     % implementing alternative stopping test. 
+unwind_protect_cleanup
+  [xbest,fbest,info]=mintry('show');
+      % This command may also be used inside the loop, 
+      % together with an appropiate conditional statement 
+      % implementing alternative stopping test. 
+  % write best to file:
+  strout = num2str(fbest);
+  for i=1:length(xbest)
+    strout = strcat(strout,"\t",num2str(xbest(i)));
+  end
+  file_id = fopen('../best_fun_params.txt', 'w');
+  fputs(file_id, strout);
+  fclose(file_id);
+end_unwind_protect
