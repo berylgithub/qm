@@ -140,5 +140,5 @@ SOAP, GAL, w/ kron, preproc data, 17.5 kcal/mol
 - Start the hyperparameter tuning with Morteza's DFO
 
 03.02.2023:
-- for the atomic fitting, the test MAE must not be used !! (since we can only use 100 energies). Only take from the training MAE.
+- for the atomic fitting, the test MAE must not be used !! (since we can only use 100 energies). Only take from the training MAE. => recompute the atomic fitting, save the training MAE
 - fitting needs to be slower than the hyperopt (and needs delay)
