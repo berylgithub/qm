@@ -53,7 +53,7 @@ end
 function caller_fit()
     # get the 10 best:
     atom_info = readdlm("result/exp_reduced_energy/atomref_info.txt")[4:end, :] # the first 3 is excluded since theyr noise from prev exps
-    MAVs = Vector{Float64}(atom_info[:, 4])
+    MAVs = Vector{Float64}(atom_info[:, 3]) # 3:=training MAE, 4:=training+testing MAE
     sid = sortperm(MAVs) # indices from sorted MAV
     best10 = atom_info[sid[1:10], :] # 10 best
     display(best10)
