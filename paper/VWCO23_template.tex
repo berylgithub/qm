@@ -20,7 +20,13 @@
 
 \begin{abstract}
 
-The Schr\"{o}dinger equation is a powerful tool to explain the atomic world, it can be solved by \textit{ab initio} quantum chemistry methods accurately; however, they require massive computational resources. In recent times, machine learning techniques have been proven to be flexible and efficient in approximating functions and are widely used in many fields, including quantum chemistry. Given a trained machine learning model, it can predict quantum properties of molecules in several orders of magnitude faster than the \textit{ab initio} methods. Here we present machine learning techniques which only have small computational cost and require small amount of samples to learn the quantum properties of a set of molecular coordinates. Several machine learning models include but not limited to combined supervised--unsupervised kernel, molecular level kernel, and atomic level kernel are employed. The QM9 dataset is chosen as a benchmark for the machine learning techniques. With only 100 samples for training, 1 kcal/mol chemical accuracy is almost achieved across the whole 130k test samples.
+The Schr\"{o}dinger equation is a powerful tool to explain the atomic world, it can be solved by \textit{ab initio} quantum chemistry methods accurately; however, they require massive computational resources. 
+In recent times, various machine learning models coupled with optimization methods have been proven to be flexible and efficient in approximating functions and are widely used in many fields, including quantum chemistry. 
+Given an optimized machine learning model, it can predict quantum properties of molecules in several orders of magnitude faster than the \textit{ab initio} methods. 
+Here we present machine learning models which are simple to optimize and only have small computational cost.
+Machine learning models such as a combined supervised--unsupervised kernel and Gaussian kernel on molecular and atomic level are employed. 
+Despite the simplicity, finding the best model configuration remains a challenge, hence we also employ an efficient hyperparameter optimization scheme using a derivative free optimizer. 
+The QM9 dataset is chosen as a benchmark for the machine learning techniques. With only 100 samples for training, 1 kcal/mol chemical accuracy is almost achieved across the whole 130k test samples.
 
 
 \iffalse
