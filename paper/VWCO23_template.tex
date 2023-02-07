@@ -11,23 +11,25 @@
 %%%!DO NOT EDIT ANYTHING ABOVE THIS LINE!------------------------------------
 
 \begin{center}
-\title{{\large Optimization in data science: 100 energies to learn molecular chemistry?}}\\[2ex]
+\title{{\large Optimization in data science: \\ 100 energies to learn molecular chemistry?}}\\[2ex]
 \author{Beryl Ramadhian Aribowo}\\
-\affil{Affiliation}\\
-\email{Email address}\\[2ex]
+\affil{Faculty of Mathematics, University of Vienna}\\
+\email{beryl.aribowo@univie.ac.at}\\[2ex]
 \jointwith{joint work with Arnold Neumaier}
 \end{center}
 
 \begin{abstract}
-The \textit{ab initio} quantum chemistry methods are powerful tools to accurately compute quantum properties of molecules; however, they require massive computational resources.
+\textit{Ab initio} quantum chemistry methods are powerful tools to accurately compute quantum properties of molecules; however, they require massive computational resources.
 In recent times, various machine learning models coupled with optimization methods have been proven to be flexible and efficient in approximating functions and are widely used in many fields, including molecular chemistry. 
-Given an optimized machine learning model, it can predict quantum properties of molecules in several orders of magnitude faster than the \textit{ab initio} methods. 
-Here we present machine learning models which are simple to optimize and only have small computational cost.
+Given an optimized machine learning model, it can predict quantum properties of molecules from a limited number of precomputed instances several orders of magnitude faster than the \textit{ab initio} methods. 
+
+We present machine learning models which are simple to optimize and only have small computational cost.
 Machine learning models such as a combined supervised--unsupervised kernel and Gaussian kernel on molecular and atomic level are employed. 
 Despite the simplicity, finding the best model configuration remains a challenge, hence we also employ an efficient hyperparameter optimization scheme using a derivative free optimizer. 
+
 The QM9 dataset is chosen as a benchmark for the machine learning techniques. 
-With only 100 sample molecules for training, a mean absolute error of 5 kcal/mol is the best currently achieved \cite{qm9challenge} across the whole 130k test samples.
-Reducing the error to 1 kcal/mol chemical accuracy is the desired goal, which in the present needs around 1k sample molecules.
+With only 100 sample molecules for training, a mean absolute error of 5 kcal/mol is the best currently achieved \cite{qm9challenge} across the whole 130k test molecules.
+Reducing the error to 1 kcal/mol (chemical accuracy) is the desired goal, which in the present needs around 1k sample molecules.
 
 
 \iffalse
