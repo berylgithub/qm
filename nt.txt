@@ -142,3 +142,17 @@ SOAP, GAL, w/ kron, preproc data, 17.5 kcal/mol
 03.02.2023:
 - for the atomic fitting, the test MAE must not be used !! (since we can only use 100 energies). Only take from the training MAE. => recompute the atomic fitting, save the training MAE
 - fitting needs to be slower than the hyperopt (and needs delay)
+
+15.02.2023:
+varlist that must be emptied on each experiment run:
+  alouet:
+    data_setup: dataset=F=f=ϕ=dϕ=centers=redf=nothing
+    fit_rose_and_atom: dataset = E_dict = f = F = ϕ = dϕ = E = D = E_atom = Midx = Uidx = Widx = nothing
+    fit_atom: dataset=F_atom=E=center_ids=Midx=Widx=A=θ=stat=errors=E_pred=E_atom=E_red_mean=Ed=nothing
+    ROSEMI fitter: SKs_train = SKs = γ = α = B = klidx = cidx = Axtemp = tempsA = op = b = tempsb = θ = stat = VK = outs = v = vmat = MADs = batches = VK_fin = nothing
+    KRR fitter: Norms=K=θ=stat=errors=K_pred=E_pred=Er=nothing
+    NN fitter: x_train=model=pars=opt=nothing
+    LLS fitter: A=θ=stat=errors=E_pred=nothing
+    GAK fitter: A=θ=stat=E_pred=errors=nothing
+
+  linastic:
