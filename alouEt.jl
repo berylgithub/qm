@@ -305,6 +305,8 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
         print(io, str*"\n")
     end
     println("data setup is finished in ",t,"s")
+    # clear memory:
+    dataset=F=f=ϕ=dϕ=centers=redf=nothing
 end
 
 """
@@ -471,6 +473,8 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     # save also the nK indices and θ's to file!!:
     data = Dict("centers"=>Midx, "theta"=>θ)
     save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
+    # clear variables:
+    SKs_train = SKs = γ = α = B = klidx = cidx = Axtemp = tempsA = op = b = tempsb = θ = stat = VK = outs = v = vmat = MADs = batches = VK_fin = nothing
     return MAE, MADmax_idxes
 end
 
@@ -648,6 +652,8 @@ function fitter_LLS(F, E, Midx, Widx, foldername, tlimit; Er = Vector{Float64}()
         end
         print(io, str*"\n")
     end
+    # clear memory:
+    A=θ=stat=errors=E_pred=nothing
 end
 
 function fit_LLS(foldername, bsize, tlimit; reduced_E = false, train_labels = Vector{Int64}()::Vector{Int64})
@@ -731,6 +737,8 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_fea
         end
         print(io, str*"\n")
     end
+    # clear variable:
+    Norms=K=θ=stat=errors=K_pred=E_pred=Er=nothing
 end
 
 function fit_KRR(foldername, bsize, tlimit; reduced_E = false, train_labels = Vector{Int64}()::Vector{Int64})
@@ -875,6 +883,8 @@ function fitter_NN(F, E, Midx, Widx, foldername; Er = Vector{Float64}()::Vector{
         end
         print(io, str*"\n")
     end
+    # clear memory:
+    x_train=model=pars=opt=nothing
 end
 
 function fit_NN(foldername)
@@ -985,6 +995,8 @@ function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; cσ = 2. *
         end
         print(io, str*"\n")
     end
+    # clear variable
+    A=θ=stat=E_pred=errors=nothing
 end
 
 """
@@ -1033,6 +1045,8 @@ function fit_atom(foldername, file_dataset, file_atomref_features; center_ids = 
     Ed["theta"] = θ # or the atom reference energy
     Ed["atomic_energies"] = E_atom # sum of the atom ref energy
     save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
+    # clear memory:
+    dataset=F_atom=E=center_ids=Midx=Widx=A=θ=stat=errors=E_pred=E_atom=E_red_mean=Ed=nothing
 end
 
 """
@@ -1101,6 +1115,8 @@ function fit_🌹_and_atom(foldername, file_dataset;
     elseif model == "GAK"
         fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; cσ=cσ, Er = E_atom) # takes atomic features instead
     end
+    # clear memory:
+    dataset = E_dict = f = F = ϕ = dϕ = E = D = E_atom = Midx = Uidx = Widx = nothing
 end
 
 """
