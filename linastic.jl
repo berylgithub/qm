@@ -328,6 +328,7 @@ function PCA_atom(f, n_select, C, σ; normalize=true, fname_plot_at="")
             end
         end
     end
+    s = ∑ = C = D = e = nothing # clear memory
     return f_new
 end
 
@@ -559,6 +560,7 @@ function PCA_mol(F, n_select; normalize=true, cov_test=true, fname_plot_mol="")
             F_new[l,:] .= (F_new[l,:] .- mins) ./ (maxs .- mins)
         end
     end
+    C=e=F=nothing # clear memory
     return F_new
 end
 
