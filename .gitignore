@@ -2,6 +2,8 @@ data/
 plot/
 VRDFON/*
 !VRDFON/driver.m
+!VRDFON/paramcheck.m
+!VRDFON/caller_pc.m
 *.aux
 *.log
 *.pdf
