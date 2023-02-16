@@ -156,3 +156,5 @@ varlist that must be emptied on each experiment run:
     GAK fitter: A=θ=stat=E_pred=errors=nothing
 
   linastic:
+    PCA_atom: s = ∑ = C = D = e = nothing
+    PCA_atom: C = e = F = nothing
