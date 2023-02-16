@@ -58,9 +58,33 @@ unwind_protect
   while true
     newdata = textread('../fun.txt', "%s");
     if ~strcmp(newdata{1,1}, fdata{1,1}) % {1,1} is the uid
-      fdata = newdata
-      f = str2double(fdata{2,1});
-      x=mintry(x,f) % the solver
+      fdata = newdata % fetch new function info
+      f = str2double(fdata{2,1}); % get obj value
+      feas=false
+      while feas==false
+        disp(feas)
+        disp(x)
+        disp(f)
+        x=mintry(x,f) % the solver
+        % round x by probablity:
+        for i=1:length(x)
+          p=rand(1);
+          if p < .5; % 50% chance
+            x(i) = floor(x(i));
+          else
+            x(i) = ceil(x(i));
+          end
+        end
+        %feas=paramcheck(x) % check feasibility, repeat until feasible
+        if x(1) < 0 || x(2) < 0
+          feas=false;
+        else
+          feas=true;
+        end
+        if !feas
+          f = 50.; % set 50kcal/mol MAE
+        end
+      end
       % write x to file:
       uid = rand(1);
       strout = num2str(uid);
@@ -75,7 +99,7 @@ unwind_protect
       break
     end
     nf += 1
-    pause(0.3) # check new data for each second
+    pause(0.3) % check new data for each second
   end
 unwind_protect_cleanup
   [xbest,fbest,info]=mintry('show');
