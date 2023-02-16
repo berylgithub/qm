@@ -131,8 +131,9 @@ function hyperparamopt(;init=false)
     # initial fitting, initialize params and funs, replace with actual fitting:
     if init
         uid = replace(string(Dates.now()), ":" => ".")
-        x = [100., 200.]
-        f = sum(x .^ 2)
+        #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  # init using best params
+        x = [-100., -100.]
+        f = main_obj(x)
         data = Matrix{Any}(undef, 1,3)
         data[1,1] = uid; data[1,2:end] = x 
         writestringline(string.(vcat(uid, x)), "params.txt")
@@ -162,6 +163,41 @@ function hyperparamopt(;init=false)
     end
 end
 
+"""
+processes the raw parameters from mintry, then compute the MAE from the given parameters
+par_ds = [n_af, n_mf, n_basis, feature_name, normalize_atom, normalize_mol] # this will be supplied by dfo driver
+par_fit_atom = [center_ids] # center_ids = 0 → use 
+par_fit = [model, cσ]
+params = [n_af, n_mf, n_basis, feature_name, normalize_atom, normalize_mol,center_ids,model, cσ]
+           1       2   3           4           5               6               7       8       9
+naf, nmf in percentage, e.g., .5 -> .5*max(naf("ACSF"))
+feature name: 1=ACSF, 2=SOAP, 3=FCHL
+model: ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
+"""
+function main_obj(x)
+    # process params:
+    fnaf = Dict() # determines max n_af
+    fnaf[1] = 51 # ACSF
+    fnaf[2] = 165 # SOAP
+    fnaf[3] = 140 # FCHL
+    max_naf = fnaf[x[4]]
+    
+    MAE = nothing 
+    data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/ACSF.jld", "ACSF"; 
+        save_global_centers = true, num_center_sets = 5)
+    fit_atom(foldername, file_dataset, file_atomref_features; center_ids = [], tlimit = 900, uid = "", kid = "")
+    GC.gc() # always gc after each run
+    fit_🌹_and_atom(foldername, file_dataset; 
+        bsize = 1000, tlimit = 900, model = "ROSEMI", 
+        E_atom = [], cσ = 2.0 * (2.0 ^ 5) ^ 2, scaler = 2.0 * (2.0 ^ 5) ^ 2, 
+        center_ids = [], uid = "", kid = "")
+    par_ds = [n_af, n_mf, n_basis, feature_name, normalize_atom, normalize_mol] # this will be supplied by dfo driver
+    par_fit_atom = [center_ids] # center_ids = 0 → use new center, otherwise use precomputed centers
+    par_fit = [model, cσ]
+    GC.gc() # always gc after each run
+
+    return MAE
+end
 
 # script to write string given a vector{string}
 function writestringline(strinput, filename; mode="w")
