@@ -693,13 +693,13 @@ end
 """
 gaussian kernel mode
 """
-function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_feature; scaler=1., Er = Vector{Float64}()::Vector{Float64})
+function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_feature; scaler = 2.0 * (2.0 ^ 5) ^ 2, Er = Vector{Float64}()::Vector{Float64})
     nK = length(Midx); Nqm9 = length(Widx)
     t_pre = @elapsed begin
         Norms = get_norms(F, Tidx, Midx)
-        σ0 =  get_sigma0(Norms)
+        #σ0 =  get_sigma0(Norms)
         #scaler = 1. # 🌸 hyperparameter   
-        σ2 = scaler * σ0
+        σ2 = scaler #σ2 = scaler * σ0
         comp_gaussian_kernel!(Norms, σ2) # generate the kernel
         K = Norms[K_indexer, K_indexer] # since the norm matrix' entries are changed
     end
@@ -725,7 +725,7 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_fea
     end
     errors = abs.(E_pred - E[Widx]) .* 627.503
     MAE = sum(errors)/length(errors)
-    println([σ0, σ2])
+    #println([σ0, σ2])
     println("pre-computation time is ",t_pre, ", MAEtrain=",MAEtrain)
     println("MAE of Nqm9 = ",MAE, ", with t_pred = ", t_pred)
     # save info to file
@@ -1055,7 +1055,7 @@ currently excludes the active training
 """
 function fit_🌹_and_atom(foldername, file_dataset; 
                         bsize=1_000, tlimit=900, model="ROSEMI", 
-                        E_atom=[], cσ = 2. *(2. ^5)^2, scaler=1., center_ids=[], uid="", kid="")
+                        E_atom=[], cσ = 2. *(2. ^5)^2, scaler=2. *(2. ^5)^2, center_ids=[], uid="", kid="")
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
