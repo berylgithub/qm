@@ -51,7 +51,7 @@ feas=false;
 while feas==false % check for feasibility:
   x=mintry(x,f); % the solver
   % round x by probablity:
-  for i=1:length(x)
+  for i=3:length(x)
     p=rand(1);
     if p < .5; % 50% chance
       x(i) = floor(x(i));
@@ -89,7 +89,7 @@ unwind_protect
         disp(f)
         x=mintry(x,f); % the solver
         % round x by probablity:
-        for i=1:length(x)
+        for i=3:length(x)
           p=rand(1);
           if p < .5; % 50% chance
             x(i) = floor(x(i));
