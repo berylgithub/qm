@@ -82,7 +82,7 @@ unwind_protect
           feas=true;
         end
         if !feas
-          f = 50.; % set 50kcal/mol MAE
+          f = 1000.; % set supremum MAE
         end
       end
       % write x to file:

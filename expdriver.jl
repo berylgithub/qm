@@ -132,8 +132,9 @@ function hyperparamopt(;init=false)
     if init
         uid = replace(string(Dates.now()), ":" => ".")
         #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  # init using best params
-        x = [-100., -100.]
+        x = [100., 100.]
         #f = main_obj(x)
+        f = sum(x .^ 2)
         data = Matrix{Any}(undef, 1,3)
         data[1,1] = uid; data[1,2:end] = x 
         writestringline(string.(vcat(uid, x)), "params.txt")
