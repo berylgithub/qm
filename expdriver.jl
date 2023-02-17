@@ -200,7 +200,7 @@ function main_obj(x)
     dfnaf[1] = 51 # ACSF
     dfnaf[2] = 165 # SOAP
     dfnaf[3] = 140 # FCHL
-    max_naf = dfnaf[Int(x[4])]; n_af = round(max_naf*x[1]); n_mf = round(n_af*x[2])
+    max_naf = dfnaf[Int(x[4])]; n_af = Int(round(max_naf*x[1])); n_mf = Int(round(n_af*x[2]))
     # crawl center_id by index, "data/centers.txt" must NOT be empty:
     centers = readdlm("data/centers.txt")
     maxlen = 95 # this is the total number of precomputed instance #size(centers, 1)
