@@ -47,8 +47,24 @@ for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
 f = str2double(fdata{2,1});
-x=mintry(x,f) % the solver
-%uid = datestr(now(), 'yyyymmddHHMMSS'); % not good, since this only unique for each second
+feas=false;
+while feas==false % check for feasibility:
+  x=mintry(x,f); % the solver
+  % round x by probablity:
+  for i=1:length(x)
+    p=rand(1);
+    if p < .5; % 50% chance
+      x(i) = floor(x(i));
+    else
+      x(i) = ceil(x(i));
+    end
+  end
+  feas=paramcheck(x) % check feasibility, repeat until feasible
+  if !feas
+    f = 100.; % set supremum MAE
+  end
+end
+disp(x)
 uid = rand(1);
 strout = num2str(uid);
 for i=1:length(x)
@@ -68,20 +84,10 @@ unwind_protect
       feas=false;
       %stuckcount=1;
       while feas==false
-        %if stuckcount >= nfstuck % if stuck continuously, then reload data (reset)
-        %  disp("reset due to stuck in infeasible sol!")
-        %  data = textread(path_param, "%s");
-        %  fdata = textread(path_fun, "%s");
-        %  f = str2double(fdata{2,1});
-        %  for i=2:length(data)
-        %    x(i-1) = str2double(data{i,1});
-        %  end
-        %  break
-        %end
         disp(feas)
         disp(x)
         disp(f)
-        x=mintry(x,f) % the solver
+        x=mintry(x,f); % the solver
         % round x by probablity:
         for i=1:length(x)
           p=rand(1);
@@ -91,18 +97,13 @@ unwind_protect
             x(i) = ceil(x(i));
           end
         end
-        %feas=paramcheck(x) % check feasibility, repeat until feasible
-        if x(1) < 0 || x(2) < 0
-          feas=false;
-        else
-          feas=true;
-        end
+        feas=paramcheck(x) % check feasibility, repeat until feasible
         if !feas
           f = 100.; % set supremum MAE
         end
-        %stuckcount += 1
       end
       % write x to file:
+      disp(x)
       uid = rand(1);
       strout = num2str(uid);
       for i=1:length(x)

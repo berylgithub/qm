@@ -125,6 +125,7 @@ end
 
 """
 big main function here, to tune hyperparameters by DFO
+    
 """
 function hyperparamopt(;init=false, init_data=[])
     # test "threading" loop:
@@ -134,10 +135,10 @@ function hyperparamopt(;init=false, init_data=[])
         uid = replace(string(Dates.now()), ":" => ".")
         if isempty(init_data)
             println("init starts, computing fobj...")
-            #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  
-            x = [100., -100., 50.]
-            #f = main_obj(x)
-            f = sum(x .^ 2) + x[3]
+            x = [20/51, 16/20, 3, 1, 1, 1, 38, 5, 32.0] # best hyperparam from pre-hyperparamopt exps
+            f = main_obj(x)
+            #= x = [100., -100., 50.]
+            f = sum(x .^ 2) + x[3] =#
         else
             println("init starts, initial fobj and points known")
             x = init_data[2:end]
@@ -154,7 +155,7 @@ function hyperparamopt(;init=false, init_data=[])
         println("start hyperparamopt using previous checkpoint")
         # do fitting:
         x = data[1,2:end]
-        f = sum(x .^ 2) + x[3]
+        f = main_obj(x)
         # write result to file:
         uid = replace(string(Dates.now()), ":" => ".")
         writestringline(string.(vcat(uid, f)), path_fun)
@@ -166,7 +167,7 @@ function hyperparamopt(;init=false, init_data=[])
             println("new incoming data ", data)
             # do fitting:
             x = data[1,2:end]
-            f = sum(x .^ 2) + x[3]
+            f = main_obj(x)
             # write result to file:
             uid = replace(string(Dates.now()), ":" => ".")
             writestringline(string.(vcat(uid, f)), path_fun)
@@ -223,13 +224,13 @@ function main_obj(x)
     model = lmodel[Int(x[8])]
     cσ = float(x[9]) # Gausssian scaler
 
-    #= println([n_af, n_mf, feature_name, feature_path, model])
-    println([uid, kid, uk_id])
+    println([n_af, n_mf, feature_name, feature_path, model])
+    #= println([uid, kid, uk_id])
     display(center)
     display(cσ) =#
 
     foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
-    data_setup(foldername, n_af, nmf, Int(x[4]), 300, file_dataset, feature_path, feature_name; 
+    data_setup(foldername, n_af, n_mf, Int(x[3]), 300, file_dataset, feature_path, feature_name; 
         normalize_atom = Int(x[5]), normalize_mol = Int(x[6]), save_global_centers = true, num_center_sets = 2)
     GC.gc() # always gc after each run
     fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=true)
@@ -237,7 +238,6 @@ function main_obj(x)
     fit_🌹_and_atom(foldername, file_dataset; model = model, 
         E_atom = E_atom, cσ = cσ, scaler = cσ, 
         center_ids = center, uid = uid, kid = uk_id)
-   
     # get MAE:
     path_result = "result/$foldername/err_$foldername.txt"
     MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
