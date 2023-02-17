@@ -219,6 +219,10 @@ function main_obj(x)
         center = [] # default empty, this will crawl the center given by the data setup
         E_atom = []
     end
+    # determine normalize switches:
+    norms = Dict()
+    norms[0] = false; norms[1] = true
+    normalize_atom = norms[Int(x[5])]; normalize_mol = norms[Int(x[6])];
     # determine model:
     lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
     model = lmodel[Int(x[8])]
@@ -231,7 +235,7 @@ function main_obj(x)
 
     foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
     data_setup(foldername, n_af, n_mf, Int(x[3]), 300, file_dataset, feature_path, feature_name; 
-        normalize_atom = Int(x[5]), normalize_mol = Int(x[6]), save_global_centers = true, num_center_sets = 2)
+        normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 2)
     GC.gc() # always gc after each run
     fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=true)
     GC.gc() # always gc after each run
