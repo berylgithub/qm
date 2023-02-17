@@ -13,5 +13,6 @@ x = zeros(length(prevbest)-1,1)
 for i=2:length(prevbest)
     x(i-1) = str2double(prevbest{i,1});
 end
-disp(x)
-disp(isnan(0.1))
+if exist('../data/best_fun_params.txsdt', 'file')
+    disp("exists")
+end

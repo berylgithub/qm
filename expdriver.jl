@@ -135,10 +135,10 @@ function hyperparamopt(;init=false)
         # init using arbitrary params, e.g., the best one:
         uid = replace(string(Dates.now()), ":" => ".")
         #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  
-        x = [100., 100.]
+        x = [100., -100., 50.]
         #f = main_obj(x)
-        f = sum(x .^ 2)
-        data = Matrix{Any}(undef, 1,3)
+        f = sum(x .^ 2) - x[3]
+        data = Matrix{Any}(undef, 1, length(x)+1)
         data[1,1] = uid; data[1,2:end] = x 
         writestringline(string.(vcat(uid, x)), path_params)
         writestringline(string.(vcat(uid, f)), path_fun)
@@ -149,7 +149,7 @@ function hyperparamopt(;init=false)
         println("start hyperparamopt using previous checkpoint")
         # do fitting:
         x = data[1,2:end]
-        f = sum(x .^ 2)
+        f = sum(x .^ 2) - x[3]
         # write result to file:
         uid = replace(string(Dates.now()), ":" => ".")
         writestringline(string.(vcat(uid, f)), path_fun)
@@ -161,7 +161,7 @@ function hyperparamopt(;init=false)
             println("new incoming data ", data)
             # do fitting:
             x = data[1,2:end]
-            f = sum(x .^ 2)
+            f = sum(x .^ 2) - x[3]
             # write result to file:
             uid = replace(string(Dates.now()), ":" => ".")
             writestringline(string.(vcat(uid, f)), path_fun)

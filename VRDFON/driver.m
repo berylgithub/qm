@@ -32,7 +32,7 @@ init.n=2;              % problem dimension
 mintry(init);          % initialize mintry
 
 %x=[-1 -1]';            % starting point 
-nfmax=1000;            % maximal number of function evaluations
+nfstuck = 50;            % max nf of getting stuck until reset
 
 % The following loop may be replaced by an arbitrarily complex 
 % computing environment. 
@@ -42,11 +42,11 @@ path_fun = '../data/fun.txt';
 path_fbest = '../data/best_fun_params.txt';
 data = textread(path_param, "%s");
 fdata = textread(path_fun, "%s");
-x = zeros(length(data)-1, 1)
+x = zeros(length(data)-1, 1);
 for i=2:length(data)
-  x(i-1) = str2double(data{i,1})
+  x(i-1) = str2double(data{i,1});
 end
-f = str2double(fdata{2,1})
+f = str2double(fdata{2,1});
 x=mintry(x,f) % the solver
 %uid = datestr(now(), 'yyyymmddHHMMSS'); % not good, since this only unique for each second
 uid = rand(1);
@@ -65,8 +65,19 @@ unwind_protect
     if ~strcmp(newdata{1,1}, fdata{1,1}) % {1,1} is the uid
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
-      feas=false
+      feas=false;
+      %stuckcount=1;
       while feas==false
+        %if stuckcount >= nfstuck % if stuck continuously, then reload data (reset)
+        %  disp("reset due to stuck in infeasible sol!")
+        %  data = textread(path_param, "%s");
+        %  fdata = textread(path_fun, "%s");
+        %  f = str2double(fdata{2,1});
+        %  for i=2:length(data)
+        %    x(i-1) = str2double(data{i,1});
+        %  end
+        %  break
+        %end
         disp(feas)
         disp(x)
         disp(f)
@@ -87,8 +98,9 @@ unwind_protect
           feas=true;
         end
         if !feas
-          f = 1000.; % set supremum MAE
+          f = 99999999999.; % set supremum MAE
         end
+        %stuckcount += 1
       end
       % write x to file:
       uid = rand(1);
@@ -100,9 +112,6 @@ unwind_protect
       fputs(file_id, strout);
       fclose(file_id);
     end
-    %if nf == nfmax
-    %  break
-    %end
     nf += 1
     pause(0.3) % check new data for each second
   end
@@ -113,15 +122,20 @@ unwind_protect_cleanup
       % implementing alternative stopping test. 
   % write best to file:
   strout = num2str(fbest);
-  % check if prev f_best is better (lower, since minprob), if it is, dont write anything:
-  prevbest = textread('../data/best_fun_params.txt', "%s")
-  fprev = str2double(prevbest{1,1});
-  if (fprev > fbest) || (isnan(fprev))
-    for i=1:length(xbest)
-      strout = strcat(strout,"\t",num2str(xbest(i)));
+  for i=1:length(xbest)
+    strout = strcat(strout,"\t",num2str(xbest(i)));
+  end
+  if exist(path_fbest, 'file') % if prev best exists, write only if current best is better
+    prevbest = textread(path_fbest, "%s")
+    fprev = str2double(prevbest{1,1});
+    if (fprev > fbest) || (isnan(fprev))
+      file_id = fopen(path_fbest, 'w');
+      fputs(file_id, strout);
+      fclose(file_id);
     end
-    file_id = fopen(path_fbest, 'w');
-    fputs(file_id, strout);
-    fclose(file_id);
+  else % if prev best doesnt exist yet, just write the current best
+      file_id = fopen(path_fbest, 'w');
+      fputs(file_id, strout);
+      fclose(file_id);
   end
 end_unwind_protect
