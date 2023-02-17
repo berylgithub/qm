@@ -133,7 +133,7 @@ function hyperparamopt(;init=false)
         uid = replace(string(Dates.now()), ":" => ".")
         #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  # init using best params
         x = [-100., -100.]
-        f = main_obj(x)
+        #f = main_obj(x)
         data = Matrix{Any}(undef, 1,3)
         data[1,1] = uid; data[1,2:end] = x 
         writestringline(string.(vcat(uid, x)), "params.txt")
@@ -176,12 +176,34 @@ model: ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
 """
 function main_obj(x)
     # process params:
-    fnaf = Dict() # determines max n_af
-    fnaf[1] = 51 # ACSF
-    fnaf[2] = 165 # SOAP
-    fnaf[3] = 140 # FCHL
-    max_naf = fnaf[x[4]]
+    # determine feature_name and path:
+    dftype = Dict()
+    dftype[1] = "ACSF"; dftype[2] = "SOAP"; dftype[3] = "FCHL";
+    feature_name = dftype[Int(x[4])]; feature_path = "data/"*feature_name*".jld";
+    # determine n_af and n_mf:
+    dfnaf = Dict() # determines max n_af
+    dfnaf[1] = 51 # ACSF
+    dfnaf[2] = 165 # SOAP
+    dfnaf[3] = 140 # FCHL
+    max_naf = dfnaf[Int(x[4])]; n_af = round(max_naf*x[1]); n_mf = round(n_af*x[2])
+    # crawl center_id by index, "data/centers.txt" must NOT be empty:
+    center_idx = Int(x[7])
+    centers = readdlm("data/centers.txt")
+    if center_idx > 0
+        center = centers[center_idx, 3:end]
+    else
+        center = [] # default empty, this will crawl the center given by the data setup
+    end
+    # determine model:
+    lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
+    model = lmodel[Int(x[8])]
     
+    
+    display(x)
+    println([n_af, n_mf, feature_name, feature_path, model])
+    display(center)
+
+   #=  
     MAE = nothing 
     data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/ACSF.jld", "ACSF"; 
         save_global_centers = true, num_center_sets = 5)
@@ -196,7 +218,7 @@ function main_obj(x)
     par_fit = [model, cσ]
     GC.gc() # always gc after each run
 
-    return MAE
+    return MAE =#
 end
 
 # script to write string given a vector{string}
