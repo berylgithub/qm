@@ -39,11 +39,11 @@ end
 
 % model params:
 if x(8) > 5
-    f=false;
+    feas=false;
     return
 end
 if x(9) == 0
-    f=false;
+    feas=false;
     return
 end
 
