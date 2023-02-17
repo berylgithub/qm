@@ -113,7 +113,7 @@ unwind_protect
       fputs(file_id, strout);
       fclose(file_id);
     end
-    nf += 1
+    %nf += 1
     pause(0.3) % check new data for each second
   end
 unwind_protect_cleanup
