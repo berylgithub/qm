@@ -36,11 +36,16 @@ nfmax=1000;            % maximal number of function evaluations
 
 % The following loop may be replaced by an arbitrarily complex 
 % computing environment. 
-%for nf=1:nfmax,
-% initial ops:
-data = textread('../params.txt', "%s");
-fdata = textread('../fun.txt', "%s");
-x = [str2double(data{2,1}) str2double(data{3,1})]' %initialize x
+% initial ops, the params and fun path MUST be non empty:
+path_param = '../data/params.txt';
+path_fun = '../data/fun.txt';
+path_fbest = '../data/best_fun_params.txt';
+data = textread(path_param, "%s");
+fdata = textread(path_fun, "%s");
+x = zeros(length(data)-1, 1)
+for i=2:length(data)
+  x(i-1) = str2double(data{i,1})
+end
 f = str2double(fdata{2,1})
 x=mintry(x,f) % the solver
 %uid = datestr(now(), 'yyyymmddHHMMSS'); % not good, since this only unique for each second
@@ -49,14 +54,14 @@ strout = num2str(uid);
 for i=1:length(x)
   strout = strcat(strout,"\t",num2str(x(i)));
 end
-file_id = fopen('../params.txt', 'w');
+file_id = fopen(path_param, 'w');
 fputs(file_id, strout);
 fclose(file_id);
 nf = 1;
 % next ops:
 unwind_protect
   while true
-    newdata = textread('../fun.txt', "%s");
+    newdata = textread(path_fun, "%s");
     if ~strcmp(newdata{1,1}, fdata{1,1}) % {1,1} is the uid
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
@@ -91,13 +96,13 @@ unwind_protect
       for i=1:length(x)
         strout = strcat(strout,"\t",num2str(x(i)));
       end
-      file_id = fopen('../params.txt', 'w');
+      file_id = fopen(path_param, 'w');
       fputs(file_id, strout);
       fclose(file_id);
     end
-    if nf == nfmax
-      break
-    end
+    %if nf == nfmax
+    %  break
+    %end
     nf += 1
     pause(0.3) % check new data for each second
   end
@@ -108,10 +113,15 @@ unwind_protect_cleanup
       % implementing alternative stopping test. 
   % write best to file:
   strout = num2str(fbest);
-  for i=1:length(xbest)
-    strout = strcat(strout,"\t",num2str(xbest(i)));
+  % check if prev f_best is better (lower, since minprob), if it is, dont write anything:
+  prevbest = textread('../data/best_fun_params.txt', "%s")
+  fprev = str2double(prevbest{1,1});
+  if (fprev > fbest) || (isnan(fprev))
+    for i=1:length(xbest)
+      strout = strcat(strout,"\t",num2str(xbest(i)));
+    end
+    file_id = fopen(path_fbest, 'w');
+    fputs(file_id, strout);
+    fclose(file_id);
   end
-  file_id = fopen('../best_fun_params.txt', 'w');
-  fputs(file_id, strout);
-  fclose(file_id);
 end_unwind_protect

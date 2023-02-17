@@ -129,27 +129,33 @@ big main function here, to tune hyperparameters by DFO
 function hyperparamopt(;init=false)
     # test "threading" loop:
     # initial fitting, initialize params and funs, replace with actual fitting:
+    path_params = "data/params.txt"; path_fun = "data/fun.txt";
     if init
+        println("init starts, computing fobj...")
+        # init using arbitrary params, e.g., the best one:
         uid = replace(string(Dates.now()), ":" => ".")
-        #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  # init using best params
+        #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  
         x = [100., 100.]
         #f = main_obj(x)
         f = sum(x .^ 2)
         data = Matrix{Any}(undef, 1,3)
         data[1,1] = uid; data[1,2:end] = x 
-        writestringline(string.(vcat(uid, x)), "params.txt")
-        writestringline(string.(vcat(uid, f)), "fun.txt")
+        writestringline(string.(vcat(uid, x)), path_params)
+        writestringline(string.(vcat(uid, f)), path_fun)
         println("init done")
     else
-        data = readdlm("params.txt")
+        # continue using prev params:
+        data = readdlm(path_params)
+        println("start hyperparamopt using previous checkpoint")
+        # do fitting:
         x = data[1,2:end]
         f = sum(x .^ 2)
         # write result to file:
         uid = replace(string(Dates.now()), ":" => ".")
-        writestringline(string.(vcat(uid, f)), "fun.txt")
+        writestringline(string.(vcat(uid, f)), path_fun)
     end
     while true
-        newdata = readdlm("params.txt")
+        newdata = readdlm(path_params)
         if data[1,1] != newdata[1,1]
             data = newdata
             println("new incoming data ", data)
@@ -158,7 +164,7 @@ function hyperparamopt(;init=false)
             f = sum(x .^ 2)
             # write result to file:
             uid = replace(string(Dates.now()), ":" => ".")
-            writestringline(string.(vcat(uid, f)), "fun.txt")
+            writestringline(string.(vcat(uid, f)), path_fun)
         end
         sleep(0.3)
     end

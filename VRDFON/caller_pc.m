@@ -5,11 +5,13 @@
 %naf, nmf in percentage, e.g., 50 -> .5*max(naf("ACSF"))
 %feature name: 1=ACSF, 2=SOAP, 3=FCHL
 %model: ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
-x = [.5, .5, 3, -1, 0, 0, 0, 6, 32.0]' %  example
-feas=paramcheck(x)
-p = rand(1)
-if p < 0.5
-    y=floor(.5)
-else
-    y=ceil(.5)
+x = [.5, .5, 3, -1, 0, 0, 0, 6, 32.0]'; %  example
+feas=paramcheck(x);
+prevbest = textread('../data/best_fun_params.txt', "%s")
+f = str2double(prevbest{1,1})
+x = zeros(length(prevbest)-1,1)
+for i=2:length(prevbest)
+    x(i-1) = str2double(prevbest{i,1});
 end
+disp(x)
+disp(isnan(0.1))
