@@ -37,9 +37,9 @@ nfstuck = 50;            % max nf of getting stuck until reset
 % The following loop may be replaced by an arbitrarily complex 
 % computing environment. 
 % initial ops, the params and fun path MUST be non empty:
-path_param = '../data/params.txt';
-path_fun = '../data/fun.txt';
-path_fbest = '../data/best_fun_params.txt';
+path_param = '../data/hyperparamopt/params.txt';
+path_fun = '../data/hyperparamopt/fun.txt';
+path_fbest = '../data/hyperparamopt/best_fun_params.txt';
 data = textread(path_param, "%s");
 fdata = textread(path_fun, "%s");
 x = zeros(length(data)-1, 1);
@@ -126,7 +126,7 @@ unwind_protect_cleanup
     strout = strcat(strout,"\t",num2str(xbest(i)));
   end
   if exist(path_fbest, 'file') % if prev best exists, write only if current best is better
-    prevbest = textread(path_fbest, "%s")
+    prevbest = textread(path_fbest, "%s");
     fprev = str2double(prevbest{1,1});
     if (fprev > fbest) || (isnan(fprev))
       file_id = fopen(path_fbest, 'w');
