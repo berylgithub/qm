@@ -1003,6 +1003,7 @@ end
 fit the atomic energy for energy reducer
 """
 function fit_atom(foldername, file_dataset, file_atomref_features; center_ids = [], tlimit = 900, uid="", kid="", save_global=false)
+    mkpath("result/$foldername")
     dataset = load(file_dataset, "data"); n_data = length(dataset)
     F_atom = load(file_atomref_features, "data")
     E = map(d -> d["energy"], dataset)
