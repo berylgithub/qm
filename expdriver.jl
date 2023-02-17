@@ -126,18 +126,23 @@ end
 """
 big main function here, to tune hyperparameters by DFO
 """
-function hyperparamopt(;init=false)
+function hyperparamopt(;init=false, init_data=[])
     # test "threading" loop:
     # initial fitting, initialize params and funs, replace with actual fitting:
-    path_params = "data/params.txt"; path_fun = "data/fun.txt";
-    if init
-        println("init starts, computing fobj...")
-        # init using arbitrary params, e.g., the best one:
+    path_params = "data/hyperparamopt/params.txt"; path_fun = "data/hyperparamopt/fun.txt";
+    if init # init using arbitrary params (or init_data), e.g., the best one:
         uid = replace(string(Dates.now()), ":" => ".")
-        #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  
-        x = [100., -100., 50.]
-        #f = main_obj(x)
-        f = sum(x .^ 2) - x[3]
+        if isempty(init_data)
+            println("init starts, computing fobj...")
+            #x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]  
+            x = [100., -100., 50.]
+            #f = main_obj(x)
+            f = sum(x .^ 2) + x[3]
+        else
+            println("init starts, initial fobj and points known")
+            x = init_data[2:end]
+            f = init_data[1]
+        end
         data = Matrix{Any}(undef, 1, length(x)+1)
         data[1,1] = uid; data[1,2:end] = x 
         writestringline(string.(vcat(uid, x)), path_params)
@@ -149,7 +154,7 @@ function hyperparamopt(;init=false)
         println("start hyperparamopt using previous checkpoint")
         # do fitting:
         x = data[1,2:end]
-        f = sum(x .^ 2) - x[3]
+        f = sum(x .^ 2) + x[3]
         # write result to file:
         uid = replace(string(Dates.now()), ":" => ".")
         writestringline(string.(vcat(uid, f)), path_fun)
@@ -161,10 +166,11 @@ function hyperparamopt(;init=false)
             println("new incoming data ", data)
             # do fitting:
             x = data[1,2:end]
-            f = sum(x .^ 2) - x[3]
+            f = sum(x .^ 2) + x[3]
             # write result to file:
             uid = replace(string(Dates.now()), ":" => ".")
             writestringline(string.(vcat(uid, f)), path_fun)
+            println("fobj computation finished")
         end
         sleep(0.3)
     end
@@ -182,6 +188,7 @@ feature name: 1=ACSF, 2=SOAP, 3=FCHL
 model: ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
 """
 function main_obj(x)
+    #display(x)
     # process params:
     # determine feature_name and path:
     dftype = Dict()
@@ -194,38 +201,50 @@ function main_obj(x)
     dfnaf[3] = 140 # FCHL
     max_naf = dfnaf[Int(x[4])]; n_af = round(max_naf*x[1]); n_mf = round(n_af*x[2])
     # crawl center_id by index, "data/centers.txt" must NOT be empty:
-    center_idx = Int(x[7])
     centers = readdlm("data/centers.txt")
-    if center_idx > 0
+    maxlen = 95 # this is the total number of precomputed instance #size(centers, 1)
+    center_idx = Int(x[7])
+    uid=""; kid= ""; uk_id = ""
+    if 0 < center_idx ≤ maxlen 
+        uid = centers[center_idx,1]; kid = centers[center_idx,2]; uk_id = join([uid,"_",kid])
         center = centers[center_idx, 3:end]
+        # get atom info global, to match center ids:
+        atomref = readdlm("data/atomref_info.txt")
+        f_atom = load("data/atomref_features.jld", "data")
+        E_atom = f_atom*atomref[center_idx,5:end]
+        #display(atomref[center_idx,5:end])
+        #display(E_atom)
     else
         center = [] # default empty, this will crawl the center given by the data setup
+        E_atom = []
     end
     # determine model:
     lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
     model = lmodel[Int(x[8])]
-    
-    
-    display(x)
-    println([n_af, n_mf, feature_name, feature_path, model])
+    cσ = float(x[9]) # Gausssian scaler
+
+    #= println([n_af, n_mf, feature_name, feature_path, model])
+    println([uid, kid, uk_id])
     display(center)
+    display(cσ) =#
 
-   #=  
-    MAE = nothing 
-    data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/ACSF.jld", "ACSF"; 
-        save_global_centers = true, num_center_sets = 5)
-    fit_atom(foldername, file_dataset, file_atomref_features; center_ids = [], tlimit = 900, uid = "", kid = "")
+    foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
+    data_setup(foldername, n_af, nmf, Int(x[4]), 300, file_dataset, feature_path, feature_name; 
+        normalize_atom = Int(x[5]), normalize_mol = Int(x[6]), save_global_centers = true, num_center_sets = 2)
     GC.gc() # always gc after each run
-    fit_🌹_and_atom(foldername, file_dataset; 
-        bsize = 1000, tlimit = 900, model = "ROSEMI", 
-        E_atom = [], cσ = 2.0 * (2.0 ^ 5) ^ 2, scaler = 2.0 * (2.0 ^ 5) ^ 2, 
-        center_ids = [], uid = "", kid = "")
-    par_ds = [n_af, n_mf, n_basis, feature_name, normalize_atom, normalize_mol] # this will be supplied by dfo driver
-    par_fit_atom = [center_ids] # center_ids = 0 → use new center, otherwise use precomputed centers
-    par_fit = [model, cσ]
+    fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=true)
     GC.gc() # always gc after each run
+    fit_🌹_and_atom(foldername, file_dataset; model = model, 
+        E_atom = E_atom, cσ = cσ, scaler = cσ, 
+        center_ids = center, uid = uid, kid = uk_id)
+   
+    # get MAE:
+    path_result = "result/$foldername/err_$foldername.txt"
+    MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
 
-    return MAE =#
+    f_atom = E_atom = nothing # clear var
+    GC.gc() # always gc after each run
+    return MAE
 end
 
 # script to write string given a vector{string}

@@ -98,7 +98,7 @@ unwind_protect
           feas=true;
         end
         if !feas
-          f = 99999999999.; % set supremum MAE
+          f = 100.; % set supremum MAE
         end
         %stuckcount += 1
       end
