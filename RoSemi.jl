@@ -1,4 +1,5 @@
 using JLD, SparseArrays, Distributions, Statistics, StatsBase, ForwardDiff, ReverseDiff, LinearOperators, Krylov
+using .Threads
 
 include("voronoi.jl")
 include("linastic.jl")
