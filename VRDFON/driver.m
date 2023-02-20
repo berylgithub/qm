@@ -78,7 +78,7 @@ nf = 1;
 unwind_protect
   while true
     newdata = textread(path_fun, "%s");
-    if ~strcmp(newdata{1,1}, fdata{1,1}) % {1,1} is the uid
+    if (dir(path_fun).bytes > 0) && (~strcmp(newdata{1,1}, fdata{1,1})) % check if the file is empty and the file is new; {1,1} is the uid
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
       feas=false;
