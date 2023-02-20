@@ -161,17 +161,23 @@ function hyperparamopt(;init=false, init_data=[])
         writestringline(string.(vcat(uid, f)), path_fun)
     end
     while true
+        prev_data = data; prev_f = f; # record previous data
         newdata = readdlm(path_params)
-        if data[1,1] != newdata[1,1]
-            data = newdata
-            println("new incoming data ", data)
-            # do fitting:
-            x = data[1,2:end]
-            f = main_obj(x)
-            # write result to file:
+        if data[1,1] != newdata[1,1] # check if the uid is different
             uid = replace(string(Dates.now()), ":" => ".")
-            writestringline(string.(vcat(uid, f)), path_fun)
-            println("fobj computation finished")
+            if data[1,2:end] == newdata[1,2:end] # if the content is the same (it's posssible due to the random rounding algorithm), then return previous f
+                writestringline(string.(vcat(uid, prev_f)), path_fun)
+            else # compute new f
+                data = newdata
+                println("new incoming data ", data)
+                # do fitting:
+                x = data[1,2:end]
+                f = main_obj(x)
+                # write result to file:
+                writestringline(string.(vcat(uid, f)), path_fun)
+                println("fobj computation finished")
+                GC.gc(); GC.gc(); GC.gc(); # GC is not working???
+            end
         end
         sleep(0.3)
     end
