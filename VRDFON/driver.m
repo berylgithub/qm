@@ -24,7 +24,7 @@ clear
 
 
 init.paths='minq8'; % mandatory absolute path to minq8
-init.n=2;              % problem dimension
+init.n=9;              % problem dimension
                        % For tuning or to see intermediate results, 
                        % a nonstandard initialization may be used.
                        % For details see mintry.m
