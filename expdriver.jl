@@ -130,7 +130,7 @@ big main function here, to tune hyperparameters by DFO
 function hyperparamopt(;init=false, init_data=[])
     # test "threading" loop:
     # initial fitting, initialize params and funs, replace with actual fitting:
-    path_params = "data/hyperparamopt/params.txt"; path_fun = "data/hyperparamopt/fun.txt";
+    path_params = "data/hyperparamopt/params.txt"; path_fun = "data/hyperparamopt/fun.txt"; path_track="data/hyperparamopt/tracker.txt";
     if init # init using arbitrary params (or init_data), e.g., the best one:
         uid = replace(string(Dates.now()), ":" => ".")
         if isempty(init_data)
@@ -160,6 +160,8 @@ function hyperparamopt(;init=false, init_data=[])
         uid = replace(string(Dates.now()), ":" => ".")
         writestringline(string.(vcat(uid, f)), path_fun)
     end
+    # tracker for fobj and hyperparams already used:
+    writestringline(string.(vcat(f, x)), path_track) 
     while true
         prev_data = data; prev_f = f; # record previous data
         newdata = readdlm(path_params)
@@ -167,16 +169,32 @@ function hyperparamopt(;init=false, init_data=[])
             uid = replace(string(Dates.now()), ":" => ".")
             if data[1,2:end] == newdata[1,2:end] # if the content is the same (it's posssible due to the random rounding algorithm), then return previous f
                 writestringline(string.(vcat(uid, prev_f)), path_fun)
-            else # compute new f
+            else # compute new f, or if the point was already "seen", return the function value
                 data = newdata
                 println("new incoming data ", data)
                 # do fitting:
                 x = data[1,2:end]
-                f = main_obj(x)
+                # check if x is already seen, if true, return (f,x):
+                tracker = readdlm(path_track)
+                idx = nothing
+                for i in axes(tracker, 1)
+                    if x == tracker[i, 2:end]
+                        idx = i
+                        break
+                    end
+                end
+                if idx === nothing # if not found, compute new point and save to tracker
+                    println("computing fobj from new point...")
+                    f = main_obj(x)
+                    writestringline(string.(vcat(f, x)), path_track)
+                else
+                    println("the point was already tracked!")
+                    f = tracker[i, 1]
+                end
                 # write result to file:
                 writestringline(string.(vcat(uid, f)), path_fun)
                 println("fobj computation finished")
-                GC.gc(); GC.gc(); GC.gc(); # GC is not working???
+                GC.gc(); GC.gc(); GC.gc(); # GC is working only in function context
             end
         end
         sleep(0.3)
