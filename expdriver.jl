@@ -282,3 +282,18 @@ function writelatextable(table, filename)
         end
     end
 end
+
+"""
+julia GC test, aparently only work within function context, not outside
+"""
+function gctest()
+    while true
+        println("init A")                                                                                                    
+        A = rand(Int(sx), Int(sy))                                                                                       
+        sleep(4)                                                                                                      
+        A = nothing
+        GC.gc()
+        println("cleared A")
+        sleep(4)                                                                                        
+    end
+end

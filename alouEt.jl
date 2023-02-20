@@ -475,7 +475,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     data = Dict("centers"=>Midx, "theta"=>θ)
     save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
     # clear variables:
-    SKs_train = SKs = γ = α = B = klidx = cidx = Axtemp = tempsA = op = b = tempsb = θ = stat = VK = outs = v = vmat = MADs = batches = VK_fin = nothing
+    SKs_train = SKs = γ = α = B = klidx = cidx = Axtemp = tempsA = op = b = tempsb = θ = stat = VK = outs = v = vmat = MADs = batches = VK_fin = nothing; GC.gc()
     return MAE, MADmax_idxes
 end
 
@@ -654,7 +654,7 @@ function fitter_LLS(F, E, Midx, Widx, foldername, tlimit; Er = Vector{Float64}()
         print(io, str*"\n")
     end
     # clear memory:
-    A=θ=stat=errors=E_pred=nothing
+    A=θ=stat=errors=E_pred=nothing; GC.gc()
 end
 
 function fit_LLS(foldername, bsize, tlimit; reduced_E = false, train_labels = Vector{Int64}()::Vector{Int64})
@@ -739,7 +739,7 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, foldername, tlimit, n_fea
         print(io, str*"\n")
     end
     # clear variable:
-    Norms=K=θ=stat=errors=K_pred=E_pred=Er=nothing
+    Norms=K=θ=stat=errors=K_pred=E_pred=Er=nothing; GC.gc()
 end
 
 function fit_KRR(foldername, bsize, tlimit; reduced_E = false, train_labels = Vector{Int64}()::Vector{Int64})
@@ -885,7 +885,7 @@ function fitter_NN(F, E, Midx, Widx, foldername; Er = Vector{Float64}()::Vector{
         print(io, str*"\n")
     end
     # clear memory:
-    x_train=model=pars=opt=nothing
+    x_train=model=pars=opt=nothing; GC.gc()
 end
 
 function fit_NN(foldername)
@@ -997,7 +997,7 @@ function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; cσ = 2. *
         print(io, str*"\n")
     end
     # clear variable
-    A=θ=stat=E_pred=errors=nothing
+    A=θ=stat=E_pred=errors=nothing; GC.gc()
 end
 
 """
@@ -1128,8 +1128,7 @@ function fit_🌹_and_atom(foldername, file_dataset;
         fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; cσ=cσ, Er = E_atom) # takes atomic features instead
     end
     # clear memory:
-    dataset = E_dict = f = F = ϕ = dϕ = E = D = E_atom = Midx = Uidx = Widx = nothing
-    GC.gc()
+    dataset = E_dict = f = F = ϕ = dϕ = E = D = E_atom = Midx = Uidx = Widx = nothing; GC.gc()
 end
 
 """
