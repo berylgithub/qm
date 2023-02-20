@@ -307,6 +307,7 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
     println("data setup is finished in ",t,"s")
     # clear memory:
     dataset=F=f=ϕ=dϕ=centers=redf=nothing
+    GC.gc()
 end
 
 """
@@ -1057,6 +1058,7 @@ function fit_atom(foldername, file_dataset, file_atomref_features; center_ids = 
     save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
     # clear memory:
     dataset=F_atom=E=center_ids=Midx=Widx=A=θ=stat=errors=E_pred=E_atom=E_red_mean=Ed=nothing
+    GC.gc()
 end
 
 """
@@ -1127,6 +1129,7 @@ function fit_🌹_and_atom(foldername, file_dataset;
     end
     # clear memory:
     dataset = E_dict = f = F = ϕ = dϕ = E = D = E_atom = Midx = Uidx = Widx = nothing
+    GC.gc()
 end
 
 """
