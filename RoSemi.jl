@@ -922,12 +922,20 @@ params:
     - Fn: vector of atomic features of several molecules
     - Ln: vector of list of atoms
 """
-function get_gaussian_kernel(F1, F2, L1, L2, cσ)
+function get_gaussian_kernel(F1, F2, L1, L2, cσ; threading=true)
     nm1 = length(L1); nm2 = length(L2)
     A = zeros(nm1, nm2)
-    for j ∈ eachindex(L2) # col
-        for i ∈ eachindex(L1) # row
-            A[i, j] = comp_atomic_gaussian_entry(F1[i], F2[j], L1[i], L2[j], cσ)
+    if threading
+        @threads for j ∈ eachindex(L2) # col
+            @threads for i ∈ eachindex(L1) # row
+                @inbounds A[i, j] = comp_atomic_gaussian_entry(F1[i], F2[j], L1[i], L2[j], cσ)
+            end
+        end
+    else
+        for j ∈ eachindex(L2) # col
+            for i ∈ eachindex(L1) # row
+                A[i, j] = comp_atomic_gaussian_entry(F1[i], F2[j], L1[i], L2[j], cσ)
+            end
         end
     end
     return A
