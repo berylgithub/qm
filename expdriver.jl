@@ -161,7 +161,7 @@ function hyperparamopt(;init=false, init_data=[])
         writestringline(string.(vcat(uid, f)), path_fun)
     end
     # tracker for fobj and hyperparams already used:
-    writestringline(string.(vcat(f, x)), path_track) 
+    writestringline(string.(vcat(f, x)), path_track; mode="a") 
     while true
         prev_data = data; prev_f = f; # record previous data
         newdata = readdlm(path_params)
@@ -186,7 +186,7 @@ function hyperparamopt(;init=false, init_data=[])
                 if idx === nothing # if not found, compute new point and save to tracker
                     println("computing fobj from new point...")
                     f = main_obj(x)
-                    writestringline(string.(vcat(f, x)), path_track)
+                    writestringline(string.(vcat(f, x)), path_track; mode="a")
                 else
                     println("the point was already tracked!")
                     f = tracker[i, 1]
