@@ -302,6 +302,24 @@ function writelatextable(table, filename)
 end
 
 """
+reference function to query any type of data, the queries are similar to this
+"""
+function dataqueryref()
+    # query example:
+    for i ∈ axes(best10, 1)
+        for j ∈ axes(centers, 1)
+            if best10[i, 1] == centers[j,1] && best10[i, 2] == centers[j, 2]
+                push!(kidx, j)
+                break
+            end
+        end
+    end
+    # string formatting example:
+    table_null[2:end, end-1:end] = map(el -> @sprintf("%.3f", el), table_null[2:end, end-1:end])
+end
+
+
+"""
 julia GC test, aparently only work within function context, not outside
 """
 function gctest()
