@@ -9,11 +9,10 @@
 x = [.5, .5, 3, 1, 0, 0, 0, 6, 32.0]' %  example
 feas=paramcheck(x)
 path_fun = '../data/hyperparamopt/fun.txt';
-path_fun = '../test.txt'
-newdata = textread(path_fun, "%s")
-dumfid = "98safh98afh9"
-if (dir(path_fun).bytes > 0) && (~strcmp(newdata{1,1}, dumfid)) % check if file is empty
-    disp("newdata found")
-else
-    disp("newfile is empty or same with prev")
-end
+path_fun = '../test.txt';
+path_bounds = '../data/hyperparamopt/bounds.txt';
+bounds = dlmread(path_bounds)
+xlo = bounds(1,2); xhi = bounds(2,2);
+xtest = -2.
+xtest = max(xlo, min(xtest, xhi)) %clip to boundary
+isinf(bounds(2,2))

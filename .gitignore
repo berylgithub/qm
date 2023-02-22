@@ -4,6 +4,7 @@ VRDFON/*
 !VRDFON/driver.m
 !VRDFON/paramcheck.m
 !VRDFON/caller_pc.m
+!VRDFON/parambound.m
 *.aux
 *.log
 *.pdf
