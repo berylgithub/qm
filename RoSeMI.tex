@@ -171,6 +171,7 @@ For the QM9 dataset, FCHL returns an array with size $(133885, 29, 5, 29)$.
 		\caption{$\mu_i := \sum_{i\geq k} \lambda_i \text{ for } k = 1,2,...,n_f$, obtained from the PCA of ACSF on the atomic level. This shows the distribution of the eigenvalues when $i$ amount of the (sorted) eigenvalues are dropped.}
 	\end{figure}
 \end{itemize}
+\at{plot labelling nequidistance}
 
 \paragraph{Timing and storage}
 Features based on atomic symmetry functions in general has $\mathcal{O}(n_\text{atom}n_\text{cutoff}c)$ time complexity, where $c$ is a factor referring to the feature extractor's method of computation (e.g., ACSF requires $c$ amount of radial symmetry function computations), and $n_\text{cutoff}$ is the number of atoms included within the cutoff radius, as it is required to sweep through the atom and its neighbours within the cutoff radius each time an atomic symmetry quantity is queried. The resulting features of each atom is a vector with length $n_{af}$, therefore a molecule has an order of $\mathcal{O}(n_\text{atom}n_{af})$ storage complexity. In total for the QM9 challenge, each time an atomic feature extraction is queried, it has $\mathcal{O}(N_\text{QM9}n_\text{atom}n_\text{cutoff}c)$ time complexity and $\mathcal{O}(N_\text{QM9}n_\text{atom}n_{af})$ storage complexity.
@@ -328,7 +329,7 @@ then for each time step $t$, we do an aggregation phase,
 	\label{eq:mpagg}
 	m^{t+1}_v = \frac{1}{|N(v)|}\sum_{w \in N(v)} M_t(h_v^t, h_w^t, e_{vw}^t),~~ \text{for }v \in G
 \end{equation}
-which is just the mean of the neighbours' features, where the aggregation function at time step $t$ is
+which is just the mean of the neighbours' features, with an aggregation function $M_t$ at time step $t$, which in the simplest case is
 \begin{equation}
 	\label{eq:mpaggex}
 	M_t(h_v^t, h_w^t, e_{vw}^t) :=  \text{concat}\Big(h_v^t, h_w^t, e_{vw}^t\Big),
@@ -485,7 +486,7 @@ where
 	b_{jm} = \Big(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\Big)/\alpha_j(w_m).
 \end{equation}
 
-\subsection{Molecular Gaussian kernel}
+\subsection{Gaussian molecular kernel (KRR)} 
 \label{subsec:gaussian}
 Let $A$ be the data matrix, if it is constructed by the Gaussian kernel then
 \begin{equation}
@@ -506,7 +507,7 @@ The target vector is simply the energies:
 	b_i := E_i.
 \end{equation}
 
-\subsection{Linear least squares}
+\subsection{Linear least squares (LLS)}
 \label{subsec:LLS}
 The linear least squares (LLS) model simply uses the feature matrix as the data matrix, hence
 \begin{equation}
@@ -516,23 +517,23 @@ The linear least squares (LLS) model simply uses the feature matrix as the data 
 where $i$ indexes the query molecule and $j$ indexes the feature column of $i$th molecule. Whereas the target vector is the same as (\ref{eq:lineartargetvector}).
 \at{revision regarding to the stuffs that are solved by LLS}
 
-\subsection{Neural network}
+\subsection{Neural network (NN)}
 \label{subsec:NN}
 \at{insert standard neural network formula here}
 
-\subsection{Atomic Gaussian kernel}
+\subsection{Gaussian atomic kernel (GAK)}
 The entries of the data matrix for the atomic Gaussian kernel are \at{\cite[Eq. (10)]{Faber et al} from \url{https://aip.scitation.org/doi/10.1063/1.5126701}}
 \iffalse
 \begin{equation}
-	\label{eq:gaussian_atom}
 	A_{l' l} = \sum_P \sum_{Z^{l'}_i = P} \sum_{Z^{l}_j = P} A^\text{atom}(f^{l'}_i, f^l_j)
+	\label{eq:gaussian_atom}
 \end{equation}
 \fi
 \begin{equation}
-	\label{eq:gaussian_atom}
 	A_{l'l} = \sum_j \sum_i \delta_{Z_i^{l'}Z_j^{l}} A^\text{atom}(f_i^{l'}, f_j^l)
+	\label{eq:gaussian_atom}
 \end{equation}
-where $Z_i^l$ is the nuclear charge of atom $i$ in molecule $l$, the Kronecker delta $\delta$ ensures that only the environment between the same atom types are compared; the atomic Gaussian kernel function is \at{\cite[Eq. (26)]{Faber et al}}
+where $Z_i^l$ and $Z_j^{l'}$ are the nuclear charges of atom $i$ and $j$ in molecule $l'$ and molecule $l$ respectively. The Kronecker delta $\delta$ ensures that only the environment between the same atom types are compared. The Gaussian atomic kernel function is \at{\cite[Eq. (26)]{Faber et al}}
 \begin{equation}
 	A^\text{atom}(u, v) = \text{ exp}\Big( - \frac{\|u - v \|^2_2}{2 \sigma^2} \Big).
 \end{equation}
@@ -545,7 +546,7 @@ where $\sigma \in \mathbb{R}$ is a hyperparameter, typically $\sigma = 2^k$ wher
 \section{Intermediate values}
 \label{sec:intermediate}
 
-\subsection{Shepard model}
+\subsection{Shepard model (ROSEMI)}
 Several intermediate values need to be computed and stored in the random access memory (RAM), since these intermediate values depend on several parameters which changes for each experiment and are fast to compute hence it is not necessary to store them in the non-volatile memory. Given the stored $F$ (from Section \ref{sec:feature}); $\Phi$ and $\Phi'$ (from Section \ref{sec:spline}); and $D$ and $T$ (from Section \ref{sec:data}):
 \begin{itemize}
 	\item Determine the set of labels of the initial trial points
@@ -631,7 +632,7 @@ The Gaussian kernels and LLS models can be fitted in a straightforward manner, t
 \begin{equation}
 	A \theta = b,
 \end{equation}
-where for Gaussian kernel $A$ is defined in (\ref{eq:gaussian}); for atomic Gaussian kernel, $A$ is defined in (\ref{eq:gaussian_atom}); meanwhile for LLS, $A$ is defined in (\ref{eq:lls}); $b$ is the target vector defined in (\ref{eq:lineartargetvector}); and $\theta$ is the coefficient vector. This can be implemented simply by
+where for Gaussian molecular kernel $A$ is defined in (\ref{eq:gaussian_mol}); for Gaussian atomic kernel, $A$ is defined in (\ref{eq:gaussian_atom}); meanwhile for LLS, $A$ is defined in (\ref{eq:lls}); $b$ is the target vector defined in (\ref{eq:lineartargetvector}); and $\theta$ is the coefficient vector. This can be implemented simply by
 \begin{equation*}
 	\theta \leftarrow \codeword{CGLS(}A, b,\codeword{itmax)},
 \end{equation*}
@@ -687,6 +688,7 @@ Given the set of files from section (\ref{sub:data}), the fitter function abstra
 \end{equation}
 where \codeword{data_dir} is a string that refers to the path which contains the files resulted from the data setup subprogram, \codeword{t_limit} is the solver time limit (in second), \codeword{batchsize} is an integer representing the size of mini-batch of several variables, in some cases the total memory usage of the system is over 8GB (typical Random Access Memory (RAM) size of modern computers) hence mini-batching is necessary. On the output side, \codeword{info} contains the fitting errors, list of timings, and list of fitting hyperparameters (e.g., $n_{af}, n_{mf},$ etc). The processes executed in the fitter are:
 \begin{enumerate}
+	\item \at{add program info for selection using usequence (also describe usequence in section 3 data selction)}
 	\item Compute variables for fitting:
 	\begin{enumerate}
 		\item $K \leftarrow $\codeword{select_centers(}$T$\codeword{)}
@@ -744,6 +746,11 @@ The hardware and software specification used for the experiments are:
 	\item Memory: 32 GB of RAM
 	\item Programming language: Julia 1.7.2
 \end{itemize}
+Additionally, a secondary computer is also often used with specification:
+\begin{itemize}
+	\item Processors: 4 $\times$ Intel\textregistered Core i5-4670S CPU @3.10 GHz
+	\item Memory: 16 GB of RAM
+\end{itemize}
 
 \subsection{Memory usage}
 The computation of fitting and prediction of QM9 challenge is resource-demanding, hence we need to allocate variables responsibly such that the OS does not throw an out-of-memory exception. The first ingredient is to approximate the size of data structures allocated within the program in megabytes (MB) order of magnitude; assuming the data structure holds \codeword{Float64} entries (which is the most common data type for numerical operations and is also the most memory consuming) this can be done by a general formula
@@ -759,13 +766,11 @@ where
 	B_N := (8\times 10^{-6}) \times 133628 \approx 1.069
 \end{equation}
 is the storage needed for $N$ entries of \codeword{Float64} in MB.
-Using Julia this can be confirmed easily by calling \codeword{Base.summarysize(D)*1e-6}, which gives the same result up to some roundoff error.
-
-The variable which has the largest memory usage from the experiment in the last row of table \ref{tab:shepard_exp} (experiment with largest hyperparameters)  is the block matrix $\phi$  for prediction, with
+Using Julia this can be confirmed simply by calling \codeword{Base.summarysize(D)*1e-6}, which gives the same result up to some roundoff error. For example, given $n_K = 100,n_f=28$, and $n_b = 5$ for ROSEMI, the block matrix $\phi$ for prediction has the memory size of
 \begin{equation}
-	B_NXY := B_N \times 100 \times 140 = 14966.336 \text{ MB} = 14.9 \text{ GB}
+	B_NXY := B_N \times 100 \times 140 = 14966.336 \text{ MB} = 14.9 \text{ GB}.
 \end{equation}
-memory size. Hence mini-batching is necessary, with \codeword{batchsize = 10_000}, for each mini-batch loop the size of $\phi$ becomes $1/13$ of its actual size which is around 1GB. 
+With \codeword{batchsize = 10_000}, for each mini-batch loop the size of $\phi$ becomes $1/13$ of its actual size which is around 1GB. 
 
 
 \subsection{Fitting results}
@@ -823,12 +828,13 @@ The atomic energy itself can be obtained by fitting a LLS model. For QM9 challen
 		\text{for }i &\in K.
 	\end{split}
 \end{equation}
-The set of training labels $K$ depends from the set of features used, it affects the resulting atomic energies. Each set is generated by the \codeword{usequence}, here each set of features is used to generate 5 distinct sets of training labels. 10 results of the atomic energies fitting against the molecular energies $E$ which gives the lowest MAE is shown in table \ref{tab:null_exp}. The complete sets of features used to generate the 95 sets of labels are displayed in table \ref{tab:app_gen_labels} in the appendix. The labels from the 10 sets are displayed in table \ref{tab:app_10_sets_labels} in the appendix.
+\subsubsection{Choice of training sets}
+The set $K$ of training labels depends on the set of features computed during the feature selection process. The complete sets of features used to generate the 95 sets of labels are displayed in table \ref{tab:app_gen_labels} in the appendix. Each set is generated by \codeword{usequence}, here each set of features is used to generate 5 distinct sets of training labels. 10 results of the atomic energies fitting against the molecular energies $E$ which gives the lowest MAE is shown in table \ref{tab:null_exp}. The labels from the 10 sets are displayed in table \ref{tab:app_10_sets_labels} in the appendix.
 The MAE from fitting the atomic energies is in fact refers to the mean absolute value of the $E^\text{red}$ of all molecules in the QM9 dataset itself.
 
 \begin{table}[H]
 	\centering
-	\caption{10 best (lowest MAE) numerical experiments of fitting to predict the null energies picked from 95 experiments. \textbf{MAE} is in kcal/mol. The atomic energies are in Hartree.}
+	\caption{10 best (lowest training MAE) numerical experiments of fitting the null model to predict the null energies picked from 95 experiments. \textbf{MAE}s are in kcal/mol. The atomic energies are in Hartree.}
 	\begin{tabular}{|c|c|c|c|c|c|c|}
 		\hline
 		$k$	& \textbf{MAE}	& $E^\text{atom}_H$	& $E^\text{atom}_C$	& $E^\text{atom}_O$	& $E^\text{atom}_N$	& $E^\text{atom}_F$	\\ \hline
@@ -847,7 +853,7 @@ The MAE from fitting the atomic energies is in fact refers to the mean absolute 
 \end{table}
 
 
-
+\subsubsection{Fitting reduced energies}
 The fitting experiments with $E^\text{red}$ as the target are run by varying the models, the set of features and the training labels. In total there are 50 instances, 10 of which with the lowest MAE are shown in table \ref{tab:best_10_exp}.
 One set of features and one set of training labels from the lowest fitting MAE is chosen to compare the models, the results are shown in table \ref{tab:model_comparison}. Here the MAEs are computed from the original energies, since the predicted energies are actually the predicted reduced energies,
 \begin{equation}
@@ -862,9 +868,7 @@ The hyperparameters used are: cutoff radius $r_\text{cut} = 8.0$ for both the FC
 
 \begin{table}[H]
 	\centering
-	\caption{10 numerical experiments with the lowest \textbf{MAE} picked from 50 experiments.
-		The MAEs are in kcal/mol. Null MAE refers to the MAE of the null model (in kcal/mol). $k$ refers to the index of set of labels used for training. KRR refers to (\ref{eq:gaussian_mol}), GAK refers to (\ref{eq:gaussian_atom}), and LLS refers to (\ref{eq:lls}).
-		$f$ is the type of atomic features, $n_{af}$ is the number of atomic features, $n_{mf}$ is the number of molecular features, $t_s$ is the solver time to train the model in seconds, and $t_p$ is the prediction time of $N_\text{qm9}$ molecules in seconds.}
+	\caption{10 numerical experiments with the lowest \textbf{MAE} picked from 50 experiments, which is 5 model experiments for each selected $K$. The MAEs are in kcal/mol. Null MAE refers to the MAE of the null model (in kcal/mol). $k$ refers to the index of set of labels used for training. KRR refers to (\ref{eq:gaussian_mol}), GAK refers to (\ref{eq:gaussian_atom}), and LLS refers to (\ref{eq:lls}). $f$ is the type of atomic features, $n_{af}$ is the number of atomic features, $n_{mf}$ is the number of molecular features, $t_s$ is the solver time to train the model in seconds, and $t_p$ is the prediction time of $N_\text{qm9}$ molecules in seconds.}
 	\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
 		\hline
 		\textbf{MAE}	& \textbf{\begin{tabular}[c]{@{}c@{}}Null \\ MAE\end{tabular}}	& \textbf{model}	& $k$	& $f$	& $n_{af}$	& $n_{mf}$	& $t_s$	& $t_p$	\\ \hline
