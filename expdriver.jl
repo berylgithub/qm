@@ -316,6 +316,20 @@ function dataqueryref()
     end
     # string formatting example:
     table_null[2:end, end-1:end] = map(el -> @sprintf("%.3f", el), table_null[2:end, end-1:end])
+    # table header example:
+    table_exp[1,:] = [raw"\textbf{MAE}", raw"\textbf{\begin{tabular}[c]{@{}c@{}}Null \\ train \\MAE\end{tabular}}", raw"\textbf{model}", raw"$k$", raw"$f$", raw"$n_{af}$", raw"$n_{mf}$", raw"$t_s$", raw"$t_p$"]
+    # query from setup_info.txt example:
+    for i ∈ axes(table_k, 1)
+        table_k[i, 2] = datainfo[didx[(i-1)*5 + 1], 4]
+    end
+    # taking mean example:
+    for i ∈ axes(table_k, 1)
+        table_k[i, 5] = mean(atominfo[(i-1)*5+1:(i-1)*5+5, 4])
+    end
+    # filling str with latex interp example:
+    for i ∈ eachindex(cidx)
+        table_centers[1, i] = L"$k=$"*string(cidx[i])
+    end
 end
 
 
