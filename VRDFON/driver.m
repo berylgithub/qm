@@ -40,19 +40,26 @@ nfstuck = 50;            % max nf of getting stuck until reset
 path_param = '../data/hyperparamopt/params.txt';
 path_fun = '../data/hyperparamopt/fun.txt';
 path_fbest = '../data/hyperparamopt/best_fun_params.txt';
+path_trackx = '../data/hyperparamopt/xlist.txt'; path_trackf = '../data/hyperparamopt/flist.txt'
+
+disp("init data...")
 data = textread(path_param, "%s");
 fdata = textread(path_fun, "%s");
 x = zeros(length(data)-1, 1);
 % init list of (x,f):
-flist = []; xlist = [];
+if ~exist(path_trackx) && ~exist(path_trackf)
+  flist = []; xlist = [];
+else
+  flist = dlmread(path_trackf); xlist = dlmread(path_trackx);
+end
 for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
 f = str2double(fdata{2,1});
-flist = [flist; f]; xlist = [xlist, x]; % append init point
+[f, xlist, flist] = paramtracker(x, f, xlist, flist); % track init point
 disp("init mintry ops...")
 x = xgenerator(x, f); % contains main loop to generate x given (x,f) and projection to feasible sol
-flist = [flist; f]; xlist = [xlist, x]; % append feasible
+[f, xlist, flist] = paramtracker(x, f, xlist, flist); % track feasible point
 paramwriter(x, path_param); % write x to file
 disp(x) % feasible x
 disp("x has been written to file..")
@@ -67,7 +74,7 @@ unwind_protect
       f = str2double(fdata{2,1}); % get obj value
       disp("mintry ops...")
       x = xgenerator(x, f);
-      flist = [flist; f]; xlist = [xlist, x]; % append feasible
+      [f, xlist, flist] = paramtracker(x, f, xlist, flist) % track feasible
       paramwriter(x, path_param); % write x to file, here x is feasible
       disp(x) % feasible x
       disp("x has been written to file")
@@ -75,6 +82,7 @@ unwind_protect
     pause(0.3) % check new data for each second
   end
 unwind_protect_cleanup
+  disp("running finished")
   [xbest,fbest,info]=mintry('show');
       % This command may also be used inside the loop, 
       % together with an appropiate conditional statement 
@@ -100,4 +108,5 @@ unwind_protect_cleanup
   % write list (xlist, flist) to file:
   disp(xlist)
   disp(flist)
+  dlmwrite(path_trackx, xlist, "\t"); dlmwrite(path_trackf, flist, "\t")
 end_unwind_protect
