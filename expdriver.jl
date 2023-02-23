@@ -225,6 +225,9 @@ function main_obj(x)
     dfnaf[2] = 165 # SOAP
     dfnaf[3] = 140 # FCHL
     max_naf = dfnaf[Int(x[4])]; n_af = Int(round(max_naf*x[1])); n_mf = Int(round(n_af*x[2]))
+    # check [naf,nmf] bounds, makes sure at least 1 feature is selected:
+    nl=1; nh=Inf
+    n_af = max(nl, min(n_af, nh)); n_mf = max(nl, min(n_mf, nh));
     # crawl center_id by index, "data/centers.txt" must NOT be empty:
     centers = readdlm("data/centers.txt")
     maxlen = 95 # this is the total number of precomputed instance #size(centers, 1)

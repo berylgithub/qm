@@ -12,35 +12,7 @@ path_fun = '../data/hyperparamopt/fun.txt';
 path_fun = '../test.txt';
 path_bounds = '../data/hyperparamopt/bounds.txt';
 bounds = dlmread(path_bounds)
-xlo = bounds(1,2); xhi = bounds(2,2);
-xtest = -2.
-xtest = max(xlo, min(xtest, xhi)) %clip to boundary
-isinf(bounds(2,2))
-
-xc = 0.8;
-xl=floor(xc);
-xh=ceil(xc);
-f = xc-xl
-1-f
-
-% appending to matrix (row wise) and finding vector in matrix (row wise)
-A = [[1.111,2.235,3];[4,5,6]];
-A = [A;[-1,-1,-1]]
-b = [1.1111,2.235,3];
-rid = find(ismember(A, b,'rows'))
-dlmwrite(path_fun, b, "\t")
-dlmread(path_fun)
-path_trackx = '../data/hyperparamopt/xlist.txt';
-exist(path_trackx)
-
-xlist = [[1.111 2.235 3];[4 5 6]]
-flist = [1,2];
-x = [1.111,2.235,3]'
-f = 4;
-rid = find(ismember(xlist, x', "rows"))
-if ~isempty(rid)
-    f = flist(rid)
-else
-    xlist = [xlist; x']
-    flist = [flist f]
-end
+%{
+x = [-0.53389,0.17588,2,2,1,0,37,2,-30]'
+x = parambound(x, bounds)
+%}
