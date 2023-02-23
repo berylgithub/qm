@@ -16,3 +16,9 @@ xlo = bounds(1,2); xhi = bounds(2,2);
 xtest = -2.
 xtest = max(xlo, min(xtest, xhi)) %clip to boundary
 isinf(bounds(2,2))
+
+xc = 0.8;
+xl=floor(xc);
+xh=ceil(xc);
+f = xc-xl
+1-f
