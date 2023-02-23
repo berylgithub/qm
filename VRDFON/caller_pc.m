@@ -26,8 +26,15 @@ f = xc-xl
 % appending to matrix (row wise) and finding vector in matrix (row wise)
 A = [[1.111,2.235,3];[4,5,6]];
 A = [A;[-1,-1,-1]]
-b = [1.111,2.235,3];
+b = [1.1111,2.235,3];
 rid = find(ismember(A, b,'rows'))
-A(rid, :)
+dlmwrite(path_fun, b, "\t")
+dlmread(path_fun)
+path_trackx = '../data/hyperparamopt/xlist.txt';
+exist(path_trackx)
 
-dlmwrite(path_fun, A, "\t")
+xlist = [[1.111,2.235,3];[4,5,6]];
+flist = [1,2,3];
+x = [1.1111,2.235,3];
+f = 4;
+[x, f, xlist, flist, rid] = paramtracker(x, f, xlist, flist)
