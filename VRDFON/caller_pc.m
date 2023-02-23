@@ -35,6 +35,12 @@ exist(path_trackx)
 
 xlist = [[1.111 2.235 3];[4 5 6]]
 flist = [1,2];
-x = [1.11111,2.235,3]'
+x = [1.111,2.235,3]'
 f = 4;
-[f, xlist, flist] = paramtracker(x, f, xlist, flist)
+rid = find(ismember(xlist, x', "rows"))
+if ~isempty(rid)
+    f = flist(rid)
+else
+    xlist = [xlist; x']
+    flist = [flist f]
+end

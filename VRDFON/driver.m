@@ -57,7 +57,7 @@ for i=2:length(data)
 end
 f = str2double(fdata{2,1});
 disp("init mintry ops...")
-[x, f, xlist, flist] = paramtracker(x, f, xlist, flist) % main loop and (x,f) trackers
+[x, f, xlist, flist] = paramtracker(x, f, xlist, flist); % main loop and (x,f) trackers, this doesn't necesssarily return new f (although always new x)
 paramwriter(x, path_param); % write x to file
 disp(x) % feasible x
 disp("x has been written to file..")
@@ -70,6 +70,7 @@ unwind_protect
       disp("new incoming data")
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
+      xlist = [xlist; x']; flist = [flist f]; % append lists
       disp("mintry ops")
       [x, f, xlist, flist] = paramtracker(x, f, xlist, flist) % main loop and (x,f) trackers
       paramwriter(x, path_param); % write x to file
