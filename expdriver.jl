@@ -224,10 +224,10 @@ function main_obj(x)
     dfnaf[1] = 51 # ACSF
     dfnaf[2] = 165 # SOAP
     dfnaf[3] = 140 # FCHL
-    max_naf = dfnaf[Int(x[4])]; n_af = Int(round(max_naf*x[1])); n_mf = Int(round(n_af*x[2]))
+    max_naf = dfnaf[Int(x[4])]; n_af = round(max_naf*x[1]); n_mf = round(n_af*x[2])
     # check [naf,nmf] bounds, makes sure at least 1 feature is selected:
     nl=1; nh=Inf
-    n_af = max(nl, min(n_af, nh)); n_mf = max(nl, min(n_mf, nh));
+    n_af = Int(max(nl, min(n_af, nh))); n_mf = Int(max(nl, min(n_mf, nh)));
     # crawl center_id by index, "data/centers.txt" must NOT be empty:
     centers = readdlm("data/centers.txt")
     maxlen = 95 # this is the total number of precomputed instance #size(centers, 1)
@@ -255,7 +255,7 @@ function main_obj(x)
     model = lmodel[Int(x[8])]
     cσ = float(x[9]) # Gausssian scaler
 
-    println([n_af, n_mf, feature_name, feature_path, model])
+    println([n_af, n_mf, feature_name, normalize_atom, normalize_mol, feature_path, model])
     #= println([uid, kid, uk_id])
     display(center)
     display(cσ) =#
