@@ -43,14 +43,18 @@ path_fbest = '../data/hyperparamopt/best_fun_params.txt';
 data = textread(path_param, "%s");
 fdata = textread(path_fun, "%s");
 x = zeros(length(data)-1, 1);
+% init list of (x,f):
+flist = []; xlist = [];
 for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
 f = str2double(fdata{2,1});
+flist = [flist; f]; xlist = [xlist, x]; % append init point
 disp("init mintry ops...")
 x = xgenerator(x, f); % contains main loop to generate x given (x,f) and projection to feasible sol
-disp(x) % feasible x
+flist = [flist; f]; xlist = [xlist, x]; % append feasible
 paramwriter(x, path_param); % write x to file
+disp(x) % feasible x
 disp("x has been written to file..")
 %nf = 1;
 % next ops:
@@ -63,8 +67,9 @@ unwind_protect
       f = str2double(fdata{2,1}); % get obj value
       disp("mintry ops...")
       x = xgenerator(x, f);
-      disp(x) % feasible x
+      flist = [flist; f]; xlist = [xlist, x]; % append feasible
       paramwriter(x, path_param); % write x to file, here x is feasible
+      disp(x) % feasible x
       disp("x has been written to file")
     end
     pause(0.3) % check new data for each second
@@ -92,4 +97,7 @@ unwind_protect_cleanup
       fputs(file_id, strout);
       fclose(file_id);
   end
+  % write list (xlist, flist) to file:
+  disp(xlist)
+  disp(flist)
 end_unwind_protect

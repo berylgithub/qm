@@ -22,3 +22,12 @@ xl=floor(xc);
 xh=ceil(xc);
 f = xc-xl
 1-f
+
+% appending to matrix (row wise) and finding vector in matrix (row wise)
+A = [[1.111,2.235,3];[4,5,6]];
+A = [A;[-1,-1,-1]]
+b = [1.111,2.235,3];
+rid = find(ismember(A, b,'rows'))
+A(rid, :)
+
+dlmwrite(path_fun, A, "\t")
