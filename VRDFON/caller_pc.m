@@ -33,8 +33,8 @@ dlmread(path_fun)
 path_trackx = '../data/hyperparamopt/xlist.txt';
 exist(path_trackx)
 
-xlist = [[1.111,2.235,3];[4,5,6]];
-flist = [1,2,3];
-x = [1.1111,2.235,3];
+xlist = [[1.111 2.235 3];[4 5 6]]
+flist = [1,2];
+x = [1.11111,2.235,3]'
 f = 4;
-[x, f, xlist, flist, rid] = paramtracker(x, f, xlist, flist)
+[f, xlist, flist] = paramtracker(x, f, xlist, flist)

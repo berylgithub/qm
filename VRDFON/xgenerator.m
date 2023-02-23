@@ -1,3 +1,4 @@
+% main loop to generate feasible x given (x,f)
 function x=xgenerator(x, f)
     feas=false;
     %stuckcount=1;
@@ -15,7 +16,7 @@ function x=xgenerator(x, f)
                 x(i) = ceil(x(i));
             end
         end
-        feas=paramcheck(x) % replace with projection
+        feas=paramcheck(x); % replace with projection
         if !feas
             f = 100.; % set supremum MAE
         end

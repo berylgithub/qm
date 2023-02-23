@@ -56,10 +56,8 @@ for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
 f = str2double(fdata{2,1});
-[f, xlist, flist] = paramtracker(x, f, xlist, flist); % track init point
 disp("init mintry ops...")
-x = xgenerator(x, f); % contains main loop to generate x given (x,f) and projection to feasible sol
-[f, xlist, flist] = paramtracker(x, f, xlist, flist); % track feasible point
+[x, f, xlist, flist] = paramtracker(x, f, xlist, flist) % main loop and (x,f) trackers
 paramwriter(x, path_param); % write x to file
 disp(x) % feasible x
 disp("x has been written to file..")
@@ -68,14 +66,13 @@ disp("x has been written to file..")
 unwind_protect
   while true
     newdata = textread(path_fun, "%s");
-    if (dir(path_fun).bytes > 0) && (~strcmp(newdata{1,1}, fdata{1,1})) % check if the file is not empty and the file is new; {1,1} is the uid
+    if (dir(path_fun).bytes > 0) && (~strcmp(newdata{1,1}, fdata{1,1})) % check if the new file is not empty and the uid is new; {1,1} is the uid
       disp("new incoming data")
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
-      disp("mintry ops...")
-      x = xgenerator(x, f);
-      [f, xlist, flist] = paramtracker(x, f, xlist, flist) % track feasible
-      paramwriter(x, path_param); % write x to file, here x is feasible
+      disp("mintry ops")
+      [x, f, xlist, flist] = paramtracker(x, f, xlist, flist) % main loop and (x,f) trackers
+      paramwriter(x, path_param); % write x to file
       disp(x) % feasible x
       disp("x has been written to file")
     end

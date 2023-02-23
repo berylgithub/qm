@@ -1,3 +1,4 @@
+% writes x to file
 function paramwriter(x, path_param)
     uid = rand(1);
     strout = num2str(uid);
