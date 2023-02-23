@@ -47,21 +47,26 @@ for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
 f = str2double(fdata{2,1});
-x = xgenerator(x, f) % contains main loop to generate x given (x,f) and projection to feasible sol
-disp(x)
-paramwriter(x, path_param) % write x to file
+disp("init mintry ops...")
+x = xgenerator(x, f); % contains main loop to generate x given (x,f) and projection to feasible sol
+disp(x) % feasible x
+paramwriter(x, path_param); % write x to file
+disp("x has been written to file..")
 %nf = 1;
 % next ops:
 unwind_protect
   while true
     newdata = textread(path_fun, "%s");
     if (dir(path_fun).bytes > 0) && (~strcmp(newdata{1,1}, fdata{1,1})) % check if the file is not empty and the file is new; {1,1} is the uid
+      disp("new incoming data")
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
-      x = xgenerator(x, f)
-      paramwriter(x, path_param) % write x to file, here x is feasible
+      disp("mintry ops...")
+      x = xgenerator(x, f);
+      disp(x) % feasible x
+      paramwriter(x, path_param); % write x to file, here x is feasible
+      disp("x has been written to file")
     end
-    %nf += 1
     pause(0.3) % check new data for each second
   end
 unwind_protect_cleanup
