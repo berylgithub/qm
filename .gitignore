@@ -5,6 +5,8 @@ VRDFON/*
 !VRDFON/paramcheck.m
 !VRDFON/caller_pc.m
 !VRDFON/parambound.m
+!VRDFON/xgenerator.m
+!VRDFON/paramwriter.m
 *.aux
 *.log
 *.pdf

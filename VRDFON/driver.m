@@ -47,71 +47,19 @@ for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
 f = str2double(fdata{2,1});
-feas=false;
-while feas==false % check for feasibility:
-  x=mintry(x,f); % the solver
-  % round x by probablity:
-  for i=3:length(x)
-    p=rand(1);
-    if p < .5; % 50% chance
-      x(i) = floor(x(i));
-    else
-      x(i) = ceil(x(i));
-    end
-  end
-  feas=paramcheck(x) % check feasibility, repeat until feasible
-  if !feas
-    f = 100.; % set supremum MAE
-  end
-end
+x = xgenerator(x, f) % contains main loop to generate x given (x,f) and projection to feasible sol
 disp(x)
-uid = rand(1);
-strout = num2str(uid);
-for i=1:length(x)
-  strout = strcat(strout,"\t",num2str(x(i)));
-end
-file_id = fopen(path_param, 'w');
-fputs(file_id, strout);
-fclose(file_id);
-nf = 1;
+paramwriter(x, path_param) % write x to file
+%nf = 1;
 % next ops:
 unwind_protect
   while true
     newdata = textread(path_fun, "%s");
-    if (dir(path_fun).bytes > 0) && (~strcmp(newdata{1,1}, fdata{1,1})) % check if the file is empty and the file is new; {1,1} is the uid
+    if (dir(path_fun).bytes > 0) && (~strcmp(newdata{1,1}, fdata{1,1})) % check if the file is not empty and the file is new; {1,1} is the uid
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
-      feas=false;
-      %stuckcount=1;
-      while feas==false
-        disp(feas)
-        disp(x)
-        disp(f)
-        x=mintry(x,f); % the solver
-        % round x by probablity:
-        for i=3:length(x)
-          p=rand(1);
-          if p < .5; % 50% chance
-            x(i) = floor(x(i));
-          else
-            x(i) = ceil(x(i));
-          end
-        end
-        feas=paramcheck(x) % check feasibility, repeat until feasible
-        if !feas
-          f = 100.; % set supremum MAE
-        end
-      end
-      % write x to file, here x is feasible
-      disp(x)
-      uid = rand(1);
-      strout = num2str(uid);
-      for i=1:length(x)
-        strout = strcat(strout,"\t",num2str(x(i)));
-      end
-      file_id = fopen(path_param, 'w');
-      fputs(file_id, strout);
-      fclose(file_id);
+      x = xgenerator(x, f)
+      paramwriter(x, path_param) % write x to file, here x is feasible
     end
     %nf += 1
     pause(0.3) % check new data for each second
