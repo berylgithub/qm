@@ -40,7 +40,9 @@ nfstuck = 50;            % max nf of getting stuck until reset
 path_param = '../data/hyperparamopt/params.txt';
 path_fun = '../data/hyperparamopt/fun.txt';
 path_fbest = '../data/hyperparamopt/best_fun_params.txt';
-path_trackx = '../data/hyperparamopt/xlist.txt'; path_trackf = '../data/hyperparamopt/flist.txt'
+path_trackx = '../data/hyperparamopt/xlist.txt'; 
+path_trackxraw = '../data/hyperparamopt/xrawlist.txt';
+path_trackf = '../data/hyperparamopt/flist.txt'
 path_bounds = '../data/hyperparamopt/bounds.txt';
 
 disp("init data...")
@@ -49,19 +51,21 @@ data = textread(path_param, "%s");
 fdata = textread(path_fun, "%s");
 x = zeros(length(data)-1, 1);
 % init list of (x,f):
-if ~exist(path_trackx) && ~exist(path_trackf)
-  flist = []; xlist = [];
+if ~exist(path_trackx) && ~exist(path_trackxraw) && ~exist(path_trackf)
+  flist = []; xlist = []; xrawlist = [];
 else
-  flist = dlmread(path_trackf); xlist = dlmread(path_trackx);
+  flist = dlmread(path_trackf); xlist = dlmread(path_trackx); xrawlist = dlmread(path_trackxraw);
 end
 for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
-f = str2double(fdata{2,1});
+f = str2double(fdata{2,1}); % here penalty term f'=sum(abs(x-xraw)) = 0
 disp("init mintry ops...")
-[x, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); % main loop and (x,f) trackers
+[x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); % main loop and (x,f) trackers
 paramwriter(x, path_param); % write x to file
-disp(x) % feasible x
+disp("[x, xraw]= ")
+disp([x xraw]) % feasible x
+disp(sum(abs(x-xraw)))
 disp("x has been written to file..")
 %nf = 1;
 % next ops:
@@ -72,11 +76,15 @@ unwind_protect
       disp("new incoming data")
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
-      xlist = [xlist; x']; flist = [flist f]; % append lists
+      f += sum(abs(x-xraw)); % add penalty term
+      disp("[f, penalty] = ")
+      disp([f, sum(abs(x-xraw))])
+      xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f]; % append lists
       disp("mintry ops")
-      [x, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds) % main loop and (x,f) trackers
+      [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); % main loop and (x,f) trackers
       paramwriter(x, path_param); % write x to file
-      disp(x) % feasible x
+      disp("[x, xraw]= ")
+      disp([x xraw]) % feasible x
       disp("x has been written to file")
     end
     pause(0.3) % check new data for each second
@@ -108,5 +116,5 @@ unwind_protect_cleanup
   % write list (xlist, flist) to file:
   disp(xlist)
   disp(flist)
-  dlmwrite(path_trackx, xlist, "\t"); dlmwrite(path_trackf, flist, "\t")
+  dlmwrite(path_trackx, xlist, "\t"); dlmwrite(path_trackxraw, xrawlist, "\t"); dlmwrite(path_trackf, flist, "\t");
 end_unwind_protect

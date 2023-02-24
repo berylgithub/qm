@@ -16,3 +16,9 @@ bounds = dlmread(path_bounds)
 x = [-0.53389,0.17588,2,2,1,0,37,2,-30]'
 x = parambound(x, bounds)
 %}
+
+xraw = x = rand(1,3)
+xdash = ones(1,3)
+x += xdash
+sum(abs(xraw-x))
+disp([x' xdash'])
