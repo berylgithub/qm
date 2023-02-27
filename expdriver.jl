@@ -52,10 +52,11 @@ end
 
 function caller_fit()
     # get the 10 best:
-    atom_info = readdlm("result/exp_reduced_energy/atomref_info.txt")[4:end, :] # the first 3 is excluded since theyr noise from prev exps
+    atom_info = readdlm("result/exp_reduced_energy/atomref_info.txt")[4:98, :] # the first 3 is excluded since theyr noise from prev exps
     MAVs = Vector{Float64}(atom_info[:, 3]) # 3:=training MAE, 4:=training+testing MAE
     sid = sortperm(MAVs) # indices from sorted MAV
-    best10 = atom_info[sid[1:10], :] # 10 best
+    #best10 = atom_info[sid[1:10], :] # 10 best
+    best10 = atom_info[sid, :]
     display(best10)
     # compute total atomic energy:
     E_atom = Matrix{Float64}(best10[:, end-4:end]) # 5 length vector
@@ -114,11 +115,14 @@ function caller_fit()
         data_setup("exp_reduced_energy", naf, nmf, 3, 300, "data/qm9_dataset_old.jld", featfile, featname)
         GC.gc()
         # loop the model:
-        for model ∈ models
+        fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld";
+                            model="GAK", E_atom=E_null, center_ids=center, uid=uid, kid=kid)
+        GC.gc()
+#=         for model ∈ models
             fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld";
                             model=model, E_atom=E_null, center_ids=center, uid=uid, kid=kid)
             GC.gc()
-        end
+        end =#
     end
 end
 
