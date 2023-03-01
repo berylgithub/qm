@@ -290,13 +290,18 @@ function hyperparamopt_jl()
         print(i, "\t", a, "\t",  c, "   \t")
         @show f(a,c)
     end =#
-    g(x,a) = sum(x^2 + a^2) 
-    ho = @hyperopt for i=20, sampler = RandomSampler(), x = LinRange(0,5,1000), a = LinRange(0,5,1000)
+    g(x,a) = sum(x^2 + a^2); gs = []
+    # this thing automatically get the best point if canceled (ctrl+c)
+    ho = @hyperopt for i=50, sampler = RandomSampler(), x = LinRange(0,5,1000), a = LinRange(0,5,1000)
         print(i, "\t", x, "\t", a)
+        sleep(2)
+        #push!(gs, g(x,a))
         @show g(x,a)
     end 
     best_params, min_f = ho.minimizer, ho.minimum
     println([best_params, min_f])
+    #display(gs)
+    println(g(best_params[1], best_params[2]))
 end
 
 # script to write string given a vector{string}
