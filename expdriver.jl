@@ -266,7 +266,7 @@ function main_obj(x)
     display(center)
     display(cσ) =#
 
-    #= foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
+    foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
     data_setup(foldername, n_af, n_mf, Int(x[3]), 300, file_dataset, feature_path, feature_name; 
         normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 2)
     GC.gc() # always gc after each run
@@ -279,7 +279,7 @@ function main_obj(x)
     path_result = "result/$foldername/err_$foldername.txt"
     MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
     f_atom = E_atom = nothing # clear var
-    GC.gc() # always gc after each run =#
+    GC.gc() # always gc after each run
     return MAE
 end
 
