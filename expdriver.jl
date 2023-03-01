@@ -1,3 +1,5 @@
+using Hyperopt
+
 include("alouEt.jl")
 
 function caller_ds()
@@ -280,6 +282,21 @@ function main_obj(x)
     f_atom = E_atom = nothing # clear var
     GC.gc() # always gc after each run
     return MAE
+end
+
+function hyperparamopt_jl()
+    #= f(a,c) = sum(@. (a-3)^2 + (c-100)^2) # Function to minimize
+    ho = @hyperopt for i=50, sampler = RandomSampler(), a = LinRange(1,5,1000), c = exp10.(LinRange(-1,3,1000))
+        print(i, "\t", a, "\t",  c, "   \t")
+        @show f(a,c)
+    end =#
+    g(x,a) = sum(x^2 + a^2) 
+    ho = @hyperopt for i=20, sampler = RandomSampler(), x = LinRange(0,5,1000), a = LinRange(0,5,1000)
+        print(i, "\t", x, "\t", a)
+        @show g(x,a)
+    end 
+    best_params, min_f = ho.minimizer, ho.minimum
+    println([best_params, min_f])
 end
 
 # script to write string given a vector{string}
