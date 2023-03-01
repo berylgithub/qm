@@ -295,47 +295,55 @@ julia version of hyperparameteropt
 """
 function hyperparamopt_jl()
     path_tracker="data/hyperparamopt/tracker_jl.txt"; path_best = "data/hyperparamopt/best_jl.txt"
-    f(naf, nmf, ns, fn, na, nm, cid, model, c) = main_obj([naf, nmf, ns, fn, na, nm, cid, model, c])# f(x) wrapper
-    #f(0.5, 0.5, 3, 1.0, 1.0, 0.0, 38., 5.0, 32.)
+    f(naf, nmf, ns, fn, na, nm, cid, model, c) = main_obj([naf, nmf, ns, fn, na, nm, cid, model, c]) # f(x) wrapper
     # only RandomSampler() will automatically get the best point if canceled (ctrl+c)
-    g(x,a) = sum(x^2 + a^2)
     # initialize trackers:
     if isfile(path_tracker)
+        println("previous tracker exists!")
         indata = readdlm(path_tracker)
-        gs = indata[:, 1]; xs = indata[:, 2:end]; xs = [xs[i,:] for i ∈ axes(xs, 1)]
+        fs = indata[:, 1]; xs = indata[:, 2:end]; xs = [xs[i,:] for i ∈ axes(xs, 1)]
     else
-        gs = []; xs = []
+        println("tracker does not exist, initializing!")
+        fs = []; xs = []
     end
-    display(gs)
-    display(xs)
     # hyperparameteropt:
-    ho = @hyperopt for resources=50, sampler=Hyperband(R=100, η=3, inner=RandomSampler()), x = LinRange(1,5,5), a = LinRange(1,5,5)
+    # declare the possible values, try fixing ns=3, model=5, na=1, nm=1, cid=38:
+    ns=3; model=5; na=1; nm=1; cid=38;
+    ho = @hyperopt for resources=256_000, sampler=Hyperband(R=256_000, η=3, inner=RandomSampler()), 
+    naf = LinRange(0,1,100), nmf = LinRange(0,1,100),
+    fn = LinRange(1,3,3), c = LinRange(1,256,256)
         #sleep(1)
         print(resources,"\t")
         if !(state === nothing)
-            x,a = state
+            naf, nmf, fn, c = state
         end
-        xv = [x,a]
+        xv = [naf, nmf, fn, c]
         xid = findfirst(xel->xel == xv, xs)
         if xid !== nothing # if prev saved iterate is found, return the found point
             println("prev point found!")
-            gv = gs[xid]
+            fv = fs[xid]
         else # new point, compute new objective
-            @show gv = g(x,a)
-            push!(gs, gv); push!(xs, xv) # tracker
+            @show fv = f(naf, nmf, ns, fn, na, nm, cid, model, c)
+            push!(fs, fv); push!(xs, xv) # tracker
         end
-        gv, xv # return values (f,x)
+        fv, xv # return values (f,x)
     end
-    best_params, min_f = ho.minimizer, ho.minimum # this returns something only if it's not abruptly stopped
-    # write best:
-    display(gs)
-    minf, minid = findmin(gs)
+    #best_params, min_f = ho.minimizer, ho.minimum # this returns something only if it's not abruptly stopped
+    # check best:
+    minf, minid = findmin(fs)
     minimizer = xs[minid]
-    writedlm(path_best, transpose(vcat(minf, minimizer)))
     display([minf, minimizer])
+    if isfile(path_best)
+        best = readdlm(path_best)
+        if minf < best[1,1] # write the new best
+            writedlm(path_best, transpose(vcat(minf, minimizer)))
+        end
+    else # write immediately, since it's empty
+        writedlm(path_best, transpose(vcat(minf, minimizer)))
+    end
     # write tracker:
     xs = mapreduce(permutedims, vcat, xs)
-    out = hcat(gs, xs)
+    out = hcat(fs, xs)
     writedlm(path_tracker, out)
 end
 
