@@ -261,12 +261,12 @@ function main_obj(x)
     model = lmodel[Int(x[8])]
     cσ = float(x[9]) # Gausssian scaler
 
-    println([n_af, n_mf, feature_name, normalize_atom, normalize_mol, feature_path, model])
+    println([n_af, n_mf, feature_name, normalize_atom, normalize_mol, feature_path, model, cσ])
     #= println([uid, kid, uk_id])
     display(center)
     display(cσ) =#
 
-    foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
+    #= foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
     data_setup(foldername, n_af, n_mf, Int(x[3]), 300, file_dataset, feature_path, feature_name; 
         normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 2)
     GC.gc() # always gc after each run
@@ -278,30 +278,65 @@ function main_obj(x)
     # get MAE:
     path_result = "result/$foldername/err_$foldername.txt"
     MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
-
     f_atom = E_atom = nothing # clear var
-    GC.gc() # always gc after each run
+    GC.gc() # always gc after each run =#
     return MAE
 end
 
+"""
+wraps the function to compute obj, checks from tracker if it's not empty
+"""
+function fwrapper(naf, nmf, ns, fn, na, nm, cid, model, c)
+    
+end
+
+"""
+julia version of hyperparameteropt
+"""
 function hyperparamopt_jl()
-    #= f(a,c) = sum(@. (a-3)^2 + (c-100)^2) # Function to minimize
-    ho = @hyperopt for i=50, sampler = RandomSampler(), a = LinRange(1,5,1000), c = exp10.(LinRange(-1,3,1000))
-        print(i, "\t", a, "\t",  c, "   \t")
-        @show f(a,c)
-    end =#
-    g(x,a) = sum(x^2 + a^2); gs = []
-    # this thing automatically get the best point if canceled (ctrl+c)
-    ho = @hyperopt for i=50, sampler = RandomSampler(), x = LinRange(0,5,1000), a = LinRange(0,5,1000)
-        print(i, "\t", x, "\t", a)
-        sleep(2)
-        #push!(gs, g(x,a))
-        @show g(x,a)
-    end 
-    best_params, min_f = ho.minimizer, ho.minimum
-    println([best_params, min_f])
-    #display(gs)
-    println(g(best_params[1], best_params[2]))
+    path_tracker="data/hyperparamopt/tracker_jl.txt"; path_best = "data/hyperparamopt/best_jl.txt"
+    f(naf, nmf, ns, fn, na, nm, cid, model, c) = main_obj([naf, nmf, ns, fn, na, nm, cid, model, c])# f(x) wrapper
+    #f(0.5, 0.5, 3, 1.0, 1.0, 0.0, 38., 5.0, 32.)
+    # only RandomSampler() will automatically get the best point if canceled (ctrl+c)
+    g(x,a) = sum(x^2 + a^2)
+    # initialize trackers:
+    if isfile(path_tracker)
+        indata = readdlm(path_tracker)
+        gs = indata[:, 1]; xs = indata[:, 2:end]; xs = [xs[i,:] for i ∈ axes(xs, 1)]
+    else
+        gs = []; xs = []
+    end
+    display(gs)
+    display(xs)
+    # hyperparameteropt:
+    ho = @hyperopt for resources=50, sampler=Hyperband(R=100, η=3, inner=RandomSampler()), x = LinRange(1,5,5), a = LinRange(1,5,5)
+        #sleep(1)
+        print(resources,"\t")
+        if !(state === nothing)
+            x,a = state
+        end
+        xv = [x,a]
+        xid = findfirst(xel->xel == xv, xs)
+        if xid !== nothing # if prev saved iterate is found, return the found point
+            println("prev point found!")
+            gv = gs[xid]
+        else # new point, compute new objective
+            @show gv = g(x,a)
+            push!(gs, gv); push!(xs, xv) # tracker
+        end
+        gv, xv # return values (f,x)
+    end
+    best_params, min_f = ho.minimizer, ho.minimum # this returns something only if it's not abruptly stopped
+    # write best:
+    display(gs)
+    minf, minid = findmin(gs)
+    minimizer = xs[minid]
+    writedlm(path_best, transpose(vcat(minf, minimizer)))
+    display([minf, minimizer])
+    # write tracker:
+    xs = mapreduce(permutedims, vcat, xs)
+    out = hcat(gs, xs)
+    writedlm(path_tracker, out)
 end
 
 # script to write string given a vector{string}
