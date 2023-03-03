@@ -17,8 +17,6 @@ x = [-0.53389,0.17588,2,2,1,0,37,2,-30]'
 x = parambound(x, bounds)
 %}
 
-xraw = x = rand(1,3)
-xdash = ones(1,3)
-x += xdash
-sum(abs(xraw-x))
-disp([x' xdash'])
+lb = 0.; ub =1.;
+x = rand(5,1) - 0.5
+x = min(ub, max(x, lb))

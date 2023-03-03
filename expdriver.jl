@@ -143,8 +143,6 @@ function hyperparamopt(;init=false, init_data=[])
             println("init starts, computing fobj...")
             x = [20/51, 16/20, 3, 1, 1, 1, 38, 5, 32.0] # best hyperparam from pre-hyperparamopt exps
             f = main_obj(x)
-            #= x = [100., -100., 50.]
-            f = sum(x .^ 2) + x[3] =#
         else
             println("init starts, initial fobj and points known")
             x = init_data[2:end]
@@ -221,23 +219,22 @@ model: ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
 function main_obj(x)
     #display(x)
     # process params:
+    # determine n_basis:
+    max_ns = 10; ns = Int(max(1., round(x[3]*max_ns)))
     # determine feature_name and path:
     dftype = Dict()
     dftype[1] = "ACSF"; dftype[2] = "SOAP"; dftype[3] = "FCHL";
-    feature_name = dftype[Int(x[4])]; feature_path = "data/"*feature_name*".jld";
+    fname_num = Int(max(1., round(x[4]*3.))) ;feature_name = dftype[fname_num]; feature_path = "data/"*feature_name*".jld";
     # determine n_af and n_mf:
     dfnaf = Dict() # determines max n_af
     dfnaf[1] = 51 # ACSF
     dfnaf[2] = 165 # SOAP
     dfnaf[3] = 140 # FCHL
-    max_naf = dfnaf[Int(x[4])]; n_af = round(max_naf*x[1]); n_mf = round(n_af*x[2])
-    # check [naf,nmf] bounds, makes sure at least 1 feature is selected:
-    nl=1; nh=Inf
-    n_af = Int(max(nl, min(n_af, nh))); n_mf = Int(max(nl, min(n_mf, nh)));
+    max_naf = dfnaf[fname_num]; n_af = Int(max(1, round(max_naf*x[1]))); n_mf = Int(max(1, round(n_af*x[2])))
     # crawl center_id by index, "data/centers.txt" must NOT be empty:
     centers = readdlm("data/centers.txt")
     maxlen = 95 # this is the total number of precomputed instance #size(centers, 1)
-    center_idx = Int(x[7])
+    center_idx = Int(round(x[7]*maxlen))
     uid=""; kid= ""; uk_id = ""
     if 0 < center_idx ≤ maxlen 
         uid = centers[center_idx,1]; kid = centers[center_idx,2]; uk_id = join([uid,"_",kid])
@@ -255,19 +252,19 @@ function main_obj(x)
     # determine normalize switches:
     norms = Dict()
     norms[0] = false; norms[1] = true
-    normalize_atom = norms[Int(x[5])]; normalize_mol = norms[Int(x[6])];
+    normalize_atom = norms[Int(round(x[5]))]; normalize_mol = norms[Int(round(x[6]))];
     # determine model:
     lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
-    model = lmodel[Int(x[8])]
-    cσ = float(x[9]) # Gausssian scaler
+    model = lmodel[Int(max(1., round(x[8]*5.)))]
+    cσ = float(min(1e+10,round(1. / x[9]))) # Gausssian scaler
 
-    println([n_af, n_mf, feature_name, normalize_atom, normalize_mol, feature_path, model, cσ])
+    println([n_af, n_mf, ns, feature_name, normalize_atom, normalize_mol, center_idx, model, cσ])
     #= println([uid, kid, uk_id])
     display(center)
     display(cσ) =#
 
-    foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
-    data_setup(foldername, n_af, n_mf, Int(x[3]), 300, file_dataset, feature_path, feature_name; 
+    #= foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
+    data_setup(foldername, n_af, n_mf, ns, 300, file_dataset, feature_path, feature_name; 
         normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 2)
     GC.gc() # always gc after each run
     fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=true)
@@ -280,14 +277,28 @@ function main_obj(x)
     MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
     f_atom = E_atom = nothing # clear var
     GC.gc() # always gc after each run
-    return MAE
+    return MAE =#
 end
 
 """
-wraps the function to compute obj, checks from tracker if it's not empty
+project parameters to boudaries, given 2 × n boundary matrix
 """
-function fwrapper(naf, nmf, ns, fn, na, nm, cid, model, c)
-    
+function parambound!(x, bounds)
+    # round x by probablity:
+    for i ∈ eachindex(x)[3:end]
+        p = rand(1);
+        xl = floor(x[i]);
+        f = x[i] - xl;
+        if p < 1-f; # larger chance to be rounded to the closest int
+            x[i] = xl;
+        else
+            x[i] = ceil(x[i]);
+        end
+    end
+    # clip to boundary:
+    for i ∈ eachindex(x)
+        x[i] = max(bounds[1,i], min(x[i], bounds[2,i]))
+    end
 end
 
 """
