@@ -42,11 +42,11 @@ path_fun = '../data/hyperparamopt/fun.txt';
 path_fbest = '../data/hyperparamopt/best_fun_params.txt';
 path_trackx = '../data/hyperparamopt/xlist.txt'; 
 path_trackxraw = '../data/hyperparamopt/xrawlist.txt';
-path_trackf = '../data/hyperparamopt/flist.txt'
+path_trackf = '../data/hyperparamopt/flist.txt';
 path_bounds = '../data/hyperparamopt/bounds.txt';
 
 disp("init data...")
-bounds = dlmread(path_bounds) % var bounds
+bounds = dlmread(path_bounds); % var bounds
 data = textread(path_param, "%s");
 fdata = textread(path_fun, "%s");
 x = zeros(length(data)-1, 1);
