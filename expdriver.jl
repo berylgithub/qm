@@ -141,7 +141,7 @@ function hyperparamopt(;init=false, init_data=[])
         uid = replace(string(Dates.now()), ":" => ".")
         if isempty(init_data)
             println("init starts, computing fobj...")
-            x = [20/51, 16/20, 3, 1, 1, 1, 38, 5, 32.0] # best hyperparam from pre-hyperparamopt exps
+            x = [20/51, 16/20, 3/10, 1/3, 1/1, 1/1, 38/95, 5/5, 1/32] # best hyperparam from pre-hyperparamopt exps
             f = main_obj(x)
         else
             println("init starts, initial fobj and points known")
@@ -212,6 +212,7 @@ par_fit_atom = [center_ids] # center_ids = 0 → use
 par_fit = [model, cσ]
 params = [n_af, n_mf, n_basis, feature_name, normalize_atom, normalize_mol,center_ids,model, cσ]
            1       2   3           4           5               6               7       8       9
+bounds = [1,var], [1,var], [1,10], [1,3],   [0,1],          [0,1]           [0,95],    [1,5], [1,1e+10]     
 naf, nmf in percentage, e.g., .5 -> .5*max(naf("ACSF"))
 feature name: 1=ACSF, 2=SOAP, 3=FCHL
 model: ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
@@ -263,7 +264,7 @@ function main_obj(x)
     display(center)
     display(cσ) =#
 
-    #= foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
+    foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
     data_setup(foldername, n_af, n_mf, ns, 300, file_dataset, feature_path, feature_name; 
         normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 2)
     GC.gc() # always gc after each run
@@ -277,7 +278,7 @@ function main_obj(x)
     MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
     f_atom = E_atom = nothing # clear var
     GC.gc() # always gc after each run
-    return MAE =#
+    return MAE
 end
 
 """
