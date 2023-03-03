@@ -6,7 +6,9 @@
 % function to generate feasible x given (x,f)
 function [x,xraw] = xgenerator(x, f, bounds)
     xraw=x=mintry(x,f); % the solver, this gives x raw
-    % round x by probablity:
+    x = min(1., max(x, 0.)); % now all variables are (0, 1), the translation is handled by Julia
+    % this one is mixed variable types mode, larger search space
+    %{
     for i = 3:length(x)
         p = rand(1);
         xl = floor(x(i));
@@ -19,6 +21,8 @@ function [x,xraw] = xgenerator(x, f, bounds)
     end
     x=parambound(x, bounds); % project to bounds, feasible guaranteed, this is processed x
 
+    }%
+    
     % this one is "check for feasibility" version instead of projection: 
     %{
     feas=false;

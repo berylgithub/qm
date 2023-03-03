@@ -162,3 +162,6 @@ varlist that must be emptied on each experiment run:
 22.02.2023:
 - need to change paramcheck into parambound
 - save list of (f,x) using the driver.m instead of jl
+
+03.03.2023:
+- use midpoint for initialization: change Inf bounds.
