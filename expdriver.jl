@@ -141,7 +141,8 @@ function hyperparamopt(;init=false, init_data=[])
         uid = replace(string(Dates.now()), ":" => ".")
         if isempty(init_data)
             println("init starts, computing fobj...")
-            x = [20/51, 16/20, 3/10, 1/3, 1/1, 1/1, 38/95, 5/5, 1/32] # best hyperparam from pre-hyperparamopt exps
+            #x = [20/51, 16/20, 3/10, 1/3, 1/1, 1/1, 38/95, 5/5, 1/32] # best hyperparam from pre-hyperparamopt exps
+            x = repeat([0.5], 9) # midpoint
             f = main_obj(x)
         else
             println("init starts, initial fobj and points known")
