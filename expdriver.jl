@@ -321,10 +321,10 @@ function hyperparamopt_jl()
     end
     # hyperparameteropt:
     # declare the possible values, try fixing ns=3, model=5, na=1, nm=1, cid=38:
-    ns=3; model=5; na=1; nm=1; cid=38;
-    ho = @hyperopt for resources=256_000, sampler=Hyperband(R=256_000, η=3, inner=RandomSampler()), 
-    naf = LinRange(0,1,100), nmf = LinRange(0,1,100),
-    fn = LinRange(1,3,3), c = LinRange(1,256,256)
+    ns=3/5; model=5/5; na=1/1; nm=1/1; cid=38/95;
+    ho = @hyperopt for resources=100, sampler=Hyperband(R=100, η=3, inner=BOHB(dims=[Hyperopt.Continuous(), Hyperopt.Continuous(), Hyperopt.Continuous(), Hyperopt.Continuous()])), 
+    naf = LinRange(0,1,101), nmf = LinRange(0,1,101),
+    fn = [1/3, 2/3, 3/3], c = LinRange(0,1,101)
         #sleep(1)
         print(resources,"\t")
         if !(state === nothing)
@@ -338,6 +338,7 @@ function hyperparamopt_jl()
         else # new point, compute new objective
             @show fv = f(naf, nmf, ns, fn, na, nm, cid, model, c)
             push!(fs, fv); push!(xs, xv) # tracker
+            open(path_tracker, "a") do io writedlm(io, ) end # write to file directly too, in case of execution kill
         end
         fv, xv # return values (f,x)
     end
@@ -359,6 +360,21 @@ function hyperparamopt_jl()
     out = hcat(fs, xs)
     writedlm(path_tracker, out)
 end
+
+function test_BOHB()
+    path_tracker="data/hyperparamopt/tracker_jl.txt"; path_best = "data/hyperparamopt/best_jl.txt"
+    f(aa, x,c) = sum(x^2 + c^2) 
+    bohb = @hyperopt for i=18, sampler=Hyperband(R=50, η=3, inner=BOHB(dims=[Hyperopt.Continuous(), Hyperopt.Continuous()])), x = LinRange(1,5,800), c = exp10.(LinRange(-1,3,1800))
+        sleep(1)
+        if state !== nothing
+            x,c = state
+        end
+        print(i,"\t")
+        @show fv = f(0, x,c)
+        fv, [x,c]
+    end
+end
+
 
 # script to write string given a vector{string}
 function writestringline(strinput, filename; mode="w")
