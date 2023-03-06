@@ -165,3 +165,7 @@ varlist that must be emptied on each experiment run:
 
 03.03.2023:
 - use midpoint for initialization: change Inf bounds.
+
+06.03.2023:
+- try removing 3k dataset (the "defective" datasets)
+- try regularization in CGLS (add lambda, possibly a new hyperparameter)
