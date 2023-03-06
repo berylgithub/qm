@@ -338,7 +338,7 @@ function hyperparamopt_jl()
         else # new point, compute new objective
             @show fv = f(naf, nmf, ns, fn, na, nm, cid, model, c)
             push!(fs, fv); push!(xs, xv) # tracker
-            open(path_tracker, "a") do io writedlm(io, ) end # write to file directly too, in case of execution kill
+            open(path_tracker, "a") do io writedlm(io, transpose(vcat(fv, xv))) end # write to file directly too, in case of execution kill
         end
         fv, xv # return values (f,x)
     end
