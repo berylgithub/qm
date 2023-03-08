@@ -564,6 +564,35 @@ function test_u2()
     # summary: uniformly distributed data especially [0,1], gives the same selected points, even on lower dimensions
 end
 
+function test_u3()
+    # generate grid:
+    len = 30 # n_data = len^2
+    z = LinRange(.01, 1, len)
+    grid = Iterators.product(z,z)
+    grid = collect.(grid)
+    x = zeros(len^2); y = zeros(len^2)
+    for i ∈ eachindex(grid)
+        x[i] = grid[i][1]; y[i] = grid[i][2]
+    end
+    F = Matrix(transpose(hcat(x,y)))
+    display(F)
+    # usequence 4 plots:
+    centers = []
+    for i ∈ 1:4
+        _, center_ids = usequence(F, 250)
+        push!(centers, center_ids)
+    end
+    display(centers[1])
+    for i ∈ 1:4
+        p = scatter(x,y, markersize=1., legend=false)
+        scatter!(x[centers[i][1:100]],y[centers[i][1:100]], legend=false)
+        scatter!(x[centers[i][101:250]],y[centers[i][101:250]], markersize=7., markershape = :x, legend=false)
+        display(p)
+        savefig(p, "plot/usequence"*"_$i.png")
+    end
+end
+
+
 function test_distances()
     # inputs:
     indices_M = convert(Vector{Int64}, range(10,50,5))
