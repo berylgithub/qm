@@ -585,8 +585,8 @@ function test_u3()
     display(centers[1])
     for i ∈ 1:4
         p = scatter(x,y, markersize=1., legend=false)
-        scatter!(x[centers[i][1:100]],y[centers[i][1:100]], legend=false)
-        scatter!(x[centers[i][101:250]],y[centers[i][101:250]], markersize=7., markershape = :x, legend=false)
+        scatter!(x[centers[i][1:100]],y[centers[i][1:100]], legend=false, markercolor=:red)
+        scatter!(x[centers[i][101:150]],y[centers[i][101:150]], markersize=5., markerstrokewidth=3., markershape = :xcross, legend=false)
         display(p)
         savefig(p, "plot/usequence"*"_$i.png")
     end
