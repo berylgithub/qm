@@ -875,7 +875,7 @@ One set of features and one set of training labels from the lowest fitting MAE i
 	\text{MAE} := \frac{1}{N_{QM9}}\sum_{m \in W}|E_{m} - (\hat{E}_m + E^\text{null}_m)|
 \end{equation}
 
-The models' hyperparameters are fixed across all experiments. ROSEMI uses $n_s = 6$, KRR uses scaler $c=1$, GAK uses $\sigma = 32.$; and the neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. 
+The models' hyperparameters are fixed across all experiments. ROSEMI uses $n_s = 6$, KRR uses scaler $c=1$, GAK uses $\sigma = 2048.$; and the neural network (NN) architecture used here is composed of \codeword{nodes }$ = [n_{mf}, 10, 1]$, where each entry represents the number of nodes in $i$th layer; ReLU is chosen as the activation function in the hidden layer (2nd layer); the NN is optimized using Adam with 0.01 momentum \at{cite Adam}. 
 
 FCHL \at{cite Lilienfeld et al} is also independently tested, it results in 9.3 kcal/mol MAE. The feature extraction, fitting, and prediction is done using the quantum machine learning (QML) package \at{cite QML \url{https://www.qmlcode.org}} in Python. 
 The training set indices $K$ is computed from the processed ACSF set of features with $n_{af} = 4$ and $n_{mf} = 18$.
