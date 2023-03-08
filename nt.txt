@@ -169,3 +169,7 @@ varlist that must be emptied on each experiment run:
 06.03.2023:
 - try removing 3k dataset (the "defective" datasets)
 - try regularization in CGLS (add lambda, possibly a new hyperparameter)
+
+08.03.2023:
+- revert back main in expdriver to previous one (non-translator mode)
+- new projection, rounding, and translation mode, in matlab file
