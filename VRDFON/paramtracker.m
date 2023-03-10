@@ -3,7 +3,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%% paramtracker.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% wrapper to call xgenerator to generate new feasible x given (x,f,bounds)
+% wrapper to call xgenerator.m to generate new feasible x given (x,f,bounds)
 % and checks whether (x,f) pair is already with (xlist, flist)
 function [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds)
     while true

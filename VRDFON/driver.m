@@ -47,11 +47,15 @@ disp("init mintry ops...")
 % main loop and (x,f) trackers:
 [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); 
 paramwriter(x, path_param); % write x to file
+% normalize the difference (since each entry has different range):
+xdiff = abs(x-xraw); 
+for i=1:length(xdiff)
+  xdiff(i) = xdiff(i)/bounds(2,i);
+end
 disp("[x, xraw]= ")
 disp([x xraw]) % feasible x
-disp(sum(abs(x-xraw)))
+disp(sum(xdiff))
 disp("x has been written to file..")
-%nf = 1;
 % next ops:
 unwind_protect
   while true
@@ -61,9 +65,14 @@ unwind_protect
       disp("new incoming data")
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
-      f += sum(abs(x-xraw)); % add penalty term
+      % normalize x (since each entry has different range):
+      xdiff = abs(x-xraw); 
+      for i=1:length(xdiff)
+        xdiff(i) = xdiff(i)/bounds(2,i);
+      end
+      f += sum(xdiff); % add penalty term
       disp("[f, penalty] = ")
-      disp([f, sum(abs(x-xraw))])
+      disp([f, sum(xdiff)])
       % append lists:
       xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
       disp("mintry ops")
@@ -74,7 +83,9 @@ unwind_protect
       disp([x xraw]) % feasible x
       disp("x has been written to file")
     end
-    pause(0.3) % check new data for each second
+    % check new data for each second
+    % to accomodate for memory > disk speed
+    pause(0.3) 
   end
 unwind_protect_cleanup
   disp("running finished")
