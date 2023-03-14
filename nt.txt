@@ -173,3 +173,8 @@ varlist that must be emptied on each experiment run:
 08.03.2023:
 - revert back main in expdriver to previous one (non-translator mode)
 - new projection, rounding, and translation mode, in matlab file
+
+14.03.2023:
+- try experiments with S := 1/(N-1).... instead of 1/N, it adds regularization effect
+- round the atomic energies to integers before use for experiments, since the mean of the rounding error is around 1.5 while the std has larger error (this will change the things slightly).
+
