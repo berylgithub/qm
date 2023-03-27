@@ -133,7 +133,7 @@ end
 big main function here, to tune hyperparameters by DFO
     
 """
-function hyperparamopt(;init=false, init_data=[])
+function hyperparamopt(;init=false, init_data=[], init_x = [])
     # test "threading" loop:
     # initial fitting, initialize params and funs, replace with actual fitting:
     path_params = "data/hyperparamopt/params.txt"; path_fun = "data/hyperparamopt/fun.txt"; path_track="data/hyperparamopt/tracker.txt";
@@ -143,7 +143,12 @@ function hyperparamopt(;init=false, init_data=[])
             println("init starts, computing fobj...")
             #x = [20/51, 16/20, 3/10, 1/3, 1/1, 1/1, 38/95, 5/5, 1/32] # best hyperparam from pre-hyperparamopt exps
             #x = repeat([0.5], 9) # midpoint
-            x = [0.5, 0.5, 6.0, 2.0, 0.0, 0.0, 48.0, 3.0, 524288.0] # midpoint
+            #x = [0.5, 0.5, 6.0, 2.0, 0.0, 0.0, 48.0, 3.0, 524288.0] # midpoint
+            if !isempty(init_x)
+                x = init_x
+            else # use predefined x
+                x = [0.5, 0.5, 6.0, 2.0, 0.0, 0.0, 48.0, 3.0, 524288.0] # midpoint
+            end
             f = main_obj(x)
         else
             println("init starts, initial fobj and points known")
