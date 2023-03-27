@@ -3,13 +3,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%% xgenerator.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function to generate feasible x (and xraw for tracking) given (x,f)
+% function to generate feasible x (and xraw for tracking) given (x,f,bounds)
 function [x,xraw] = xgenerator(x, f, bounds)
     xraw=x=mintry(x,f); % the solver, this gives x raw
     for i = 1:length(x)
         % check whether need to be transformed or not:
         tr = paramcheck(bounds(3,i), bounds(1,i), bounds(2,i));
-        if bounds(3,i) == 1 % check type, int = 1, real = 0
+        if (bounds(3,i) == 1) || (bounds(3,i) == 2) % check type, int = 1, real = 0, categorical = 2
             % project to bounds:
             x(i) = max(bounds(1,i), min(x(i), bounds(2,i)));
             % stochastic round:
