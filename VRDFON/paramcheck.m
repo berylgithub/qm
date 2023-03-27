@@ -13,7 +13,7 @@ function tr=paramcheck(typ, lb, ub)
     tr = false;
     dif = abs(ub - lb) <= 100;
     div = abs(ub/(lb+1e-10)) <= 100; % add extra miniscule term for numstability
-    if (typ == 1 || dif || div) % integer = 1, real = 0
+    if (typ == 1 || typ == 2 || dif || div) % integer = 1, real = 0, categorical = 2
         tr = false;
     else
         tr = true;

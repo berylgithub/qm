@@ -17,7 +17,7 @@ mintry(init);          % initialize mintry
 % init some vars:
 nfstuck = 5; % max nf of getting stuck until reset
 ct = 1; % stuck counter
-cpen = 5.; % penalty factor
+cpen = 1.; % penalty factor
 
 % The following loop may be replaced by an arbitrarily complex 
 % computing environment. 
