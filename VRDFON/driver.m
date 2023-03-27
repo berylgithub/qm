@@ -99,7 +99,7 @@ unwind_protect
       disp("[x, xraw]= ")
       disp([x xraw]) % feasible x
       disp("x has been written to file")
-      % compare if new x is equal to prev x:
+      % compare if new x (components) is equal to prev x:
       if x(3:9) == xprev(3:9)
         ct += 1
       end
