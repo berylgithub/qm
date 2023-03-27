@@ -13,7 +13,11 @@ init.n=9;              % problem dimension
                        % a nonstandard initialization may be used.
                        % For details see mintry.m
 mintry(init);          % initialize mintry
-%nfstuck = 50;            % max nf of getting stuck until reset
+
+% init some vars:
+nfstuck = 5; % max nf of getting stuck until reset
+ct = 1; % stuck counter
+cpen = 5.; % penalty factor
 
 % The following loop may be replaced by an arbitrarily complex 
 % computing environment. 
@@ -43,9 +47,13 @@ for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
 f = str2double(fdata{2,1}); % here penalty term f'=sum(abs(x-xraw)) = 0
+xinit = x; finit = f; % store (x, f)_init for restart
 disp("init mintry ops...")
 % main loop and (x,f) trackers:
 [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); 
+xprev = x; fprev = f; % record prev data
+% append lists:
+xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
 paramwriter(x, path_param); % write x to file
 % normalize the difference (since each entry has different range):
 xdiff = abs(x-xraw); 
@@ -70,22 +78,37 @@ unwind_protect
       for i=1:length(xdiff)
         xdiff(i) = xdiff(i)/bounds(2,i);
       end
-      f += sum(xdiff); % add penalty term
+      f += cpen*sum(xdiff); % add penalty term
       disp("[f, penalty] = ")
       disp([f, sum(xdiff)])
+      disp("mintry ops")
+      % check reset counter:
+      if ct >= 5
+        disp("restart !!")
+        ct = 1; % reset counter
+        mintry(init); % restart mintry
+        x = xinit; f = finit; % restart (x,f)
+        cpen /= 10. % reduce penalty factor
+        break
+      end
+      % main loop and (x,f) trackers (get new x):
+      [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds);
       % append lists:
       xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
-      disp("mintry ops")
-      % main loop and (x,f) trackers:
-      [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds);
       paramwriter(x, path_param); % write x to file
       disp("[x, xraw]= ")
       disp([x xraw]) % feasible x
       disp("x has been written to file")
+      % compare if new x is equal to prev x:
+      if x(3:9) == xprev(3:9)
+        ct += 1
+      end
+      % set new prev:
+      xprev = x; fprev = f;
     end
     % check new data for each second
     % to accomodate for memory > disk speed
-    pause(0.3) 
+    pause(0.5) 
   end
 unwind_protect_cleanup
   disp("running finished")
@@ -117,5 +140,5 @@ unwind_protect_cleanup
   disp(flist)
   dlmwrite(path_trackx, xlist, "\t");
   dlmwrite(path_trackxraw, xrawlist, "\t"); 
-  dlmwrite(path_trackf, flist, "\t");
+  dlmwrite(path_trackf, flist, "\n");
 end_unwind_protect

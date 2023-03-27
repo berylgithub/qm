@@ -12,20 +12,27 @@ path_fun = '../test.txt';
 path_bounds = '../data/hyperparamopt/bounds.txt';
 bounds = dlmread(path_bounds)
 
-%{
-i=8;
-lb = bounds(1,i)/(1+abs(bounds(1,i))); ub = bounds(2,i)/(1+abs(bounds(2,i)));
-bs = [ub, lb]
-bs = sort(bs)
-z = max(bs(1), min(x(i), bs(2)))
-z = z/(1-z)
-%}
 
-xdiff = abs(x);
-for i=1:length(x)
-    xdiff(i) = xdiff(i)/bounds(2, i)
+
+
+x = [3, 1, 0, 0]; ct = 1
+xprev(1:2) = x(1:2)
+while true
+    % chekc break counter
+    if ct >= 5
+        disp("reset at")
+        disp(ct)
+        ct = 1 % reset count
+        break
+    end
+    % get new x:
+    x(3:4) = rand(1,2)
+    disp(ct)
+    disp("")
+    % compare if new x is equal to prev x
+    if x(1:2) == xprev(1:2)
+        ct += 1
+    end
+    % set new prev:
+    xprev(3:4) = x(3:4)
 end
-sum(xdiff)
-
-100/(0+1e-10)
-100/100
