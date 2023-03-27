@@ -39,21 +39,29 @@ x = zeros(length(data)-1, 1);
 if ~exist(path_trackx) && ~exist(path_trackxraw) && ~exist(path_trackf)
   flist = []; xlist = []; xrawlist = [];
 else
-  flist = dlmread(path_trackf); 
+  flist = dlmread(path_trackf)'; 
   xlist = dlmread(path_trackx); 
   xrawlist = dlmread(path_trackxraw);
 end
 for i=2:length(data)
   x(i-1) = str2double(data{i,1});
 end
-f = str2double(fdata{2,1}); % here penalty term f'=sum(abs(x-xraw)) = 0
+f = str2double(fdata{2,1}); % here penalty term = 0
 xinit = x; finit = f; % store (x, f)_init for restart
+% append initial (x,f):
+xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
 disp("init mintry ops...")
 % main loop and (x,f) trackers:
+disp("pre")
+disp(f)
+disp(x)
 [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); 
 xprev = x; fprev = f; % record prev data
-% append lists:
-xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
+% append x:
+disp("post")
+disp(f)
+disp(x)
+xlist = [xlist; x']; xrawlist = [xrawlist; xraw'];
 paramwriter(x, path_param); % write x to file
 % normalize the difference (since each entry has different range):
 xdiff = abs(x-xraw); 
@@ -92,8 +100,14 @@ unwind_protect
         break
       end
       % main loop and (x,f) trackers (get new x):
+      disp("pre")
+      disp(f)
+      disp(x)
       [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds);
       % append lists:
+      disp("post")
+      disp(f)
+      disp(x)
       xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
       paramwriter(x, path_param); % write x to file
       disp("[x, xraw]= ")
