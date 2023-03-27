@@ -369,6 +369,30 @@ function hyperparamopt_jl()
     writedlm(path_tracker, out)
 end
 
+
+"""
+to fit ex-datasets, i.e., dataset with excluded uncharacterized molecules.
+"""
+function fit_ex()
+    foldername = "exp_ex"
+    # ACSF:
+    nafs = [40, 30, 20] 
+    nmfs = [40, 30, 20]
+    println("ACSF")
+    for i ∈ eachindex(nafs)
+        for j ∈ eachindex(nmfs)
+            nmf = nmfs[j]
+            if nmf >= nafs[i] # the num of mol feature must be less than atom f
+                nmf = nafs[i] - rand(1:5, 1)[1]
+            end
+            println(nafs[i]," ",nmf)
+            data_setup(foldername, nafs[i], nmf, 3, 300, "data/qm9_dataset_old.jld", "data/ACSF.jld", "ACSF"; 
+                        save_global_centers = true, num_center_sets = 5)
+            GC.gc()
+        end
+    end
+end
+
 function test_BOHB()
     path_tracker="data/hyperparamopt/tracker_jl.txt"; path_best = "data/hyperparamopt/best_jl.txt"
     f(aa, x,c) = sum(x^2 + c^2) 
