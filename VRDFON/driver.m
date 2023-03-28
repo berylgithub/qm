@@ -16,7 +16,7 @@ mintry(init);          % initialize mintry
 
 % init some vars:
 nfstuck = 5; % max nf of getting stuck until reset
-ct = 1; % stuck counter
+ct = 0; % stuck counter
 cpen = 1.; % penalty factor
 
 % The following loop may be replaced by an arbitrarily complex 
@@ -48,20 +48,10 @@ for i=2:length(data)
 end
 f = str2double(fdata{2,1}); % here penalty term = 0
 xinit = x; finit = f; % store (x, f)_init for restart
-% append initial (x,f):
-xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
-disp("init mintry ops...")
-% main loop and (x,f) trackers:
-disp("pre")
-disp(f)
-disp(x)
-[x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); 
 xprev = x; fprev = f; % record prev data
-% append x:
-disp("post")
-disp(f)
-disp(x)
-xlist = [xlist; x']; xrawlist = [xrawlist; xraw'];
+disp("init mintry ops...")
+% main loop and (x,f) trackers, new x:
+[x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); 
 paramwriter(x, path_param); % write x to file
 % normalize the difference (since each entry has different range):
 xdiff = abs(x-xraw); 
@@ -70,7 +60,7 @@ for i=1:length(xdiff)
 end
 disp("[x, xraw]= ")
 disp([x xraw]) % feasible x
-disp(sum(xdiff))
+disp(cpen*sum(xdiff))
 disp("x has been written to file..")
 % next ops:
 unwind_protect
@@ -99,26 +89,22 @@ unwind_protect
         cpen /= 10. % reduce penalty factor
         break
       end
-      % main loop and (x,f) trackers (get new x):
-      disp("pre")
-      disp(f)
-      disp(x)
-      [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds);
-      % append lists:
-      disp("post")
-      disp(f)
-      disp(x)
+      % compare if new x (components) is equal to prev x:
+      if x(3:9) == xprev(3:9)
+        ct += 1
+      else
+        ct = 0
+      end
+      % set new prev:
+      xprev = x; fprev = f;
+      % append initial (x,f):
       xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
+      % main loop and (x,f) trackers (get new x):
+      [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds);
       paramwriter(x, path_param); % write x to file
       disp("[x, xraw]= ")
       disp([x xraw]) % feasible x
       disp("x has been written to file")
-      % compare if new x (components) is equal to prev x:
-      if x(3:9) == xprev(3:9)
-        ct += 1
-      end
-      % set new prev:
-      xprev = x; fprev = f;
     end
     % check new data for each second
     % to accomodate for memory > disk speed
