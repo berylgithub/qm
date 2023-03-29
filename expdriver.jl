@@ -145,7 +145,7 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
         if isempty(init_data)
             println("init starts, computing fobj...")
             #x = [20/51, 16/20, 3/10, 1/3, 1/1, 1/1, 38/95, 5/5, 1/32] # best hyperparam from pre-hyperparamopt exps
-            #x = repeat([0.5], 9) # midpoint
+            #x = repeat([0.5], 9) # midpoint if continuosu
             #x = [0.5, 0.5, 6.0, 2.0, 0.0, 0.0, 48.0, 3.0, 524288.0] # midpoint
             if !isempty(init_x)
                 x = init_x
@@ -155,9 +155,10 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
             f = main_obj(x)
         else
             println("init starts, initial fobj and points known")
-            x = init_data[2:end]
+            x = init_data[2:end] # unencoded x, the one that Julia accepts
             f = init_data[1]
         end
+        x = encode_parameters(x, bounds) # encode x for mintry
         data = Matrix{Any}(undef, 1, length(x)+1)
         data[1,1] = uid; data[1,2:end] = x 
         writestringline(string.(vcat(uid, x)), path_params)
