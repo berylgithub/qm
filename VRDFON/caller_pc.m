@@ -15,28 +15,8 @@ bounds = dlmread(path_bounds)
 
 
 
-x = [3, 1, 0, 0]; ct = 1
-xprev(1:2) = x(1:2)
-while true
-    % chekc break counter
-    if ct >= 5
-        disp("reset at")
-        disp(ct)
-        ct = 1 % reset count
-        break
-    end
-    % get new x:
-    x(3:4) = rand(1,2)
-    disp(ct)
-    disp("")
-    % compare if new x is equal to prev x
-    if x(1:2) == xprev(1:2)
-        ct += 1
-    end
-    % set new prev:
-    xprev(3:4) = x(3:4)
-end
 
-a = -1; b = 1; N=5;
-x = r = a + (b-a) .* rand(N,1)
+a = -2; b = 2; N=3;
+xp = a + (b-a) .* rand(N,1)
+x = [0; 0; 1] + xp
 sum(minprob(x))
