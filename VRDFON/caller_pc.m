@@ -37,5 +37,6 @@ while true
     xprev(3:4) = x(3:4)
 end
 
-x = [-1.234; 29823.345; 0.899435]
+a = -1; b = 1; N=5;
+x = r = a + (b-a) .* rand(N,1)
 sum(minprob(x))

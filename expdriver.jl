@@ -134,9 +134,12 @@ big main function here, to tune hyperparameters by DFO
     
 """
 function hyperparamopt(;init=false, init_data=[], init_x = [])
-    # test "threading" loop:
     # initial fitting, initialize params and funs, replace with actual fitting:
-    path_params = "data/hyperparamopt/params.txt"; path_fun = "data/hyperparamopt/fun.txt"; path_track="data/hyperparamopt/tracker.txt";
+    path_params = "data/hyperparamopt/params.txt"; 
+    path_fun = "data/hyperparamopt/fun.txt"; 
+    path_track="data/hyperparamopt/tracker.txt";
+    path_bounds = "data/hyperparamopt/bounds.txt";
+    bounds = readdlm(path_bounds)
     if init # init using arbitrary params (or init_data), e.g., the best one:
         uid = replace(string(Dates.now()), ":" => ".")
         if isempty(init_data)
@@ -210,6 +213,28 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
         end
         sleep(0.3)
     end
+end
+
+
+"""
+encode parameters to desired form by the solver
+particularly categorical variables are encoded by one-hot-encoding
+"""
+function encode_parameters(x, bounds)
+    xout = []
+    for i ∈ eachindex(x) # for each variable:
+        if bounds[3, i] == 2 # check for type, handle categorical (2)
+            # one hot encoding:
+            len = Int(bounds[2, i] - bounds[1, i] + 1)
+            values = LinRange(Int(bounds[1, i]), Int(bounds[2, i]), len)
+            v = zeros(Int(len))
+            v[findfirst(c -> c == x[i], values)] = 1
+            append!(xout, v)
+        else
+            push!(xout, x[i])
+        end
+    end
+    return xout
 end
 
 """
