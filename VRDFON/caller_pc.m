@@ -36,3 +36,6 @@ while true
     % set new prev:
     xprev(3:4) = x(3:4)
 end
+
+x = [-1.234; 29823.345; 0.899435]
+sum(minprob(x))

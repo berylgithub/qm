@@ -8,6 +8,7 @@ VRDFON/*
 !VRDFON/xgenerator.m
 !VRDFON/paramwriter.m
 !VRDFON/paramtracker.m
+!VRDFON/minprob.m
 *.aux
 *.log
 *.pdf
