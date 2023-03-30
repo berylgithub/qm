@@ -9,7 +9,7 @@ function [xnew,xraw,fpen] = xgenerator(x, f, bounds, bm)
     xraw=x=mintry(x,f); % the solver, this gives x raw
     xnew = []; % new x to be accepted by Julia
     fpen = 0; % f penalty
-    bsize = size(bounds)(2) % number of variables
+    bsize = size(bounds)(2); % number of variables
     for i = 1:bsize
         % check whether need to be transformed or not:
         tr = paramcheck(bounds(3,i), bounds(1,i), bounds(2,i));
@@ -35,7 +35,7 @@ function [xnew,xraw,fpen] = xgenerator(x, f, bounds, bm)
             % choose x_i based on p:
             xi = 0;
             q = [0.; cumsum(p)];
-            r = rand(1)
+            r = rand(1);
             for i=1:length(q)-1
                 if (q(i) < r) && (r <= q(i+1))
                     xi = i;

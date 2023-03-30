@@ -135,6 +135,7 @@ big main function here, to tune hyperparameters by DFO
 """
 function hyperparamopt(;init=false, init_data=[], init_x = [])
     # initial fitting, initialize params and funs, replace with actual fitting:
+    path_init_params = "data/hyperparamopt/init_params.txt"; 
     path_params = "data/hyperparamopt/params.txt"; 
     path_fun = "data/hyperparamopt/fun.txt"; 
     path_track="data/hyperparamopt/tracker.txt";
@@ -161,7 +162,7 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
         x = encode_parameters(x, bounds) # encode x for mintry
         data = Matrix{Any}(undef, 1, length(x)+1)
         data[1,1] = uid; data[1,2:end] = x 
-        writestringline(string.(vcat(uid, x)), path_params)
+        writestringline(string.(vcat(uid, x)), path_init_params); writestringline(string.(vcat(uid, x)), path_params)
         writestringline(string.(vcat(uid, f)), path_fun)
         println("init done")
     else

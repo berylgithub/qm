@@ -24,3 +24,5 @@ bm = extractbound(bounds)
 [x, xraw, fpen] = xgenerator(x, f, bounds, bm)
 xsel = xraw(bm(4,1):bm(4,2))
 p = minprob(xsel)
+xa= []
+!isempty(xa)

@@ -6,22 +6,8 @@
 % main driver to generate feasible x given (x,f) using xgenerator.m 
 clear
 
-% standard initialization:
-init.paths='minq8';     % mandatory absolute path to minq8
-init.n=9;              % problem dimension
-                       % For tuning or to see intermediate results, 
-                       % a nonstandard initialization may be used.
-                       % For details see mintry.m
-mintry(init);          % initialize mintry
-
-% init some vars:
-nfstuck = 5; % max nf of getting stuck until reset
-ct = 0; % stuck counter
-cpen = 1.; % penalty factor
-
-% The following loop may be replaced by an arbitrarily complex 
-% computing environment. 
 % initial ops, the params and fun path MUST be non empty:
+path_init_param = '../data/hyperparamopt/init_params.txt';
 path_param = '../data/hyperparamopt/params.txt';
 path_fun = '../data/hyperparamopt/fun.txt';
 path_fbest = '../data/hyperparamopt/best_fun_params.txt';
@@ -32,9 +18,9 @@ path_bounds = '../data/hyperparamopt/bounds.txt';
 
 disp("init data...")
 bounds = dlmread(path_bounds); % var bounds
-data = textread(path_param, "%s");
-fdata = textread(path_fun, "%s");
-x = zeros(length(data)-1, 1);
+data = textread(path_init_param, "%s"); % params
+fdata = textread(path_fun, "%s"); % f
+xin = zeros(length(data)-1, 1);
 % init list of (x,f):
 if ~exist(path_trackx) && ~exist(path_trackxraw) && ~exist(path_trackf)
   flist = []; xlist = []; xrawlist = [];
@@ -44,23 +30,32 @@ else
   xrawlist = dlmread(path_trackxraw);
 end
 for i=2:length(data)
-  x(i-1) = str2double(data{i,1});
+  xin(i-1) = str2double(data{i,1});
 end
 f = str2double(fdata{2,1}); % here penalty term = 0
-xinit = x; finit = f; % store (x, f)_init for restart
-xprev = x; fprev = f; % record prev data
+xinit = xin; finit = f; % store (x, f)_init for restart
+xprev = [];
+
 disp("init mintry ops...")
+% mintry init:
+init.paths='minq8';     % mandatory absolute path to minq8
+init.n=length(xin);              % problem dimension
+                       % For tuning or to see intermediate results, 
+                       % a nonstandard initialization may be used.
+                       % For details see mintry.m
+mintry(init);          % initialize mintry
+
+% init some vars:
+nfstuck = 5; % max nf of getting stuck until reset
+ct = 0; % stuck counter
+cpen = 1.; % penalty factor
+
 % main loop and (x,f) trackers, new x:
-[x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds); 
-paramwriter(x, path_param); % write x to file
-% normalize the difference (since each entry has different range):
-xdiff = abs(x-xraw); 
-for i=1:length(xdiff)
-  xdiff(i) = xdiff(i)/bounds(2,i);
-end
-disp("[x, xraw]= ")
-disp([x xraw]) % feasible x
-disp(cpen*sum(xdiff))
+bm = extractbound(bounds); % compute boundary index matrix
+[xout, xraw, f, fpen, xlist, flist] = paramtracker(xin, f, xlist, flist, bounds, bm); 
+paramwriter(xout, path_param); % write x to file
+disp([f fpen])
+disp(xout)
 disp("x has been written to file..")
 % next ops:
 unwind_protect
@@ -71,39 +66,37 @@ unwind_protect
       disp("new incoming data")
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
-      % normalize x (since each entry has different range):
-      xdiff = abs(x-xraw); 
-      for i=1:length(xdiff)
-        xdiff(i) = xdiff(i)/bounds(2,i);
-      end
-      f += cpen*sum(xdiff); % add penalty term
+      f += cpen*fpen; % add penalty term
       disp("[f, penalty] = ")
-      disp([f, sum(xdiff)])
+      disp([f, fpen])
       disp("mintry ops")
       % check reset counter:
       if ct >= 5
         disp("restart !!")
         ct = 1; % reset counter
         mintry(init); % restart mintry
-        x = xinit; f = finit; % restart (x,f)
+        xin = xinit; f = finit; % restart (x,f)
         cpen /= 10. % reduce penalty factor
         break
       end
       % compare if new x (components) is equal to prev x:
-      if x(3:9) == xprev(3:9)
-        ct += 1
-      else
-        ct = 0
+      if !isempty(xprev)
+        if xout(3:9) == xprev(3:9)
+          ct += 1
+        else
+          ct = 0
+        end
       end
       % set new prev:
-      xprev = x; fprev = f;
-      % append initial (x,f):
-      xlist = [xlist; x']; xrawlist = [xrawlist; xraw']; flist = [flist f];
+      xprev = xout; fprev = f;
+      % append (x,f):
+      xlist = [xlist; xout']; xrawlist = [xrawlist; xraw']; flist = [flist f];
       % main loop and (x,f) trackers (get new x):
-      [x, xraw, f, xlist, flist] = paramtracker(x, f, xlist, flist, bounds);
-      paramwriter(x, path_param); % write x to file
-      disp("[x, xraw]= ")
-      disp([x xraw]) % feasible x
+      xin = xraw; % feed the raw x_{k-1}
+      [xout, xraw, f, fpen, xlist, flist] = paramtracker(xin, f, xlist, flist, bounds, bm); 
+      paramwriter(xout, path_param); % write x to file
+      disp([f fpen])
+      disp(xout)
       disp("x has been written to file")
     end
     % check new data for each second
