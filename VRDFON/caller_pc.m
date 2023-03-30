@@ -14,9 +14,14 @@ bounds = dlmread(path_bounds)
 
 
 
-
-
+%{
 a = -2; b = 2; N=3;
 xp = a + (b-a) .* rand(N,1)
 x = [0; 0; 1] + xp
-sum(minprob(x))
+p = minprob(x)
+sum(p)
+A = rand(3,5);
+size(bounds)(1)
+%}
+bounds
+extractbound(bounds)
