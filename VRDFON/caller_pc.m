@@ -24,4 +24,17 @@ A = rand(3,5);
 size(bounds)(1)
 %}
 bounds
-extractbound(bounds)
+binfo = extractbound(bounds)
+x = rand(binfo(end, end), 1)
+xi = x(binfo(4,1):binfo(4,2))
+p = minprob(xi)
+z = 0;
+r = 0.990
+q = [0.; cumsum(p)]
+for i=1:length(q)-1
+    if (q(i) < r) && (r <= q(i+1))
+        z = i;
+        break
+    end
+end
+z
