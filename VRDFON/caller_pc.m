@@ -12,17 +12,5 @@ path_x = '../data/hyperparamopt/params.txt'
 path_bounds = '../data/hyperparamopt/bounds.txt';
 bounds = dlmread(path_bounds)
 
-f = dlmread(path_fun)(2) + 1
-x = dlmread(path_x)(2:end)'
-init.paths='minq8';     % mandatory absolute path to minq8
-init.n=length(x);              % problem dimension
-                       % For tuning or to see intermediate results, 
-                       % a nonstandard initialization may be used.
-                       % For details see mintry.m
-mintry(init);          % initialize mintry
-bm = extractbound(bounds)
-[x, xraw, fpen] = xgenerator(x, f, bounds, bm)
-xsel = xraw(bm(4,1):bm(4,2))
-p = minprob(xsel)
-xa= []
-!isempty(xa)
+
+linspace(1,5,5-1+1)
