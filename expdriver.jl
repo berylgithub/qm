@@ -151,7 +151,7 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
             if !isempty(init_x)
                 x = init_x
             else # use predefined x
-                x = [0.5, 0.5, 6.0, 2.0, 0.0, 0.0, 48.0, 3.0, 524288.0] # midpoint
+                x = [0.5, 0.5, 6.0, 2.0, 0.0, 0.0, 48.0, 4.0, 524288.0] # midpoint, shifted the model by 1
             end
             f = main_obj(x)
         else

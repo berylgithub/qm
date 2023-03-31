@@ -73,11 +73,10 @@ unwind_protect
       % check reset counter:
       if ct >= 5
         disp("restart !!")
-        ct = 1; % reset counter
+        ct = 0; % reset counter
         mintry(init); % restart mintry
         xin = xinit; f = finit; % restart (x,f)
         cpen /= 10. % reduce penalty factor
-        break
       end
       % compare if new x (components) is equal to prev x:
       if !isempty(xprev)
