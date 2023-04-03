@@ -936,6 +936,27 @@ The second series of experiments is done by projecting the infeasible solutions 
 	\end{pmatrix},
 \end{equation*}
 where each column corresponds to the each hyperparameter boundaries. 25 hyperparameters found are in Table \ref{tab:hyperopt2}.
+
+\begin{table}[H]
+	\centering
+	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type, possible range, best found value, and starting value. \textbf{Int} type means integer, \textbf{Cat} type means categorical.}
+	\begin{tabular}{|c|c|c|c|c|}
+		\hline
+		\textbf{hyperparam}	& \textbf{type}	& \textbf{range}	& \textbf{best}	& \textbf{start}	\\ \hline
+		$p_{af}$	& \codeword{Int}	& [1,[51,165,140]]	& 45	& 82	\\ \hline
+		$p_{mf}$	& \codeword{Int}	& $[1,p_{af}]$	& 28	& 41	\\ \hline
+		ns	& \codeword{Int}	& [1,10]	& 7	& 6	\\ \hline
+		ftype	& \codeword{Cat}	& [1,3]	& 1	& 2	\\ \hline
+		norm\_af	& \codeword{Cat}	& [0,1]	& 0	& 0	\\ \hline
+		norm\_mf	& \codeword{Cat}	& [0,1]	& 0	& 0	\\ \hline
+		$k$	& \codeword{Int}	& [0,95]	& 48	& 48	\\ \hline
+		model	& \codeword{Cat}	& [1,5]	& 4	& 4	\\ \hline
+		$c\sigma$	& \codeword{Int}	& $[2^0,2^{20}]$	& 524287	& 524288	\\ \hline
+	\end{tabular}
+	\label{tb:hyperparaminfo}
+\end{table}
+
+
 \begin{table}[H]
 	\centering
 	\caption{Sets of hyperparameters and their MAE found during the hyperparameter optimization process. \textbf{MAE} is in kcal/mol. Here infeasible points are set to have $\text{MAE} = 100$.} 
