@@ -721,28 +721,40 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 \section{Hyperparameter space}
 \label{sec:hyperspace}
 
-We can construct the whole molecular fitting process from start to end by choosing many different possible combinations of hyperparameters. At the very fist step, we can choose the feature extraction method between \codeword{ftype} $\in$ \{ACSF, SOAP, FCHL\}. During feature selection, there exist several possible choices of hyperparameters:
+We can construct the whole molecular fitting process from start to end by choosing many different possible combinations of hyperparameters. At the very fist step, we can choose the feature extraction method between \codeword{ftype} $\in$ \{ACSF, SOAP, FCHL\}, which is a categorical variable. During feature selection, there exist several possible choices of hyperparameters:
 \begin{itemize}
-	\item The choice for the scaling factor of the correlation matrix: the diagonals of the covariance matrix or the sensitivity vector. In the case of sensitivity vector, we can also choose how many perturbed features to be included.
-	\item Number of selected atomic features in percentage $p_{af} \in (0,1]$,
-	\item molecular feature extraction mode, whether to include: sum of squares, binomial features;
-	\item normalization mode: whether to normalize atomic features \codeword{norm_af} $ \in \{\codeword{true, false}\}$ or molecular features \codeword{norm_mf} $ \in \{\codeword{true, false}\}$.
-	\item number of selected molecular features in percentage $p_{mf} \in (0,1]$,
-	\item number of splines $n_{s}\in \mathbb{Z}_{>0}$.
+	\item (Categorical) the choice for the scaling factor of the correlation matrix: the diagonals of the covariance matrix or the sensitivity vector, $\codeword{pca_sf} \in \{\text{diag, sens}\}$. (Integral) In the case of sensitivity vector, we can also choose how many perturbed features to be included $n_{pf} \in \mathbb{Z}_{>0}$.
+	\item (Integral) number of selected atomic features $n_{af} \in [1,50]$,
+	\item (Integral) number of selected molecular features $n_{mf} \in [1,n_{af}]$,
+	\item (Integral) number of splines $n_{s}\in \mathbb{Z}_{>0}$.
+	\item (Categorical) molecular feature extraction mode, whether to include: sum of squares, binomial features; $\codeword{mfem} \in [\{\codeword{true, false}\},  \{\codeword{true, false}\}]$.
+	\item (Categorical) normalization mode: whether to normalize atomic features \codeword{norm_af} $ \in \{\codeword{true, false}\}$ or molecular features \codeword{norm_mf} $ \in \{\codeword{true, false}\}$.
+
+
 \end{itemize}
 For data selection, the possible hyperparameters are
 \begin{itemize}
-	\item The number of centers requested $N \in [1 : N_\text{QM9}] \subseteq \mathbb{Z}_{>0}$;
-	\item index $k \in \mathbb{Z}_{\geq 0}$ of precomputed set of selected centers by the \codeword{usequence}.
+	\item (Integral) the number of centers requested $N \in [1 : N_\text{QM9}] \subseteq \mathbb{Z}_{>0}$;
+	\item (Integral) index $k \in \mathbb{Z}_{\geq 0}$ of precomputed set of selected centers by the \codeword{usequence}.
 \end{itemize}
 
-For model fitting, the model choice is \codeword{model} $\in$ \{RoSeMI, KRR, NN, LLS, GAK\}. The hyperparameter for both KRR and GAK is the scaling factor $c\sigma \in \mathbb{Z}_{>0}$. For NN, there are several hyperparameters:
+For model fitting, the model choice is from a categorical variable \codeword{model} $\in$ \{RoSeMI, KRR, NN, LLS, GAK\}. The hyperparameter for both KRR and GAK is the scaling factor $c \in \mathbb{R}_{>0}$. For NN, there are several hyperparameters:
 \begin{itemize}
-	\item The number hidden layers $n_\text{HL} \in \mathbb{Z}_{>0}$,
-	\item the list of the hidden layers $n_\text{nodes} \in \mathbb{Z}^{1 \times n_{HL}}_{>0}$ ,
-	\item the choice of activation function for each node in each layer: ReLU, sigmoid, tanh, etc.
+	\item (Integral) the number of hidden layers $n_\text{HL} \in \mathbb{Z}_{>0}$,
+	\item (Integral) the list of hidden layers $n_\text{nodes} \in \mathbb{Z}^{1 \times n_{HL}}_{>0}$ ,
+	\item (Categorical) the choice of activation function for each node in each layer: ReLU, sigmoid, tanh, etc.
 \end{itemize}
 the NN can be optimized by several choices of optimization method: Adam, gradient descent, RMSProp, etc. RoSeMI, KRR, and LLS are solved by CGLS hence we have a choice of the maximum number of iteration \codeword{itmax} $\in \mathbb{Z}_{>0}$.
+
+All categorical variables are encoded in \textbf{one--hot--encoding} form, which transforms a value into a vector in which the length of the vector is equal to the size of the set variable, where the vector contains all 0 except at the relative position of the selected value within the set, here we set it as 1. For example, if we choose "RoSeMI" as \codeword{model}, then
+\begin{equation}
+	\codeword{f_encode("RoSeMI", model)} = [1,0,0,0,0],
+\end{equation}
+another example would be if we choose "SOAP" as the feature type then
+\begin{equation}
+	\codeword{f_encode("SOAP", ftype)} = [0,1,0],
+\end{equation}
+here \codeword{f_encode(val, var)} is a function which encodes the value \codeword{val} given a set variable \codeword{var} into one--hot vector format.
 
 \section{Numerical experiments}
 The hardware and software specification used for the experiments are:
@@ -939,19 +951,18 @@ where each column corresponds to the each hyperparameter boundaries. 25 hyperpar
 
 \begin{table}[H]
 	\centering
-	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type, possible range, best found value, and starting value. \textbf{Int} type means integer, \textbf{Cat} type means categorical.}
+	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type, possible range, best found value, and starting value. \textbf{Int} type means integer, \textbf{Cat} type means categorical. The hyperparameters in the \textbf{best} column give the current best found MAE = 11.626.}
 	\begin{tabular}{|c|c|c|c|c|}
 		\hline
 		\textbf{hyperparam}	& \textbf{type}	& \textbf{range}	& \textbf{best}	& \textbf{start}	\\ \hline
-		$p_{af}$	& \codeword{Int}	& [1,[51,165,140]]	& 45	& 82	\\ \hline
-		$p_{mf}$	& \codeword{Int}	& $[1,p_{af}]$	& 28	& 41	\\ \hline
-		ns	& \codeword{Int}	& [1,10]	& 7	& 6	\\ \hline
-		ftype	& \codeword{Cat}	& [1,3]	& 1	& 2	\\ \hline
-		norm\_af	& \codeword{Cat}	& [0,1]	& 0	& 0	\\ \hline
-		norm\_mf	& \codeword{Cat}	& [0,1]	& 0	& 0	\\ \hline
-		$k$	& \codeword{Int}	& [0,95]	& 48	& 48	\\ \hline
-		model	& \codeword{Cat}	& [1,5]	& 4	& 4	\\ \hline
-		$c\sigma$	& \codeword{Int}	& $[2^0,2^{20}]$	& 524287	& 524288	\\ \hline
+		$n_{af}$	& \codeword{Int}	& [1,50]	& 20	& 25.5	\\ \hline
+		$n_{mf}$	& \codeword{Int}	& $[1,n_{af}]$	& 16	& 13.25	\\ \hline
+		ns	& \codeword{Int}	& [1,10]	& 3	& 5.5	\\ \hline
+		$c$	& \codeword{Real}	& $[0,20]$	& 11	& 10.5	\\ \hline
+		ftype	& \codeword{Cat}	& [1,3]	& 1	& $[1/3, 1/3, 1/3]$	\\ \hline
+		norm\_af	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
+		norm\_mf	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
+		model	& \codeword{Cat}	& [1,5]	& 3	& $[1/5, 1/5, 1/5, 1/5, 1/5]$	\\ \hline
 	\end{tabular}
 	\label{tb:hyperparaminfo}
 \end{table}
