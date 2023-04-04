@@ -19,8 +19,8 @@ path_bounds = '../data/hyperparamopt/bounds.txt';
 disp("init data...")
 bounds = dlmread(path_bounds); % var bounds
 data = textread(path_init_param, "%s"); % params
-fdata = textread(path_fun, "%s"); % f
 xin = zeros(length(data)-1, 1);
+xinit = xin;
 % init list of (x,f):
 if ~exist(path_trackx) && ~exist(path_trackxraw) && ~exist(path_trackf)
   flist = []; xlist = []; xrawlist = [];
@@ -29,12 +29,16 @@ else
   xlist = dlmread(path_trackx); 
   xrawlist = dlmread(path_trackxraw);
 end
+% accept encoded x:
 for i=2:length(data)
   xin(i-1) = str2double(data{i,1});
 end
-f = str2double(fdata{2,1}); % here penalty term = 0
-xinit = xin; finit = f; % store (x, f)_init for restart
 xprev = [];
+
+bm = extractbound(bounds); % compute boundary index matrix
+[xout, fpen] = decode(xin, bounds, bm) % decode x
+paramwriter(xout) % write decoded x
+disp("x has been written to file..")
 
 disp("init mintry ops...")
 % mintry init:
@@ -49,23 +53,20 @@ mintry(init);          % initialize mintry
 nfstuck = 5; % max nf of getting stuck until reset
 ct = 0; % stuck counter
 cpen = 1.; % penalty factor
+citer = 1; % iteration counter
 
-% main loop and (x,f) trackers, new x:
-bm = extractbound(bounds); % compute boundary index matrix
-[xout, xraw, f, fpen, xlist, flist] = paramtracker(xin, f, xlist, flist, bounds, bm); 
-paramwriter(xout, path_param); % write x to file
-disp([f fpen])
-disp(xout)
-disp("x has been written to file..")
-% next ops:
+% main loop:
 unwind_protect
   while true
-    newdata = textread(path_fun, "%s");
+    newdata = textread(path_fun, "%s"); % get new f
     % check if the new file is not empty and the uid is new; {1,1} is the uid:
     if (dir(path_fun).bytes > 0) && (~strcmp(newdata{1,1}, fdata{1,1}))
       disp("new incoming data")
       fdata = newdata % fetch new function info
       f = str2double(fdata{2,1}); % get obj value
+      if citer == 1 % set initial f for reset purpose
+        finit = f
+      end
       f += cpen*fpen; % add penalty term
       disp("[f, penalty] = ")
       disp([f, fpen])
@@ -89,14 +90,14 @@ unwind_protect
       % set new prev:
       xprev = xout; fprev = f;
       % append (x,f):
-      xlist = [xlist; xout']; xrawlist = [xrawlist; xraw']; flist = [flist f];
+      xlist = [xlist; xout']; xrawlist = [xrawlist; xin']; flist = [flist f];
       % main loop and (x,f) trackers (get new x):
-      xin = xraw; % feed the raw x_{k-1}
-      [xout, xraw, f, fpen, xlist, flist] = paramtracker(xin, f, xlist, flist, bounds, bm); 
+      [xout, xin, f, fpen, xlist, flist] = paramtracker(xin, f, xlist, flist, bounds, bm); 
       paramwriter(xout, path_param); % write x to file
       disp([f fpen])
       disp(xout)
       disp("x has been written to file")
+      citer += 1; % increment iteration counter
     end
     % check new data for each second
     % to accomodate for memory > disk speed
