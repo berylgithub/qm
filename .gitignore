@@ -10,6 +10,7 @@ VRDFON/*
 !VRDFON/paramtracker.m
 !VRDFON/minprob.m
 !VRDFON/extractbound.m
+!VRDFON/decode.m
 *.aux
 *.log
 *.pdf

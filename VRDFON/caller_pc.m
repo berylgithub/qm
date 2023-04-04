@@ -10,7 +10,10 @@
 path_fun = '../data/hyperparamopt/fun.txt';
 path_x = '../data/hyperparamopt/params.txt'
 path_bounds = '../data/hyperparamopt/bounds.txt';
-bounds = dlmread(path_bounds)
+bounds = dlmread(path_bounds);
 
-
-linspace(1,5,5-1+1)
+% x = [0.5; 0.5; 6; ]
+x = [0.5; 0.5; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 38; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5;] % encoded x
+length(x)
+bm = extractbound(bounds)
+[xnew, fpen] = decode(x, bounds, bm)
