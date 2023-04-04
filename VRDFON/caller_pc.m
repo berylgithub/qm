@@ -30,4 +30,12 @@ bm = extractbound(bounds)
 [xout, xin, fpen] = xgenerator(x, f, bounds, bm)
 
 intmax
-intmax+1
+fdata = {};
+fdata{1,1} = "asd"
+
+newdata = textread(path_fun, "%s");
+if !isempty(newdata) && ~strcmp(newdata{1,1}, fdata{1,1})
+    disp("do mintry")
+else
+    disp("either the incoming data is old or it is empty")
+end
