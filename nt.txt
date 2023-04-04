@@ -178,3 +178,6 @@ varlist that must be emptied on each experiment run:
 - try experiments with S := 1/(N-1).... instead of 1/N, it adds regularization effect
 - round the atomic energies to integers before use for experiments, since the mean of the rounding error is around 1.5 while the std has larger error (this will change the things slightly).
 
+04.04.2023:
+- table of collection of hyperparameters checkpoint in "data/hyperparamopt/tables/tf_fsort.txt"
+- separate mintry(x,f) and decoder(x), useful for "infeasible" initial point
