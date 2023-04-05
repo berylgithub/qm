@@ -11,6 +11,7 @@ VRDFON/*
 !VRDFON/minprob.m
 !VRDFON/extractbound.m
 !VRDFON/decode.m
+!VRDFON/computex.m
 *.aux
 *.log
 *.pdf
