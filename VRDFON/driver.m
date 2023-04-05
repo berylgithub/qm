@@ -42,16 +42,20 @@ bm = extractbound(bounds); % compute boundary index matrix
 paramwriter(xout, path_param); % write decoded x
 disp("x has been written to file..")
 
+
 disp("init mintry ops...")
+initbounds = boundtransform(bounds); % transform "actual" bounds to "encoded" bounds, only for mintry init
 % mintry init:
-init.paths='minq8';     % mandatory absolute path to minq8
-init.n=length(xin);              % problem dimension
-                       % For tuning or to see intermediate results, 
-                       % a nonstandard initialization may be used.
-                       % For details see mintry.m
+% For details see driverMintry.m
+init.paths = ''; % mandatory absolute path to ???
+init.m = length(xin); init.n = 1; % problem dimension, "could be row or column vector"
+init.nfmax = 500; % max nfe
+init.upp = initbounds(2,:); % upperbound
+init.low = initbounds(1,:); % low
+init.type = initbounds(3,:); % type of variables (categorical and oint == real for now)
+init
 mintry(init);          % initialize mintry
 
-% init some vars:
 nfstuck = 5; % max nf of getting stuck until reset
 ct = 0; % stuck counter
 cpen = 1.; % penalty factor
