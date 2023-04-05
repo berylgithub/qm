@@ -49,10 +49,11 @@ initbounds = boundtransform(bounds); % transform "actual" bounds to "encoded" bo
 % For details see driverMintry.m
 init.paths = ''; % mandatory absolute path to ???
 init.m = length(xin); init.n = 1; % problem dimension, "could be row or column vector"
-init.nfmax = 500; % max nfe
+init.nfmax = 1000; % max nfe
 init.upp = initbounds(2,:); % upperbound
 init.low = initbounds(1,:); % low
 init.type = initbounds(3,:); % type of variables (categorical and oint == real for now)
+init.solver='MATRS'; % solver type
 init
 mintry(init);          % initialize mintry
 
@@ -147,4 +148,8 @@ unwind_protect_cleanup
   dlmwrite(path_trackx, xlist, "\t");
   dlmwrite(path_trackxraw, xrawlist, "\t"); 
   dlmwrite(path_trackf, flist, "\n");
+  % empty the fun file:
+  file_id = fopen(path_fun, 'w');
+  fputs(file_id, "");
+  fclose(file_id);
 end_unwind_protect

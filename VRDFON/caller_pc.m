@@ -37,4 +37,3 @@ bounds
 newbounds = boundtransform(bounds)
 bm = extractbound(newbounds)
 %decode(x, bounds, bm)
-
