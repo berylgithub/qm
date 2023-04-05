@@ -43,10 +43,10 @@ function [xnew, fpen] = decode(x, bounds, bm)
             end
             fpen += norm(p-zi)**2;  % compute penalty
         elseif bounds(3,i) == 3
-            p = minprob(zi)
-            xi = computex(p, bounds(1,i), bounds(2,i))
-            p = computep(xi, bounds(1,i), bounds(2,i))
-            fpen += norm(p-zi)**2  % compute penalty
+            p = minprob(zi);
+            xi = computex(p, bounds(1,i), bounds(2,i));
+            p = computep(xi, bounds(1,i), bounds(2,i));
+            fpen += norm(p-zi)**2;  % compute penalty
         else
             if tr
                 lb = bounds(1,i)/(1+abs(bounds(1,i))); 

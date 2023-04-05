@@ -34,3 +34,10 @@ decode(xold, bounds_old, bm)
 
 bm = extractbound(bounds)
 decode(x, bounds, bm)
+
+data = textread("../data/hyperparamopt/init_params.txt", "%s");
+xin = zeros(length(data)-1, 1);
+for i=2:length(data)
+    xin(i-1) = str2double(data{i,1});
+end
+xin

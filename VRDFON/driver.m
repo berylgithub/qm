@@ -85,8 +85,9 @@ unwind_protect
           cpen /= 10. % reduce penalty factor
         end
         % compare if new x (components) is equal to prev x:
+        % (!) hardcoded condition:
         if !isempty(xprev)
-          if xout(3:9) == xprev(3:9)
+          if xout(1:7) == xprev(1:7)
             ct += 1
           else
             ct = 0
@@ -101,8 +102,6 @@ unwind_protect
         paramwriter(xout, path_param); % write x to file
         % some info display:
         xin
-        f 
-        fpen
         xout
         disp("x has been written to file")
         disp("waiting for new f data....")
