@@ -14,7 +14,7 @@ function [xnew, fpen] = decode(x, bounds, bm)
         tr = paramcheck(bounds(3,i), bounds(1,i), bounds(2,i));
         % slice x_i given the index matrix bm
         zi = x(bm(i,1):bm(i,2)); % zi := encoded xi, i.e., raw xi
-        % check type, int = 1, real = 0, categorical = 2:
+        % check type, real = 0, int = 1, categorical = 2, ordered int =3
         if bounds(3,i) == 1 
             % project to bounds:
             xi = max(bounds(1,i), min(zi, bounds(2,i)));
@@ -42,6 +42,11 @@ function [xnew, fpen] = decode(x, bounds, bm)
                 end
             end
             fpen += norm(p-zi)**2;  % compute penalty
+        elseif bounds(3,i) == 3
+            p = minprob(zi)
+            xi = computex(p, bounds(1,i), bounds(2,i))
+            p = computep(xi, bounds(1,i), bounds(2,i))
+            fpen += norm(p-zi)**2  % compute penalty
         else
             if tr
                 lb = bounds(1,i)/(1+abs(bounds(1,i))); 

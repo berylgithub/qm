@@ -21,18 +21,16 @@ f = 100.;
 x = [1/3; 1/3; 1/3; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5]
 
 %{
-p = [1/6, 1/3, 1/3, 1/6]
+zi = [1/6, 1/3, 1/3, 1/6]'
 xu = 20; xl = 1;
+p = minprob(zi)
 x = computex(p, xl, xu)
 p = computep(x, xl, xu)
-p = minprob(p)
-sum(p)
+norm(p-zi)**2
 
 bm = extractbound(bounds_old)
 decode(xold, bounds_old, bm)
 %}
-
-sum(bounds(4,:))
 
 bm = extractbound(bounds)
 decode(x, bounds, bm)
