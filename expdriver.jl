@@ -250,63 +250,55 @@ bounds = [1,var], [1,var], [1,10], [1,3],   [0,1],          [0,1]           [0,9
 naf, nmf in percentage, e.g., .5 -> .5*max(naf("ACSF"))
 feature name: 1=ACSF, 2=SOAP, 3=FCHL
 model: ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
+
+new params:
+[n_mf, n_af, n_basis, feature_name, normalize_atom, normalize_mol, model, c]
+    1   2       3       4               5               6           7     8 
+the rest of the definitions are the same 
 """
 function main_obj(x)
-    #display(x)
     # process params:
+
+    # determine n_af and n_mf:
+    n_mf = Int(x[1]); n_af = Int(x[2]);
+    n_basis = Int(x[3]) # determine number of splines
+
     # determine feature_name and path:
     dftype = Dict()
     dftype[1] = "ACSF"; dftype[2] = "SOAP"; dftype[3] = "FCHL";
     feature_name = dftype[Int(x[4])]; feature_path = "data/"*feature_name*".jld";
-    # determine n_af and n_mf:
-    dfnaf = Dict() # determines max n_af
-    dfnaf[1] = 51 # ACSF
-    dfnaf[2] = 165 # SOAP
-    dfnaf[3] = 140 # FCHL
-    max_naf = dfnaf[Int(x[4])]; n_af = round(max_naf*x[1]); n_mf = round(n_af*x[2])
-    # check [naf,nmf] bounds, makes sure at least 1 feature is selected:
-    nl=1; nh=Inf
-    n_af = Int(max(nl, min(n_af, nh))); n_mf = Int(max(nl, min(n_mf, nh)));
+
     # crawl center_id by index, "data/centers.txt" must NOT be empty:
     centers = readdlm("data/centers.txt")
-    maxlen = 95 # this is the total number of precomputed instance #size(centers, 1)
-    center_idx = Int(x[7])
+    center_idx = 38 # set it fixed as current "best" found training points
     uid=""; kid= ""; uk_id = ""
-    if 0 < center_idx ≤ maxlen 
-        uid = centers[center_idx,1]; kid = centers[center_idx,2]; uk_id = join([uid,"_",kid])
-        center = centers[center_idx, 3:end]
-        # get atom info global, to match center ids:
-        atomref = readdlm("data/atomref_info.txt")
-        f_atom = load("data/atomref_features.jld", "data")
-        E_atom = f_atom*atomref[center_idx,5:end]
-        #display(atomref[center_idx,5:end])
-        #display(E_atom)
-    else
-        center = [] # default empty, this will crawl the center given by the data setup
-        E_atom = []
-    end
+    uid = centers[center_idx,1]; kid = centers[center_idx,2]; uk_id = join([uid,"_",kid])
+    center = centers[center_idx, 3:end]
+    # get atom info global, to match center ids:
+    atomref = readdlm("data/atomref_info.txt")
+    f_atom = load("data/atomref_features.jld", "data")
+    E_atom = f_atom*atomref[center_idx,5:end]
+
     # determine normalize switches:
     norms = Dict()
     norms[0] = false; norms[1] = true
     normalize_atom = norms[Int(x[5])]; normalize_mol = norms[Int(x[6])];
     # determine model:
     lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
-    model = lmodel[Int(x[8])]
-    cσ = float(x[9]) # Gausssian scaler
+    model = lmodel[Int(x[7])]
+    c = 2^x[8] # determine gaussian scaler for kernels
 
-    println([n_af, n_mf, feature_name, normalize_atom, normalize_mol, feature_path, model])
-    #= println([uid, kid, uk_id])
-    display(center)
-    display(cσ) =#
+    println([n_mf, n_af, n_basis, feature_name, normalize_atom, normalize_mol, feature_path, model, c])
 
     foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
-    data_setup(foldername, n_af, n_mf, Int(x[3]), 300, file_dataset, feature_path, feature_name; 
-        normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 2)
+    
+    data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
+        normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 1)
     GC.gc() # always gc after each run
-    fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=true)
+    fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=false)
     GC.gc() # always gc after each run
     fit_🌹_and_atom(foldername, file_dataset; model = model, 
-        E_atom = E_atom, cσ = cσ, scaler = cσ, 
+        E_atom = E_atom, cσ = c, scaler = c, 
         center_ids = center, uid = uid, kid = uk_id)
     # get MAE:
     path_result = "result/$foldername/err_$foldername.txt"
@@ -315,6 +307,7 @@ function main_obj(x)
     f_atom = E_atom = nothing # clear var
     GC.gc() # always gc after each run
     return MAE
+    
 end
 
 """
