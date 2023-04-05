@@ -17,7 +17,7 @@ path_trackf = '../data/hyperparamopt/flist.txt';
 path_bounds = '../data/hyperparamopt/bounds.txt';
 
 disp("init data...")
-bounds = dlmread(path_bounds); % var bounds
+bounds = dlmread(path_bounds); % var bounds, {[1,:]=lb; [2,:]=ub; [3,:]=type; [4,:]=size} 
 data = textread(path_init_param, "%s"); % params
 xin = zeros(length(data)-1, 1);
 % init list of (x,f):

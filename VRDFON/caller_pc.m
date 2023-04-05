@@ -10,16 +10,29 @@
 path_fun = '../data/hyperparamopt/fun.txt';
 path_x = '../data/hyperparamopt/params.txt'
 path_bounds = '../data/hyperparamopt/bounds.txt';
+path_bounds_old = '../data/hyperparamopt/bounds_old.txt';
 bounds = dlmread(path_bounds);
+bounds_old = dlmread(path_bounds_old);
 
 % x = [0.5; 0.5; 6; ]
-x = [0.5; 0.5; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 38; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5;]; % encoded x
+xold = [0.5; 0.5; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 38; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5;]; % encoded x
 f = 100.;
 
+x = [1/3; 1/3; 1/3; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5]
 
+%{
 p = [1/6, 1/3, 1/3, 1/6]
 xu = 20; xl = 1;
 x = computex(p, xl, xu)
 p = computep(x, xl, xu)
 p = minprob(p)
 sum(p)
+
+bm = extractbound(bounds_old)
+decode(xold, bounds_old, bm)
+%}
+
+sum(bounds(4,:))
+
+bm = extractbound(bounds)
+decode(x, bounds, bm)
