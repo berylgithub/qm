@@ -12,6 +12,7 @@ VRDFON/*
 !VRDFON/extractbound.m
 !VRDFON/decode.m
 !VRDFON/computex.m
+!VRDFON/computep.m
 *.aux
 *.log
 *.pdf
