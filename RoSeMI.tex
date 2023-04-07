@@ -761,7 +761,8 @@ here \codeword{f_encode(val, var)} is a function which encodes the value \codewo
 \subsection{Special mechanisms for passing the hyperparameters}
 Typically variables with \textbf{real} and \textbf{integral} types can be easily passed into an optimization routine given the bounds and types, as most optimization softwares handle both as mandatory types (e.g. in mixed--integer solvers). This is not the case for types such as \textbf{categorical} and \textbf{ordered integers}, hence a special treatment is needed.
 
-Given a variable with \textbf{categorical} type, as mentioned in the previous subsection, we can encode it as a one--hot vector. The most general way, i.e., a way of passing the variable such that the variable can be handled by most optimization routines is by setting the one--hot vector type as \textbf{real}. A mechanism to handle the categorical variable, which is called "round to simplex", says: given arbitrary $x \in \mathbb{R}^n$, find $p$ such that 
+\subsubsection{Handling categorical variables}
+Given a variable with \textbf{categorical} type, as mentioned in the previous subsection, we can encode it as a one--hot vector. The most general way, i.e., a way of passing the variable such that the variable can be handled by most optimization routines is by setting the one--hot vector type as \textbf{real}. A mechanism to handle the categorical variable, which is called "round to simplex", says: given $x \in \mathbb{R}^n$, find $p$ such that 
 \begin{equation}
 	\begin{split}
 		&\min \|p-x\|^2_2 \\	
@@ -769,9 +770,53 @@ Given a variable with \textbf{categorical} type, as mentioned in the previous su
 	\end{split}
 	\label{eq:categorical_rounding}
 \end{equation}
-where $e$ is an all--1 vector. In other words, we want to find a "probability" vector $p$ that is closest to $x$, here $x$ can be an output of the optimization solver or a random initial point which corresponds to the one--hot vector.
+where $e$ is an all--1 vector. In other words, we want to find a "probability" vector $p$ that is closest to $x$, here $x$ can be an output of the optimization solver or an arbitrary initial point which corresponds to the one--hot vector. (\ref{eq:categorical_rounding}) can be solved analytically in order to find $p$. By considering the first order optimality condition of (\ref{eq:categorical_rounding}), which gives
+\begin{equation*}
+	\text{inf}(p-x-\lambda e, p) = 0,
+\end{equation*}
+this implies
+\begin{equation*}
+	p_i = p_i(\lambda) := (x_i - \lambda)_+,
+\end{equation*}
+where $\lambda$ is such that
+\begin{equation*}
+	S(\lambda) := e^\top p(\lambda) = \sum_i (x_i - \lambda)_+ = 1,
+\end{equation*}
+where $S(\lambda)$ is piecewise linear with breakpoints at $x_i$. From here, in order to solve $S(\lambda)$ for $\lambda$, we do the following steps:
+\begin{itemize}
+	\item Let $z = \codeword{sort}(\bar{x} - x)$, where $\bar{x} = \max_i(x_i)$, now we have: $0=z_1\leq z_2 \leq ... \leq z_n$.
+	\item Let $\hat{x}_i = \bar{x} - z_i$, and $\mu = \bar{x} - \lambda$, then
+	\begin{equation*}
+		\begin{split}
+			&S(\lambda) = \sum_i (\hat{x}_i - \lambda)_+ = \sum_i (\bar{x} - \lambda - z_i)_+ = \sum_i (\mu - z_i)_+ = \sum_{i=1}^k (\mu - z_i)_+ = k\mu - S_k, \\
+			&\text{ if } z_k \leq \mu \leq z_{k+1}, \text{where }z_0 := -\infty, z_{k+1} := \infty.
+		\end{split}
+	\end{equation*}
+	\item Since $k=0$ gives $\mu \leq 0$ and $S(\lambda) = 0$, thus we need to find $k>0$ in order to satisfy the $S(\lambda) = 1$:
+	\begin{equation*}
+		\begin{split}
+			&k\mu - S_k=1, \\
+			&\mu = \frac{1+S_k}{k}, \text{where $k$ is the smallest with } 1 \leq kz_{k+1} - S_k
+		\end{split}
+	\end{equation*}
+	\item Given the smallest possible $k$, finally we can obtain feasible $p$
+	\begin{equation*}
+		\begin{split}
+			\lambda &= \bar{x} - \mu, \\
+			p_i &= (x_i - \lambda)_+.	
+		\end{split}
+	\end{equation*}
+\end{itemize}
+Using the feasible $p$ from the steps above, we can pick the value $y$ of the categorical variable by
+\begin{equation*}
+	q_i = \sum_{j\leq i} p_i,~~ \text{for }i = 0,1,2,...
+\end{equation*}
+where $q_0 = 0$. We generate a random value $r \in \mathbb{R} \cap [0,1]$, then we pick $y := i$ which satisfies
+\begin{equation*}
+	q_i \leq r \leq q_{i+1}.
+\end{equation*}
 
-
+\subsubsection{Handling ordered integer variables}
 
 \section{Numerical experiments}
 The hardware and software specification used for the experiments are:
