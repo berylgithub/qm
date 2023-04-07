@@ -741,12 +741,13 @@ For data selection, the possible hyperparameters are
 For model fitting, the possible choices of hyperparameters are:
 \begin{itemize}
 	\item \codeword{model} $\in$ \{RoSeMI, KRR, NN, LLS, GAK\} (\textbf{categorical}), the choice of models.
-	\item $c \in \mathbb{R}_{\geq0}$ (\textbf{real}), KRR and GAK kernel scaling factor.
+	\item $c \in \mathbb{R}_{\geq0}$ (\textbf{real}), the scaling factor for KRR and GAK kernels.
 	\item $n_\text{HL} \in \mathbb{Z}_{>0}$ (\textbf{integral}), the number of hidden layers for NN,
 	\item $n_\text{nodes} \in \mathbb{Z}^{1 \times n_{HL}}_{>0}$ (\textbf{integral}), the number of nodes in each hidden layer,
 	\item $\codeword{f_act} \in \{\text{ReLU, sigmoid, tanh}\}$ (\textbf{categorical}), the choice of activation function for each node in each layer.
+	\item $\codeword{NN_opt} \in \{\text{Adam, SGD, RMSProp}\}$ (\textbf{categorical}), the choice of NN optimizer.
+	\item \codeword{itmax} $\in \mathbb{Z}_{>0}$ (\textbf{integral}), number of CGLS iterations for the linear models.
 \end{itemize}
-NN can be optimized by several choices of optimization method: Adam, gradient descent, RMSProp, etc. RoSeMI, KRR, and LLS are solved by CGLS hence we have a choice of the maximum number of iteration \codeword{itmax} $\in \mathbb{Z}_{>0}$.
 
 All categorical variables are encoded in \textbf{one--hot--encoding} form, since there is no natural ordering of categorical variables (in contrast to variables with real or integer types). The encoding process transforms a value into a vector in which the length of the vector is equal to the size of the set variable, where the vector contains all 0 except at the relative position of the selected value within the set where we set it as 1. For example, if we choose "RoSeMI" as \codeword{model}, then
 \begin{equation}
@@ -817,6 +818,26 @@ where $q_0 = 0$. We generate a random value $r \in \mathbb{R} \cap [0,1]$, then 
 \end{equation*}
 
 \subsubsection{Handling ordered integer variables}
+Analogous to the categorical variables, we encode $n$ ordered integers into an arbitrary vector $p \in \mathbb{R}^{n+1}$. It is allowed for either the initial point or the output of the optimizer to yield infeasible $p$, i.e., $e^\top p \neq 1$, thus we need to apply the "round to simplex" procedure for $p$, then we can obtain the values of the $n$ ordered integers by
+\begin{equation*}
+	x_i = x_{i-1} + p_idx, ~~ \text{for }i=0,1,...,n
+\end{equation*}
+where
+\begin{equation}
+	x_0 := \underbar{$x$}, ~~ x_{n+1} := \bar{x}, ~~ dx = \bar{x} - \underbar{$x$}.
+\end{equation}
+
+On the opposite direction, suppose $x$ is known, and we want to compute $p$ instead
+\begin{equation*}
+	\underbar{$x$} = x_0 \leq x_1 \leq ... \leq x_n \leq x_{n+1} = \bar{x},
+\end{equation*}
+then we encode them into a "probability" vector of size $n+1$ by
+\begin{equation*}
+	p_i = \frac{x_i - x_{i-1}}{dx}.
+\end{equation*}
+
+
+
 
 \section{Numerical experiments}
 The hardware and software specification used for the experiments are:
@@ -1020,12 +1041,32 @@ where each column corresponds to the each hyperparameter boundaries. 25 hyperpar
 		$n_{mf} \leq n_{af}$	& \codeword{OInt}	& [1,50]	& [16, 20]	& 	[1/3, 1/3, 1/3] \\ \hline
 		$n_s$	& \codeword{Int}	& [1,10]	& 3	& 5.5	\\ \hline
 		$c$	& \codeword{Real}	& $[0,20]$	& 11	& 10.5	\\ \hline
-		ftype	& \codeword{Cat}	& [1,3]	& 1	& $[1/3, 1/3, 1/3]$	\\ \hline
-		norm\_af	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
-		norm\_mf	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
-		model	& \codeword{Cat}	& [1,5]	& 3	& $[1/5, 1/5, 1/5, 1/5, 1/5]$	\\ \hline
+		\codeword{ftype}	& \codeword{Cat}	& [1,3]	& 1	& $[1/3, 1/3, 1/3]$	\\ \hline
+		\codeword{norm_af}	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
+		\codeword{norm_mf}	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
+		\codeword{model}	& \codeword{Cat}	& [1,5]	& 3	& $[1/5, 1/5, 1/5, 1/5, 1/5]$	\\ \hline
 	\end{tabular}
 	\label{tb:hyperparaminfo}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{The list of fixed hyperparameters throughout all experiments.}
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{value}	\\ \hline
+		\codeword{itmax}	&	\codeword{Int}	&	$[1, \infty]$	&	500	\\ \hline
+		$n_{pf}$	& \codeword{Int}	& $[0,\infty]$	& 0	\\ \hline
+		$N$	& \codeword{Int}	& $[1,N_{QM9}]$	& 300	\\ \hline
+		$k$	& \codeword{Int}	& $[0,95]$	& 38	\\ \hline
+		$n_{HL}$	&	\codeword{Int}	& [1,50]	& 2	\\ \hline
+		$n_\text{nodes}$	&	\codeword{Int}	& 	[[1,100],...,[1,100]]	& [10, 10]	\\ \hline
+		\codeword{f_act}	&	\codeword{Cat}	&	[[1, 3],...,[1, 3]]	&	[1, 1]	\\ \hline
+		\codeword{NN_opt}	&	\codeword{Cat}	&	[1,3]	&	1	\\	\hline
+		\codeword{pca_sf}	& \codeword{Cat}	& [0,1]	& 0	\\ \hline
+		\codeword{mfem}	& \codeword{Cat}	& $[[0,1],[0,1]]$	& [0,0]	\\ \hline		
+	\end{tabular}
+	\label{tb:fixed_hyperparam}
 \end{table}
 
 
