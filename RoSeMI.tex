@@ -721,42 +721,44 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 \section{Hyperparameter space}
 \label{sec:hyperspace}
 \subsection{Possible hyperparameters}
-We can construct the whole molecular fitting process from start to end by choosing many different possible combinations of hyperparameters. At the very fist step, we can choose the feature extraction method between \codeword{ftype} $\in$ \{ACSF, SOAP, FCHL\}, which is a \textbf{categorical} variable. During feature selection, there exist several possible choices of hyperparameters:
+We can construct the whole molecular fitting process from start to end by choosing many different possible combinations of hyperparameters. The hyperparameters included in the hyperparameter optimization experiments are listed in Table \ref{tb:hyperparam_include}, meanwhile the excluded ones are listed in Table \ref{tb:hyperparam_exclude}. During feature selection, there exist several possible choices of hyperparameters:
 \begin{itemize}
+	\item \codeword{ftype} $\in$ \{ACSF, SOAP, FCHL\} (\textbf{categorical}), the choice of set of atomic features.
 	\item $\codeword{pca_sf} \in \{\text{diag, sens}\}$ (\textbf{categorical}), the choice for the scaling factor of the correlation matrix: the diagonals of the covariance matrix or the sensitivity vector.  $n_{pf} \in \mathbb{Z}_{>0}$ (\textbf{integral}), which is the number of features involved for the sensitivity vector computation.
 	\item $n_{mf} \leq n_{af} \in \mathbb{Z}_{>0}$ (\textbf{ordered integers}), the number of molecular features chosen $n_{mf}$ and the number of atomic features $n_{af}$.
 	\item $n_{s}\in \mathbb{Z}_{>0}$ (\textbf{integral}), number of splines.
-	\item $\codeword{mfem} \in [\{\codeword{false, true}\},  \{\codeword{false, true}\}]$ (\textbf{categorical}), the molecular feature extraction mode, whether to include: sum of squares, binomial features.
+	\item $\codeword{mfem_ss} \in \{\codeword{false, true}\}$ (\textbf{categorical}), the feature extraction mode, whether to include sum of squares features.
+	\item $\codeword{mfem_bf} \in \{\codeword{false, true}\}$ (\textbf{categorical}), the feature extraction mode, whether to include binomial features.
 	\item \codeword{norm_af} $ \in \{\codeword{false, true}\}$ (\textbf{categorical}), the atomic features normalization mode, the choice of whether to normalize the atomic features.
 	\item \codeword{norm_mf} $ \in \{\codeword{false, true}\}$ (\textbf{categorical}), the molecular features normalization mode, the choice of whether to normalize the molecular features.
-
-
 \end{itemize}
-For data selection, the possible hyperparameters are
+For data selection, the possible hyperparameters are:
 \begin{itemize}
 	\item $N \in [1 : N_\text{QM9}] \subseteq \mathbb{Z}_{>0}$ (\textbf{integral}), the number of centers requested;
 	\item $k \in \mathbb{Z}_{\geq 0}$ (\textbf{integral}), the index of precomputed set of selected centers by the \codeword{usequence}.
 \end{itemize}
-
-For model fitting, the possible choices of hyperparameters are:
+For linear model fitting, the possible choices of hyperparameters are:
 \begin{itemize}
 	\item \codeword{model} $\in$ \{RoSeMI, KRR, NN, LLS, GAK\} (\textbf{categorical}), the choice of models.
 	\item $c \in \mathbb{R}_{\geq0}$ (\textbf{real}), the scaling factor for KRR and GAK kernels.
+	\item \codeword{itmax} $\in \mathbb{Z}_{>0}$ (\textbf{integral}), number of CGLS iterations for the linear models.
+\end{itemize}
+For neural network, the possibilities are:
+\begin{itemize}
 	\item $n_\text{HL} \in \mathbb{Z}_{>0}$ (\textbf{integral}), the number of hidden layers for NN,
 	\item $n_\text{nodes} \in \mathbb{Z}^{1 \times n_{HL}}_{>0}$ (\textbf{integral}), the number of nodes in each hidden layer,
-	\item $\codeword{f_act} \in \{\text{ReLU, sigmoid, tanh}\}$ (\textbf{categorical}), the choice of activation function for each node in each layer.
+	\item $\codeword{f_act} \in \{\text{ReLU, sigmoid, tanh}\}^{1 \times n_{HL}}$ (\textbf{categorical}), the choice of activation function for each node in each layer.
 	\item $\codeword{NN_opt} \in \{\text{Adam, SGD, RMSProp}\}$ (\textbf{categorical}), the choice of NN optimizer.
-	\item \codeword{itmax} $\in \mathbb{Z}_{>0}$ (\textbf{integral}), number of CGLS iterations for the linear models.
 \end{itemize}
 
 All categorical variables are encoded in \textbf{one--hot--encoding} form, since there is no natural ordering of categorical variables (in contrast to variables with real or integer types). The encoding process transforms a value into a vector in which the length of the vector is equal to the size of the set variable, where the vector contains all 0 except at the relative position of the selected value within the set where we set it as 1. For example, if we choose "RoSeMI" as \codeword{model}, then
-\begin{equation}
+\begin{equation*}
 	\codeword{f_encode("RoSeMI", model)} = [1,0,0,0,0],
-\end{equation}
+\end{equation*}
 another example would be if we choose "SOAP" as the feature type then
-\begin{equation}
+\begin{equation*}
 	\codeword{f_encode("SOAP", ftype)} = [0,1,0],
-\end{equation}
+\end{equation*}
 here \codeword{f_encode(val, var)} is a function which encodes the value \codeword{val} given a set variable \codeword{var} into one--hot vector format.
 
 \subsection{Special mechanisms for passing the hyperparameters}
@@ -836,6 +838,43 @@ then we encode them into a "probability" vector of size $n+1$ by
 	p_i = \frac{x_i - x_{i-1}}{dx}.
 \end{equation*}
 
+\begin{table}[H]
+	\centering
+	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type, possible range, best found value, and starting value. Under the \textbf{type} column, \textbf{Int} means integer, \textbf{Cat} means categorical, and \textbf{OInt} means ordered integers. The hyperparameters in the \textbf{best} column give the current best found MAE = 11.626.}
+	\begin{tabular}{|c|c|c|c|c|}
+		\hline
+		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{best}	& \textbf{start}	\\ \hline
+		$n_{mf} \leq n_{af}$	& \codeword{OInt}	& [1,50]	& [16, 20]	& 	[1/3, 1/3, 1/3] \\ \hline
+		$n_s$	& \codeword{Int}	& [1,10]	& 3	& 5.5	\\ \hline
+		$c$	& \codeword{Real}	& $[0,20]$	& 11	& 10.5	\\ \hline
+		\codeword{ftype}	& \codeword{Cat}	& [1,3]	& 1	& $[1/3, 1/3, 1/3]$	\\ \hline
+		\codeword{norm_af}	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
+		\codeword{norm_mf}	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
+		\codeword{model}	& \codeword{Cat}	& [1,5]	& 3	& $[1/5, 1/5, 1/5, 1/5, 1/5]$	\\ \hline
+	\end{tabular}
+	\label{tb:hyperparam_include}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{The list of fixed hyperparameters throughout all experiments.}
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{value}	\\ \hline
+		\codeword{itmax}	&	\codeword{Int}	&	$[1, \infty]$	&	500	\\ \hline
+		$n_{pf}$	& \codeword{Int}	& $[0,\infty]$	& 0	\\ \hline
+		$N$	& \codeword{Int}	& $[1,N_{QM9}]$	& 300	\\ \hline
+		$k$	& \codeword{Int}	& $[0,95]$	& 38	\\ \hline
+		$n_{HL}$	&	\codeword{Int}	& [1,50]	& 2	\\ \hline
+		$n_\text{nodes}$	&	\codeword{Int}	& 	$[1,100]^{n_{HL}}$	& [10, 10]	\\ \hline
+		\codeword{f_act}	&	\codeword{Cat}	&	$[1, 3]^{n_{HL}}$	&	[1, 1]	\\ \hline
+		\codeword{NN_opt}	&	\codeword{Cat}	&	[1,3]	&	1	\\	\hline
+		\codeword{pca_sf}	& \codeword{Cat}	& [0,1]	& 0	\\ \hline
+		\codeword{mfem_ss}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
+		\codeword{mfem_bf}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
+	\end{tabular}
+	\label{tb:hyperparam_exclude}
+\end{table}
 
 
 
@@ -952,6 +991,7 @@ The full MAE from fitting the atomic energies is in fact refers to the mean abso
 		45	& -380.123	& -23889.676	& -34354.064	& -47203.101	& -62656.640	& 17.287	& 20.146	\\ \hline
 		26	& -378.354	& -23892.807	& -34351.090	& -47202.015	& -62663.825	& 17.315	& 20.341	\\ \hline
 		91	& -376.980	& -23894.187	& -34352.579	& -47204.336	& -62658.886	& 17.421	& 20.226	\\ \hline
+		all	& -378.666  & -23891.253 	& -34354.806	& -47203.592 	& -62665.984	& 19.886	& 19.886	\\ \hline
 	\end{tabular}
 	\label{tab:null_exp}
 \end{table}
@@ -1013,7 +1053,7 @@ The hyperparameters used are: cutoff radius $r_\text{cut} = 8.0$ for both the FC
 
 
 \subsubsection{Hyperparameter optimization}
-To find the best model configuration, here we also conducted numerical experiments using hyperparameters optimized by a derivative--free optimizer \at{cite Morteza's software}. The set of hyperparameters chosen to be optimized is the subset of hyperparameters explained in section \ref{sec:hyperspace}, which are:
+To find the best model configuration, here we conducted numerical experiments using hyperparameters optimized by a derivative--free optimizer \at{cite Morteza's software}. The set of hyperparameters chosen to be optimized is the subset of hyperparameters explained in section \ref{sec:hyperspace}, which are:
 \begin{equation*}
 	H := \{p_{af}, p_{mf}, n_s, \codeword{ftype}, \codeword{norm_af}, \codeword{norm_mf}, k, \codeword{model}, c\sigma\}.
 \end{equation*}
@@ -1031,43 +1071,6 @@ The second series of experiments is done by projecting the infeasible solutions 
 	\end{pmatrix},
 \end{equation*}
 where each column corresponds to the each hyperparameter boundaries. 25 hyperparameters found are in Table \ref{tab:hyperopt2}.
-
-\begin{table}[H]
-	\centering
-	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type, possible range, best found value, and starting value. Under the \textbf{type} column, \textbf{Int} means integer, \textbf{Cat} means categorical, and \textbf{OInt} means ordered integers. The hyperparameters in the \textbf{best} column give the current best found MAE = 11.626.}
-	\begin{tabular}{|c|c|c|c|c|}
-		\hline
-		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{best}	& \textbf{start}	\\ \hline
-		$n_{mf} \leq n_{af}$	& \codeword{OInt}	& [1,50]	& [16, 20]	& 	[1/3, 1/3, 1/3] \\ \hline
-		$n_s$	& \codeword{Int}	& [1,10]	& 3	& 5.5	\\ \hline
-		$c$	& \codeword{Real}	& $[0,20]$	& 11	& 10.5	\\ \hline
-		\codeword{ftype}	& \codeword{Cat}	& [1,3]	& 1	& $[1/3, 1/3, 1/3]$	\\ \hline
-		\codeword{norm_af}	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
-		\codeword{norm_mf}	& \codeword{Cat}	& [0,1]	& 1	& $[1/2, 1/2]$	\\ \hline
-		\codeword{model}	& \codeword{Cat}	& [1,5]	& 3	& $[1/5, 1/5, 1/5, 1/5, 1/5]$	\\ \hline
-	\end{tabular}
-	\label{tb:hyperparaminfo}
-\end{table}
-
-\begin{table}[H]
-	\centering
-	\caption{The list of fixed hyperparameters throughout all experiments.}
-	\begin{tabular}{|c|c|c|c|}
-		\hline
-		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{value}	\\ \hline
-		\codeword{itmax}	&	\codeword{Int}	&	$[1, \infty]$	&	500	\\ \hline
-		$n_{pf}$	& \codeword{Int}	& $[0,\infty]$	& 0	\\ \hline
-		$N$	& \codeword{Int}	& $[1,N_{QM9}]$	& 300	\\ \hline
-		$k$	& \codeword{Int}	& $[0,95]$	& 38	\\ \hline
-		$n_{HL}$	&	\codeword{Int}	& [1,50]	& 2	\\ \hline
-		$n_\text{nodes}$	&	\codeword{Int}	& 	[[1,100],...,[1,100]]	& [10, 10]	\\ \hline
-		\codeword{f_act}	&	\codeword{Cat}	&	[[1, 3],...,[1, 3]]	&	[1, 1]	\\ \hline
-		\codeword{NN_opt}	&	\codeword{Cat}	&	[1,3]	&	1	\\	\hline
-		\codeword{pca_sf}	& \codeword{Cat}	& [0,1]	& 0	\\ \hline
-		\codeword{mfem}	& \codeword{Cat}	& $[[0,1],[0,1]]$	& [0,0]	\\ \hline		
-	\end{tabular}
-	\label{tb:fixed_hyperparam}
-\end{table}
 
 
 \begin{table}[H]
