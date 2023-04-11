@@ -14,6 +14,7 @@ VRDFON/*
 !VRDFON/computex.m
 !VRDFON/computep.m
 !VRDFON/boundtransform.m
+!VRDFON/MATRSstep.m
 *.aux
 *.log
 *.pdf
