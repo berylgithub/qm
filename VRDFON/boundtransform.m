@@ -1,3 +1,8 @@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%% boundtransform.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % transforms actual bounds {int, oint, cat, real} to encoded bounds which only accepts {int, real}
 function v = boundtransform(bounds)
     dec_size = size(bounds)(2) % number of "decoded"/actual variables 

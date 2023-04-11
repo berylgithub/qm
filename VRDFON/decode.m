@@ -3,6 +3,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% decode.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function to decode encoded x, 
+% given vector "x", bounds matrix "bounds", and bounds index matrix "bm", 
 % this generally implies reduction of x's dimension.
 % Also computes penalty objective but is independent of function value!!
 function [xnew, fpen] = decode(x, bounds, bm)

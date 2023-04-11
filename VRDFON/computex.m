@@ -1,5 +1,9 @@
 
-% function which computes integral x given a vector of p \in [0,1]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% computex.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function which computes integral x given a "probability vector" p \in [0,1]
 function x = computex(p, xl, xu)
     dx = xu - xl;
     n = length(p);

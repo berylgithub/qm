@@ -1,4 +1,9 @@
-% extracts relevant information given boundary matrix
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%% extractbound.m %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% extracts boundary matrix indices given boundary matrix
 function v = extractbound(bounds)
     %{
     pbu = 0; % var for (p)revious (b)ound (u)pperbound
