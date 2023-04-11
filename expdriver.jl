@@ -174,7 +174,7 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
         f = main_obj(x)
         # write result to file:
         uid = replace(string(Dates.now()), ":" => ".")
-        writestringline(string.(vcat(uid, f)), path_fun)
+        writestringline(string.(vcat(uid, f)), path_fun); writestringline(string.(vcat(f, x)), path_track; mode="a");
     end
     # tracker for fobj and hyperparams already used:
     #writestringline(string.(vcat(f, x)), path_track; mode="a") 
