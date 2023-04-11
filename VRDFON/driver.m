@@ -102,6 +102,7 @@ unwind_protect
         xprev = xout; fprev = f;
         % append (x,f):
         xlist = [xlist; xout']; xrawlist = [xrawlist; xin']; flist = [flist f];
+        dlmwrite(path_trackx, xlist, "\t"); dlmwrite(path_trackf, flist, "\n"); dlmwrite(path_trackxraw, xrawlist, "\t"); 
         % main loop and (x,f) trackers (get new x):
         [xout, xin, f, fpen, xlist, flist] = paramtracker(xin, f, xlist, flist, bounds, bm); 
         paramwriter(xout, path_param); % write x to file
