@@ -1236,6 +1236,58 @@ function center_comp_driver()
                 ff, fname; save_global_centers = true)
 end
 
+"""
+fit all NQM9 data for null model, separate function since the default function can't accomodate full data (error)
+"""
+function fit_all_null(foldername, file_dataset, file_atomref_features; center_ids = [], tlimit = 900, uid="", kid="", save_global=false)
+    mkpath("result/$foldername")
+    dataset = load(file_dataset, "data"); n_data = length(dataset)
+    F_atom = load(file_atomref_features, "data")
+    E = map(d -> d["energy"], dataset)
+    if isempty(center_ids)
+        center_ids = load("data/$foldername/center_ids.jld", "data")[1]
+    end
+    Midx = center_ids
+    # compute atomic reference energies:
+    A = F_atom[Midx, :] # construct the data matrix
+    start = time()
+    θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    errors = A*θ - E[Midx]
+    MAEtrain = mean(abs.(errors))*627.503
+    println("atomic MAE train = ",MAEtrain)
+    E_atom = F_atom*θ # the sum of atomic energies
+    E_red_mean = mean(abs.(E - E_atom)) .* 627.503 # mean of reduced energy
+    # save MAE and atomref energies to file
+    if isempty(uid)
+        uid = readdlm("data/$foldername/setup_info.txt")[end, 1] # get data setup uid
+    end
+    if isempty(kid)
+        kid = "K1"
+    end
+    strlist = string.(vcat(uid, kid, MAEtrain, E_red_mean, θ)) # concat the MAEs with the atomic ref energies
+    open("result/$foldername/atomref_info.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+    if save_global
+        open("data/atomref_info.txt","a") do io # write also to global
+            str = ""
+            for s ∈ strlist
+                str*=s*"\t"
+            end
+            print(io, str*"\n")
+        end
+    end
+    # reduced energy data structure:
+    Ed = Dict()
+    Ed["theta"] = θ # or the atom reference energy
+    Ed["atomic_energies"] = E_atom # sum of the atom ref energy
+    save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
+end
+
 
 """
 test PyCall for QML
