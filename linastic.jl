@@ -1,4 +1,4 @@
-using LinearAlgebra, Statistics, Distributions, Plots, LaTeXStrings, DataFrames
+using LinearAlgebra, Statistics, StatsBase, Distributions, Plots, LaTeXStrings, DataFrames
 
 """
 placeholder for linear algebra and statistics operations, if RoSemi is overcrowded, or when the need arises
@@ -176,7 +176,7 @@ params:
     ;
     - callplot is for personal use only
 """
-function PCA_atom(f, n_select; normalize=true, fname_plot_at="", save_cov=false)
+function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_plot_at="", save_cov=false)
     # cut number of features:
     N, n_f = (length(f), size(f[1], 2))
     # compute mean vector:
@@ -250,13 +250,24 @@ function PCA_atom(f, n_select; normalize=true, fname_plot_at="", save_cov=false)
     end
     # normalize
     if normalize
-        maxs = map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
-        mins = map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
-        @simd for l ∈ 1:N
-            n_atom = size(f[l], 1)
-            @simd for i ∈ 1:n_atom
-                f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
+        if normalize_mode == "minmax"
+            maxs = map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+            mins = map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+            @simd for l ∈ 1:N
+                n_atom = size(f[l], 1)
+                @simd for i ∈ 1:n_atom
+                    f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
+                end
             end
+        elseif normalize_mode == "ecdf" # empirical CDF scaler, UNFINISHED, DONT USE!
+            maxs = map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+            mins = map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+            @simd for l ∈ 1:N
+                n_atom = size(f[l], 1)
+                @simd for i ∈ 1:n_atom
+                    f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
+                end
+            end    
         end
     end
     s = ∑ = S = ∑S = C = D = e = temp_A = nothing; GC.gc() # clear memory
@@ -375,7 +386,7 @@ assume features and dataset are contiguous
 params:
     - mode: features to be used: fsos, fbin
 """
-function extract_mol_features(f, dataset; ft_sos=true, ft_bin=true, sum_mode=0)
+function extract_mol_features(f, dataset; ft_sos=false, ft_bin=false, sum_mode=0)
     N, n_f0 = (length(f), size(f[1], 2))
     #n_f = n_f0*5*2 + (binomial(n_f0, 2)+n_f0)*5 # since the features are separated, ×2 since the includes also the quadratic, + binomial(n_f0, 2)*5 since it's the atomic combination
     n_f = n_f0*5
@@ -505,7 +516,7 @@ params:
     - F, ∈Float64(N, n_f)
     - cov test only for numerically unstable features (such as FCHL)
 """
-function PCA_mol(F, n_select; normalize=true, cov_test=true, fname_plot_mol="")
+function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_test=true, fname_plot_mol="")
     N, n_f = size(F)
     if cov_test
         C = cov(F)
@@ -555,10 +566,17 @@ function PCA_mol(F, n_select; normalize=true, cov_test=true, fname_plot_mol="")
     end
 
     if normalize
-        maxs = vec(maximum(F_new, dims=1))
-        mins = vec(minimum(F_new, dims=1))
-        for l ∈ 1:N
-            F_new[l,:] .= (F_new[l,:] .- mins) ./ (maxs .- mins)
+        if normalize_mode == "minmax"
+            maxs = vec(maximum(F_new, dims=1))
+            mins = vec(minimum(F_new, dims=1))
+            for l ∈ 1:N
+                F_new[l,:] .= (F_new[l,:] .- mins) ./ (maxs .- mins)
+            end
+        elseif normalize_mode == "ecdf" # empirical CDF scaler
+            @simd for k ∈ axes(F_new, 2)
+                ec = ecdf(F_new[:, k]) # fit CDF
+                F_new[:, k] = ec(fbig[:, k]) # predict CDF
+            end
         end
     end
     C=e=F=nothing; GC.gc() # clear memory
