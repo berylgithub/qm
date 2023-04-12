@@ -226,7 +226,7 @@ takes in the data indices (relative to the qm9 dataset).
 if molf_file  is not empty then there will be no atomic feature extractions, only PCA on molecular level
 """
 function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
-                    universe_size=1_000, normalize_atom = true, normalize_mol = true, ft_sos=false, ft_bin=false, 
+                    universe_size=1_000, normalize_atom = true, normalize_mol = true, normalize_mode = "minmax", ft_sos=false, ft_bin=false, 
                     molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false, num_center_sets = 1)
     println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
@@ -253,13 +253,13 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
             println("PCA atom done!")
             println("mol feature processing starts!")
             F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
-            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol)
+            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode)
             println("mol feature processing finished!")
         else
             println("mol only mode!")
             println("mol feature processing starts!")
             F = load(molf_file)["data"]
-            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, cov_test=feature_name=="FCHL" ? true : false)
+            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode, cov_test=feature_name=="FCHL" ? true : false)
             println("mol feature processing finished!")
         end
         #F = F[data_indices, :]; f = f[data_indices]

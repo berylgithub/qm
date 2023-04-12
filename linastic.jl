@@ -575,7 +575,7 @@ function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_tes
         elseif normalize_mode == "ecdf" # empirical CDF scaler
             @simd for k ∈ axes(F_new, 2)
                 ec = ecdf(F_new[:, k]) # fit CDF
-                F_new[:, k] = ec(fbig[:, k]) # predict CDF
+                F_new[:, k] = ec(F_new[:, k]) # predict CDF
             end
         end
     end
