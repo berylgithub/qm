@@ -977,7 +977,7 @@ The full MAE from fitting the atomic energies is in fact refers to the mean abso
 
 \begin{table}[H]
 	\centering
-	\caption{10 best (lowest training MAE) numerical experiments of fitting the null model to predict the null energies picked from 95 experiments. The \textbf{MAE}s and the atomic energies are in kcal/mol.}
+	\caption{10 best (lowest training MAE) numerical experiments of fitting the null model to predict the null energies picked fro 95 experiments. The \textbf{MAE}s and the atomic energies are in kcal/mol. The last row shows the experiment of null model fitted to $N_{QM9}$ data points.}
 	\begin{tabular}{|c|r|r|r|r|r|r|r|}
 		\hline
 		$k$	& $E_H^\text{atom}$	& $E_C^\text{atom}$	& $E_O^\text{atom}$	& $E_N^\text{atom}$	& $E_F^\text{atom}$	&  \textbf{\begin{tabular}[c]{@{}c@{}}Train \\ MAE\end{tabular}}	&  \textbf{\begin{tabular}[c]{@{}c@{}}Full \\ MAE\end{tabular}}	\\ \hline
@@ -1059,7 +1059,7 @@ To find the best model configuration, here we conducted numerical experiments us
 \end{equation*}
 $H$ is initialized by the set of hyperparameters which produced the lowest MAE in table \ref{tab:best_10_exp} (1st row)
 \begin{equation*}
-	H = \{0.392, 0.800, 3, \text{ACSF}, \codeword{true}, \codeword{true}, 38, \text{GAK}, 32\}
+	H = \{0.392, 0.800, 3, \text{ACSF}, \codeword{true}, \codeword{true}, 38, \text{GAK}, 2048\}
 \end{equation*}
 A series of experiments by setting infeasible solutions to have $\text{MAE} = 100$ is done, 30 latest hyperparameters found are shown in table \ref{tab:hyperopt}.
 The second series of experiments is done by projecting the infeasible solutions into the boundaries of feasible solutions, the bounds are
