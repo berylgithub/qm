@@ -1077,7 +1077,7 @@ where $p_{af}, p_{mf} \in (0,1] \cap \mathbb{R}$ are the percentage of the featu
 	n_{af} = p_{af} \bar{n}_{af},
 \end{equation*}
 where $\bar{n}_{af}$ is the maximum possible number of atomic feature selected, e.g., for ACSF $\bar{n}_{af} = 51$; this is also analogous for the percentage of molecular features $p_{mf}$.
-$H$ is initialized by the set of hyperparameters which produced the lowest MAE in table \ref{tab:best_10_exp} (1st row) with small perturbation
+$H$ is initialized by the set of hyperparameters which produced the lowest MAE in table \ref{tab:best_10_exp} (1st row) with perturbation
 \begin{equation*}
 	H = \{0.392, 0.800, 3, \text{ACSF}, \codeword{true}, \codeword{true}, 38, \text{GAK}, 32\}
 \end{equation*}
@@ -1172,6 +1172,7 @@ where each column corresponds to the each hyperparameter boundaries. 25 hyperpar
 \paragraph{Hyperopt with special constraints}
 As explained in section \ref{sec:hyperspace}, several variables have special constraints that are implied by the types, for example, the relationship $n_{mf} \leq n_{af}$. 
 In particular, here we treat categorical (\textbf{Cat}) and ordered integer variables (\textbf{OInt}) using the mechanisms in section \ref{sec:hyperopt_cat} and \ref{sec:hyperopt_oint} respectively.
+The middle--point between the lower and upper bound of each variable is used as the initial starting point as shown in Table \ref{tb:hyperopt_spec}, this is done to promote more exploration.
 
 \begin{table}[H]
 	\centering
