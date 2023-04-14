@@ -763,6 +763,45 @@ another example would be if we choose "SOAP" as the feature type then
 \end{equation*}
 here \codeword{f_encode(val, var)} is a function which encodes the value \codeword{val} given a set variable \codeword{var} into one--hot vector format.
 
+\begin{table}[H]
+	\centering
+	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type and possible range. 
+	Under the \textbf{type} column, \textbf{Int} means integer, \textbf{Cat} means categorical, and \textbf{OInt} means ordered integers. }
+	\begin{tabular}{|c|c|c|c|c|}
+		\hline
+		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	\\ \hline
+		$n_{mf} \leq n_{af}$	& \codeword{OInt}	&	[16, 20]	\\ \hline
+		$n_s$	& \codeword{Int}	& [1,10]			\\ \hline
+		$c$	& \codeword{Real}	& $[0,20]$				\\ \hline
+		\codeword{ftype}	& \codeword{Cat}	& [1,3]	\\ \hline
+		\codeword{norm_af}	& \codeword{Cat}	& [0,1]	\\ \hline
+		\codeword{norm_mf}	& \codeword{Cat}	& [0,1]	\\ \hline
+		\codeword{model}	& \codeword{Cat}	& [1,5]	\\ \hline
+	\end{tabular}
+	\label{tb:hyperparam_include}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{The list of fixed hyperparameters throughout all experiments.}
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{value}	\\ \hline
+		\codeword{itmax}	&	\codeword{Int}	&	$[1, \infty]$	&	500	\\ \hline
+		$n_{pf}$	& \codeword{Int}	& $[0,\infty]$	& 0	\\ \hline
+		$N$	& \codeword{Int}	& $[1,N_{QM9}]$	& 300	\\ \hline
+		$k$	& \codeword{Int}	& $[0,95]$	& 38	\\ \hline
+		$n_{HL}$	&	\codeword{Int}	& [1,50]	& 2	\\ \hline
+		$n_\text{nodes}$	&	\codeword{Int}	& 	$[1,100]^{n_{HL}}$	& [10, 10]	\\ \hline
+		\codeword{f_act}	&	\codeword{Cat}	&	$[1, 3]^{n_{HL}}$	&	[1, 1]	\\ \hline
+		\codeword{NN_opt}	&	\codeword{Cat}	&	[1,3]	&	1	\\	\hline
+		\codeword{pca_sf}	& \codeword{Cat}	& [0,1]	& 0	\\ \hline
+		\codeword{mfem_ss}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
+		\codeword{mfem_bf}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
+	\end{tabular}
+	\label{tb:hyperparam_exclude}
+\end{table}
+
 \subsection{Special treatments for special--typed variables}
 Typically variables with \textbf{real} and \textbf{integral} types can be easily passed into an optimization routine given the bounds and types, as most optimization softwares handle both as mandatory types (e.g. in mixed--integer solvers). 
 This is not the case for types such as \textbf{categorical} and \textbf{ordered integers}, hence special treatments are needed.
@@ -843,46 +882,6 @@ then we encode them into a "probability" vector of size $n+1$ by
 \begin{equation*}
 	p_i = \frac{x_i - x_{i-1}}{dx}.
 \end{equation*}
-
-\begin{table}[H]
-	\centering
-	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type and possible range. 
-	Under the \textbf{type} column, \textbf{Int} means integer, \textbf{Cat} means categorical, and \textbf{OInt} means ordered integers. }
-	\begin{tabular}{|c|c|c|c|c|}
-		\hline
-		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	\\ \hline
-		$n_{mf} \leq n_{af}$	& \codeword{OInt}	&	[16, 20]	\\ \hline
-		$n_s$	& \codeword{Int}	& [1,10]			\\ \hline
-		$c$	& \codeword{Real}	& $[0,20]$				\\ \hline
-		\codeword{ftype}	& \codeword{Cat}	& [1,3]	\\ \hline
-		\codeword{norm_af}	& \codeword{Cat}	& [0,1]	\\ \hline
-		\codeword{norm_mf}	& \codeword{Cat}	& [0,1]	\\ \hline
-		\codeword{model}	& \codeword{Cat}	& [1,5]	\\ \hline
-	\end{tabular}
-	\label{tb:hyperparam_include}
-\end{table}
-
-\begin{table}[H]
-	\centering
-	\caption{The list of fixed hyperparameters throughout all experiments.}
-	\begin{tabular}{|c|c|c|c|}
-		\hline
-		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{value}	\\ \hline
-		\codeword{itmax}	&	\codeword{Int}	&	$[1, \infty]$	&	500	\\ \hline
-		$n_{pf}$	& \codeword{Int}	& $[0,\infty]$	& 0	\\ \hline
-		$N$	& \codeword{Int}	& $[1,N_{QM9}]$	& 300	\\ \hline
-		$k$	& \codeword{Int}	& $[0,95]$	& 38	\\ \hline
-		$n_{HL}$	&	\codeword{Int}	& [1,50]	& 2	\\ \hline
-		$n_\text{nodes}$	&	\codeword{Int}	& 	$[1,100]^{n_{HL}}$	& [10, 10]	\\ \hline
-		\codeword{f_act}	&	\codeword{Cat}	&	$[1, 3]^{n_{HL}}$	&	[1, 1]	\\ \hline
-		\codeword{NN_opt}	&	\codeword{Cat}	&	[1,3]	&	1	\\	\hline
-		\codeword{pca_sf}	& \codeword{Cat}	& [0,1]	& 0	\\ \hline
-		\codeword{mfem_ss}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
-		\codeword{mfem_bf}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
-	\end{tabular}
-	\label{tb:hyperparam_exclude}
-\end{table}
-
 
 
 \section{Numerical experiments}
@@ -1099,7 +1098,7 @@ where each column corresponds to the each hyperparameter boundaries. 25 hyperpar
 	\caption{Sets of hyperparameters and their MAE found during the hyperparameter optimization process. \textbf{MAE} is in kcal/mol. Here infeasible points are set to have $\text{MAE} = 100$.} 
 	\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
 		\hline
-		\textbf{MAE}	& $p_{af}$ & $p_{mf}$ & $n_s$ & \codeword{ftype} & \codeword{norm_af} & \codeword{norm_mf} & $k$ & \codeword{model} & $c\sigma$	\\ \hline
+		\textbf{MAE}	& $p_{af}$ & $p_{mf}$ & $n_s$ & \codeword{ftype} & \codeword{norm_af} & \codeword{norm_mf} & $k$ & \codeword{model} & $c$	\\ \hline
 		11.785	& 0.389	& 0.798	& 2	& ACSF	& true	& true	& 38	& GAK	& 33	\\ \hline
 		11.785	& 0.393	& 0.789	& 3	& ACSF	& true	& true	& 38	& GAK	& 33	\\ \hline
 		11.785	& 0.390	& 0.798	& 2	& ACSF	& true	& true	& 38	& GAK	& 33	\\ \hline
@@ -1139,7 +1138,7 @@ where each column corresponds to the each hyperparameter boundaries. 25 hyperpar
 	\caption{Sets of hyperparameters and their MAE found during the hyperparameter optimization process. \textbf{MAE} is in kcal/mol. Here infeasible points are projected into the boundaries of feasible solutions.} 
 	\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
 		\hline
-		\textbf{MAE}	& $p_{af}$ & $p_{mf}$ & $n_s$ & \codeword{ftype} & \codeword{norm_af} & \codeword{norm_mf} & $k$ & \codeword{model} & $c\sigma$	\\ \hline
+		\textbf{MAE}	& $p_{af}$ & $p_{mf}$ & $n_s$ & \codeword{ftype} & \codeword{norm_af} & \codeword{norm_mf} & $k$ & \codeword{model} & $c$	\\ \hline
 		12.063	& 0.465	& 0.926	& 3	& ACSF	& true	& true	& 0	& GAK	& 32.0	\\ \hline
 		12.580	& 0.392	& 0.800	& 3	& ACSF	& true	& true	& 0	& GAK	& 32.0	\\ \hline
 		12.736	& 0.377	& 0.811	& 3	& ACSF	& true	& true	& 0	& GAK	& 32.0	\\ \hline
@@ -1173,6 +1172,7 @@ where each column corresponds to the each hyperparameter boundaries. 25 hyperpar
 As explained in section \ref{sec:hyperspace}, several variables have special constraints that are implied by the types, for example, the relationship $n_{mf} \leq n_{af}$. 
 In particular, here we treat categorical (\textbf{Cat}) and ordered integer variables (\textbf{OInt}) using the mechanisms in section \ref{sec:hyperopt_cat} and \ref{sec:hyperopt_oint} respectively.
 The middle--point between the lower and upper bound of each variable is used as the initial starting point as shown in Table \ref{tb:hyperopt_spec}, this is done to promote more exploration.
+Table \ref{tb:hyperopt_spec_res} shows the samples of hyperparameters found and their MAE.
 
 \begin{table}[H]
 	\centering
@@ -1192,6 +1192,46 @@ The middle--point between the lower and upper bound of each variable is used as 
 		\codeword{model}	& \codeword{Cat}	& [1,5]	& 3	& $[1/5, 1/5, 1/5, 1/5, 1/5]$	\\ \hline
 	\end{tabular}
 	\label{tb:hyperopt_spec}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{Sets of hyperparameters and their MAE found during the hyperparameter optimization process using the special mechanisms for \textbf{OInt} and \textbf{Cat}.} 
+	\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+		\hline
+		\textbf{MAE}	& $n_{mf}$ & $n_{af}$ & $n_s$ & \codeword{ftype} & \codeword{norm_af} & \codeword{norm_mf} & \codeword{model} & $c$	\\ \hline
+		12.053	& 22	& 38	& 6	& ACSF	& 1	& 0	& GAK	& 10.356	\\ \hline
+		12.053	& 22	& 38	& 1	& ACSF	& 1	& 1	& GAK	& 10.356	\\ \hline
+		12.053	& 22	& 38	& 5	& ACSF	& 1	& 0	& GAK	& 10.356	\\ \hline
+		15.552	& 21	& 34	& 6	& ACSF	& 0	& 1	& GAK	& 10.435	\\ \hline
+		15.634	& 22	& 38	& 3	& ACSF	& 1	& 0	& LLS	& 10.356	\\ \hline
+		15.655	& 22	& 38	& 6	& ACSF	& 1	& 1	& LLS	& 10.356	\\ \hline
+		15.805	& 22	& 38	& 6	& ACSF	& 0	& 0	& GAK	& 10.356	\\ \hline
+		15.805	& 22	& 38	& 10	& ACSF	& 0	& 1	& GAK	& 10.356	\\ \hline
+		19.889	& 22	& 38	& 5	& ACSF	& 0	& 0	& ROSEMI	& 10.356	\\ \hline
+		19.918	& 22	& 38	& 10	& ACSF	& 0	& 0	& ROSEMI	& 10.356	\\ \hline
+		20.046	& 22	& 38	& 7	& ACSF	& 1	& 0	& ROSEMI	& 10.356	\\ \hline
+		20.050	& 21	& 35	& 6	& ACSF	& 1	& 0	& ROSEMI	& 10.380	\\ \hline
+		20.050	& 22	& 38	& 10	& ACSF	& 1	& 0	& ROSEMI	& 10.356	\\ \hline
+		20.053	& 22	& 38	& 3	& ACSF	& 1	& 1	& ROSEMI	& 10.356	\\ \hline
+		20.131	& 22	& 38	& 8	& ACSF	& 1	& 1	& ROSEMI	& 10.356	\\ \hline
+		20.204	& 22	& 38	& 9	& ACSF	& 1	& 1	& ROSEMI	& 10.356	\\ \hline
+		20.253	& 19	& 32	& 5	& ACSF	& 1	& 1	& NN	& 10.162	\\ \hline
+		21.240	& 14	& 31	& 6	& SOAP	& 0	& 1	& ROSEMI	& 10.584	\\ \hline
+		20.295	& 27	& 40	& 6	& FCHL	& 1	& 1	& NN	& 10.581	\\ \hline
+		20.367	& 25	& 34	& 5	& FCHL	& 0	& 0	& GAK	& 10.269	\\ \hline
+		20.367	& 22	& 38	& 5	& FCHL	& 0	& 1	& GAK	& 10.356	\\ \hline
+		20.367	& 23	& 37	& 6	& FCHL	& 0	& 0	& GAK	& 10.322	\\ \hline
+		20.367	& 22	& 38	& 1	& FCHL	& 0	& 1	& GAK	& 10.356	\\ \hline
+		30.173	& 22	& 38	& 4	& FCHL	& 1	& 0	& GAK	& 10.356	\\ \hline
+		99.999	& 22	& 38	& 1	& FCHL	& 1	& 0	& LLS	& 10.356	\\ \hline
+		NaN	& 22	& 38	& 5	& FCHL	& 1	& 0	& ROSEMI	& 10.356	\\ \hline
+		NaN	& 22	& 38	& 4	& FCHL	& 1	& 1	& ROSEMI	& 10.356	\\ \hline
+		NaN	& 22	& 38	& 5	& FCHL	& 0	& 0	& ROSEMI	& 10.356	\\ \hline
+		NaN	& 19	& 33	& 6	& FCHL	& 1	& 1	& ROSEMI	& 10.271	\\ \hline
+		NaN	& 21	& 37	& 5	& FCHL	& 1	& 1	& ROSEMI	& 10.378	\\ \hline
+	\end{tabular}
+	\label{tb:hyperopt_spec_res}
 \end{table}
 
 
