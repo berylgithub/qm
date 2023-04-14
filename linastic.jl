@@ -603,6 +603,22 @@ function comp_ecdf(f, ids; type = "mol")
         for i ∈ axes(f, 2) # fit ecdf for each feature/column
             f[:, i] = ecdf(f[ids, i])(f[:, i]) # fit ecdf using selected ids and predict ∀ indexes
         end
+    elseif type == "atom"
+        ff, lbs, ubs = flattener(f)
+        # get matrix indexer:
+        idfit = []
+        for i ∈ eachindex(ids)
+            idfit = vcat(idfit, lbs[ids[i]]:ubs[ids[i]])
+        end
+        ffit = ff[idfit, :] # slice flattened matrix for fitting
+        for i ∈ axes(ff, 2) # fit ecdf for each column
+            ff[:, i] = ecdf(ffit[:, i])(ff[:, i])
+        end
+        # return to vector of matrices:
+        for l ∈ eachindex(f)
+            f[l] = ff[lbs[l]:ubs[l],:]
+        end
+        ff = nothing; GC.gc() # clear mem
     end
     return f
 end
