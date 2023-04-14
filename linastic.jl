@@ -609,6 +609,7 @@ end
 
 """
 function to flatten vector of matrices to matrices with the same number of columns
+also returns the relative indexing of the matrix
 """
 function flattener(f)
     # get the rowsizes of the matrices:
@@ -616,7 +617,6 @@ function flattener(f)
     for l ∈ eachindex(f)
         push!(natoms, size(f[l],1))
     end
-    println(natoms)
     lbs = []; ubs = []; # vectors containing the flattened matrix indices
     # fill the indexer vectors:
     lb = 0; ub = 0;
@@ -629,7 +629,12 @@ function flattener(f)
         ub = lb+natoms[i]-1
         push!(lbs, lb); push!(ubs, ub)
     end
-    println(lbs, ubs)
+    # fill the flattened matrix:
+    ff = zeros(sum(natoms), size(f[1], 2)) # doubles memory, careful!!
+    for l ∈ axes(f,1)
+        ff[lbs[l]:ubs[l], :] = f[l]
+    end
+    return ff, lbs, ubs
 end
 
 function checkcov(X)
