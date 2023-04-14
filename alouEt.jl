@@ -226,7 +226,8 @@ takes in the data indices (relative to the qm9 dataset).
 if molf_file  is not empty then there will be no atomic feature extractions, only PCA on molecular level
 """
 function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
-                    universe_size=1_000, normalize_atom = true, normalize_mol = true, normalize_mode = "minmax", ft_sos=false, ft_bin=false, 
+                    universe_size=1_000, normalize_atom = true, normalize_mol = true, normalize_mode = "minmax", 
+                    fit_ecdf = false, fit_ecdf_ids = [], ft_sos=false, ft_bin=false, 
                     molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false, num_center_sets = 1)
     println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
@@ -266,9 +267,20 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
         #dataset = dataset[data_indices] # slice dataset
         # compute bspline:
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
-        display(size(F))
         # get centers:
+        println("computing centers...")
         centers = set_cluster(F, num_centers, universe_size=universe_size, num_center_sets=num_center_sets)
+        if fit_ecdf # normalization by fitting the ecdf using the centers
+            println("fitting ecdf...")
+            ids = []
+            if isempty(fit_ecdf_ids) # if empty then use the first index centers
+                ids = centers[1]
+            else
+                ids = fit_ecdf_ids
+            end
+            f = comp_ecdf(f, ids; type="atom")
+            F = comp_ecdf(F, ids; type="mol")
+        end
         # copy pre-computed atomref features:
         redf = load("data/atomref_features.jld", "data")
         # save files:
