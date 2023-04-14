@@ -181,3 +181,6 @@ varlist that must be emptied on each experiment run:
 04.04.2023:
 - table of collection of hyperparameters checkpoint in "data/hyperparamopt/tables/tf_fsort.txt"
 - separate mintry(x,f) and decoder(x), useful for "infeasible" initial point
+
+14.04.2023:
+- tried empirical cumulative distribution function (ECDF) for feature binning, seems like for atom (GAK), binning full data gives better MAE; not yet tested for molecules (MGK/KRR, LLS, NN, etc).
