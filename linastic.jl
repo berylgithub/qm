@@ -595,6 +595,43 @@ function feature_extractor(f, dataset, n_select_at, n_select_mol; normalize_at=t
     return F
 end
 
+"""
+standalone function to compute empirical cumulative distribution function (ecdf)
+"""
+function comp_ecdf(f, ids; type = "mol")
+    if type == "mol"
+        for i ∈ axes(f, 2) # fit ecdf for each feature/column
+            f[:, i] = ecdf(f[ids, i])(f[:, i]) # fit ecdf using selected ids and predict ∀ indexes
+        end
+    end
+    return f
+end
+
+"""
+function to flatten vector of matrices to matrices with the same number of columns
+"""
+function flattener(f)
+    # get the rowsizes of the matrices:
+    natoms = []
+    for l ∈ eachindex(f)
+        push!(natoms, size(f[l],1))
+    end
+    println(natoms)
+    lbs = []; ubs = []; # vectors containing the flattened matrix indices
+    # fill the indexer vectors:
+    lb = 0; ub = 0;
+    for i ∈ eachindex(natoms)
+        if i == 1
+            lb = 1
+        else
+            lb = ub+1
+        end
+        ub = lb+natoms[i]-1
+        push!(lbs, lb); push!(ubs, ub)
+    end
+    println(lbs, ubs)
+end
+
 function checkcov(X)
     r, c = size(X)
     s = vec(sum(X, dims=1)) ./ r
