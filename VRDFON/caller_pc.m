@@ -34,6 +34,9 @@ decode(xold, bounds_old, bm)
 
 
 bounds
-newbounds = boundtransform(bounds)
-bm = extractbound(newbounds)
-%decode(x, bounds, bm)
+newbounds = boundtransform(bounds);
+bm = extractbound(bounds);
+[xnew, fpen] = decode(x, bounds, bm)
+
+p = [0,1,2]
+norm(p, 1)
