@@ -152,8 +152,9 @@ def train_FCHL():
 
     mypath = "data/qm9/"
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f)) and (f not in errfiles)] # remove errorfiles
-    onlyfiles = sorted(onlyfiles)
+    onlyfiles = sorted(onlyfiles)[1:]
     onlyfiles = np.array(onlyfiles)
+    print(onlyfiles)
 
     # load energies:
     E = np.loadtxt("data/energies.txt")
@@ -161,8 +162,7 @@ def train_FCHL():
     print(Nqm9)
 
     # centers:
-    centers = np.loadtxt("data/centers.txt", dtype=int)
-    centers = centers[:100]
+    centers = np.loadtxt("data/sel_centers.txt", dtype=int)
     # determine indices:
     idtrain = centers
     idtest = np.setdiff1d(list(range(Nqm9)), idtrain)
@@ -184,7 +184,7 @@ def train_FCHL():
 
     # generate kernels:
     Xtrain = np.array(Xtrain)
-    sigmas = [32.]
+    sigmas = [32.] #[32.]
     Ktrain = get_local_kernels(Xtrain, Xtrain, sigmas, cut_distance=cutoff)
     print(Ktrain.shape)
     # solve model:
@@ -262,6 +262,6 @@ def getatom_FCHL():
 
 
 # main:
-#train_FCHL()
+train_FCHL()
 #getatom_FCHL()
-extract_SOAP()
+#extract_SOAP()
