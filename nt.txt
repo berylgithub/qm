@@ -189,3 +189,4 @@ varlist that must be emptied on each experiment run:
 - tested FCHL Kernel with center index = 38 as training set, MAE = 7.088911846921814
 - for now removed FCHL atomic feature from hyperparameteropt, since it causes NaN; changed c to int instead of real
 - changed init params, following the bounds, now the vector size is 16
+- all_tb_170423 contains all of the current found hyperparameters 
