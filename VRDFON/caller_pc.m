@@ -18,7 +18,8 @@ bounds_old = dlmread(path_bounds_old);
 xold = [0.5; 0.5; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 38; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5;]; % encoded x
 f = 100.;
 
-x = [1/3; 1/3; 1/3; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5]
+%x = [1/3; 1/3; 1/3; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5]; 
+x = [1/3; 1/3; 1/3; 6; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mixed int
 
 %{
 zi = [1/6, 1/3, 1/3, 1/6]'
@@ -36,3 +37,6 @@ decode(xold, bounds_old, bm)
 bounds
 newbounds = boundtransform(bounds)
 bm = extractbound(bounds);
+[xnew, fpen] = decode(x, bounds, bm)
+
+dlmread("../data/hyperparamopt/init_params.txt")

@@ -37,7 +37,6 @@ function [xnew, fpen] = decode(x, bounds, bm)
             r = rand(1);
             v = linspace(bounds(1,i), bounds(2,i), bounds(2,i)-bounds(1,i)+1); % generate the category vector
             p = 0*p; % reset p to zeros for fpen
-            length(q)
             for j=1:length(q)-1
                 if (q(j) < r) && (r <= q(j+1))
                     xi = v(j);
