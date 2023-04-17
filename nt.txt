@@ -184,3 +184,6 @@ varlist that must be emptied on each experiment run:
 
 14.04.2023:
 - tried empirical cumulative distribution function (ECDF) for feature binning, seems like for atom (GAK), binning full data gives better MAE; not yet tested for molecules (MGK/KRR, LLS, NN, etc).
+
+17.04.2023:
+- tested FCHL with center index = 38 as training set, MAE = 7.088911846921814
