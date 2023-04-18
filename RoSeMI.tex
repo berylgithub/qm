@@ -722,27 +722,66 @@ where \codeword{data_dir} is a string that refers to the path which contains the
 \label{sec:hyperspace}
 \subsection{Possible choices of hyperparameters}
 We can construct the whole molecular fitting process from start to end by choosing many different possible combinations of hyperparameters.
-Table \ref{tb:hyperparam_include} shows the list of variables included in the hyperparameter optimization, meanwhile Table \ref{tb:hyperparam_exclude} contains the excluded ones.
+Table \ref{tb:hyperparam_exclude} contains the excluded hyperparameters, meanwhile Table \ref{tb:hyperparam_include} shows the list of variables included in the hyperparameter optimization.
+\begin{table}[H]
+	\centering
+	\caption{The list of fixed hyperparameters throughout all experiments.}
+	\begin{tabular}{|c|c|c|c|}
+		\hline
+		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{fixed value}	\\ \hline
+		\codeword{itmax}	&	\codeword{Int}	&	$[1, \infty]$	&	500	\\ \hline
+		$n_{pf}$	& \codeword{Int}	& $[0,\infty]$	& 0	\\ \hline
+		$N$	& \codeword{Int}	& $[1,N_{QM9}]$	& 300	\\ \hline
+		$k$	& \codeword{Int}	& $[0,95]$	& 38	\\ \hline
+		$n_{HL}$	&	\codeword{Int}	& [1,50]	& 2	\\ \hline
+		$n_\text{nodes}$	&	\codeword{Int}	& 	$[1,100]^{n_{HL}}$	& $10^{n_{HL}}$	\\ \hline
+		\codeword{f_act}	&	\codeword{Cat}	&	$[1, 3]^{n_{HL}}$	&	$1^{n_{HL}}$	\\ \hline
+		\codeword{NN_opt}	&	\codeword{Cat}	&	[1,3]	&	1	\\	\hline
+		\codeword{pca_sf}	& \codeword{Cat}	& [0,1]	& 0	\\ \hline
+		\codeword{mfem_ss}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
+		\codeword{mfem_bf}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
+	\end{tabular}
+	\label{tb:hyperparam_exclude}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type and possible range. 
+	Under the \textbf{type} column, \textbf{Int} means integer, \textbf{Cat} means categorical, and \textbf{OInt} means ordered integers. }
+	\begin{tabular}{|c|c|c|c|c|}
+		\hline
+		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	\\ \hline
+		$n_{mf} \leq n_{af}$	& \codeword{OInt}	&	[16, 20]	\\ \hline
+		$n_s$	& \codeword{Int}	& [1,10]			\\ \hline
+		$c$	& \codeword{Real}	& $[0,20]$				\\ \hline
+		\codeword{ftype}	& \codeword{Cat}	& [1,3]	\\ \hline
+		\codeword{norm_af}	& \codeword{Cat}	& [0,1]	\\ \hline
+		\codeword{norm_mf}	& \codeword{Cat}	& [0,1]	\\ \hline
+		\codeword{model}	& \codeword{Cat}	& [1,5]	\\ \hline
+	\end{tabular}
+	\label{tb:hyperparam_include}
+\end{table}
+
 During feature selection, there exist several possible choices of hyperparameters:
 \begin{itemize}
-	\item \codeword{ftype} $\in$ \{ACSF, SOAP, FCHL\} (\textbf{categorical}), the choice of set of atomic features.
-	\item $\codeword{pca_sf} \in \{\text{diag, sens}\}$ (\textbf{categorical}), the choice for the scaling factor of the correlation matrix: the diagonals of the covariance matrix or the sensitivity vector.  $n_{pf} \in \mathbb{Z}_{>0}$ (\textbf{integral}), which is the number of features involved for the sensitivity vector computation.
 	\item $n_{mf} \leq n_{af} \in \mathbb{Z}_{>0}$ (\textbf{ordered integers}), the number of molecular features chosen $n_{mf}$ and the number of atomic features $n_{af}$.
 	\item $n_{s}\in \mathbb{Z}_{>0}$ (\textbf{integral}), number of splines.
-	\item $\codeword{mfem_ss} \in \{\codeword{false, true}\}$ (\textbf{categorical}), the feature extraction mode, whether to include sum of squares features.
-	\item $\codeword{mfem_bf} \in \{\codeword{false, true}\}$ (\textbf{categorical}), the feature extraction mode, whether to include binomial features.
+	\item \codeword{ftype} $\in$ \{ACSF, SOAP, FCHL\} (\textbf{categorical}), the choice of set of atomic features.
 	\item \codeword{norm_af} $ \in \{\codeword{false, true}\}$ (\textbf{categorical}), the atomic features normalization mode, the choice of whether to normalize the atomic features.
 	\item \codeword{norm_mf} $ \in \{\codeword{false, true}\}$ (\textbf{categorical}), the molecular features normalization mode, the choice of whether to normalize the molecular features.
+	\item $\codeword{pca_sf} \in \{\text{diag, sens}\}$ (\textbf{categorical}), the choice for the scaling factor of the correlation matrix: the diagonals of the covariance matrix or the sensitivity vector.  $n_{pf} \in \mathbb{Z}_{>0}$ (\textbf{integral}), which is the number of features involved for the sensitivity vector computation.	
+	\item $\codeword{mfem_ss} \in \{\codeword{false, true}\}$ (\textbf{categorical}), the feature extraction mode, whether to include sum of squares features.
+	\item $\codeword{mfem_bf} \in \{\codeword{false, true}\}$ (\textbf{categorical}), the feature extraction mode, whether to include binomial features.
 \end{itemize}
 For data selection, the possible hyperparameters are:
 \begin{itemize}
-	\item $N \in [1 : N_\text{QM9}] \subseteq \mathbb{Z}_{>0}$ (\textbf{integral}), the number of centers requested;
 	\item $k \in \mathbb{Z}_{\geq 0}$ (\textbf{integral}), the index of precomputed set of selected centers by the \codeword{usequence}.
+	\item $N \in [1 : N_\text{QM9}] \subseteq \mathbb{Z}_{>0}$ (\textbf{integral}), the number of centers requested;
 \end{itemize}
 For linear model fitting, the possible choices of hyperparameters are:
 \begin{itemize}
 	\item \codeword{model} $\in$ \{RoSeMI, KRR, NN, LLS, GAK\} (\textbf{categorical}), the choice of models.
-	\item $c \in \mathbb{R}_{\geq0}$ (\textbf{real}), the scaling factor for KRR and GAK kernels.
+	\item $c \in \mathbb{Z}_{\geq0}$ (\textbf{integral}), the scaling factor $2^c$ for KRR and GAK kernels.
 	\item \codeword{itmax} $\in \mathbb{Z}_{>0}$ (\textbf{integral}), number of CGLS iterations for the linear models.
 \end{itemize}
 For neural network, the possibilities are:
@@ -763,47 +802,9 @@ another example would be if we choose "SOAP" as the feature type then
 \end{equation*}
 here \codeword{f_encode(val, var)} is a function which encodes the value \codeword{val} given a set variable \codeword{var} into one--hot vector format.
 
-\begin{table}[H]
-	\centering
-	\caption{The hyperparameters passed into the hyperparameter optimization routine with its data type and possible range. 
-	Under the \textbf{type} column, \textbf{Int} means integer, \textbf{Cat} means categorical, and \textbf{OInt} means ordered integers. }
-	\begin{tabular}{|c|c|c|c|c|}
-		\hline
-		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	\\ \hline
-		$n_{mf} \leq n_{af}$	& \codeword{OInt}	&	[16, 20]	\\ \hline
-		$n_s$	& \codeword{Int}	& [1,10]			\\ \hline
-		$c$	& \codeword{Real}	& $[0,20]$				\\ \hline
-		\codeword{ftype}	& \codeword{Cat}	& [1,3]	\\ \hline
-		\codeword{norm_af}	& \codeword{Cat}	& [0,1]	\\ \hline
-		\codeword{norm_mf}	& \codeword{Cat}	& [0,1]	\\ \hline
-		\codeword{model}	& \codeword{Cat}	& [1,5]	\\ \hline
-	\end{tabular}
-	\label{tb:hyperparam_include}
-\end{table}
-
-\begin{table}[H]
-	\centering
-	\caption{The list of fixed hyperparameters throughout all experiments.}
-	\begin{tabular}{|c|c|c|c|}
-		\hline
-		\textbf{hyperparameter}	& \textbf{type}	& \textbf{range}	& \textbf{value}	\\ \hline
-		\codeword{itmax}	&	\codeword{Int}	&	$[1, \infty]$	&	500	\\ \hline
-		$n_{pf}$	& \codeword{Int}	& $[0,\infty]$	& 0	\\ \hline
-		$N$	& \codeword{Int}	& $[1,N_{QM9}]$	& 300	\\ \hline
-		$k$	& \codeword{Int}	& $[0,95]$	& 38	\\ \hline
-		$n_{HL}$	&	\codeword{Int}	& [1,50]	& 2	\\ \hline
-		$n_\text{nodes}$	&	\codeword{Int}	& 	$[1,100]^{n_{HL}}$	& [10, 10]	\\ \hline
-		\codeword{f_act}	&	\codeword{Cat}	&	$[1, 3]^{n_{HL}}$	&	[1, 1]	\\ \hline
-		\codeword{NN_opt}	&	\codeword{Cat}	&	[1,3]	&	1	\\	\hline
-		\codeword{pca_sf}	& \codeword{Cat}	& [0,1]	& 0	\\ \hline
-		\codeword{mfem_ss}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
-		\codeword{mfem_bf}	& \codeword{Cat}	& $[0,1]$	& 0	\\ \hline		
-	\end{tabular}
-	\label{tb:hyperparam_exclude}
-\end{table}
 
 \subsection{Special treatments for special--typed variables}
-Typically variables with \textbf{real} and \textbf{integral} types can be easily passed into an optimization routine given the bounds and types, as most optimization softwares handle both as mandatory types (e.g. in mixed--integer solvers). 
+Typically variables with \textbf{real} and \textbf{integral} types can be easily passed into an optimization routine given the bounds and types, as most optimization software handles both as mandatory types (e.g. in mixed--integer solvers). 
 This is not the case for types such as \textbf{categorical} and \textbf{ordered integers}, hence special treatments are needed.
 
 \subsubsection{Treating categorical variables}
