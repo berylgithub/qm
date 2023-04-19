@@ -19,7 +19,9 @@ xold = [0.5; 0.5; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 38; 1/5; 1/5; 1/5; 1/5
 f = 100.;
 
 %x = [1/3; 1/3; 1/3; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5]; 
-x = [1/3; 1/3; 1/3; 6; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mixed int
+%x = [1/3; 1/3; 1/3; 6; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mid for mixed int
+%x = [1/3; 1/3; 1/3; 6; 1/2; 1/2; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mid for mixed int without FCHL
+x = [0.306122; 0.081633; 0.612245; 6; 1; 0; 0; 1; 0; 1; 0; 0; 0; 0; 1; 11]; % x best, MAE = 11.62
 
 %{
 zi = [1/6, 1/3, 1/3, 1/6]'
@@ -31,12 +33,19 @@ norm(p-zi)**2
 
 bm = extractbound(bounds_old)
 decode(xold, bounds_old, bm)
+
+
+
+dlmread("../data/hyperparamopt/init_params.txt")
+
+p = computep([16, 20], 1, 50)
+x = computex([0.306122, 0.081633, 0.612245], 1, 50)
 %}
-
-
 bounds
 newbounds = boundtransform(bounds)
 bm = extractbound(bounds);
 [xnew, fpen] = decode(x, bounds, bm)
+dlmwrite("../data/hyperparamopt/init_params.txt", x', "\t")
 
-dlmread("../data/hyperparamopt/init_params.txt")
+
+
