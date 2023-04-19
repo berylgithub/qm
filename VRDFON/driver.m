@@ -59,7 +59,7 @@ mintry(init);          % initialize mintry
 
 nfstuck = 5; % max nf of getting stuck until reset
 ct = 0; % stuck counter
-cpen = 1.; % penalty factor
+cpen = 10.; % penalty factor
 citer = 1; % iteration counter
 
 disp("waiting for new f data....")

@@ -123,10 +123,11 @@ if ni>0
     MA.int.s = zeros(ni, 1);
     MA.int.M = eye(ni);
     MA.int.echi = sqrt(ni)*(1 - 1/ni/4 - 1/ni/ni/21);
-    MA.int.a = eye(itune.ilambda,1); 
-    MA.int.D   = ones(ni,itune.ilambda);     
+    MA.int.a = ones(itune.ilambda,1); 
+    MA.int.pinit = ones(ni,1);
+    MA.int.dir=5;
+    MA.int.D   = iusequence(MA,itune.ilambda,ni);    
     MA.int.good=1;
-    MA.int.dir=1;
 end
 
 if nc>0 
@@ -136,8 +137,9 @@ if nc>0
     MA.cont.Parent.y = x;
     MA.cont.s = zeros(nc, 1);
     MA.cont.M = eye(nc);
-    MA.cont.D = ones(nc,ctune.clambda);
+    MA.cont.pinit = ones(nc,1);
     MA.cont.dir=1;
+    MA.cont.D   = cusequence(MA,ctune.clambda,nc);  
     MA.cont.a = ones(ctune.clambda,1); 
     MA.cont.good=1;
 end
