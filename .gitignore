@@ -15,6 +15,9 @@ VRDFON/*
 !VRDFON/computep.m
 !VRDFON/boundtransform.m
 !VRDFON/MATRSstep.m
+!VRDFON/cusequence.m
+!VRDFON/iusequence.m
+!VRDFON/initTune.m
 *.aux
 *.log
 *.pdf
