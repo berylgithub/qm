@@ -157,6 +157,7 @@ For the QM9 dataset, FCHL returns an array with size $(133885, 29, 5, 29)$.
 	\end{equation}
 	\begin{equation}
 		f^l_{ij} \leftarrow (f^l_{ij} - \underbar{$f$}_j)/ (\overline{f}_j - \underbar{$f$}_j), \text{ for } j = 1,..., n_f^\text{select}.
+		\label{eq:atomminmax}
 	\end{equation}
 	\begin{figure}[H]
 		\label{fig:PCA_atom_rat}
@@ -288,6 +289,7 @@ The atomic features is often in the form of row vector $f^l_{i}$ with length $n_
 	\end{equation}
 	\begin{equation}
 		F_{:j} \leftarrow (F_{:j} - \underbar{$F$}_{j})/ (\overline{F}_{j} - \underbar{$F$}_{j}), \text{ for } j = 1,2,..., n_{mf}.
+		\label{eq:molminmax}
 	\end{equation}
 	\begin{figure}[h]
 		\label{fig:PCA_mol_rat}
@@ -310,6 +312,25 @@ The timing breakdown of the molecular feature selection is as the following:
 	\item Additional features which increase the complexity noticeably is the binomial feature, each binomial feature matrix takes $\mathcal{O}(n^2_{af})$ order of computation and $\mathcal{O}(n^2_{af})$ storage, for $N_\text{QM9}$ this becomes $\mathcal{O}(N_\text{QM9}n_\text{atom}n^2_{af})$ time and storage requirement.
 \end{itemize}
 For molecular features, the PCA has similar time and storage complexity to the atomic feature counterpart, the only differences are the initial mean vector $s$, the symmetric matrix $S$ computation, and the final projection, since the feature is now a vector with length $n_{mf}$ for each molecule in contrast to the atomic features with $\mathbb{R}^{n_\text{atom} \times n_{af}}$ matrix for each molecule.
+
+\subsection{Alternative way to scale the features}
+Other than the min--max scaler as demonstrated in (\ref{eq:atomminmax}) and (\ref{eq:molminmax}), we may use empirical cumulative distribution function (ECDF) to scale the feature vectors. 
+ECDF is basically a "discrete" version of CDF constructed by fitting the CDF using data points, generally more data points lead to smoother ECDF; we can think of fitting and prediction using the ECDF as the process of binning the data points.
+Yang et al stated that ECDF has a desirable property, which is it does not suffer from outlier sensitivity \at{cite D-MPNN paper}.
+Another nice built--in feature that ECDF has is, it is possible to directly control the bias and variance trade--off by controlling the number of data points for the ECDF fitting; more data points generally lead to higher variance, while less data points give higher bias. 
+
+First, to compute the ECDF, we may select the subset of the data points as the "training data"; 
+let $X \in \mathbb{R}^{n_\text{data} \times n_\text{features}}$, then
+\begin{equation*}
+	X^\text{train} \subseteq X,
+\end{equation*}
+then for each feature, i.e., for each column vector $X_{:k}$, we can compute its ECDF by 
+\begin{equation}
+	\codeword{ECDF}(X_{:k}; X_{:k}^\text{train}) = \frac{1}{n} \sum_{i}^n 1_{X_{ik} \leq X^\text{train}_{jk}}, ~~ \text{ for }j \in \codeword{eachindex}(X^\text{train}_{:k}).
+	\label{eq:ecdf}
+\end{equation}
+In the case of molecular features, it is quite straightforward, each ECDF is fitted using each column of the molecular feature matrix (optionally, the selection of the row indices for fitting and prediction). 
+Meanwhile for the atomic features, the vector of atomic feature matrices needs to be stacked into one big matrix of atomic features then we can compute the ECDF.
 
 \subsection{Feature transformation by message passing}
 The idea of \textit{message passing} is to make the atoms within a molecule to be "aware" of each other's features.  
