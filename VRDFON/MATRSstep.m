@@ -90,6 +90,9 @@ if nargout==0
   end
   xc = x.cont; yc = x.int;
   [ctune,itune] = initTune(xc,yc,nc,ni);
+%    xc = x.cont; yc = x.int; zc = x.version;
+%   [ctune,itune,version] = initTune(xc,yc,zc,nc,ni);
+  
   % tuning parameters
   nfmax = budget;
   
@@ -120,11 +123,10 @@ if ni>0
     MA.int.s = zeros(ni, 1);
     MA.int.M = eye(ni);
     MA.int.echi = sqrt(ni)*(1 - 1/ni/4 - 1/ni/ni/21);
-    MA.int.a = ones(itune.ilambda,1); 
-    MA.int.pinit = ones(ni,1);
-    MA.int.dir=5;
-    MA.int.D   = iusequence(MA,itune.ilambda,ni);    
+    MA.int.a = eye(itune.ilambda,1); 
+    MA.int.D   = ones(ni,itune.ilambda);     
     MA.int.good=1;
+    MA.int.dir=1;
 end
 
 if nc>0 
@@ -134,9 +136,8 @@ if nc>0
     MA.cont.Parent.y = x;
     MA.cont.s = zeros(nc, 1);
     MA.cont.M = eye(nc);
-    MA.cont.pinit = ones(nc,1);
+    MA.cont.D = ones(nc,ctune.clambda);
     MA.cont.dir=1;
-    MA.cont.D   = cusequence(MA,ctune.clambda,nc);  
     MA.cont.a = ones(ctune.clambda,1); 
     MA.cont.good=1;
 end
@@ -407,7 +408,8 @@ while 1
                MA.cont.pinit = info.xbest0(info.cI)-xbest(info.cI);
                MA.cont.pinit = 10*MA.cont.pinit/norm(MA.cont.pinit,inf);
                 MA.cont.D  = cusequence(MA,ctune.clambda,nc);
-               if MA.cont.dir<20, MA.cont.dir=MA.cont.dir+1;
+               if MA.cont.dir<20 % 20,
+                   MA.cont.dir=MA.cont.dir+1;
                else, MA.cont.dir=1;
                end
           else
@@ -466,7 +468,8 @@ while 1
              % update MA.cont.sigma
              pow = norm(MA.cont.s)/MA.cont.echi - 1; 
              MA.cont.sigma = MA.cont.sigma*exp((cc_s/cd_s)*pow);
-             MA.cont.sigma = min(ctune.csigmamax,MA.cont.sigma);
+             MA.cont.sigma = max(ctune.csigmamin,...
+                             min(ctune.csigmamax,MA.cont.sigma));
              %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
              % perform integer recombination
              %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -512,7 +515,7 @@ while 1
          end
       end
       if Vstate==16
-        MA.cont.alp0 = min(MA.cont.alpmax,MA.cont.sigma);
+        MA.cont.alp0 = sqrt(MA.cont.alpmax*MA.cont.sigma);
         % calculate dimension of the problem
         % Build first point for starting linesearch
         info.yworst  = xbest;
@@ -779,8 +782,9 @@ while 1
             end
        end 
        if Vstate==29
-          if norm(MA.cont.M,inf)>=100 % change
+          if norm(MA.cont.M,inf)>=5 % change
               MA.cont.s = zeros(nc, 1); MA.cont.M = eye(nc); 
+              MA.cont.sigma=1;
           end
           if ni>0, Vstate=30; else, Vstate=2;end
        end
@@ -1091,7 +1095,8 @@ while 1
             if ~changDi
                MA.int.pinit = info.xbest0i(info.iI)-xbest(info.iI);
                MA.int.pinit = ceil(5*MA.int.pinit/norm(MA.int.pinit,inf));
-                if MA.int.dir<30, MA.int.dir=MA.int.dir+1;
+                if MA.int.dir<30 % 30,
+                    MA.int.dir=MA.int.dir+1;
                 else, MA.int.dir=2;
                 end
                 MA.int.D = iusequence(MA,itune.ilambda,ni);
@@ -1226,7 +1231,7 @@ while 1
          end
       end
       if Vstate==44 
-        MA.int.alp0   = min(MA.int.alpmax,MA.int.sigma);
+        MA.int.alp0   = max(1,round(sqrt(MA.int.alpmax*MA.int.sigma)));
         info.yworst  = xbest;
         info.yworst(info.iI)  = max(info.ilow,min(info.iupp,...
                        xbest(info.iI) + MA.int.alp0 * MA.int.drec));
@@ -1587,7 +1592,7 @@ while 1
      end
      if Vstate==57
        if norm(MA.int.M,inf)>=5
-         MA.int.s = zeros(ni, 1); MA.int.M = eye(ni);
+         MA.int.s = zeros(ni, 1); MA.int.M = eye(ni); MA.int.sigma=1;
        end
        if nc>0 && ni==0
           Vstate=2; 
@@ -1598,18 +1603,20 @@ while 1
        end
        
      end
-   end
+    end
+   
+    
+    
    if Vstate == 58
-        changDic = norm(info.xbest0-xbest)==0;
+        p0   =  xbest-info.xbest0;
+        changDic = norm(p0)==0;
         if ~changDic 
-           p0      =  info.xbest0-xbest;
-           p0      = p0/norm(p0,inf);
            MA.cont.p      = p0(info.cI); 
-           MA.int.p       = ceil(p0(info.iI));
-           MA.mixed.p     =     zeros(dim,1);
+           MA.int.p       = p0(info.iI);
+           MA.mixed.p     = zeros(dim,1);
            MA.mixed.p(info.iI) = MA.int.p; 
            MA.mixed.p(info.cI) = MA.cont.p;
-           if norm(MA.int.p)~=0&&norm(MA.cont.p)~=0
+           if norm(MA.int.p)~=0||norm(MA.cont.p)~=0
             [MA,info]= requirMixedLSS(xbest,MA,info);
              Vstate=59;
           else
@@ -1619,18 +1626,17 @@ while 1
             MA.int.p=[]; MA.cont.p=[];
             for kk=1:length(info.F)-3
                 p0           = info.X(:,1)-info.X(:,end-kk-1);
-                p0           = p0/norm(p0,inf);
                 MA.cont.p    = p0(info.cI); 
-                MA.int.p     = ceil(p0(info.iI));
+                MA.int.p     = p0(info.iI);
                 MA.mixed.p   = zeros(dim,1); 
                 MA.mixed.p(info.iI) = MA.int.p; 
                 MA.mixed.p(info.cI) = MA.cont.p;
                 if norm(MA.mixed.p)~=0, break; end
             end
-            if isempty(MA.int.p)||isempty(MA.cont.p)
+            if isempty(MA.int.p)&&isempty(MA.cont.p)
                 Vstate=2;
             else
-                 if norm(MA.int.p)~=0 && norm(MA.cont.p)~=0
+                 if norm(MA.int.p)~=0 || norm(MA.cont.p)~=0
                    [MA,info]= requirMixedLSS(xbest,MA,info);
                     Vstate=59; 
                  else
@@ -1641,10 +1647,8 @@ while 1
    end
    if Vstate==59
        if MA.int.feasible&&MA.cont.feasible
-            MA.int.p  = MA.mixed.p(info.iI);  
-            MA.cont.p = MA.mixed.p(info.cI);
-            info.ytrial=xbest; info.ftrial=fbest; 
-            MA.cont.alpha = 0; MA.int.alpha = 0;
+             info.ytrial=xbest; info.ftrial=fbest; 
+             MA.cont.alpha = 0; MA.int.alpha = 0;
             info.yworst  = xbest;
             info.yworst(info.cI)  = ...
                             max(info.clow,min(info.cupp,...
@@ -1652,6 +1656,26 @@ while 1
             info.yworst(info.iI)  = ...
                            max(info.ilow,min(info.iupp,...
                            xbest(info.iI)+MA.int.alp0 * MA.int.p));
+            Vstate=60;
+            x=info.yworst;
+            return;           
+       elseif MA.int.feasible
+             info.ytrial=xbest; info.ftrial=fbest; 
+             MA.int.alpha = 0;
+            info.yworst  = xbest;
+            info.yworst(info.iI)  = ...
+                           max(info.ilow,min(info.iupp,...
+                           xbest(info.iI)+MA.int.alp0 * MA.int.p));
+            Vstate=60;
+            x=info.yworst;
+            return;  
+       elseif MA.cont.feasible
+             info.ytrial=xbest; info.ftrial=fbest; 
+             MA.cont.alpha = 0; 
+            info.yworst  = xbest;
+            info.yworst(info.cI)  = ...
+                            max(info.clow,min(info.cupp,...
+                            xbest(info.cI)+MA.cont.alp0 * MA.cont.p));
             Vstate=60;
             x=info.yworst;
             return;
@@ -1671,26 +1695,48 @@ while 1
             info.xf(info.nf,dim+1)=info.fworst;
             info=UpdatePoints(info);
         end
-         
         Vstate=62;
    end
   if Vstate==62
     if info.fworst<fbest
         % initialize alpha and best point
-        MA.cont.alpha = MA.cont.alp0; MA.int.alpha = MA.int.alp0;
-        info.ytrial=info.yworst; info.ftrial=info.fworst;
-        % calculate trial point
-        info.yworst= xbest;
-        betac = min(MA.cont.alpmax,ctune.cnu*MA.cont.alpha);
-        info.yworst(info.cI) = max(info.clow,min(info.cupp,...
-                           xbest(info.cI) + betac * MA.cont.p));
+        if MA.int.feasible&&MA.cont.feasible
+            MA.cont.alpha = MA.cont.alp0; MA.int.alpha = MA.int.alp0;
+            info.ytrial=info.yworst; info.ftrial=info.fworst;
+            % calculate trial point
+            info.yworst= xbest;
+            betac = min(MA.cont.alpmax,ctune.cnu*MA.cont.alpha);
+            info.yworst(info.cI) = max(info.clow,min(info.cupp,...
+                               xbest(info.cI) + betac * MA.cont.p));
 
-        betai      = min(MA.int.alpmax,itune.inu*MA.int.alpha);
-        info.yworst(info.iI) = max(info.ilow,min(info.iupp,...
-                           xbest(info.iI) + betai * MA.int.p));
-        Vstate=63;
-        x=info.yworst;
-        return;
+            betai      = min(MA.int.alpmax,itune.inu*MA.int.alpha);
+            info.yworst(info.iI) = max(info.ilow,min(info.iupp,...
+                               xbest(info.iI) + betai * MA.int.p));
+           
+        elseif MA.int.feasible
+            MA.cont.alpha = inf; MA.int.alpha = MA.int.alp0;
+            info.ytrial=info.yworst; info.ftrial=info.fworst;
+            % calculate trial point
+            info.yworst= xbest;
+           
+            betai      = min(MA.int.alpmax,itune.inu*MA.int.alpha);
+            info.yworst(info.iI) = max(info.ilow,min(info.iupp,...
+                               xbest(info.iI) + betai * MA.int.p));
+           
+            
+        elseif MA.cont.feasible
+            MA.cont.alpha = MA.cont.alp0; MA.int.alpha = inf;
+            info.ytrial=info.yworst; info.ftrial=info.fworst;
+            % calculate trial point
+            info.yworst= xbest;
+            betac = min(MA.cont.alpmax,ctune.cnu*MA.cont.alpha);
+            info.yworst(info.cI) = max(info.clow,min(info.cupp,...
+                               xbest(info.cI) + betac * MA.cont.p));
+           
+        end
+         Vstate=63;
+         x=info.yworst;
+         return;
     else
         Vstate=70;
     end
@@ -1708,12 +1754,12 @@ while 1
         info=UpdatePoints(info);
     end
     
-    Vstate=64;
+    Vstate=64; 
   end
   while Vstate==64||Vstate==65 
         if Vstate==64
-            okLS = (MA.int.alpha<MA.int.alpmax && ...
-                    MA.cont.alpha<MA.cont.alpmax && ...
+            okLS = ((MA.int.alpha<MA.int.alpmax && ...
+                    MA.cont.alpha<MA.cont.alpmax )&& ...
                     info.fworst < fbest);
             % expansion step (increase stepsize)
             if okLS
@@ -1738,26 +1784,8 @@ while 1
                    Vstate = 65; 
                    x=info.yworst;
                    return;
-                elseif(MA.cont.alpha < MA.cont.alpmax)
-                   info.yworst  = xbest;  
-                   betac  = min(MA.cont.alpmax,ctune.cnu*MA.cont.alpha);
-                   info.yworst(info.cI) = ...
-                                max(info.clow,min(info.cupp,...
-                                xbest(info.cI) + betac * MA.cont.p));
-                   Vstate  = 65; 
-                   x=info.yworst;
-                    return;
-               elseif (MA.int.alpha < MA.int.alpmax)  
-                   info.yworst   = xbest;  
-                   betai  = min(MA.int.alpmax,itune.inu*MA.int.alpha);
-                   info.yworst(info.iI) = ...
-                              max(info.ilow,min(info.iupp,...
-                              xbest(info.iI) + betai * MA.int.p));
-                   Vstate = 65; 
-                   x=info.yworst;
-                   return;
                 else
-                    Vstate=66; break; 
+                    Vstate=70; 
                 end
             else
                 Vstate=66; break; 
@@ -1779,6 +1807,7 @@ while 1
             Vstate=64; 
        end
   end  
+  
    while Vstate==66||Vstate==67 
         if Vstate==66
             okLS = (MA.int.alpha<MA.int.alpmax && ...
@@ -1859,6 +1888,8 @@ while 1
            Vstate=68;
         end
    end
+   
+   
    if Vstate==70
      if MA.int.alpha>0 ||MA.cont.alpha>0
          if info.ftrial<fbest
@@ -1870,12 +1901,11 @@ while 1
          Vstate=71;
      end
    end
+   %%%%%%%%%%%%%%%%%%%%% opposite direction is tried %%%%%%%%%%%%%%%%%%
    if Vstate==71
       MA.int.p =- MA.int.p; MA.cont.p=-MA.cont.p; MA.mixed.p=-MA.mixed.p;
       [MA,info]= requirMixedLSS(xbest,MA,info);
        if MA.int.feasible&&MA.cont.feasible
-            MA.int.p = MA.mixed.p(info.iI);
-            MA.cont.p = MA.mixed.p(info.cI);
             info.ytrial   = xbest; 
             info.ftrial   = fbest; 
             MA.cont.alpha  = 0; 
@@ -1885,6 +1915,28 @@ while 1
                       xbest(info.cI)+MA.cont.alp0 * MA.cont.p));
             info.yworst(info.iI)  = max(info.ilow,min(info.iupp,...
                       xbest(info.iI)+MA.int.alp0 * MA.int.p));
+            Vstate=72;
+            x=info.yworst;
+            return;
+            
+       elseif MA.int.feasible
+           
+             info.ytrial=xbest; info.ftrial=fbest; 
+             MA.int.alpha = 0;
+            info.yworst  = xbest;
+            info.yworst(info.iI)  = ...
+                           max(info.ilow,min(info.iupp,...
+                           xbest(info.iI)+MA.int.alp0 * MA.int.p));
+            Vstate=72;
+            x=info.yworst;
+            return;  
+       elseif MA.cont.feasible
+             info.ytrial=xbest; info.ftrial=fbest; 
+             MA.cont.alpha = 0; 
+            info.yworst  = xbest;
+            info.yworst(info.cI)  = ...
+                            max(info.clow,min(info.cupp,...
+                            xbest(info.cI)+MA.cont.alp0 * MA.cont.p));
             Vstate=72;
             x=info.yworst;
             return;
@@ -1908,22 +1960,45 @@ while 1
         Vstate=73;
   end
   if Vstate==73
-    if info.fworst<fbest
+   if info.fworst<fbest
         % initialize alpha and best point
-        MA.cont.alpha = MA.cont.alp0; MA.int.alpha = MA.int.alp0;
-        info.ytrial=info.yworst; info.ftrial=info.fworst;
-        % calculate trial point
-        info.yworst= xbest;
-        betac = min(MA.cont.alpmax,ctune.cnu*MA.cont.alpha);
-        info.yworst(info.cI) = max(info.clow,min(info.cupp,...
-                        xbest(info.cI) + betac * MA.cont.p));
+        if MA.int.feasible&&MA.cont.feasible
+            MA.cont.alpha = MA.cont.alp0; MA.int.alpha = MA.int.alp0;
+            info.ytrial=info.yworst; info.ftrial=info.fworst;
+            % calculate trial point
+            info.yworst= xbest;
+            betac = min(MA.cont.alpmax,ctune.cnu*MA.cont.alpha);
+            info.yworst(info.cI) = max(info.clow,min(info.cupp,...
+                               xbest(info.cI) + betac * MA.cont.p));
 
-        betai  = min(MA.int.alpmax,itune.inu*MA.int.alpha);
-        info.yworst(info.iI) = max(info.ilow,min(info.iupp,...
-                       xbest(info.iI) + betai * MA.int.p));
-        Vstate=74;
-        x=info.yworst;
-        return;
+            betai      = min(MA.int.alpmax,itune.inu*MA.int.alpha);
+            info.yworst(info.iI) = max(info.ilow,min(info.iupp,...
+                               xbest(info.iI) + betai * MA.int.p));
+           
+        elseif MA.int.feasible
+            MA.cont.alpha = inf; MA.int.alpha = MA.int.alp0;
+            info.ytrial=info.yworst; info.ftrial=info.fworst;
+            % calculate trial point
+            info.yworst= xbest;
+           
+            betai      = min(MA.int.alpmax,itune.inu*MA.int.alpha);
+            info.yworst(info.iI) = max(info.ilow,min(info.iupp,...
+                               xbest(info.iI) + betai * MA.int.p));
+           
+            
+        elseif MA.cont.feasible
+            MA.cont.alpha = MA.cont.alp0; MA.int.alpha = inf;
+            info.ytrial=info.yworst; info.ftrial=info.fworst;
+            % calculate trial point
+            info.yworst= xbest;
+            betac = min(MA.cont.alpmax,ctune.cnu*MA.cont.alpha);
+            info.yworst(info.cI) = max(info.clow,min(info.cupp,...
+                               xbest(info.cI) + betac * MA.cont.p));
+           
+        end
+         Vstate=74;
+         x=info.yworst;
+         return;
     else
         Vstate=2;
     end
