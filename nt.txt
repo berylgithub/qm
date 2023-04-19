@@ -190,3 +190,10 @@ varlist that must be emptied on each experiment run:
 - for now removed FCHL atomic feature from hyperparameteropt, since it causes NaN; changed c to int instead of real
 - changed init params, following the bounds, now the vector size is 16
 - all_tb_170423 contains all of the current found hyperparameters 
+
+19.04.2023:
+- Hyperparams which are possible to improve MATRs:
+  + inittune.m: cdeltamin [30]
+  + inittune.m: cnu [21]
+  + in general larger budget gives better result, recommended = 1200*n (current, n=16 -> 19200 nfmax)
+- changed penalty factor to 10, see if this gives better results
