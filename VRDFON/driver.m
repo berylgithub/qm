@@ -49,7 +49,7 @@ initbounds = boundtransform(bounds); % transform "actual" bounds to "encoded" bo
 % For details see driverMintry.m
 init.paths = ''; % mandatory absolute path to ???
 init.m = length(xin); init.n = 1; % problem dimension, "could be row or column vector"
-init.nfmax = 1000; % max nfe
+init.nfmax = 10000; % max nfe
 init.upp = initbounds(2,:); % upperbound
 init.low = initbounds(1,:); % low
 init.type = initbounds(3,:); % type of variables (categorical and oint == real for now)
