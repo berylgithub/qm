@@ -133,7 +133,7 @@ end
 big main function here, to tune hyperparameters by DFO
     
 """
-function hyperparamopt(;init=false, init_data=[], init_x = [])
+function hyperparamopt(;init=false, init_data=[], init_x = [], dummyfx = false, trackx = true)
     # initial fitting, initialize params and funs, replace with actual fitting:
     path_init_params = "data/hyperparamopt/init_params.txt"; 
     path_params = "data/hyperparamopt/params.txt"; 
@@ -141,6 +141,11 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
     path_track="data/hyperparamopt/tracker.txt";
     path_bounds = "data/hyperparamopt/bounds.txt";
     bounds = readdlm(path_bounds)
+    if dummyfx # if dummy function value is requested:
+        fx = fxdummy
+    else
+        fx = main_obj
+    end
     if init # init using arbitrary params (or init_data), e.g., the best one:
         uid = replace(string(Dates.now()), ":" => ".")
         if isempty(init_data)
@@ -153,7 +158,7 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
             else # use predefined x
                 x = [0.5, 0.5, 6.0, 2.0, 0.0, 0.0, 48.0, 4.0, 524288.0] # midpoint, shifted the model by 1
             end
-            f = main_obj(x)
+            f = fx(x)
         else
             println("init starts, initial fobj and points known")
             x = init_data[2:end] # unencoded x, the one that Julia accepts
@@ -171,10 +176,13 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
         println("start hyperparamopt using previous checkpoint")
         # do fitting:
         x = data[1,2:end]
-        f = main_obj(x)
+        f = fx(x)
         # write result to file:
         uid = replace(string(Dates.now()), ":" => ".")
-        writestringline(string.(vcat(uid, f)), path_fun); writestringline(string.(vcat(f, x)), path_track; mode="a");
+        writestringline(string.(vcat(uid, f)), path_fun); 
+        if trackx
+            writestringline(string.(vcat(f, x)), path_track; mode="a");
+        end
     end
     # tracker for fobj and hyperparams already used:
     #writestringline(string.(vcat(f, x)), path_track; mode="a") 
@@ -191,18 +199,22 @@ function hyperparamopt(;init=false, init_data=[], init_x = [])
                 # do fitting:
                 x = data[1,2:end]
                 # check if x is already seen, if true, return (f,x):
-                tracker = readdlm(path_track)
                 idx = nothing
-                for i in axes(tracker, 1)
-                    if x == tracker[i, 2:end]
-                        idx = i
-                        break
+                if filesize(path_track) > 0 && isfile(path_track)
+                    tracker = readdlm(path_track)
+                    for i in axes(tracker, 1)
+                        if x == tracker[i, 2:end]
+                            idx = i
+                            break
+                        end
                     end
                 end
                 if idx === nothing # if not found, compute new point and save to tracker
                     println("computing fobj from new point...")
-                    f = main_obj(x)
-                    writestringline(string.(vcat(f, x)), path_track; mode="a")
+                    f = fx(x)
+                    if trackx
+                        writestringline(string.(vcat(f, x)), path_track; mode="a")
+                    end
                 else
                     println("the point was already tracked!")
                     f = tracker[idx, 1]
@@ -307,7 +319,12 @@ function main_obj(x)
     f_atom = E_atom = nothing # clear var
     GC.gc() # always gc after each run
     return MAE
-    
+end
+
+function fxdummy(x)
+    u = 0.
+    s = norm(x .- u)^2
+    return 10. + (5s)/(s+1)
 end
 
 """
