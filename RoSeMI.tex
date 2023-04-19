@@ -329,8 +329,8 @@ then for each feature, i.e., for each column vector $X_{:k}$, we can compute its
 	\codeword{ECDF}(X_{:k}; X_{:k}^\text{train}) = \frac{1}{n} \sum_{i}^n 1_{X_{ik} \leq X^\text{train}_{jk}}, ~~ \text{ for }j \in \codeword{eachindex}(X^\text{train}_{:k}).
 	\label{eq:ecdf}
 \end{equation}
-In the case of molecular features, it is quite straightforward, each ECDF is fitted using each column of the molecular feature matrix (optionally, the selection of the row indices for fitting and prediction). 
-Meanwhile for the atomic features, the vector of atomic feature matrices needs to be stacked into one big matrix of atomic features then we can compute the ECDF.
+In the case of molecular features, it is quite straightforward, each ECDF is fitted using each column of the molecular feature matrix (optionally, the selection of the row indices for "fitting" and "prediction"). 
+Meanwhile for the atomic features, the vector of atomic feature matrices needs to be stacked into one big matrix of atomic features in order to compute the ECDF.
 
 \subsection{Feature transformation by message passing}
 The idea of \textit{message passing} is to make the atoms within a molecule to be "aware" of each other's features.  
