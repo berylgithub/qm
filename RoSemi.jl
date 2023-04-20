@@ -943,6 +943,27 @@ function get_gaussian_kernel(F1, F2, L1, L2, cσ; threading=true)
 end
 
 """
+inner product kernel entry (reproducing kernel)
+"""
+function comp_repker_entry(u, v)
+    return u'v
+end
+
+"""
+compute repker given 2 feature matrices
+"""
+function comp_repker(f1, f2)
+    K = zeros(size(f1, 1), size(f2, 1))
+    @threads for i ∈ axes(f2, 1)
+        @threads for j ∈ axes(f1, 1)
+            @inbounds K[j,i] = f1[j, :]'f2[i,:]
+        end
+    end
+    return K
+end
+
+
+"""
 ==================================
 """
 
@@ -1316,16 +1337,26 @@ end
 
 
 function testrepker()
-    f_atom = load("data/exp_reduced_energy/features_atom.jld", "data")
+    f = load("data/exp_reduced_energy/features_atom.jld", "data")
     F = load("data/exp_reduced_energy/features.jld", "data") # should try using the curent best found features
+    E = readdlm("data/energies.txt")
+    dataset = load("data/qm9_dataset_old.jld", "data")
+    Eatom = readdlm("data/atomic_energies.txt")
+    Ered = E - Eatom
     centers = readdlm("data/centers.txt")[38, 3:102]
-    Ftrain = F[centers,:]
-    display(Ftrain)
-    K = zeros(size(Ftrain, 1), size(Ftrain, 1))
-    @simd for i ∈ axes(Ftrain, 1)
-        @simd for j ∈ axes(Ftrain, 1)
-            @inbounds K[j,i] = Ftrain[j, :]'Ftrain[i,:]
-        end
-    end
-    display(K)
+    testids = setdiff(1:size(F, 1), centers)
+    Ftrain = F[centers,:] #F[centers,:]
+    Ftest = F[testids,:]
+    K = comp_repker(Ftrain, Ftrain)
+    θ = K\Ered[centers]
+    display(mean(abs.(K*θ - Ered[centers]))*627.503)
+    K = comp_repker(Ftest, Ftrain)
+    display(mean(abs.(K*θ - Ered[testids]))*627.503)
+    K = get_gaussian_kernel(f[centers], f[centers], [d["atoms"] for d in dataset[centers]], [d["atoms"] for d in dataset[centers]], 2048.)
+    θ = K\Ered[centers]
+    display(mean(abs.(K*θ - Ered[centers]))*627.503)
+    K = get_gaussian_kernel(f[testids], f[centers], [d["atoms"] for d in dataset[testids]], [d["atoms"] for d in dataset[centers]], 2048.)
+    display(mean(abs.(K*θ - Ered[testids]))*627.503)
+    
+
 end
