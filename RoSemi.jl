@@ -1313,3 +1313,19 @@ function test_LS()
     display(norm(op*x - b))
 
 end
+
+
+function testrepker()
+    f_atom = load("data/exp_reduced_energy/features_atom.jld", "data")
+    F = load("data/exp_reduced_energy/features.jld", "data") # should try using the curent best found features
+    centers = readdlm("data/centers.txt")[38, 3:102]
+    Ftrain = F[centers,:]
+    display(Ftrain)
+    K = zeros(size(Ftrain, 1), size(Ftrain, 1))
+    @simd for i ∈ axes(Ftrain, 1)
+        @simd for j ∈ axes(Ftrain, 1)
+            @inbounds K[j,i] = Ftrain[j, :]'Ftrain[i,:]
+        end
+    end
+    display(K)
+end
