@@ -213,6 +213,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     C = D*C*D # the diagonals are the sensitivity
     # spectral decomposition:
     e = eigen(C)
+    display(e)
     v = e.values # careful of numerical overflow and errors!!
     Q = e.vectors
     #display(v)
@@ -544,11 +545,9 @@ function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_tes
 
     # correlation matrix:
     C = cor(F) # more accurate than the D*C*D somehow
-    display(C)
     # here should check for Infs or NaNs first
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
-    display(v)
     Q = e.vectors
     #display(v)
     #println("ev compute done")
