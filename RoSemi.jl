@@ -1352,14 +1352,14 @@ function testrepker()
     θ, stat = cgls(K, Ered[centers], itmax=500, verbose=1) #θ = K\Ered[centers]
     display(mean(abs.(K*θ - Ered[centers]))*627.503)
     K = comp_repker(Ftest, Ftrain)
-    display(mean(abs.(K*θ - Ered[testids]))*627.503) =#
+    display(mean(abs.(K*θ - Ered[testids]))*627.503)
     # compare w/ gaussian atom kerneL:
     K = get_gaussian_kernel(f[centers], f[centers], [d["atoms"] for d in dataset[centers]], [d["atoms"] for d in dataset[centers]], 2048.)
     display(K)
     θ, stat = cgls(K, Ered[centers], itmax=500, verbose=0) #θ = K\Ered[centers]
     display(mean(abs.(K*θ - Ered[centers]))*627.503)
     K = get_gaussian_kernel(f[testids], f[centers], [d["atoms"] for d in dataset[testids]], [d["atoms"] for d in dataset[centers]], 2048.)
-    display(mean(abs.(K*θ - Ered[testids]))*627.503)
+    display(mean(abs.(K*θ - Ered[testids]))*627.503) =#
     # test repker as feature:
     K = comp_repker(F, Ftrain) # could choose any data points as col
 end

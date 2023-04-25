@@ -516,7 +516,7 @@ params:
     - F, ∈Float64(N, n_f)
     - cov test only for numerically unstable features (such as FCHL)
 """
-function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_test=true, fname_plot_mol="")
+function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_test=false, fname_plot_mol="")
     N, n_f = size(F)
     if cov_test
         C = cov(F)
@@ -547,6 +547,7 @@ function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_tes
     # here should check for Infs or NaNs first
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!
+    display(v)
     Q = e.vectors
     #display(v)
     #println("ev compute done")

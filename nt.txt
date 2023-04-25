@@ -201,3 +201,4 @@ varlist that must be emptied on each experiment run:
 
 25.04.2023:
 - repker w/ CGLS w/ current "best" feature: (train, test) = (13.315580220029185, 18.506755171167082)
+? the mol PCA gives different results in SAINT and OMP1 but atom PCA is the same ???, reproduce result: data_setup("exp_reduced_energy", 20, 16, 5, 300, "data/qm9_dataset_old.jld", "data/ACSF.jld", "ACSF"; save_global_centers = false)
