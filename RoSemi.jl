@@ -1347,8 +1347,8 @@ function testrepker()
     testids = setdiff(1:size(F, 1), centers)
     Ftrain = F[centers,:] #F[centers,:]
     Ftest = F[testids,:]
-    # repker test:
-    K = comp_repker(Ftrain, Ftrain)
+    # test repker as fitter kernel:
+    #= K = comp_repker(Ftrain, Ftrain)
     θ, stat = cgls(K, Ered[centers], itmax=500, verbose=1) #θ = K\Ered[centers]
     display(mean(abs.(K*θ - Ered[centers]))*627.503)
     K = comp_repker(Ftest, Ftrain)
@@ -1358,5 +1358,7 @@ function testrepker()
     θ, stat = cgls(K, Ered[centers], itmax=500, verbose=1) #θ = K\Ered[centers]
     display(mean(abs.(K*θ - Ered[centers]))*627.503)
     K = get_gaussian_kernel(f[testids], f[centers], [d["atoms"] for d in dataset[testids]], [d["atoms"] for d in dataset[centers]], 2048.)
-    display(mean(abs.(K*θ - Ered[testids]))*627.503)
+    display(mean(abs.(K*θ - Ered[testids]))*627.503) =#
+    # test repker as feature:
+    K = comp_repker(F, Ftrain) # could choose any data points as col
 end
