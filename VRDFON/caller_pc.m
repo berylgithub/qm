@@ -47,7 +47,8 @@ dlmwrite("../data/hyperparamopt/init_params.txt", x', "\t")
 %}
 
 % test eigenvalue:
-C = dlmread("../testeigen.txt")
+F = dlmread("../testeigen.txt");
+C = corrcoef(F);
 eig(C)
 
 
