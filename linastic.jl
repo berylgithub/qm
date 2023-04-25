@@ -544,6 +544,7 @@ function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_tes
 
     # correlation matrix:
     C = cor(F) # more accurate than the D*C*D somehow
+    display(C)
     # here should check for Infs or NaNs first
     e = eigen(C)
     v = e.values # careful of numerical overflow and errors!!

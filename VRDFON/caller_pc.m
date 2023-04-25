@@ -34,18 +34,20 @@ norm(p-zi)**2
 bm = extractbound(bounds_old)
 decode(xold, bounds_old, bm)
 
-
-
 dlmread("../data/hyperparamopt/init_params.txt")
 
 p = computep([16, 20], 1, 50)
 x = computex([0.306122, 0.081633, 0.612245], 1, 50)
-%}
+
 bounds
 newbounds = boundtransform(bounds)
 bm = extractbound(bounds);
 [xnew, fpen] = decode(x, bounds, bm)
 dlmwrite("../data/hyperparamopt/init_params.txt", x', "\t")
+%}
 
+% test eigenvalue:
+C = dlmread("../testeigen.txt")
+eig(C)
 
 
