@@ -1368,7 +1368,7 @@ end
 function testrepker()
     
     # === tests on 20--16 features ===
-    f = load("data/exp_reduced_energy/features_atom.jld", "data")
+    #= f = load("data/exp_reduced_energy/features_atom.jld", "data")
     F = load("data/exp_reduced_energy/features.jld", "data") # should try using the curent best found features
     E = readdlm("data/energies.txt")
     dataset = load("data/qm9_dataset_old.jld", "data")
@@ -1377,7 +1377,7 @@ function testrepker()
     centers = readdlm("data/centers.txt")[38, 3:102]
     testids = setdiff(1:size(F, 1), centers)
     Ftrain = F[centers,:] #F[centers,:]
-    Ftest = F[testids,:]
+    Ftest = F[testids,:] =#
     
     # test repker as fitter kernel:
     #= K = comp_repker(Ftrain, Ftrain)
@@ -1412,10 +1412,29 @@ function testrepker()
     display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503) =#
 
     # test repker atom level:
+    #= K = get_repker_atom(f[centers], f[centers], [d["atoms"] for d ∈ dataset[centers]], [d["atoms"] for d ∈ dataset[centers]])
+    display(K)
+    θ = K\Ered[centers] #θ, stat = cgls(K, Ered[centers], itmax=500)
+    display(mean(abs.(K*θ + Eatom[centers] - E[centers]))*627.503)
+    K = get_repker_atom(f[testids], f[centers], [d["atoms"] for d ∈ dataset[testids]], [d["atoms"] for d ∈ dataset[centers]])
+    display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503) =#
+
+    # test using actual features:
+    f = load("data/ACSF.jld", "data")
+    E = readdlm("data/energies.txt")
+    dataset = load("data/qm9_dataset_old.jld", "data")
+    Eatom = readdlm("data/atomic_energies.txt")
+    Ered = E - Eatom
+    centers = readdlm("data/centers.txt")[38, 3:102]
+    testids = setdiff(eachindex(dataset), centers)
+
+    # test repker atom level:
     K = get_repker_atom(f[centers], f[centers], [d["atoms"] for d ∈ dataset[centers]], [d["atoms"] for d ∈ dataset[centers]])
     display(K)
-    θ, stat = cgls(K, Ered[centers], itmax=500)
+    θ, stat = cgls(K, Ered[centers], itmax=500) #θ = K\Ered[centers]
     display(mean(abs.(K*θ + Eatom[centers] - E[centers]))*627.503)
     K = get_repker_atom(f[testids], f[centers], [d["atoms"] for d ∈ dataset[testids]], [d["atoms"] for d ∈ dataset[centers]])
     display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503)
 end
+
+
