@@ -211,3 +211,9 @@ turns out the difference is all the way from the eigen atom, small numerical dif
 - repker atom level from 20-16: 
   ! (train, test, mode, machine) = (7.828382458724014, 10.998833688919287, CGLS, OMP1), current best! 
   ! (train, test, mode, machine) = (7.989517036864852, 11.043965907343884, CGLS, SAINT), really need to check the difference of numresults between SAINT and OMP1 (bug)!
+- parallel mode of hyperparameter optimization (need VSC access):
+  1 init as usual
+  2 perturb the next iterate into n different iterates, broadcast this to slaves
+  3 get the best iterates from the slaves into master
+  4 go to 2
+
