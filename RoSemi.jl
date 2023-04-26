@@ -962,6 +962,35 @@ function comp_repker(f1, f2)
     return K
 end
 
+"""
+atomic level repker: K_ll' = ∑_{ij} δ_{il,jl'} K(ϕ_il, ϕ_jl')
+similar to gaussian kernel entry
+"""
+function comp_atomic_repker_entry(f1, f2, l1, l2)
+    entry = 0.
+    @threads for i ∈ eachindex(l1)
+        @threads for j ∈ eachindex(l2)
+            @inbounds begin
+                if l1[i] == l2[j] # manually set Kronecker delta using if 
+                    d = comp_repker_entry(f1[i, :], f2[j, :]) # (vector, vector, scalar)
+                    entry += d
+                end 
+            end
+        end
+    end
+    return entry
+end
+
+function get_repker_atom(F1, F2, L1, L2)
+    nm1 = length(L1); nm2 = length(L2)
+    A = zeros(nm1, nm2)
+    @threads for j ∈ eachindex(L2) # col
+        @threads for i ∈ eachindex(L1) # row
+            @inbounds A[i, j] = comp_atomic_repker_entry(F1[i], F2[j], L1[i], L2[j])
+        end
+    end
+    return A
+end
 
 """
 ==================================
@@ -1337,6 +1366,8 @@ end
 
 
 function testrepker()
+    
+    # === tests on 20--16 features ===
     f = load("data/exp_reduced_energy/features_atom.jld", "data")
     F = load("data/exp_reduced_energy/features.jld", "data") # should try using the curent best found features
     E = readdlm("data/energies.txt")
@@ -1347,12 +1378,15 @@ function testrepker()
     testids = setdiff(1:size(F, 1), centers)
     Ftrain = F[centers,:] #F[centers,:]
     Ftest = F[testids,:]
+    
     # test repker as fitter kernel:
     #= K = comp_repker(Ftrain, Ftrain)
-    θ, stat = cgls(K, Ered[centers], itmax=500, verbose=1) #θ = K\Ered[centers]
-    display(mean(abs.(K*θ - Ered[centers]))*627.503)
+    θ, stat = cgls(K, Ered[centers], itmax=500, verbose=0) #θ = K\Ered[centers]
+    Epred = K*θ + Eatom[centers]
+    display(mean(abs.(Epred - E[centers]))*627.503)
     K = comp_repker(Ftest, Ftrain)
-    display(mean(abs.(K*θ - Ered[testids]))*627.503)
+    Epred = K*θ + Eatom[testids]
+    display(mean(abs.(Epred - E[testids]))*627.503)
     # compare w/ gaussian atom kerneL:
     K = get_gaussian_kernel(f[centers], f[centers], [d["atoms"] for d in dataset[centers]], [d["atoms"] for d in dataset[centers]], 2048.)
     display(K)
@@ -1360,6 +1394,28 @@ function testrepker()
     display(mean(abs.(K*θ - Ered[centers]))*627.503)
     K = get_gaussian_kernel(f[testids], f[centers], [d["atoms"] for d in dataset[testids]], [d["atoms"] for d in dataset[centers]], 2048.)
     display(mean(abs.(K*θ - Ered[testids]))*627.503) =#
+    
     # test repker as feature:
-    K = comp_repker(F, Ftrain) # could choose any data points as col
+    #= F = comp_repker(F, Ftrain) # could choose any data points as col
+    display(F)
+    # get KRR:
+    # train:
+    σ2 = 2048.
+    K = get_norms(F, centers, centers)
+    comp_gaussian_kernel!(K, σ2) # generate the kernel
+    display(K)
+    θ, stat = cgls(K, Ered[centers], itmax=500)
+    display(mean(abs.(K*θ + Eatom[centers] - E[centers]))*627.503)
+    # test:
+    K = get_norms(F, testids, centers)
+    comp_gaussian_kernel!(K, σ2)
+    display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503) =#
+
+    # test repker atom level:
+    K = get_repker_atom(f[centers], f[centers], [d["atoms"] for d ∈ dataset[centers]], [d["atoms"] for d ∈ dataset[centers]])
+    display(K)
+    θ, stat = cgls(K, Ered[centers], itmax=500)
+    display(mean(abs.(K*θ + Eatom[centers] - E[centers]))*627.503)
+    K = get_repker_atom(f[testids], f[centers], [d["atoms"] for d ∈ dataset[testids]], [d["atoms"] for d ∈ dataset[centers]])
+    display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503)
 end
