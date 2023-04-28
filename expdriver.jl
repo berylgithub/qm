@@ -133,7 +133,7 @@ end
 big main function here, to tune hyperparameters by DFO
     
 """
-function hyperparamopt(;init=false, init_data=[], init_x = [], dummyfx = false, trackx = true)
+function hyperparamopt(;init=false, init_data=[], init_x = [], dummyfx = false, trackx = true, fmode = "molecule")
     # initial fitting, initialize params and funs, replace with actual fitting:
     path_init_params = "data/hyperparamopt/init_params.txt"; 
     path_params = "data/hyperparamopt/params.txt"; 
@@ -144,7 +144,11 @@ function hyperparamopt(;init=false, init_data=[], init_x = [], dummyfx = false, 
     if dummyfx # if dummy function value is requested:
         fx = fxdummy
     else
-        fx = main_obj
+        if fmode == "molecule"
+            fx = main_obj
+        elseif fmode == "atom"
+            fx = main_obj_atom
+        end
     end
     if init # init using arbitrary params (or init_data), e.g., the best one:
         uid = replace(string(Dates.now()), ":" => ".")
@@ -261,7 +265,7 @@ params = [n_af, n_mf, n_basis, feature_name, normalize_atom, normalize_mol,cente
 bounds = [1,var], [1,var], [1,10], [1,3],   [0,1],          [0,1]           [0,95],    [1,5], [1,1e+10]     
 naf, nmf in percentage, e.g., .5 -> .5*max(naf("ACSF"))
 feature name: 1=ACSF, 2=SOAP, 3=FCHL
-model: ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
+model: ["ROSEMI", "KRR", "NN", "LLS", "GAK", "REAPER"]
 
 new params:
 [n_mf, n_af, n_basis, feature_name, normalize_atom, normalize_mol, model, c]
@@ -296,7 +300,7 @@ function main_obj(x)
     norms[0] = false; norms[1] = true
     normalize_atom = norms[Int(x[5])]; normalize_mol = norms[Int(x[6])];
     # determine model:
-    lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK"]
+    lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK", "REAPER"]
     model = lmodel[Int(x[7])]
     c = 2^x[8] # determine gaussian scaler for kernels
 

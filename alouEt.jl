@@ -323,6 +323,106 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
 end
 
 """
+data setup which only include atomic features
+"""
+function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_file, feature_name; 
+                    universe_size=1_000, normalize_atom = true, normalize_mode = "minmax", 
+                    fit_ecdf = false, fit_ecdf_ids = [], 
+                    cov_file = "", sensitivity_file = "", save_global_centers = false, num_center_sets = 1)
+    println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
+    t = @elapsed begin
+        path = mkpath("data/$foldername")
+        # load dataset:
+        dataset = load(dataset_file)["data"]
+        # PCA:
+        F = nothing
+        sens_mode = false
+        uid = replace(string(Dates.now()), ":" => ".") # generate uid
+        plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
+        if length(molf_file) == 0 # if molecular feature file is not provided:
+            println("atomic ⟹ mol mode!")
+            f = load(feature_file)["data"] # pre-extracted atomic features
+            println("PCA atom starts!")
+            if isempty(cov_file)
+                f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
+            else
+                sens_mode = true
+                C = load(cov_file)["data"]
+                σ = load(sensitivity_file)["data"]
+                f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
+            end
+            println("PCA atom done!")
+            println("mol feature processing starts!")
+            F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
+            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode)
+            println("mol feature processing finished!")
+        else
+            println("mol only mode!")
+            println("mol feature processing starts!")
+            F = load(molf_file)["data"]
+            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode, cov_test=feature_name=="FCHL" ? true : false)
+            println("mol feature processing finished!")
+        end
+        #F = F[data_indices, :]; f = f[data_indices]
+        #dataset = dataset[data_indices] # slice dataset
+        # compute bspline:
+        ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
+        # get centers:
+        println("computing centers...")
+        centers = set_cluster(F, num_centers, universe_size=universe_size, num_center_sets=num_center_sets)
+        if fit_ecdf # normalization by fitting the ecdf using the centers
+            println("fitting ecdf...")
+            ids = []
+            if isempty(fit_ecdf_ids) # if empty then use the first index centers
+                ids = centers[1]
+            else
+                ids = fit_ecdf_ids
+            end
+            f = comp_ecdf(f, ids; type="atom")
+            F = comp_ecdf(F, ids; type="mol")
+        end
+        # copy pre-computed atomref features:
+        redf = load("data/atomref_features.jld", "data")
+        # save files:
+    end
+    #save("data/$foldername/dataset.jld", "data", dataset)
+    save("data/$foldername/features_atom.jld", "data", f) # atomic features
+    save("data/$foldername/features.jld", "data", F) # molecular features
+    save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
+    save("data/$foldername/center_ids.jld", "data", centers)
+    save("data/$foldername/spline.jld", "data", ϕ)
+    save("data/$foldername/dspline.jld", "data", dϕ)
+    if save_global_centers # append centers to global directory
+        for i ∈ eachindex(centers)
+            kid = "K"*string(i)
+            strings = string.(vcat(uid, kid, centers[i]))
+            open("data/centers.txt", "a") do io
+                str = ""
+                for s ∈ strings
+                    str*=s*"\t"
+                end
+                print(io, str*"\n")
+            end
+        end
+    end
+    # write data setup info:
+    n_data = length(dataset)
+    machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
+    strlist = string.([uid, n_data, num_centers, feature_name, n_af, n_mf, ft_sos, ft_bin, normalize_atom, normalize_mol, sens_mode, n_basis+3, t, machine]) # dates serves as readable uid, n_basis + 3 by definition
+    open("data/$foldername/setup_info.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+    println("data setup is finished in ",t,"s")
+    # clear memory:
+    dataset=F=f=ϕ=dϕ=centers=redf=nothing
+    GC.gc()
+end
+
+"""
 this takes a very long time to finish, jsutified as a part of data setup
 """
 function compute_sigma2(foldername)
@@ -969,7 +1069,11 @@ end
 atomic gaussian fitting (FCHL-ish)
 """
 function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; cσ = 2. * (2^5)^2, Er = Vector{Float64}()::Vector{Float64})
-    nK = length(Midx); Nqm9 = length(Widx); n_f = size(F, 2)
+    nK = length(Midx); Nqm9 = length(Widx); 
+    n_f = 0
+    if F !== nothing # could be empty since GAK only depends on atomic features
+        n_f = size(F, 2)
+    end
     # fit gausatom:
     #cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
     A = get_gaussian_kernel(f[Midx], f[Midx], [d["atoms"] for d in dataset[Midx]], [d["atoms"] for d in dataset[Midx]], cσ)
@@ -990,6 +1094,53 @@ function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; cσ = 2. *
     # pred ∀ data
     t = @elapsed begin
         A = get_gaussian_kernel(f[Widx], f[Midx], [d["atoms"] for d in dataset[Widx]], [d["atoms"] for d in dataset[Midx]], cσ)
+    end
+    println("kernel pred t = ",t)
+    E_pred = A*θ
+    if !isempty(Er)
+        E_pred .+= Er[Widx]
+    end 
+    errors = E_pred - E[Widx]
+    MAE = mean(abs.(errors)) * 627.503 # in kcal/mol
+    println("MAE test = ",MAE)
+    # save info to file
+    strlist = string.([MAE, Nqm9, nK, n_f, t_ls, t])
+    open("result/$foldername/err_$foldername.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+    # clear variable
+    A=θ=stat=E_pred=errors=nothing; GC.gc()
+end
+
+function fitter_repker(F, f, dataset, E, Midx, Widx, foldername, tlimit; Er = Vector{Float64}()::Vector{Float64})
+    nK = length(Midx); Nqm9 = length(Widx); 
+    n_f = 0
+    if F !== nothing # could be empty since GAK only depends on atomic features
+        n_f = size(F, 2)
+    end
+    # fit gausatom:
+    #cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
+    A = get_repker_atom(f[Midx], f[Midx], [d["atoms"] for d ∈ dataset[Midx]], [d["atoms"] for d ∈ dataset[Midx]])
+    start = time()
+    t_ls = @elapsed begin
+        θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    end
+    # check MAE of training data only:
+    E_pred = A*θ # return the magnitude
+    if !isempty(Er)
+        E_pred .+= Er[Midx]
+        E[Midx] .+= Er[Midx]
+    end
+    errors = E_pred - E[Midx]
+    MAEtrain = mean(abs.(errors))*627.503 # in kcal/mol
+    println("MAE train = ",MAEtrain)
+    # pred ∀ data
+    t = @elapsed begin
+        A = get_repker_atom(f[Widx], f[Midx], [d["atoms"] for d ∈ dataset[Widx]], [d["atoms"] for d ∈ dataset[Midx]])
     end
     println("kernel pred t = ",t)
     E_pred = A*θ
@@ -1136,8 +1287,10 @@ function fit_🌹_and_atom(foldername, file_dataset;
         fitter_NN(F, E, Midx, Widx, foldername; Er = E_atom) # no tlimit yet, but mostly dont really matter
     elseif model == "LLS"
         fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = E_atom)
-    elseif model == "GAK"
+    elseif model == "GAK" # atomic model
         fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; cσ=cσ, Er = E_atom) # takes atomic features instead
+    elseif model == "REAPER" # atomic model
+        fitter_repker(F', f, dataset, E, Midx, Widx, foldername, tlimit; Er = E_atom)
     end
     # clear memory:
     dataset = E_dict = f = F = ϕ = dϕ = E = D = E_atom = Midx = Uidx = Widx = nothing; GC.gc()
