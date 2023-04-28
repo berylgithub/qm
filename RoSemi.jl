@@ -1392,9 +1392,9 @@ function testrepker()
     K = get_gaussian_kernel(f[centers], f[centers], [d["atoms"] for d in dataset[centers]], [d["atoms"] for d in dataset[centers]], c)
     display(K)
     θ, stat = cgls(K, Ered[centers], itmax=500, verbose=0) #θ = K\Ered[centers]
-    display(mean(abs.(K*θ + Eatom[centers] - Ered[centers]))*627.503)
+    display(mean(abs.(K*θ + Eatom[centers] - E[centers]))*627.503)
     K = get_gaussian_kernel(f[testids], f[centers], [d["atoms"] for d in dataset[testids]], [d["atoms"] for d in dataset[centers]], c)
-    display(mean(abs.(K*θ + Eatom[testids] - Ered[testids]))*627.503)
+    display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503)
     
     # test repker as feature:
     #= F = comp_repker(F, Ftrain) # could choose any data points as col
