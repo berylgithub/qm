@@ -323,12 +323,12 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
 end
 
 """
-data setup which only include atomic features
+data setup which only include atomic features ⟹ no data selection
 """
 function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_file, feature_name; 
                     universe_size=1_000, normalize_atom = true, normalize_mode = "minmax", 
                     fit_ecdf = false, fit_ecdf_ids = [], 
-                    cov_file = "", sensitivity_file = "", save_global_centers = false, num_center_sets = 1)
+                    cov_file = "", sensitivity_file = "")
     println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
@@ -339,47 +339,24 @@ function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_fi
         sens_mode = false
         uid = replace(string(Dates.now()), ":" => ".") # generate uid
         plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
-        if length(molf_file) == 0 # if molecular feature file is not provided:
-            println("atomic ⟹ mol mode!")
-            f = load(feature_file)["data"] # pre-extracted atomic features
-            println("PCA atom starts!")
-            if isempty(cov_file)
-                f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
-            else
-                sens_mode = true
-                C = load(cov_file)["data"]
-                σ = load(sensitivity_file)["data"]
-                f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
-            end
-            println("PCA atom done!")
-            println("mol feature processing starts!")
-            F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
-            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode)
-            println("mol feature processing finished!")
+        
+        println("atomic ⟹ mol mode!")
+        f = load(feature_file)["data"] # pre-extracted atomic features
+        println("PCA atom starts!")
+        if isempty(cov_file)
+            f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
         else
-            println("mol only mode!")
-            println("mol feature processing starts!")
-            F = load(molf_file)["data"]
-            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode, cov_test=feature_name=="FCHL" ? true : false)
-            println("mol feature processing finished!")
+            sens_mode = true
+            C = load(cov_file)["data"]
+            σ = load(sensitivity_file)["data"]
+            f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
         end
-        #F = F[data_indices, :]; f = f[data_indices]
-        #dataset = dataset[data_indices] # slice dataset
-        # compute bspline:
-        ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
-        # get centers:
-        println("computing centers...")
-        centers = set_cluster(F, num_centers, universe_size=universe_size, num_center_sets=num_center_sets)
+        println("PCA atom done!")
+        ϕ = dϕ = F = nothing # not needed for atomic level models
         if fit_ecdf # normalization by fitting the ecdf using the centers
             println("fitting ecdf...")
-            ids = []
-            if isempty(fit_ecdf_ids) # if empty then use the first index centers
-                ids = centers[1]
-            else
-                ids = fit_ecdf_ids
-            end
+            ids = fit_ecdf_ids
             f = comp_ecdf(f, ids; type="atom")
-            F = comp_ecdf(F, ids; type="mol")
         end
         # copy pre-computed atomref features:
         redf = load("data/atomref_features.jld", "data")
@@ -389,22 +366,9 @@ function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_fi
     save("data/$foldername/features_atom.jld", "data", f) # atomic features
     save("data/$foldername/features.jld", "data", F) # molecular features
     save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
-    save("data/$foldername/center_ids.jld", "data", centers)
     save("data/$foldername/spline.jld", "data", ϕ)
     save("data/$foldername/dspline.jld", "data", dϕ)
-    if save_global_centers # append centers to global directory
-        for i ∈ eachindex(centers)
-            kid = "K"*string(i)
-            strings = string.(vcat(uid, kid, centers[i]))
-            open("data/centers.txt", "a") do io
-                str = ""
-                for s ∈ strings
-                    str*=s*"\t"
-                end
-                print(io, str*"\n")
-            end
-        end
-    end
+
     # write data setup info:
     n_data = length(dataset)
     machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
@@ -1071,7 +1035,7 @@ atomic gaussian fitting (FCHL-ish)
 function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; cσ = 2. * (2^5)^2, Er = Vector{Float64}()::Vector{Float64})
     nK = length(Midx); Nqm9 = length(Widx); 
     n_f = 0
-    if F !== nothing # could be empty since GAK only depends on atomic features
+    if !isempty(F) # could be empty since GAK only depends on atomic features
         n_f = size(F, 2)
     end
     # fit gausatom:
@@ -1119,7 +1083,7 @@ end
 function fitter_repker(F, f, dataset, E, Midx, Widx, foldername, tlimit; Er = Vector{Float64}()::Vector{Float64})
     nK = length(Midx); Nqm9 = length(Widx); 
     n_f = 0
-    if F !== nothing # could be empty since GAK only depends on atomic features
+    if !isempty(F) # could be empty since GAK only depends on atomic features
         n_f = size(F, 2)
     end
     # fit gausatom:
