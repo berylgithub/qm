@@ -325,6 +325,61 @@ function main_obj(x)
     return MAE
 end
 
+
+"""
+ATOM ONLY!
+params = [naf, fname, norm_atom, model, c]
+"""
+function main_obj_atom(x)
+    # process params:
+
+    # determine n_af and n_mf:
+    n_af = Int(x[1]);
+
+    # determine feature_name and path:
+    dftype = Dict()
+    dftype[1] = "ACSF"; dftype[2] = "SOAP"; dftype[3] = "FCHL";
+    feature_name = dftype[Int(x[2])]; feature_path = "data/"*feature_name*".jld";
+
+    # crawl center_id by index, "data/centers.txt" must NOT be empty:
+    centers = readdlm("data/centers.txt")
+    center_idx = 38 # set it fixed as current "best" found training points
+    uid=""; kid= ""; uk_id = ""
+    uid = centers[center_idx,1]; kid = centers[center_idx,2]; uk_id = join([uid,"_",kid])
+    center = centers[center_idx, 3:end]
+    # get atom info global, to match center ids:
+    atomref = readdlm("data/atomref_info.txt")
+    f_atom = load("data/atomref_features.jld", "data")
+    E_atom = f_atom*atomref[center_idx,5:end]
+
+    # determine normalize switches:
+    norms = Dict()
+    norms[0] = false; norms[1] = true
+    normalize_atom = norms[Int(x[3])];
+    # determine model:
+    lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK", "REAPER"]
+    model = lmodel[Int(x[4])]
+    c = 2^x[5] # determine gaussian scaler for kernels
+
+    println([n_af, feature_name, normalize_atom, normalize_mol, feature_path, model, c])
+
+    foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
+    
+    data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
+        normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 1)
+    GC.gc() # always gc after each run
+    fit_🌹_and_atom(foldername, file_dataset; model = model, 
+        E_atom = E_atom, cσ = c, scaler = c, 
+        center_ids = center, uid = uid, kid = uk_id)
+    # get MAE:
+    path_result = "result/$foldername/err_$foldername.txt"
+    MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
+
+    f_atom = E_atom = nothing # clear var
+    GC.gc() # always gc after each run
+    return MAE
+end
+
 function fxdummy(x)
     u = 0.
     s = norm(x .- u)^2
