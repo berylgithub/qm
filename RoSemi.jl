@@ -1388,7 +1388,7 @@ function testrepker()
     Epred = K*θ + Eatom[testids]
     display(mean(abs.(Epred - E[testids]))*627.503) =#
     # compare w/ gaussian atom kerneL:
-    c = 1.
+    c = 2048.
     K = get_gaussian_kernel(f[centers], f[centers], [d["atoms"] for d in dataset[centers]], [d["atoms"] for d in dataset[centers]], c)
     display(K)
     θ, stat = cgls(K, Ered[centers], itmax=500, verbose=0) #θ = K\Ered[centers]
@@ -1419,7 +1419,7 @@ function testrepker()
     Eatom = readdlm("data/atomic_energies.txt")
     Ered = E - Eatom
     centers = readdlm("data/centers.txt")[38, 3:102]
-    testids = setdiff(eachindex(dataset), centers)
+    testids = setdiff(eachindex(dataset), centers) =#
 
     # test repker atom level:
     K = get_repker_atom(f[centers], f[centers], [d["atoms"] for d ∈ dataset[centers]], [d["atoms"] for d ∈ dataset[centers]])
@@ -1427,7 +1427,7 @@ function testrepker()
     θ, stat = cgls(K, Ered[centers], itmax=500) #θ = K\Ered[centers]
     display(mean(abs.(K*θ + Eatom[centers] - E[centers]))*627.503)
     K = get_repker_atom(f[testids], f[centers], [d["atoms"] for d ∈ dataset[testids]], [d["atoms"] for d ∈ dataset[centers]])
-    display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503) =#
+    display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503)
 end
 
 
