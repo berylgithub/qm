@@ -1,4 +1,6 @@
 include("expdriver.jl")
 
 
-testrepker()
+#testrepker()
+hyperparamopt(init=false, dummyfx=true, trackx=false)
+
