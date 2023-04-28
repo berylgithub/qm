@@ -325,11 +325,11 @@ end
 """
 data setup which only include atomic features ⟹ no data selection
 """
-function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_file, feature_name; 
+function data_setup_atom(foldername, n_af, dataset_file, feature_file, feature_name; 
                     universe_size=1_000, normalize_atom = true, normalize_mode = "minmax", 
                     fit_ecdf = false, fit_ecdf_ids = [], 
                     cov_file = "", sensitivity_file = "")
-    println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
+    println("data setup for ATOMIC FEATURES only = ",n_af," starts!")
     t = @elapsed begin
         path = mkpath("data/$foldername")
         # load dataset:
@@ -338,7 +338,7 @@ function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_fi
         F = nothing
         sens_mode = false
         uid = replace(string(Dates.now()), ":" => ".") # generate uid
-        plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
+        plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af" # plot name infix
         
         println("atomic ⟹ mol mode!")
         f = load(feature_file)["data"] # pre-extracted atomic features
@@ -352,7 +352,7 @@ function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_fi
             f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
         end
         println("PCA atom done!")
-        ϕ = dϕ = F = nothing # not needed for atomic level models
+        ϕ = dϕ = F = [] # not needed for atomic level models
         if fit_ecdf # normalization by fitting the ecdf using the centers
             println("fitting ecdf...")
             ids = fit_ecdf_ids
@@ -372,7 +372,7 @@ function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_fi
     # write data setup info:
     n_data = length(dataset)
     machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
-    strlist = string.([uid, n_data, num_centers, feature_name, n_af, n_mf, ft_sos, ft_bin, normalize_atom, normalize_mol, sens_mode, n_basis+3, t, machine]) # dates serves as readable uid, n_basis + 3 by definition
+    strlist = string.([uid, n_data, feature_name, n_af, normalize_atom, sens_mode, t, machine]) # dates serves as readable uid, n_basis + 3 by definition
     open("data/$foldername/setup_info.txt","a") do io
         str = ""
         for s ∈ strlist
@@ -382,7 +382,7 @@ function data_setup_atom(foldername, n_af, num_centers, dataset_file, feature_fi
     end
     println("data setup is finished in ",t,"s")
     # clear memory:
-    dataset=F=f=ϕ=dϕ=centers=redf=nothing
+    dataset=F=f=ϕ=dϕ=redf=nothing
     GC.gc()
 end
 
@@ -1040,7 +1040,7 @@ function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; cσ = 2. *
     end
     # fit gausatom:
     #cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
-    A = get_gaussian_kernel(f[Midx], f[Midx], [d["atoms"] for d in dataset[Midx]], [d["atoms"] for d in dataset[Midx]], cσ)
+    A = get_gaussian_kernel(f[Midx], f[Midx], [d["atoms"] for d ∈ dataset[Midx]], [d["atoms"] for d ∈ dataset[Midx]], cσ)
     start = time()
     t_ls = @elapsed begin
         θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
@@ -1206,8 +1206,11 @@ function fit_🌹_and_atom(foldername, file_dataset;
     file_finger_atom = path*"features_atom.jld"
     file_spline = path*"spline.jld"
     file_dspline = path*"dspline.jld"
-    files = [file_dataset, file_atom_E, file_finger_atom, file_finger, file_spline, file_dspline]
-    dataset, E_dict, f, F, ϕ, dϕ = [load(f)["data"] for f in files] #F_atom is for fitting energy reducer, f is atomic features for the molecular fitting
+    files = [file_dataset, file_finger_atom, file_finger, file_spline, file_dspline]
+    dataset, f, F, ϕ, dϕ = [load(f)["data"] for f in files] #F_atom is for fitting energy reducer, f is atomic features for the molecular fitting
+    if isfile(file_atom_E) # separated, since this may be empty
+        E_dict = load(file_atom_E, "data")
+    end
     if isempty(center_ids)
         center_ids = load("data/$foldername/center_ids.jld", "data")[1]
     end
