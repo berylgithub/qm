@@ -213,7 +213,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     C = D*C*D # the diagonals are the sensitivity
     # spectral decomposition:
     e = eigen(C)
-    v = e.values # careful of numerical overflow and errors!!
+    v = real(e.values) # temporary fix of small rounding errors: use real
     Q = e.vectors
     #display(v)
     # plot here:
