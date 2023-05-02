@@ -1447,34 +1447,74 @@ function testmsg()
     Ftrain = F[centers,:] #F[centers,:]
     Ftest = F[testids,:] =#
 
-    # initialization phase:
-    # compute interatomic distances given a molecule
-    # the graph is always asumed as full graph (no broken bridges), unless with cutoff
-    h = Matrix{Float64}(I, 4, 3) #h = f[1] # initialize hidden node
-    nnodes = size(h, 1); nf = size(h, 2)
+    # MP test, logic not yet finished...:
+    H = [Matrix{Float64}(I, 4, 3), rand(2,3)] # init dummy data
+    T = 2; nselect = 5 # hyperparameters
+    nf = size(H[1], 2); fsize = 2*nf+1 # init feature size
+    for t ∈ 1:T
+        println("timestep=",t)
+        for l ∈ eachindex(H) # molecule is inside since we want to stack for PCA
+            if t == 1
+                # initialization:
+
+
+            else
+
+            end
+            h = H[l] # init hidden node
+            e = mp_getedgef(h) # get edge feature
+            nnodes = size(h, 1) 
+            mt = zeros(nnodes, fsize) # depending on the MP method, 2nf+1 = double atomic feature + 1 edge feature
+            # one step aggregation:
+            H[l] = mp_step(h, e, mt, nnodes)
+        end
+        display(H)
+    end
+    # PCA the dataset together:
+    #= h = PCA_atom([mt], nselect)[1] # get h^{t+1}
+    display(h)
+    mpfs = size(h, 2)*2 + 1 # set to next step size =#
+end
+
+"""
+computes the edge features given node features:
+compute interatomic distances given a molecule
+the graph is always asumed as full graph (no broken bridges), unless with cutoff
+"""
+function mp_getedgef(h)
     r = Dict() # store at dict, faster and more efficient, since matmul isnt needed
     @threads for w ∈ axes(h, 1)
         @threads for v ∈ axes(h, 1)
             @inbounds begin
                 if w > v # upper triangular
-                    println([v,w])
                     r[v,w] = norm(h[v,:] - h[w,:])
                 end
             end 
         end
     end
-    # aggregation phase, concat and sum at the same time: 
-    mt = zeros(nnodes, 2*nf + 1) # depending on the MP method, 2nf+1 = double atomic feature + 1 edge feature
+    return r
+end
+
+function mp_init()
+
+end
+
+
+"""
+one step of MP aggregate given a set of atomic features
+"""
+function mp_step(h, e, mt, nnodes)
     @threads for v ∈ axes(h, 1) # loop nodes first
         @threads for w ∈ axes(h, 1) # its "neighbours"
             @inbounds begin
                 if v != w # no diag, asymmetry is assumed, can't be neougbours to itself:
                     # only the distances are symmetric:
-                    if !haskey(r, (v,w))
-                        d = r[w,v]
+                    if !haskey(e, (v,w))
+                        d = e[w,v]
                     else
-                        d = r[v,w]
+                        d = e[v,w]
                     end
+                    # mtv = ∑Mt(hv,hw,evw)
                     Mt = vcat(h[v,:], h[w,:], d)
                     mt[v,:] += Mt
                     println([v,w, Mt])
@@ -1482,7 +1522,20 @@ function testmsg()
             end 
         end
     end
-    display(mt)
+    mt /= (nnodes - 1) # mean
+    return mt
 end
 
+function mp_update()
+    
+end
+
+"""
+transform (atomic) features based on message passing scheme,
+currently the hidden nodes are assumed to be asymmetry.
+currently constant PCA feature size is assumed.
+"""
+function mp_transform(f, T, n_select)
+
+end
 
