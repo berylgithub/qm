@@ -1436,7 +1436,7 @@ message passing scheme unit tests:
 """
 function testmsg()
     # === tests on 20--16 features ===
-    f = load("data/exp_reduced_energy/features_atom.jld", "data")
+    #= f = load("data/exp_reduced_energy/features_atom.jld", "data")
     F = load("data/exp_reduced_energy/features.jld", "data") # should try using the curent best found features
     E = readdlm("data/energies.txt")
     dataset = load("data/qm9_dataset_old.jld", "data")
@@ -1445,15 +1445,44 @@ function testmsg()
     centers = readdlm("data/centers.txt")[38, 3:102]
     testids = setdiff(1:size(F, 1), centers)
     Ftrain = F[centers,:] #F[centers,:]
-    Ftest = F[testids,:]
+    Ftest = F[testids,:] =#
 
     # initialization phase:
-
-    # aggregation phase:
-
-    
-
-
+    # compute interatomic distances given a molecule
+    # the graph is always asumed as full graph (no broken bridges), unless with cutoff
+    h = Matrix{Float64}(I, 4, 3) #h = f[1] # initialize hidden node
+    nnodes = size(h, 1); nf = size(h, 2)
+    r = Dict() # store at dict, faster and more efficient, since matmul isnt needed
+    @threads for w ∈ axes(h, 1)
+        @threads for v ∈ axes(h, 1)
+            @inbounds begin
+                if w > v # upper triangular
+                    println([v,w])
+                    r[v,w] = norm(h[v,:] - h[w,:])
+                end
+            end 
+        end
+    end
+    # aggregation phase, concat and sum at the same time: 
+    mt = zeros(nnodes, 2*nf + 1) # depending on the MP method, 2nf+1 = double atomic feature + 1 edge feature
+    @threads for v ∈ axes(h, 1) # loop nodes first
+        @threads for w ∈ axes(h, 1) # its "neighbours"
+            @inbounds begin
+                if v != w # no diag, asymmetry is assumed, can't be neougbours to itself:
+                    # only the distances are symmetric:
+                    if !haskey(r, (v,w))
+                        d = r[w,v]
+                    else
+                        d = r[v,w]
+                    end
+                    Mt = vcat(h[v,:], h[w,:], d)
+                    mt[v,:] += Mt
+                    println([v,w, Mt])
+                end
+            end 
+        end
+    end
+    display(mt)
 end
 
 
