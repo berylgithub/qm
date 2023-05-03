@@ -1449,9 +1449,9 @@ function testmsg()
 
     # MP test:
     H = [Matrix{Float64}(I, 4, 3), Matrix{Float64}(2I, 2, 3)] # init dummy data
-    T = 2; nselect = 5 # hyperparameters
+    T = 2; nselect = 2 # hyperparameters
     nf = size(H[1], 2); fsize = 2*nf+1 # init feature size
-    H, e = mp_step(H)
+    H, e = mp_step(H, nselect)
     display(e)
     display(H[1]); display(H[2])
     # PCA the dataset together:
@@ -1466,20 +1466,26 @@ end
 MP for one step of t
 takes in H the whole molecular dataset, and optional param e the edge features
 """
-function mp_step(H; e=[])
+function mp_step(H, n_select; e=[], 
+    normalize = true, normalize_mode = "minmax", 
+    fname_plot_at = "", save_cov = false)
     # initialization phase:
     nf = size(H[1], 2); nf2 = 2*nf+1 # init feature sizes
     if isempty(e) # check if e is empty ⟹ not yet computed
         e = Vector{Dict}(undef, size(H, 1))
-        for l ∈ eachindex(H)
-            e[l] = mp_getedgef(H[l])
+        @threads for l ∈ eachindex(H)
+            @inbounds e[l] = mp_getedgef(H[l])
         end
     end
     # aggregation phase 1, concat and sum:
-    for l ∈ eachindex(H)
-        H[l] = mp_agg(H[l], e[l], nf2)
+    display("pre-PCA")
+    @threads for l ∈ eachindex(H)
+        @inbounds H[l] = mp_agg(H[l], e[l], nf2)
+        display(H[l])
     end
     # aggregation pahse 2, PCA:
+    H = PCA_atom(H, n_select; normalize = normalize, normalize_mode = normalize_mode, 
+        fname_plot_at = fname_plot_at, save_cov = save_cov)
     return H, e
 end
 
@@ -1505,6 +1511,7 @@ end
 """
 one step of MP aggregate ONLY, given a set of atomic features (one molecule)
 nf2 = 2nf + 1 currently
+Mt is assumed to be asymmetric, only the distances are ⟹ Mt_vw != Mt_wv ∩ e_vw = e_wv
 """
 function mp_agg(h, e, nf2)
     nnodes = size(h, 1) # numofatom
