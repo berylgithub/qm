@@ -1561,7 +1561,7 @@ function testmsg()
     Eatom = readdlm("data/atomic_energies.txt")
     Ered = E - Eatom
     centers = readdlm("data/centers.txt")[38, 3:102]
-    testids = setdiff(1:size(F, 1), centers)
+    testids = setdiff(1:length(dataset), centers)
     # mp transform:
     T = 1; n_select = 20
     pp = Dict() # PCA optional params
