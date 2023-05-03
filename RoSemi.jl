@@ -1554,8 +1554,8 @@ function testmsg()
     display(H) =#
 
     # MP test with actual data for fitting:
-    # load raw data:
-    f = load("data/ACSF.jld", "data")
+    # load data:
+    f = load("data/exp_reduced_energy/features_atom.jld", "data")
     E = readdlm("data/energies.txt")
     dataset = load("data/qm9_dataset_old.jld", "data")
     Eatom = readdlm("data/atomic_energies.txt")
