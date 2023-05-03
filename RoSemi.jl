@@ -1434,35 +1434,6 @@ end
 """
 message passing scheme unit tests:
 """
-function testmsg()
-    # === tests on 20--16 features ===
-    #= f = load("data/exp_reduced_energy/features_atom.jld", "data")
-    F = load("data/exp_reduced_energy/features.jld", "data") # should try using the curent best found features
-    E = readdlm("data/energies.txt")
-    dataset = load("data/qm9_dataset_old.jld", "data")
-    Eatom = readdlm("data/atomic_energies.txt")
-    Ered = E - Eatom
-    centers = readdlm("data/centers.txt")[38, 3:102]
-    testids = setdiff(1:size(F, 1), centers)
-    Ftrain = F[centers,:] #F[centers,:]
-    Ftest = F[testids,:] =#
-
-    # MP test:
-    H = [Matrix{Float64}(I, 4, 3), Matrix{Float64}(2I, 2, 3)] # init dummy data
-    T = 5; n_select = 2 # hyperparameters
-    pp = Dict() # PCA optional params
-    pp[:normalize] = false
-    H = mp_transform(H,T,n_select; PCA_params = pp)
-    display(H)
-
-    # MP test with actual data (paste this to cmd, instead of running within the function, to see the actual time):
-    f = load("data/ACSF.jld", "data")
-    T = 2; n_select = 20
-    pp = Dict() # PCA optional params
-    f = mp_transform(f,T,n_select; PCA_params = pp)
-    display(f)
-end
-
 
 """
 Message-passing feature transformaation, takes in the whole batch of the dataset (a set of molecuels)
@@ -1474,16 +1445,20 @@ featuring:
 * PCA_params contains the optional parameters of PCA_atom, which is a kwargs dict
 """
 function mp_transform(H, T, n_select; PCA_params=Dict())
+    println("MP transform starts!")
     e = nothing # init empty e
-    for t ∈ 1:T
-        println("timestep = ",t)
-        if t == 1
-            H, e = mp_step(H, n_select; PCA_params=PCA_params)
-        else
-            H, e = mp_step(H, n_select; e=e, PCA_params=PCA_params) # now e has already been computed
+    tmp = @elapsed begin
+        for t ∈ 1:T
+            println("timestep = ",t)
+            if t == 1
+                H, e = mp_step(H, n_select; PCA_params=PCA_params)
+            else
+                H, e = mp_step(H, n_select; e=e, PCA_params=PCA_params) # now e has already been computed
+            end
+            println("timestep ",t," is finished!")
         end
-        println("timestep ",t," is finished!")
     end
+    println("MP transform is finished in ",tmp)
     return H
 end
 
@@ -1556,4 +1531,47 @@ function mp_agg(h, e, nf2)
     mt /= (nnodes - 1) # mean
     return mt
 end
+
+function testmsg()
+    # === tests on 20--16 features ===
+    #= f = load("data/exp_reduced_energy/features_atom.jld", "data")
+    F = load("data/exp_reduced_energy/features.jld", "data") # should try using the curent best found features
+    E = readdlm("data/energies.txt")
+    dataset = load("data/qm9_dataset_old.jld", "data")
+    Eatom = readdlm("data/atomic_energies.txt")
+    Ered = E - Eatom
+    centers = readdlm("data/centers.txt")[38, 3:102]
+    testids = setdiff(1:size(F, 1), centers)
+    Ftrain = F[centers,:] #F[centers,:]
+    Ftest = F[testids,:] =#
+
+    # MP test with dummy data:
+    #= H = [Matrix{Float64}(I, 4, 3), Matrix{Float64}(2I, 2, 3)] # init dummy data
+    T = 5; n_select = 2 # hyperparameters
+    pp = Dict() # PCA optional params
+    pp[:normalize] = false
+    H = mp_transform(H,T,n_select; PCA_params = pp)
+    display(H) =#
+
+    # MP test with actual data for fitting:
+    # load raw data:
+    f = load("data/ACSF.jld", "data")
+    E = readdlm("data/energies.txt")
+    dataset = load("data/qm9_dataset_old.jld", "data")
+    Eatom = readdlm("data/atomic_energies.txt")
+    Ered = E - Eatom
+    centers = readdlm("data/centers.txt")[38, 3:102]
+    testids = setdiff(1:size(F, 1), centers)
+    # mp transform:
+    T = 1; n_select = 20
+    pp = Dict() # PCA optional params
+    f = mp_transform(f,T,n_select; PCA_params = pp)
+    # test using repker (current best fitter):
+    K = get_repker_atom(f[centers], f[centers], [d["atoms"] for d ∈ dataset[centers]], [d["atoms"] for d ∈ dataset[centers]])
+    θ, stat = cgls(K, Ered[centers], itmax=500) #θ = K\Ered[centers]
+    display(mean(abs.(K*θ + Eatom[centers] - E[centers]))*627.503) #err train
+    K = get_repker_atom(f[testids], f[centers], [d["atoms"] for d ∈ dataset[testids]], [d["atoms"] for d ∈ dataset[centers]])
+    display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503) #err test
+end
+
 
