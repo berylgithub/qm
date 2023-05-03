@@ -1456,6 +1456,11 @@ function testmsg()
     display(H)
 
     # MP test with actual data (paste this to cmd, instead of running within the function, to see the actual time):
+    f = load("data/ACSF.jld", "data")
+    T = 2; n_select = 20
+    pp = Dict() # PCA optional params
+    f = mp_transform(f,T,n_select; PCA_params = pp)
+    display(f)
 end
 
 
@@ -1477,6 +1482,7 @@ function mp_transform(H, T, n_select; PCA_params=Dict())
         else
             H, e = mp_step(H, n_select; e=e, PCA_params=PCA_params) # now e has already been computed
         end
+        println("timestep ",t," is finished!")
     end
     return H
 end
@@ -1497,7 +1503,6 @@ function mp_step(H, n_select; e=[], PCA_params=Dict())
     # aggregation phase 1, concat and sum:
     @threads for l ∈ eachindex(H)
         @inbounds H[l] = mp_agg(H[l], e[l], nf2)
-        display(H[l])
     end
     # aggregation pahse 2, PCA:
     H = PCA_atom(H, n_select; PCA_params...)
