@@ -184,7 +184,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         @simd for i ∈ 1:n_atom
-            ∑ .= ∑ .+ f[l][i,:] 
+            @inbounds ∑ .= ∑ .+ f[l][i,:] 
         end
         ∑ .= ∑ ./ n_atom
         s .= s .+ ∑
@@ -196,7 +196,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         @simd for i ∈ 1:n_atom
-            ∑S .= ∑S .+ (f[l][i,:]*f[l][i,:]')
+            @inbounds ∑S .= ∑S .+ (f[l][i,:]*f[l][i,:]')
         end
         ∑S .= ∑S ./ n_atom
         S .= S .+ ∑S
@@ -244,7 +244,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
         n_atom = size(f[l], 1)
         temp_A = zeros(n_atom, n_select)
         @simd for i ∈ 1:n_atom
-            temp_A[i,:] .= Q'*(f[l][i,:] - s)
+            @inbounds temp_A[i,:] .= Q'*(f[l][i,:] - s)
         end
         f[l] = temp_A
     end
@@ -256,7 +256,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
             @simd for l ∈ 1:N
                 n_atom = size(f[l], 1)
                 @simd for i ∈ 1:n_atom
-                    f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
+                    @inbounds f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
                 end
             end
         elseif normalize_mode == "ecdf" # empirical CDF scaler, UNFINISHED, DONT USE!
