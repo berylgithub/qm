@@ -1449,26 +1449,43 @@ function testmsg()
 
     # MP test:
     H = [Matrix{Float64}(I, 4, 3), Matrix{Float64}(2I, 2, 3)] # init dummy data
-    T = 2; nselect = 2 # hyperparameters
-    nf = size(H[1], 2); fsize = 2*nf+1 # init feature size
-    H, e = mp_step(H, nselect)
-    display(e)
-    display(H[1]); display(H[2])
-    # PCA the dataset together:
-    #= h = PCA_atom([mt], nselect)[1] # get h^{t+1}
-    display(h)
-    mpfs = size(h, 2)*2 + 1 # set to next step size =#
+    T = 5; n_select = 2 # hyperparameters
+    pp = Dict() # PCA optional params
+    pp[:normalize] = false
+    H = mp_transform(H,T,n_select; PCA_params = pp)
+    display(H)
+
+    # MP test with actual data (paste this to cmd, instead of running within the function, to see the actual time):
 end
 
 
+"""
+Message-passing feature transformaation, takes in the whole batch of the dataset (a set of molecuels)
+featuring: 
+    - asymetric aggregation ⟹ directed graph
+    - PCA of the whole dataset instead of one by one foreach t ∈ T
+    - uniform n_select ∀t (later would probably be changed to a vector of n_select)
+
+* PCA_params contains the optional parameters of PCA_atom, which is a kwargs dict
+"""
+function mp_transform(H, T, n_select; PCA_params=Dict())
+    e = nothing # init empty e
+    for t ∈ 1:T
+        println("timestep = ",t)
+        if t == 1
+            H, e = mp_step(H, n_select; PCA_params=PCA_params)
+        else
+            H, e = mp_step(H, n_select; e=e, PCA_params=PCA_params) # now e has already been computed
+        end
+    end
+    return H
+end
 
 """
 MP for one step of t
 takes in H the whole molecular dataset, and optional param e the edge features
 """
-function mp_step(H, n_select; e=[], 
-    normalize = true, normalize_mode = "minmax", 
-    fname_plot_at = "", save_cov = false)
+function mp_step(H, n_select; e=[], PCA_params=Dict())
     # initialization phase:
     nf = size(H[1], 2); nf2 = 2*nf+1 # init feature sizes
     if isempty(e) # check if e is empty ⟹ not yet computed
@@ -1478,14 +1495,12 @@ function mp_step(H, n_select; e=[],
         end
     end
     # aggregation phase 1, concat and sum:
-    display("pre-PCA")
     @threads for l ∈ eachindex(H)
         @inbounds H[l] = mp_agg(H[l], e[l], nf2)
         display(H[l])
     end
     # aggregation pahse 2, PCA:
-    H = PCA_atom(H, n_select; normalize = normalize, normalize_mode = normalize_mode, 
-        fname_plot_at = fname_plot_at, save_cov = save_cov)
+    H = PCA_atom(H, n_select; PCA_params...)
     return H, e
 end
 
@@ -1496,8 +1511,8 @@ the graph is always asumed as full graph (no broken bridges), unless with cutoff
 """
 function mp_getedgef(h)
     r = Dict() # store at dict, faster and more efficient, since matmul isnt needed
-    @threads for w ∈ axes(h, 1)
-        @threads for v ∈ axes(h, 1)
+    @simd for w ∈ axes(h, 1)
+        @simd for v ∈ axes(h, 1)
             @inbounds begin
                 if w > v # upper triangular
                     r[v,w] = norm(h[v,:] - h[w,:])
@@ -1529,7 +1544,6 @@ function mp_agg(h, e, nf2)
                     # mtv = ∑Mt(hv,hw,evw)
                     Mt = vcat(h[v,:], h[w,:], d)
                     mt[v,:] += Mt
-                    println([v,w, Mt])
                 end
             end 
         end
