@@ -1447,33 +1447,40 @@ function testmsg()
     Ftrain = F[centers,:] #F[centers,:]
     Ftest = F[testids,:] =#
 
-    # MP test, logic not yet finished...:
-    H = [Matrix{Float64}(I, 4, 3), rand(2,3)] # init dummy data
+    # MP test:
+    H = [Matrix{Float64}(I, 4, 3), Matrix{Float64}(2I, 2, 3)] # init dummy data
     T = 2; nselect = 5 # hyperparameters
     nf = size(H[1], 2); fsize = 2*nf+1 # init feature size
-    for t ∈ 1:T
-        println("timestep=",t)
-        for l ∈ eachindex(H) # molecule is inside since we want to stack for PCA
-            if t == 1
-                # initialization:
-
-
-            else
-
-            end
-            h = H[l] # init hidden node
-            e = mp_getedgef(h) # get edge feature
-            nnodes = size(h, 1) 
-            mt = zeros(nnodes, fsize) # depending on the MP method, 2nf+1 = double atomic feature + 1 edge feature
-            # one step aggregation:
-            H[l] = mp_step(h, e, mt, nnodes)
-        end
-        display(H)
-    end
+    H, e = mp_step(H)
+    display(e)
+    display(H[1]); display(H[2])
     # PCA the dataset together:
     #= h = PCA_atom([mt], nselect)[1] # get h^{t+1}
     display(h)
     mpfs = size(h, 2)*2 + 1 # set to next step size =#
+end
+
+
+
+"""
+MP for one step of t
+takes in H the whole molecular dataset, and optional param e the edge features
+"""
+function mp_step(H; e=[])
+    # initialization phase:
+    nf = size(H[1], 2); nf2 = 2*nf+1 # init feature sizes
+    if isempty(e) # check if e is empty ⟹ not yet computed
+        e = Vector{Dict}(undef, size(H, 1))
+        for l ∈ eachindex(H)
+            e[l] = mp_getedgef(H[l])
+        end
+    end
+    # aggregation phase 1, concat and sum:
+    for l ∈ eachindex(H)
+        H[l] = mp_agg(H[l], e[l], nf2)
+    end
+    # aggregation pahse 2, PCA:
+    return H, e
 end
 
 """
@@ -1495,15 +1502,13 @@ function mp_getedgef(h)
     return r
 end
 
-function mp_init()
-
-end
-
-
 """
-one step of MP aggregate given a set of atomic features
+one step of MP aggregate ONLY, given a set of atomic features (one molecule)
+nf2 = 2nf + 1 currently
 """
-function mp_step(h, e, mt, nnodes)
+function mp_agg(h, e, nf2)
+    nnodes = size(h, 1) # numofatom
+    mt = zeros(nnodes, nf2) # empty vectors of size relevant to the aggregation function, now it is 2nf+1
     @threads for v ∈ axes(h, 1) # loop nodes first
         @threads for w ∈ axes(h, 1) # its "neighbours"
             @inbounds begin
@@ -1524,18 +1529,5 @@ function mp_step(h, e, mt, nnodes)
     end
     mt /= (nnodes - 1) # mean
     return mt
-end
-
-function mp_update()
-    
-end
-
-"""
-transform (atomic) features based on message passing scheme,
-currently the hidden nodes are assumed to be asymmetry.
-currently constant PCA feature size is assumed.
-"""
-function mp_transform(f, T, n_select)
-
 end
 
