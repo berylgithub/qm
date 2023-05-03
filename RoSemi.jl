@@ -1444,16 +1444,16 @@ featuring:
 
 * PCA_params contains the optional parameters of PCA_atom, which is a kwargs dict
 """
-function mp_transform(H, T, n_select; PCA_params=Dict())
+function mp_transform(H, T, n_select; PCA = true, PCA_params=Dict())
     println("MP transform starts!")
     e = nothing # init empty e
     tmp = @elapsed begin
         for t ∈ 1:T
             println("timestep = ",t)
             if t == 1
-                H, e = mp_step(H, n_select; PCA_params=PCA_params)
+                H, e = mp_step(H, n_select; PCA=PCA, PCA_params=PCA_params)
             else
-                H, e = mp_step(H, n_select; e=e, PCA_params=PCA_params) # now e has already been computed
+                H, e = mp_step(H, n_select; e=e, PCA=PCA, PCA_params=PCA_params) # now e has already been computed
             end
             println("timestep ",t," is finished!")
         end
@@ -1466,7 +1466,7 @@ end
 MP for one step of t
 takes in H the whole molecular dataset, and optional param e the edge features
 """
-function mp_step(H, n_select; e=[], PCA_params=Dict())
+function mp_step(H, n_select; e=[], PCA = true, PCA_params=Dict())
     # initialization phase:
     nf = size(H[1], 2); nf2 = 2*nf+1 # init feature sizes
     if isempty(e) # check if e is empty ⟹ not yet computed
@@ -1480,7 +1480,9 @@ function mp_step(H, n_select; e=[], PCA_params=Dict())
         @inbounds H[l] = mp_agg(H[l], e[l], nf2)
     end
     # aggregation pahse 2, PCA:
-    H = PCA_atom(H, n_select; PCA_params...)
+    if PCA
+        H = PCA_atom(H, n_select; PCA_params...)
+    end
     return H, e
 end
 
@@ -1549,13 +1551,12 @@ function testmsg()
     #= H = [Matrix{Float64}(I, 4, 3), Matrix{Float64}(2I, 2, 3)] # init dummy data
     T = 5; n_select = 2 # hyperparameters
     pp = Dict() # PCA optional params
-    pp[:normalize] = false
-    H = mp_transform(H,T,n_select; PCA_params = pp)
-    display(H) =#
+    H = mp_transform(H,T,n_select; PCA = false, PCA_params = pp)
+    display(H[1]); display(H[2]) =#
 
     # MP test with actual data for fitting:
     # load data:
-    f = load("data/exp_reduced_energy/features_atom.jld", "data")
+    f = load("data/ACSF.jld", "data")
     E = readdlm("data/energies.txt")
     dataset = load("data/qm9_dataset_old.jld", "data")
     Eatom = readdlm("data/atomic_energies.txt")
@@ -1565,7 +1566,7 @@ function testmsg()
     # mp transform:
     T = 1; n_select = 20
     pp = Dict() # PCA optional params
-    f = mp_transform(f,T,n_select; PCA_params = pp)
+    f = mp_transform(f,T,n_select; PCA=false, PCA_params = pp)
     # test using repker (current best fitter):
     K = get_repker_atom(f[centers], f[centers], [d["atoms"] for d ∈ dataset[centers]], [d["atoms"] for d ∈ dataset[centers]])
     θ, stat = cgls(K, Ered[centers], itmax=500) #θ = K\Ered[centers]

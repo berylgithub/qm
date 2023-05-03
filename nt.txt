@@ -222,4 +222,5 @@ turns out the difference is all the way from the eigen atom, small numerical dif
 - test MP without sigma yet, (t, data, train, test, model, machine):
   - (1, ACSF, 8.531877790679385, 13.637190148167665, REAPER, SAINT)
   - (5, ACSF, 12.134951800081835, 19.285999493686106, REAPER, SAINT)
-  - (1, 20--16, , , REAPER, SAINT)
+  - (1, 20--16, 6.405897394503283, 13.164806953612652, REAPER, SAINT)
+  - (2, 20--16, 6.027474617840749, 13.895430026759396, REAPER, SAINT)
