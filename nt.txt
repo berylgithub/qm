@@ -226,9 +226,9 @@ turns out the difference is all the way from the eigen atom, small numerical dif
   - (2, 20--16, 6.027474617840749, 13.895430026759396, REAPER, SAINT)
 - test MP without PCA:
   - (1, ACSF, 7.687329449835585, 12.792789108425062, REAPER, SAINT)
-  - (2, ACSF, , , REAPER, SAINT)
-  - (1, 20--16, , , REAPER, SAINT)
-  - (2, 20--16, , , REAPER, SAINT)
+  - (2, ACSF, 7.9554008405230405, 13.032915591258527, REAPER, SAINT)
+  - (1, 20--16, 7.700348168196548, 13.380650010040405, REAPER, SAINT)
+  - (2, 20--16, 8.115258754956065, 12.977283254952756, REAPER, SAINT)
   ...
 - see paper(s) for hyperoptparallelization.
   
