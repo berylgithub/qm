@@ -234,10 +234,17 @@ turns out the difference is all the way from the eigen atom, small numerical dif
   
 05.05.2023:
 - the parallelization will probably be in slurm level:
+  First scheme of parallelizatgion:
   - 3 big processes, 2 masters (mintry m, controller jl), and 1 slave category (n simulators jl)
   - mintry and simulators run as usual, controller controls the (x,f) flow, spawn processes, etc
-  - the simulators can be in slurm level (node level) (recommended, since each proc \in node), the number of processes run in this case can be determined by running in jl:
+  Or:
+  - 3 processes: mintry.m, controller.jl/m, generator.m, simulators.jl
+  - mintry: as usual, runs indefinitely, reads mintry table periodically -- get (x,f) pair, compute x = mintry(x,f), store x in mintry table 
+  - controller runs indefinitely, reads sim table periodically, if sufficient numbers of data depending on id is accumulated, store best(f) in mintry table  
+  - generator runs indefinitely, reads new signals from the simulators periodically, get x from mintry's table, returns xhat = perturb(xraw) for each new signal 
+  - simulators: run indefenitely, asks for new xhat if idle (sends signal to generator), compute f = f(xhat), store f to sim table ({id,f,x,})
+  - see paper for more details.
+- the simulators can be in slurm level (node level) (recommended, since each proc \in node), the number of processes run in this case can be determined by running in jl:
     s = readchomp(`squeue -u berylaribowo`) # to read the output of command
     ...
     count the occurence of job containing "..jl" as job name identifier
-  - see paper for more details.
