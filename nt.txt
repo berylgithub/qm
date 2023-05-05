@@ -232,3 +232,12 @@ turns out the difference is all the way from the eigen atom, small numerical dif
   ...
 - see paper(s) for hyperoptparallelization.
   
+05.05.2023:
+- the parallelization will probably be in slurm level:
+  - 3 big processes, 2 masters (mintry m, controller jl), and 1 slave category (n simulators jl)
+  - mintry and simulators run as usual, controller controls the (x,f) flow, spawn processes, etc
+  - the simulators can be in slurm level (node level) (recommended, since each proc \in node), the number of processes run in this case can be determined by running in jl:
+    s = readchomp(`squeue -u berylaribowo`) # to read the output of command
+    ...
+    count the occurence of job containing "..jl" as job name identifier
+  - see paper for more details.
