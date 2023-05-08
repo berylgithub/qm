@@ -44,11 +44,15 @@ newbounds = boundtransform(bounds)
 bm = extractbound(bounds);
 [xnew, fpen] = decode(x, bounds, bm)
 dlmwrite("../data/hyperparamopt/init_params.txt", x', "\t")
-%}
 
 % test eigenvalue:
 F = dlmread("../testeigen.txt");
 C = corrcoef(F);
 eig(C)
+%}
+
+bounds
+
+
 
 
