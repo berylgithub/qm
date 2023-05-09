@@ -21,7 +21,7 @@ f = 100.;
 %x = [1/3; 1/3; 1/3; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5]; 
 %x = [1/3; 1/3; 1/3; 6; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mid for mixed int
 %x = [1/3; 1/3; 1/3; 6; 1/2; 1/2; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mid for mixed int without FCHL
-x = [0.306122; 0.081633; 0.612245; 6; 1; 0; 0; 1; 0; 1; 0; 0; 0; 0; 1; 11]; % x best, MAE = 11.62
+x = [0.306122; 0.081633; 0.612245; 6; 1; 0; 0; 1; 0; 1; 0; 0; 0; 0; 0; 1; 11]; % x best, MAE = 10.99
 
 %{
 zi = [1/6, 1/3, 1/3, 1/6]'
@@ -51,8 +51,31 @@ C = corrcoef(F);
 eig(C)
 %}
 
+x = [0.306122; 0.081633; 0.612245; 6; 1; 0; 0; 1; 0; 1; 0; 0; 0; 0; 0; 1; 11];
+x = [0.306122; 0.081633; 0.612245; 6; 0.6; 0.4; 0.4; 0.6; 0.4; 0.6; 4/25; 4/25; 4/25; 4/25; 4/25; 1/5; 11];
+
 bounds
+bm = extractbound(bounds);
+
+xlist = []; # controller repo
+for i=1:20 # loop over "processors"
+    tol = 0
+    while tol < 100 # tolerance loop to find next rounded iterates
+        [xsim, fpen] = decode(x, bounds, bm)
+        if isempty(find(ismember(xlist',xsim', "rows")))
+            xlist = [xlist, xsim];
+            break
+        end
+        tol += 1
+    end
+end
+
+xlist
 
 
+my_mat = [1 2 4
+          5 3 1
+          6 9 7];
+new = [6 9 8];
 
-
+isempty(find(ismember(my_mat,new, "rows")))
