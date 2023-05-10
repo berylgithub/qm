@@ -51,10 +51,12 @@ C = corrcoef(F);
 eig(C)
 %}
 
+
+
+%{
 x = [0.306122; 0.081633; 0.612245; 6; 0.6; 0.4; 0.4; 0.6; 0.4; 0.6; 4/25; 4/25; 4/25; 4/25; 4/25; 1/5; 11]; % current best found x with non deterministic round prob
 dlmwrite("../data/hyperparamopt/init_params.txt", x', "\t")
 
-%{
 bounds
 bm = extractbound(bounds);
 
@@ -73,3 +75,8 @@ end
 
 xlist
 %}
+
+
+s.id = "a09f"
+s.f = 104.23
+s
