@@ -9,6 +9,7 @@ clear
 % initial ops, the params and fun path MUST be non empty:
 path_init_param = '../data/hyperparamopt/init_params.txt';
 path_param = '../data/hyperparamopt/params.txt';
+path_rawparam = '../data/hyperparamopt/raw_params.txt'; % to place raw parameters to be processed by controller
 path_fun = '../data/hyperparamopt/fun.txt';
 path_fbest = '../data/hyperparamopt/best_fun_params.txt';
 path_trackx = '../data/hyperparamopt/xlist.txt'; 
@@ -16,7 +17,7 @@ path_trackxraw = '../data/hyperparamopt/xrawlist.txt';
 path_trackf = '../data/hyperparamopt/flist.txt';
 path_bounds = '../data/hyperparamopt/bounds.txt';
 
-disp("init data...")
+disp("init mintry driver data...")
 bounds = dlmread(path_bounds); % var bounds, {[1,:]=lb; [2,:]=ub; [3,:]=type; [4,:]=size} 
 data = textread(path_init_param, "%s"); % params
 xin = zeros(length(data)-1, 1);
@@ -40,6 +41,7 @@ fdata = {}; fdata{1,1} = ""; % dummy fdata
 bm = extractbound(bounds); % compute boundary index matrix
 [xout, fpen] = decode(xin, bounds, bm) % decode x
 paramwriter(xout, path_param); % write decoded x
+paramwriter(xin, path_rawparam); % write encoded x for controller
 disp("x has been written to file..")
 
 
@@ -49,7 +51,7 @@ initbounds = boundtransform(bounds); % transform "actual" bounds to "encoded" bo
 % For details see driverMintry.m
 init.paths = ''; % mandatory absolute path to ???
 init.m = length(xin); init.n = 1; % problem dimension, "could be row or column vector"
-init.nfmax = 10000; % max nfe
+init.nfmax = 100000; % max nfe
 init.upp = initbounds(2,:); % upperbound
 init.low = initbounds(1,:); % low
 init.type = initbounds(3,:); % type of variables (categorical and oint == real for now)
@@ -106,6 +108,7 @@ unwind_protect
         % main loop and (x,f) trackers (get new x):
         [xout, xin, f, fpen, xlist, flist] = paramtracker(xin, f, xlist, flist, bounds, bm); 
         paramwriter(xout, path_param); % write x to file
+        paramwriter(xin, path_rawparam); % write xraw to file
         % some info display:
         xin
         xout
