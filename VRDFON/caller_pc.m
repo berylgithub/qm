@@ -77,6 +77,33 @@ xlist
 %}
 
 
-s.id = "a09f"
-s.f = 104.23
-s
+files = dir("../data/hyperparamopt/sim/*.txt")
+getname = @(file) file.name % anon f example
+str = files(2).name
+getname(files(2))
+
+length(files)
+
+ismember([1,2,3], 23)
+
+
+
+newstr = strsplit(str,"_")
+newstr(2)
+
+f = dir("../data/hyperparamopt/sim/*.m")
+isempty(f)
+
+
+
+
+path_sim = "../data/hyperparamopt/sim/*.txt";
+id_sim = []; f_id_sim = []; f_sim = {}; it_sim = []; cell_iter = 1;
+i = 0
+while true
+    [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_id_sim, f_sim, it_sim, cell_iter)
+    i += 1
+    pause(2)
+end
+
+

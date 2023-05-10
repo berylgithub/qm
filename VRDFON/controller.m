@@ -10,6 +10,7 @@
 %       
 %       
 
+path_simfolder = "../data/hyperparamopt/sim/"
 path_siminfo = "../data/hyperparamopt/sim_info.txt"; % init num sim from here
 path_bounds = '../data/hyperparamopt/bounds.txt'; % bound info for rounding init
 path_rawparam = '../data/hyperparamopt/raw_params.txt'; % get xraw from here
@@ -20,7 +21,7 @@ disp("init controller...")
 siminfo = dlmread(path_siminfo);
 %n_sim = siminfo(1); % number of spawned simulators, probably not used later, since the number of sim will be dynamic instead
 t_sim = siminfo(1); % integral threshold of when each iteration is fulfilled, need to know beforehand the expected number of simulator will be spawned, otherwise each iteration will never be finished
-f_sim = []; ct_sim = []; % initialization of simulator data
+id_sim = []; f_sim = []; it_sim = []; % initialization of simulator trackers
 
 % extract boundary info
 bounds = dlmread(path_bounds);
@@ -38,7 +39,7 @@ while true
     end
     pause(.5)
     % listens to simulator port
-    listener_sim() 
+    [id_sim, f_sim, it_sim] = listener_sim(path_sim, id_sim, f_sim, it_sim) 
     % computes argmin_i f(i) and store f(i) in path_fun:
     i += 1 % remove later
 end
