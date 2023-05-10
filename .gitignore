@@ -20,6 +20,7 @@ VRDFON/*
 !VRDFON/initTune.m
 !VRDFON/runm.sh
 !VRDFON/controller.m
+!VRDFON/listener_sim.m
 *.aux
 *.log
 *.pdf
