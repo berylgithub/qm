@@ -19,6 +19,7 @@ VRDFON/*
 !VRDFON/iusequence.m
 !VRDFON/initTune.m
 !VRDFON/runm.sh
+!VRDFON/controller.m
 *.aux
 *.log
 *.pdf
