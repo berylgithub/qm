@@ -77,24 +77,6 @@ xlist
 %}
 
 
-files = dir("../data/hyperparamopt/sim/*.txt")
-getname = @(file) file.name % anon f example
-str = files(2).name
-getname(files(2))
-
-length(files)
-
-ismember([1,2,3], 23)
-
-
-
-newstr = strsplit(str,"_")
-newstr(2)
-
-f = dir("../data/hyperparamopt/sim/*.m")
-isempty(f)
-
-
 
 
 path_sim = "../data/hyperparamopt/sim/*.txt";

@@ -13,11 +13,11 @@ function [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, i
                 if length(sinfo) == 0 % if sim is empty then init iter with 0
                     it_sim = [it_sim; 0]; % init iter
                     f_id_sim = [f_id_sim; 0]; % alloc id with 0, f_id should be float from rand(1)                
-                    f_sim{cell_iter} = []; % init empty f value from simulator !! this part is still incorrect, if the file is re-ordered, the cell will be replaced
+                    f_sim{cell_iter} = []; % init empty f value from simulator
                     cell_iter += 1; % increment cell iter tracker
                 end
             else % if id is found, get updated info from sim[id]:
-                sinfo = dlmread(strcat(path_sim(1:end-5),fname)) % get sim 
+                sinfo = dlmread(strcat(path_sim(1:end-5),fname)) % get sim data
                 if length(sinfo) > 0 % if not empty then the sim has ever computed f value
                     f_id = sinfo(1); % check if the f id is different:
                     if f_id != f_id_sim(finder) % if it's different, then new f has been computed (f, it, f_id)
