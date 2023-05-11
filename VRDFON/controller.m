@@ -50,7 +50,6 @@ while true
     iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, thres, path_fun)
     % listens to simulator port, and updates simulator data:
     [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_id_sim, f_sim, it_sim, cell_iter)
-    % computes argmin_i f(i) and store f(i) in path_fun:
     i += 1 % remove later
     pause(2)
 end

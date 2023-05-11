@@ -1,3 +1,6 @@
+% listens to simulators: checking whether the simulators give any update
+% give x to simulators: happens if fid is updated, or sim entry
+
 function [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_id_sim, f_sim, it_sim, cell_iter)
     files = dir(path_sim);
     if !isempty(files)
