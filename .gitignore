@@ -21,6 +21,7 @@ VRDFON/*
 !VRDFON/runm.sh
 !VRDFON/controller.m
 !VRDFON/listener_sim.m
+!VRDFON/finfo_updater.m
 *.aux
 *.log
 *.pdf

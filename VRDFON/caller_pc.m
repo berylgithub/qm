@@ -76,9 +76,7 @@ end
 xlist
 %}
 
-
-
-
+%{
 path_sim = "../data/hyperparamopt/sim/*.txt";
 id_sim = []; f_id_sim = []; f_sim = {}; it_sim = []; cell_iter = 1;
 i = 0
@@ -87,5 +85,10 @@ while true
     i += 1
     pause(2)
 end
+%}
 
 
+
+path_fun = '../data/hyperparamopt/fun.txt';
+t = 0; it_sim = [3,2]; f_sim = {[5,5,5],[2,4],[]}; thres = 2;
+t = finfo_updater(t, it_sim, f_sim, thres, path_fun)

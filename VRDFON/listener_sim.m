@@ -15,6 +15,7 @@ function [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, i
                     f_id_sim = [f_id_sim; 0]; % alloc id with 0, f_id should be float from rand(1)                
                     f_sim{cell_iter} = []; % init empty f value from simulator
                     cell_iter += 1; % increment cell iter tracker
+                % else, add sinfo (add later):
                 end
             else % if id is found, get updated info from sim[id]:
                 sinfo = dlmread(strcat(path_sim(1:end-5),fname)) % get sim data

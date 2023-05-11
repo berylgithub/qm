@@ -19,7 +19,7 @@ disp("init controller...")
 % init sim info
 siminfo = dlmread(path_siminfo);
 %n_sim = siminfo(1); % number of spawned simulators, probably not used later, since the number of sim will be dynamic instead
-t_sim = siminfo(1); % integral threshold of when each iteration is fulfilled, need to know beforehand the expected number of simulator will be spawned, otherwise each iteration will never be finished
+thres = siminfo(1); % integral threshold of when each iteration is fulfilled, need to know beforehand the expected number of simulator will be spawned, otherwise each iteration will never be finished
 
 % init fbest controller:
 iter_tracker = 0 % tracks the internal iteration in which it determines how many iters have the the threshold been fulfied
@@ -29,7 +29,7 @@ path_sim = strcat(path_simfolder, "*.txt");
 id_sim = []; % a vector, the id of simulators
 f_id_sim = [];  % a vector, the id of fobj computed by the simulators
 f_sim = {};  % a cell of vectors, each cell = each simulator, each vector element = fobj of the corresponding sim
-it_sim = []; % a vector, determines on which "iteration" the simulator is in 
+it_sim = []; % a vector, determines on which iteration each simulator is in 
 cell_iter = 1; % int, keeps track of the occupied cells of f_sim, to avoid replacing the celss whenever new sim enters
 
 % extract boundary info
@@ -46,9 +46,9 @@ while true
         rp_id = rp_info(1);
         xraw = rp_info(2:end);
     end
-    % checks for simulator's global counter update, must be BEFORE any simulator data update
-    finfo_updater(iter_tracker, it_sim, f_sim)
-    % listens to simulator port
+    % checks for simulator's global counter update, must be BEFORE any simulator data update:
+    iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, id_sim, thres)
+    % listens to simulator port, and updates simulator data:
     [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_id_sim, f_sim, it_sim, cell_iter)
     % computes argmin_i f(i) and store f(i) in path_fun:
     i += 1 % remove later
