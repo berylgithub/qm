@@ -10,7 +10,7 @@ function [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, i
             fname = files(i).name; % filename of the output of the simulator i
             id = strsplit(fname, "_")(2); % the id is 2nd entry
             finder = find(ismember(id_sim, id)); % find by id
-            if isempty(finder) % if id not found, initialize simulator info:
+            if isempty(finder) % (sim entry) if id not found, initialize simulator info:
                 id_sim = [id_sim; id]; % append new sim id
                 sinfo = dlmread(strcat(path_sim(1:end-5),fname)); % get sim info
                 if length(sinfo) == 0 % if sim is empty then init iter with 0
@@ -20,14 +20,16 @@ function [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, i
                     cell_iter += 1; % increment cell iter tracker
                 % else, add sinfo (add later):
                 end
+                % give x:
             else % if id is found, get updated info from sim[id]:
                 sinfo = dlmread(strcat(path_sim(1:end-5),fname)) % get sim data
                 if length(sinfo) > 0 % if not empty then the sim has ever computed f value
                     f_id = sinfo(1); % check if the f id is different:
-                    if f_id != f_id_sim(finder) % if it's different, then new f has been computed (f, it, f_id)
+                    if f_id != f_id_sim(finder) % (fid update) if it's different, then new f has been computed (f, it, f_id)
                         f_sim{finder} = [f_sim{finder}; sinfo(2)]; % update f
                         it_sim(finder) += 1; % increment iteration
                         f_id_sim(finder) = f_id; % update f_id tracker
+                        % give x:
                     end
                 end
             end
