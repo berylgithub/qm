@@ -22,6 +22,7 @@ VRDFON/*
 !VRDFON/controller.m
 !VRDFON/listener_sim.m
 !VRDFON/finfo_updater.m
+!VRDFON/x_donator.m
 *.aux
 *.log
 *.pdf
