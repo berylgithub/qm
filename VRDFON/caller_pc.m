@@ -75,18 +75,6 @@ for i=1:20 # loop over "processors"
 end
 
 xlist
-%}
-
-%{
-path_sim = "../data/hyperparamopt/sim/*.txt";
-id_sim = []; f_id_sim = []; f_sim = {}; it_sim = []; cell_iter = 1;
-i = 0
-while true
-    [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_id_sim, f_sim, it_sim, cell_iter)
-    i += 1
-    pause(2)
-end
-%}
 
 
 % finfo usage example:
@@ -104,3 +92,19 @@ for i = 1:20
     xlist = x_donator(x, xlist, bounds, bm)
 end
 xlist
+
+% listener usage:
+path_sim = "../data/hyperparamopt/sim/*.txt";
+id_sim = []; f_id_sim = []; f_sim = {}; it_sim = []; cell_iter = 1;
+i = 0
+while true
+    [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_id_sim, f_sim, it_sim, cell_iter)
+    i += 1
+    pause(2)
+end
+
+%}
+
+
+c = {}
+c{3} = 3

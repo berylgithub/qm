@@ -28,7 +28,7 @@ iter_tracker = 0 % tracks the internal iteration in which it determines how many
 path_sim = strcat(path_simfolder, "*.txt");
 id_sim = []; % a vector, the id of simulators
 f_id_sim = [];  % a vector, the id of fobj computed by the simulators
-f_sim = {};  % a cell of vectors, each cell = each simulator, each vector element = fobj of the corresponding sim
+f_sim = {};  % a cell of cells, each cell = each simulator, each cell element = fobj of the corresponding iteration
 it_sim = []; % a vector, determines on which iteration each simulator is in 
 cell_iter = 1; % int, keeps track of the occupied cells of f_sim, to avoid replacing the celss whenever new sim enters
 
