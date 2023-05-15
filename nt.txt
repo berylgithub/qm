@@ -249,3 +249,8 @@ turns out the difference is all the way from the eigen atom, small numerical dif
     ...
     count the occurence of job containing "..jl" as job name identifier
 - the main processors should only be: mintry, controller, simulators. Controller bridges the mintry and simulator, mintry and simulator work as usual
+
+15.05.2023:
+- (see paper) need to accomodate for when:
+  - disjoint iteration: 1 -> 3. Sol? add iter_id
+  - n_sim idle > thresh OR n_sim run < thresh => thresh not fulfilled => no f update for mintry => no x update from mintry => all sim idle (no iter update). Sol? put sim_state
