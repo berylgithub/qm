@@ -21,7 +21,8 @@ f = 100.;
 %x = [1/3; 1/3; 1/3; 5.5; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 10.5]; 
 %x = [1/3; 1/3; 1/3; 6; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mid for mixed int
 %x = [1/3; 1/3; 1/3; 6; 1/2; 1/2; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mid for mixed int without FCHL
-x = [0.306122; 0.081633; 0.612245; 6; 1; 0; 0; 1; 0; 1; 0; 0; 0; 0; 0; 1; 11]; % x best, MAE = 10.99
+%x = [0.306122; 0.081633; 0.612245; 6; 1; 0; 0; 1; 0; 1; 0; 0; 0; 0; 0; 1; 11]; % x best, MAE = 10.99
+x = [0.306122; 0.081633; 0.612245; 6; 0.6; 0.4; 0.4; 0.6; 0.4; 0.6; 4/25; 4/25; 4/25; 4/25; 4/25; 1/5; 11]; % current best found x with non deterministic round prob
 
 %{
 zi = [1/6, 1/3, 1/3, 1/6]'
@@ -88,7 +89,18 @@ end
 %}
 
 
-
+% finfo usage example:
 path_fun = '../data/hyperparamopt/fun.txt';
 t = 0; it_sim = [3,2]; f_sim = {[5,5,5],[2,4],[]}; thres = 2;
 t = finfo_updater(t, it_sim, f_sim, thres, path_fun)
+
+
+% x_donator usage:
+bounds
+bm = extractbound(bounds);
+xlist = [];
+% loop over processors
+for i = 1:20
+    xlist = x_donator(x, xlist, bounds, bm)
+end
+xlist
