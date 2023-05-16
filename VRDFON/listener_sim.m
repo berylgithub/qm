@@ -2,7 +2,7 @@
 % sinfo is simulator info, contains: id_sim (from file name), state, iter of sim, f
 % give x to simulators: happens if state is idle
 
-function [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_id_sim, f_sim, it_sim, cell_iter, iter_tracker)
+function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_sim, it_sim, cell_iter, iter_tracker)
     files = dir(path_sim);
     if !isempty(files)
         % check whether there is new simulator:
@@ -23,17 +23,24 @@ function [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, i
                     f_sim{cell_iter}{sl_iter} = sl_f; % add f and iter id
                 end
                 cell_iter += 1; % increment cell iter tracker
-                
-                % give x if sim is idle:
+                % give x if sim is idle (0):
+                if !isempty(sinfo)
+                    if sinfo(1) == 0
+                        disp("x has been given!")
+                    end
+                end
 
             else % if id is found, get updated info from sim[id]:
-                if length(sinfo) > 0 % if not empty then the sim has ever computed f value
-                    f_id = sinfo(1); % check if the f id is different:
-                    if f_id != f_id_sim(finder) % (fid update) if it's different, then new f has been computed (f, it, f_id)
-                        f_sim{finder} = [f_sim{finder}; sinfo(2)]; % update f
-                        it_sim(finder) += 1; % increment iteration
-                        f_id_sim(finder) = f_id; % update f_id tracker
-                        % give x:
+                if length(sinfo) > 2
+                    % get f:
+                    sl_state = sinfo(1); % sim state
+                    sl_iter = sinfo(2); % sim iteration
+                    sl_f = sinfo(3); % sim fobj
+                    f_sim{finder}{sl_iter} = sl_f; % set f in the cell
+                    it_sim(finder) = sl_iter;
+                    % give x if sim is idle (0):
+                    if sl_state == 0
+                        disp("x has been given")
                     end
                 end
             end

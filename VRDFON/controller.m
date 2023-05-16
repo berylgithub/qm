@@ -27,7 +27,6 @@ iter_tracker = 0 % tracks the internal iteration in which it determines how many
 % init simulator listener:
 path_sim = strcat(path_simfolder, "*.txt");
 id_sim = []; % a vector, the id of simulators
-f_id_sim = [];  % a vector, the id of fobj computed by the simulators
 f_sim = {};  % a cell of cells, each cell = each simulator, each cell element = fobj of the corresponding iteration
 it_sim = []; % a vector, determines on which iteration each simulator is in 
 cell_iter = 1; % int, keeps track of the occupied cells of f_sim, to avoid replacing the celss whenever new sim enters
@@ -47,9 +46,9 @@ while true
         xraw = rp_info(2:end);
     end
     % checks for simulator's global counter update, must be BEFORE any simulator data update:
-    iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, thres, path_fun)
+    %iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, thres, path_fun)
     % listens to simulator port, and updates simulator data:
-    [id_sim, f_id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_id_sim, f_sim, it_sim, cell_iter)
+    [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_sim, it_sim, cell_iter, iter_tracker)
     i += 1 % remove later
     pause(2)
 end
