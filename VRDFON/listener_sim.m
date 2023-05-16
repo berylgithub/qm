@@ -2,8 +2,8 @@
 % sinfo is simulator info, contains: id_sim (from file name), state, iter of sim, f
 % give x to simulators: happens if state is idle
 
-function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_sim, it_sim, cell_iter, iter_tracker)
-    files = dir(path_sim);
+function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_simf, path_simx, id_sim, f_sim, it_sim, cell_iter, iter_tracker)
+    files = dir(path_simf);
     if !isempty(files)
         % check whether there is new simulator:
         % get simulator ids:
@@ -11,7 +11,7 @@ function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_s
             fname = files(i).name; % filename of the output of the simulator i
             id = strsplit(fname, "_")(2); % the id is 2nd entry
             finder = find(ismember(id_sim, id)); % find by id
-            sinfo = dlmread(strcat(path_sim(1:end-5),fname)); % get sim info
+            sinfo = dlmread(strcat(path_simf(1:end-5),fname)); % get sim info
             if isempty(finder) % (sim entry) if id not found, initialize simulator info:
                 % initialize sinfo:
                 id_sim = [id_sim; id]; % append new sim id
@@ -27,6 +27,8 @@ function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_s
                 if !isempty(sinfo)
                     if sinfo(1) == 0
                         disp("x has been given!")
+                        str = strcat(path_simx, fname)
+                        %dlmwrite(str, [iter_tracker+1, ])
                     end
                 end
 

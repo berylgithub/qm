@@ -9,8 +9,10 @@
 %           - takes new f if the simulator places it
 %           - give rounded x to simulators that sends request
 
-path_simfolder = "../data/hyperparamopt/sim/"
-path_siminfo = "../data/hyperparamopt/sim_info.txt"; % init num sim from here
+path_simfolder = "../data/hyperparamopt/sim/"; % contains all data of simulators
+path_simx = strcat(path_simfolder, "x/"); % contains x info of which given by controller to simulators
+path_simf = strcat(path_simfolder, "f/"); % contains fobj info which are the output of the simulators 
+path_siminfo = "../data/hyperparamopt/sim/sim_info.txt"; % init num sim from here
 path_bounds = '../data/hyperparamopt/bounds.txt'; % bound info for rounding init
 path_rawparam = '../data/hyperparamopt/raw_params.txt'; % get xraw from here
 path_fun = '../data/hyperparamopt/fun.txt'; % store best f here
@@ -31,6 +33,9 @@ f_sim = {};  % a cell of cells, each cell = each simulator, each cell element = 
 it_sim = []; % a vector, determines on which iteration each simulator is in 
 cell_iter = 1; % int, keeps track of the occupied cells of f_sim, to avoid replacing the celss whenever new sim enters
 
+% init x donator controller
+xlist = []; % contains only the list of possible rounding iterates in each mintry iteration
+
 % extract boundary info
 bounds = dlmread(path_bounds);
 bm = extractbound(bounds);
@@ -48,7 +53,7 @@ while true
     % checks for simulator's global counter update, must be BEFORE any simulator data update:
     iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, thres, path_fun)
     % listens to simulator port, and updates simulator data:
-    [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_sim, it_sim, cell_iter, iter_tracker)
+    [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_simf, id_sim, f_sim, it_sim, cell_iter, iter_tracker)
     i += 1 % remove later
     pause(2)
 end
