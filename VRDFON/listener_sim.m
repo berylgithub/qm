@@ -19,7 +19,7 @@ function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_s
                 f_sim{cell_iter} = {}; % init empty f value from simulator
                 if length(sinfo) > 2 % if length(sinfo) == 3 then the sim has ever computed something
                     sl_iter = sinfo(2); % the last iteration of the observed simulator 
-                    sl_f = sinfo(3); % last f of the observed simulator
+                    sl_f = sinfo(3); % last fobj of the observed simulator
                     f_sim{cell_iter}{sl_iter} = sl_f; % add f and iter id
                 end
                 cell_iter += 1; % increment cell iter tracker

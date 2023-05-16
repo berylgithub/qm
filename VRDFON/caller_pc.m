@@ -109,3 +109,9 @@ end
 dlmwrite("../data/hyperparamopt/sim/sim_09123.txt", [0, 3, 1234.], "\t")
 dlmwrite("../data/hyperparamopt/sim/sim_00002.txt", [0, 2, 22.], "\t")
 dlmwrite("../data/hyperparamopt/sim/sim_3333.txt", [0, 4, 333.], "\t")
+
+
+% finfo usage example:
+path_fun = '../data/hyperparamopt/fun.txt';
+t = 2; it_sim = [3,3,3]; f_sim = {{123., 1233., 101.},{[], 22., 102.},{[],[],333.}}; thres = 2;
+t = finfo_updater(t, it_sim, f_sim, thres, path_fun)

@@ -8,7 +8,7 @@ function iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, thres, path_f
             fbest = Inf;
             for i=1:length(finder)
                 if finder(i) == 1
-                    fsel = f_sim{i}(iter_tracker+1);
+                    fsel = f_sim{i}{iter_tracker+1};
                     if fsel < fbest
                         fbest = fsel;
                     end
