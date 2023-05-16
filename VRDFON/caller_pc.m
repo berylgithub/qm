@@ -79,7 +79,7 @@ xlist
 
 % finfo usage example:
 path_fun = '../data/hyperparamopt/fun.txt';
-t = 0; it_sim = [3,2]; f_sim = {[5,5,5],[2,4],[]}; thres = 2;
+t = 2; it_sim = [3,3,3]; f_sim = {{123., 1233., 101.},{[], 22., 102.},{[],13.,33}}; thres = 2;
 t = finfo_updater(t, it_sim, f_sim, thres, path_fun)
 
 
@@ -105,13 +105,20 @@ end
 
 %}
 
+f = {"../data/hyperparamopt/sim/sim_09123.txt";"../data/hyperparamopt/sim/sim_00002.txt"; "../data/hyperparamopt/sim/sim_3333.txt"};
+f{end-1}
+%{
+for i=1:length(f)
+    delete(f{i})
+end
+dlmwrite(f{1}, [0, 3, 1234.], "\t")
+dlmwrite(f{2}, [0, 2, 22.], "\t")
+dlmwrite(f{3}, [0, 4, 333.], "\t")
+%}
 
-dlmwrite("../data/hyperparamopt/sim/sim_09123.txt", [0, 3, 1234.], "\t")
-dlmwrite("../data/hyperparamopt/sim/sim_00002.txt", [0, 2, 22.], "\t")
-dlmwrite("../data/hyperparamopt/sim/sim_3333.txt", [0, 4, 333.], "\t")
+dlmwrite(f{1}, [0, 2, 112.], "\t")
+dlmwrite(f{2}, [0, 1, 22.], "\t")
+dlmwrite(f{3}, [0, 2, 33.], "\t")
 
 
-% finfo usage example:
-path_fun = '../data/hyperparamopt/fun.txt';
-t = 2; it_sim = [3,3,3]; f_sim = {{123., 1233., 101.},{[], 22., 102.},{[],[],333.}}; thres = 2;
-t = finfo_updater(t, it_sim, f_sim, thres, path_fun)
+

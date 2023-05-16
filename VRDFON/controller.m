@@ -46,7 +46,7 @@ while true
         xraw = rp_info(2:end);
     end
     % checks for simulator's global counter update, must be BEFORE any simulator data update:
-    %iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, thres, path_fun)
+    iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, thres, path_fun)
     % listens to simulator port, and updates simulator data:
     [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_sim, id_sim, f_sim, it_sim, cell_iter, iter_tracker)
     i += 1 % remove later
