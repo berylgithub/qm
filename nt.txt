@@ -254,3 +254,8 @@ turns out the difference is all the way from the eigen atom, small numerical dif
 - (see paper) need to accomodate for when:
   - disjoint iteration: 1 -> 3. Sol? add iter_id
   - n_sim idle > thresh OR n_sim run < thresh => thresh not fulfilled => no f update for mintry => no x update from mintry => all sim idle (no iter update). Sol? put sim_state
+
+17.05.2023:
+- fobj listener is now only depends on the iter -> any simulator can compute any iterations
+- iter tracker now is more simple.
+- speed: simulator listener > controller listener > mintry listener, since it's possible that the simulator receive duplicate x if the simulator is too slow on receiveing signal
