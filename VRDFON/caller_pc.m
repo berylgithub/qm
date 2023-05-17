@@ -105,7 +105,7 @@ end
 
 %}
 
-f = {"../data/hyperparamopt/sim/f/sim_09123.txt";"../data/hyperparamopt/sim/f/sim_00002.txt"; "../data/hyperparamopt/sim/f/sim_3333.txt"};
+f = {"../data/hyperparamopt/sim/f/sim_1.txt";"../data/hyperparamopt/sim/f/sim_2.txt"; "../data/hyperparamopt/sim/f/sim_3.txt"};
 %{
 for i=1:length(f)
     delete(f{i})
@@ -115,4 +115,12 @@ dlmwrite(f{2}, [0, 2, 22.], "\t")
 dlmwrite(f{3}, [0, 4, 333.], "\t")
 %}
 
-dlmwrite(f{1}, [1, 1, 1234.], "\t")
+fid = 0.24342
+dlmwrite(f{1}, [1, 1, 0.2434, 11.], "\t")
+dlmwrite(f{2}, [1, 1, 2.24342, 23.], "\t")
+%delete(f{1})
+
+n = "1234.txt"
+id = strsplit(n, "."){1}
+id_sim = []
+find(ismember(id_sim, str2num(id)))

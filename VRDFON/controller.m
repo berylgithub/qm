@@ -24,14 +24,14 @@ siminfo = dlmread(path_siminfo);
 thres = siminfo(1); % integral threshold of when each iteration is fulfilled, need to know beforehand the expected number of simulator will be spawned, otherwise each iteration will never be finished
 
 % init fbest controller:
-prev_iter = iter_tracker = 0 % tracks the internal iteration in which it determines how many iters have the the threshold been fulfied
+prev_iter = iter_tracker = 1 % tracks the internal iteration in which it determines how many iters have the the threshold been fulfied
 
 % init simulator listener:
 path_sim = strcat(path_simfolder, "*.txt");
 id_sim = []; % a vector, the id of simulators
-f_sim = {};  % a cell of cells, each cell = each simulator, each cell element = fobj of the corresponding iteration
-it_sim = []; % a vector, determines on which iteration each simulator is in 
-cell_iter = 1; % int, keeps track of the occupied cells of f_sim, to avoid replacing the celss whenever new sim enters
+f_sim = {};  % a cell of vectors, each cell = each iteration, each cell element = fobj of the corresponding iteration
+f_sim{iter_tracker} = []; % init empty vector for the current iter
+fid_sim = {}; % tracker of fobj comp id, to make sure no duplicate computation result is inputted
 
 % extract boundary info
 bounds = dlmread(path_bounds)
@@ -48,20 +48,21 @@ while true
     rp_info = dlmread(path_rawparam);
     if rp_info(1) != rp_id
         disp("new incoming xraw!")
-        rp_id = rp_info(1);
+        rp_id = rp_info(1); % uid of the raw x
         xraw = rp_info(2:end)' % transpose to column vector
     end
-    % reset xlist if iter_tracker is changed:
+    % if iter_tracker is changed (incremented):
     if iter_tracker != prev_iter
-        xlist = [];
+        xlist = [] % reset xlist
+        f_sim{iter_tracker} = [] % initialize next iter's cell
+        prev_iter = iter_tracker; % reset prev iter since iter tracker is changed
     end
     xlist
-    prev_iter = iter_tracker
     % gives new f to mintry if the number of new iterates > thres (see the function logic), must be BEFORE any simulator data update:
-    iter_tracker = finfo_updater(iter_tracker, it_sim, f_sim, thres, path_fun)
+    %iter_tracker = finfo_updater(iter_tracker, f_sim, thres, path_fun)
     % listens to simulator port, and updates simulator data:
     xd_vars{1} = xraw; xd_vars{2} = xlist; % fill the vars for x_donator fun
-    [id_sim, f_sim, it_sim, cell_iter, xlist] = listener_sim(path_simf, id_sim, f_sim, it_sim, cell_iter, iter_tracker, xd_vars)
+    [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim, fid_sim, iter_tracker, xd_vars)
     i += 1 % remove later
-    pause(3)
+    pause(2)
 end

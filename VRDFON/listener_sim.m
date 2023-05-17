@@ -1,8 +1,8 @@
 % listens to simulators: checking whether the simulators give any update
-% sinfo is simulator info, contains: id_sim (from file name), state, iter of sim, f
+% sinfo is simulator info, contains: id_sim (from file name), state, iter of sim, fid, f
 % give x to simulators: happens if state is idle
 
-function [id_sim, f_sim, it_sim, cell_iter, xlist] = listener_sim(path_simf, id_sim, f_sim, it_sim, cell_iter, iter_tracker, xd_vars)
+function [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim, fid_sim, iter_tracker, xd_vars)
     files = dir(path_simf);
     % unroll params of xdonator:
     xraw = xd_vars{1}; xlist = xd_vars{2}; bounds = xd_vars{3}; bm = xd_vars{4}; path_simx = xd_vars{5};
@@ -11,20 +11,20 @@ function [id_sim, f_sim, it_sim, cell_iter, xlist] = listener_sim(path_simf, id_
         % get simulator ids:
         for i=1:length(files)
             fname = files(i).name; % filename of the output of the simulator i
-            id = strsplit(fname, "_")(2); % the id is 2nd entry
+            id = str2num(strsplit(strsplit(fname, "_"){2}, "."){1}); % the sim id is the integral str before the dot after underscore
             finder = find(ismember(id_sim, id)); % find by id
             sinfo = dlmread(strcat(path_simf(1:end-5),fname)); % get sim info
             if isempty(finder) % (sim entry) if id not found, initialize simulator info:
                 % initialize sinfo:
                 id_sim = [id_sim; id]; % append new sim id
-                it_sim = [it_sim; 0]; % init iter
-                f_sim{cell_iter} = {}; % init empty f value from simulator
+                fid_sim{id} = 0. ; % init fid, must be float
                 if length(sinfo) > 2 % if length(sinfo) == 3 then the sim has ever computed something
                     sl_iter = sinfo(2); % the last iteration of the observed simulator 
-                    sl_f = sinfo(3); % last fobj of the observed simulator
-                    f_sim{cell_iter}{sl_iter} = sl_f; % add f and iter id
+                    sl_fid = sinfo(3); % the id of sim comp 
+                    sl_f = sinfo(4); % last fobj of the observed simulator
+                    fid_sim{id} = sl_fid; % set fid
+                    f_sim{iter_tracker} = [f_sim{iter_tracker}, sl_f]; % add f and iter id
                 end
-                cell_iter += 1; % increment cell iter tracker
                 % give x if sim is idle (0):
                 if !isempty(sinfo)
                     if sinfo(1) == 0
@@ -37,9 +37,13 @@ function [id_sim, f_sim, it_sim, cell_iter, xlist] = listener_sim(path_simf, id_
                     % get f:
                     sl_state = sinfo(1); % sim state
                     sl_iter = sinfo(2); % sim iteration
-                    sl_f = sinfo(3); % sim fobj
-                    f_sim{finder}{sl_iter} = sl_f; % set f in the cell
-                    it_sim(finder) = sl_iter;
+                    sl_fid = sinfo(3); % the fid of the comp from the sim
+                    sl_f = sinfo(4); % sim fobj
+                    % it the fid is different than the previous one, then update f:
+                    if fid_sim{id} != sl_fid
+                        f_sim{sl_iter} = [f_sim{sl_iter}, sl_f]; % set f in the cell
+                        fid_sim{id} = sl_fid;
+                    end
                     % give x if sim is idle (0):
                     if sl_state == 0
                         %disp("old simulator, idle state, give x")
