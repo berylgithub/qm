@@ -106,7 +106,6 @@ end
 %}
 
 f = {"../data/hyperparamopt/sim/f/sim_09123.txt";"../data/hyperparamopt/sim/f/sim_00002.txt"; "../data/hyperparamopt/sim/f/sim_3333.txt"};
-f{end-1}
 %{
 for i=1:length(f)
     delete(f{i})
@@ -116,5 +115,4 @@ dlmwrite(f{2}, [0, 2, 22.], "\t")
 dlmwrite(f{3}, [0, 4, 333.], "\t")
 %}
 
-[0, [1,2,3]]
-
+dlmwrite(f{1}, [1, 1, 1234.], "\t")

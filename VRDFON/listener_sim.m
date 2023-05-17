@@ -2,8 +2,10 @@
 % sinfo is simulator info, contains: id_sim (from file name), state, iter of sim, f
 % give x to simulators: happens if state is idle
 
-function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_simf, path_simx, id_sim, f_sim, it_sim, cell_iter, iter_tracker)
+function [id_sim, f_sim, it_sim, cell_iter, xlist] = listener_sim(path_simf, id_sim, f_sim, it_sim, cell_iter, iter_tracker, xd_vars)
     files = dir(path_simf);
+    % unroll params of xdonator:
+    xraw = xd_vars{1}; xlist = xd_vars{2}; bounds = xd_vars{3}; bm = xd_vars{4}; path_simx = xd_vars{5};
     if !isempty(files)
         % check whether there is new simulator:
         % get simulator ids:
@@ -26,12 +28,10 @@ function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_simf, path_simx,
                 % give x if sim is idle (0):
                 if !isempty(sinfo)
                     if sinfo(1) == 0
-                        disp("x has been given!")
-                        str = strcat(path_simx, fname)
-                        %dlmwrite(str, [iter_tracker+1, ])
+                        %disp("new simulator, give x")
+                        xlist = x_donator(xraw, xlist, bounds, bm, strcat(path_simx, fname), iter_tracker)
                     end
                 end
-
             else % if id is found, get updated info from sim[id]:
                 if length(sinfo) > 2
                     % get f:
@@ -42,7 +42,8 @@ function [id_sim, f_sim, it_sim, cell_iter] = listener_sim(path_simf, path_simx,
                     it_sim(finder) = sl_iter;
                     % give x if sim is idle (0):
                     if sl_state == 0
-                        disp("x has been given")
+                        %disp("old simulator, idle state, give x")
+                        xlist = x_donator(xraw, xlist, bounds, bm, strcat(path_simx, fname), iter_tracker)
                     end
                 end
             end
