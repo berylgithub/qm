@@ -59,7 +59,7 @@ while true
     end
     xlist
     % gives new f to mintry if the number of new iterates > thres (see the function logic), must be BEFORE any simulator data update:
-    %iter_tracker = finfo_updater(iter_tracker, f_sim, thres, path_fun)
+    iter_tracker = finfo_updater(iter_tracker, f_sim, thres, path_fun)
     % listens to simulator port, and updates simulator data:
     xd_vars{1} = xraw; xd_vars{2} = xlist; % fill the vars for x_donator fun
     [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim, fid_sim, iter_tracker, xd_vars)

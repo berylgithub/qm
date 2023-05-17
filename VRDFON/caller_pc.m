@@ -115,12 +115,6 @@ dlmwrite(f{2}, [0, 2, 22.], "\t")
 dlmwrite(f{3}, [0, 4, 333.], "\t")
 %}
 
-fid = 0.24342
-dlmwrite(f{1}, [1, 1, 0.2434, 11.], "\t")
-dlmwrite(f{2}, [1, 1, 2.24342, 23.], "\t")
-%delete(f{1})
-
-n = "1234.txt"
-id = strsplit(n, "."){1}
-id_sim = []
-find(ismember(id_sim, str2num(id)))
+dlmwrite(f{1}, [1, 2, 0.2435, 12.], "\t")
+dlmwrite(f{3}, [1, 2, 3.24344, 0.32], "\t")
+%delete(f{3})
