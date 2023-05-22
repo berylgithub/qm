@@ -259,3 +259,18 @@ turns out the difference is all the way from the eigen atom, small numerical dif
 - fobj listener is now only depends on the iter -> any simulator can compute any iterations
 - iter tracker now is more simple.
 - speed: simulator listener > controller listener > mintry listener, since it's possible that the simulator receive duplicate x if the simulator is too slow on receiveing signal
+
+22.05.2023:
+Quests:
+? avoid controller giving multiple generated-x if simulator's listener is slower => make controller (listener) speed < simulator speed
+? handle case where if there is no new f accepted AND no new x given (no running sim, no update from mintry) =>  accpet whatever f is in the contr repo, but if repo is empty??? -> stuck, iter doesnt advance.
+? when not enough new iterates, 2 choices:
+  - don't anything to sim -> (see quest 2)
+  - give whatever x, sim MUST NOT compute f(x) but looks into the repo and returns f -> this needs one (x,f(x)) repository, race condition since one sim accesses the same file?? -> race condition is fine, doesnt give any error!
+? write simulator (jl), algo:
+  - initialize simulator with only "state = idle" f info
+  - listen to controller's signal (faster than controller), read x file: 
+    - set state = running
+    - if uid is different, check x: 
+      - if x exists in tracker: write the corresponding f. Otherwise: run f = f(x) and write f, 
+    - set state = idle

@@ -115,6 +115,8 @@ dlmwrite(f{2}, [0, 2, 22.], "\t")
 dlmwrite(f{3}, [0, 4, 333.], "\t")
 %}
 
-dlmwrite(f{1}, [1, 2, 0.2435, 12.], "\t")
-dlmwrite(f{3}, [1, 2, 3.24344, 0.32], "\t")
+% [state, iter, uid, f]
+%dlmwrite(f{1}, [1, 1, 0.24341, 11.], "\t")
 %delete(f{3})
+
+!isempty([])

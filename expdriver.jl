@@ -576,3 +576,18 @@ function gctest()
         sleep(4)                                                                                        
     end
 end
+
+
+"""
+test race condition of multiple julia accessing one file:
+"""
+function test_race(id)
+    iter = 0
+    while true
+        data = [id, string(iter)]
+        println(data, " has been written")
+        writestringline(data, "testrace.txt", mode="a")
+        iter+=1
+        sleep(.5)
+    end
+end
