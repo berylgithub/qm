@@ -266,7 +266,7 @@ Quests:
 ? handle case where if there is no new f accepted AND no new x given (no running sim, no update from mintry) =>  accpet whatever f is in the contr repo, but if repo is empty??? -> stuck, iter doesnt advance.
 ? when not enough new iterates, 2 choices:
   - don't anything to sim -> (see quest 2)
-  - give whatever x, sim MUST NOT compute f(x) but looks into the repo and returns f -> this needs one (x,f(x)) repository, race condition since one sim accesses the same file?? -> race condition is fine, doesnt give any error!
+  - (choose dis) give whatever x, sim MUST NOT compute f(x) but looks into the repo and returns f -> this needs one (x,f(x)) repository, race condition since one sim accesses the same file?? -> race condition is fine, doesnt give any error!
 ? write simulator (jl), algo:
   - initialize simulator with only "state = idle" f info
   - listen to controller's signal (faster than controller), read x file: 

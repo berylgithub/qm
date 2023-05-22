@@ -233,6 +233,69 @@ function hyperparamopt(;init=false, init_data=[], init_x = [], dummyfx = false, 
     end
 end
 
+"""
+simulators spawner for parallel hyperparam
+- sim_id must be positive integers as low as possible due to the nature of the cell
+"""
+function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
+    # paths to necessary folders:
+    path_f = "data/hyperparamopt/sim/f/"
+    path_x = "data/hyperparamopt/sim/x/"
+    path_tracker = "data/hyperparamopt/sim/sim_tracker.txt"
+    if !isfile(path_tracker)
+        writedlm(path_tracker, []) # if tracker doesn't exist, create empty
+    end
+
+    # initialize simulator:
+    if dummyfx
+        fx = fxdummy
+    else
+        fx = main_obj
+    end
+    path_sim_f = path_f*"sim_$sim_id.txt"
+    writedlm(path_sim_f, [0]) # init, state = "idle"
+
+    # listen to path_x
+    xuid = nothing
+    path_sim_x = path_x*"$sim_id.txt"
+    while true
+        if filesize(path_sim_x) > 0 && isfile(path_sim_x) # check if file is not empty
+            xinfo = readdlm(path_sim_x)
+            if xuid != xinfo[1] # check if the uid is different from the previous one
+                writedlm(path_sim_f, [1]) # state = "running"
+                xuid = xinfo[1]; iter = xinfo[2]; x = xinfo[3:end] # get x info
+                println("new incoming xinfo!", x)
+                # find if x is in the repo/tracker:
+                idx = nothing
+                if filesize(path_tracker) > 0
+                    tracker = readdlm(path_tracker)
+                    for i ∈ axes(tracker, 1)
+                        if x == tracker[i, 3:end] # [fuid, f, x]
+                            idx = i
+                            break
+                        end
+                    end
+                end
+                fuid = rand(1)[1] # random fuid, IS A VECTOR!, hence take the first elem only
+                if idx !== nothing # if x is found in the repo, then just return the f given by the index
+                    println("x found in tracker!")
+                    f = tracker[idx, 2]
+                else
+                    println("x not found in tracker, computing f(x)...")
+                    f = fx(x) # compute f=f(x)
+                    if trackx # write to tracker:
+                        writestringline(string.(vcat(fuid, f, x)'), path_tracker; mode="a") # [fuid, f, x]
+                    end
+                end
+                # write f info to controller listener:
+                println("new f info has been written")
+                writedlm(path_sim_f, [0, iter, fuid, f]', "\t") # [state, iter, fuid, f] 
+                println("waiting for new x...")
+            end
+        end
+        sleep(.05) # delay a  bit
+    end
+end
 
 """
 encode parameters to desired form by the solver

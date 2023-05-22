@@ -105,7 +105,7 @@ end
 
 %}
 
-f = {"../data/hyperparamopt/sim/f/sim_1.txt";"../data/hyperparamopt/sim/f/sim_2.txt"; "../data/hyperparamopt/sim/f/sim_3.txt"};
+f = {"../data/hyperparamopt/sim/f/sim_11.txt";"../data/hyperparamopt/sim/f/sim_2.txt"; "../data/hyperparamopt/sim/f/sim_3.txt"};
 %{
 for i=1:length(f)
     delete(f{i})
@@ -116,7 +116,6 @@ dlmwrite(f{3}, [0, 4, 333.], "\t")
 %}
 
 % [state, iter, uid, f]
-%dlmwrite(f{1}, [1, 1, 0.24341, 11.], "\t")
+dlmwrite(f{1}, [1, 1, 0.24341, 11.], "\t")
 %delete(f{3})
 
-!isempty([])
