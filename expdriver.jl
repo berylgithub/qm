@@ -256,11 +256,16 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
     writedlm(path_sim_f, [0]) # init, state = "idle"
 
     # listen to path_x
-    xuid = nothing
+    xinfo = xuid = nothing # initialize data structures
     path_sim_x = path_x*"sim_$sim_id.txt"
     while true
         if filesize(path_sim_x) > 0 && isfile(path_sim_x) # check if file is not empty
-            xinfo = readdlm(path_sim_x)
+            try # for some reason sometimes the written x is empty, HELLO OCTAVE??
+                xinfo = readdlm(path_sim_x)
+            catch ArgumentError
+                println("ERROR: x info is empty!")
+                continue
+            end
             if xuid != xinfo[1] # check if the uid is different from the previous one
                 writedlm(path_sim_f, [1]) # state = "running"
                 xuid = xinfo[1]; iter = xinfo[2]; x = xinfo[3:end] # get x info
