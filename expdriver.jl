@@ -257,7 +257,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
 
     # listen to path_x
     xuid = nothing
-    path_sim_x = path_x*"$sim_id.txt"
+    path_sim_x = path_x*"sim_$sim_id.txt"
     while true
         if filesize(path_sim_x) > 0 && isfile(path_sim_x) # check if file is not empty
             xinfo = readdlm(path_sim_x)
@@ -279,7 +279,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
                 fuid = rand(1)[1] # random fuid, IS A VECTOR!, hence take the first elem only
                 if idx !== nothing # if x is found in the repo, then just return the f given by the index
                     println("x found in tracker!")
-                    f = tracker[idx, 2]
+                    f = tracker[idx, 3]
                 else
                     println("x not found in tracker, computing f(x)...")
                     f = fx(x) # compute f=f(x)
