@@ -270,7 +270,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
                 if filesize(path_tracker) > 0
                     tracker = readdlm(path_tracker)
                     for i ∈ axes(tracker, 1)
-                        if x == tracker[i, 3:end] # [fuid, f, x]
+                        if x == tracker[i, 4:end] # [sim_id, fuid, f, x]
                             idx = i
                             break
                         end
@@ -284,7 +284,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
                     println("x not found in tracker, computing f(x)...")
                     f = fx(x) # compute f=f(x)
                     if trackx # write to tracker:
-                        writestringline(string.(vcat(fuid, f, x)'), path_tracker; mode="a") # [fuid, f, x]
+                        writestringline(string.(vcat(sim_id, fuid, f, x)'), path_tracker; mode="a") # [fuid, f, x]
                     end
                 end
                 # write f info to controller listener:
