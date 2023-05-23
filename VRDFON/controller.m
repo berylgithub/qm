@@ -64,5 +64,5 @@ while true
     xd_vars{1} = xraw; xd_vars{2} = xlist; % fill the vars for x_donator fun
     [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim, fid_sim, iter_tracker, xd_vars)
     i += 1 % remove later
-    pause(2)
+    pause(0.3) % for easier debugging, increase speed later
 end
