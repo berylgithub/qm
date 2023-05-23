@@ -236,6 +236,7 @@ end
 """
 simulators spawner for parallel hyperparam
 - sim_id must be positive integers as low as possible due to the nature of the cell
+- states: 0 = idle, 1 = running, 2 = killed (or killed is no file found)
 """
 function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
     # paths to necessary folders:
@@ -258,47 +259,56 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
     # listen to path_x
     xinfo = xuid = nothing # initialize data structures
     path_sim_x = path_x*"sim_$sim_id.txt"
-    while true
-        if filesize(path_sim_x) > 0 && isfile(path_sim_x) # check if file is not empty
-            try # for some reason sometimes the written x is empty, HELLO OCTAVE??
-                xinfo = readdlm(path_sim_x)
-            catch ArgumentError
-                println("ERROR: x info is empty!")
-                continue
-            end
-            if xuid != xinfo[1] # check if the uid is different from the previous one
-                writedlm(path_sim_f, [1]) # state = "running"
-                xuid = xinfo[1]; iter = xinfo[2]; x = xinfo[3:end] # get x info
-                println("new incoming xinfo!", x)
-                # find if x is in the repo/tracker:
-                idx = nothing
-                if filesize(path_tracker) > 0
-                    tracker = readdlm(path_tracker)
-                    for i ∈ axes(tracker, 1)
-                        if x == tracker[i, 4:end] # [sim_id, fuid, f, x]
-                            idx = i
-                            break
+    try
+        while true
+            if filesize(path_sim_x) > 0 && isfile(path_sim_x) # check if file is not empty
+                try # for some reason sometimes the written x is empty, HELLO OCTAVE??
+                    xinfo = readdlm(path_sim_x)
+                catch ArgumentError
+                    println("ERROR: x info is empty!")
+                    continue
+                end
+                if xuid != xinfo[1] # check if the uid is different from the previous one
+                    writedlm(path_sim_f, [1]) # state = "running"
+                    xuid = xinfo[1]; iter = xinfo[2]; x = xinfo[3:end] # get x info
+                    println("new incoming xinfo!", x)
+                    # find if x is in the repo/tracker:
+                    idx = nothing
+                    if filesize(path_tracker) > 0
+                        tracker = readdlm(path_tracker)
+                        for i ∈ axes(tracker, 1)
+                            if x == tracker[i, 4:end] # [sim_id, fuid, f, x]
+                                idx = i
+                                break
+                            end
                         end
                     end
-                end
-                fuid = rand(1)[1] # random fuid, IS A VECTOR!, hence take the first elem only
-                if idx !== nothing # if x is found in the repo, then just return the f given by the index
-                    println("x found in tracker!")
-                    f = tracker[idx, 3]
-                else
-                    println("x not found in tracker, computing f(x)...")
-                    f = fx(x) # compute f=f(x)
-                    if trackx # write to tracker:
-                        writestringline(string.(vcat(sim_id, fuid, f, x)'), path_tracker; mode="a") # [fuid, f, x]
+                    fuid = rand(1)[1] # random fuid, IS A VECTOR!, hence take the first elem only
+                    if idx !== nothing # if x is found in the repo, then just return the f given by the index
+                        println("x found in tracker!")
+                        f = tracker[idx, 3]
+                    else
+                        println("x not found in tracker, computing f(x)...")
+                        f = fx(x) # compute f=f(x)
+                        if trackx # write to tracker:
+                            writestringline(string.(vcat(sim_id, fuid, f, x)'), path_tracker; mode="a") # [fuid, f, x]
+                        end
                     end
+                    # write f info to controller listener:
+                    println("new f info has been written")
+                    writedlm(path_sim_f, [0, iter, fuid, f]', "\t") # [state, iter, fuid, f] 
+                    println("waiting for new x...")
                 end
-                # write f info to controller listener:
-                println("new f info has been written")
-                writedlm(path_sim_f, [0, iter, fuid, f]', "\t") # [state, iter, fuid, f] 
-                println("waiting for new x...")
             end
+            sleep(.05) # delay a  bit for harddisk
+        end 
+    catch exc # add error catcher if simulator is killed or something, then remove the f info file (signal sender)
+        if exc isa InterruptException
+            println("simulator is killed!")
+        elseif exc isa OutOfMemoryError
+            println("OOM!")
         end
-        sleep(.05) # delay a  bit
+        rm(path_sim_f)
     end
 end
 

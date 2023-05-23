@@ -54,6 +54,7 @@ while true
     % if iter_tracker is changed (incremented):
     if iter_tracker != prev_iter
         xlist = [] % reset xlist
+        f_sim{prev_iter} = [] % empty previous cell 
         f_sim{iter_tracker} = [] % initialize next iter's cell
         prev_iter = iter_tracker; % reset prev iter since iter tracker is changed
     end
@@ -64,5 +65,5 @@ while true
     xd_vars{1} = xraw; xd_vars{2} = xlist; % fill the vars for x_donator fun
     [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim, fid_sim, iter_tracker, xd_vars)
     i += 1 % remove later
-    pause(0.3) % for easier debugging, increase speed later
+    pause(3) % for easier debugging, increase speed later
 end
