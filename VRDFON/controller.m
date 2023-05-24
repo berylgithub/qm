@@ -45,11 +45,13 @@ i = 0 % remove later
 rp_id = 99999999; xraw = []; % init xraw data
 while true
     % listens to xraw port:
-    rp_info = dlmread(path_rawparam);
-    if rp_info(1) != rp_id
-        disp("new incoming xraw!")
-        rp_id = rp_info(1); % uid of the raw x
-        xraw = rp_info(2:end)' % transpose to column vector
+    if dir(path_rawparam).bytes > 0
+        rp_info = dlmread(path_rawparam);
+        if rp_info(1) != rp_id
+            disp("new incoming xraw!")
+            rp_id = rp_info(1); % uid of the raw x
+            xraw = rp_info(2:end)' % transpose to column vector
+        end
     end
     % if iter_tracker is changed (incremented):
     if iter_tracker != prev_iter

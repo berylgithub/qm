@@ -307,6 +307,8 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
             println("simulator is killed!")
         elseif exc isa OutOfMemoryError
             println("OOM!")
+        else
+            throw(exc)
         end
         rm(path_sim_f)
     end
@@ -458,7 +460,7 @@ function main_obj_atom(x)
     return MAE
 end
 
-function fxdummy(x)
+function fxdummy(x; sim_id="")
     u = 0.
     s = norm(x .- u)^2
     return 10. + (5s)/(s+1)

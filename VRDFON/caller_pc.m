@@ -113,5 +113,7 @@ end
 %}
 
 % [state, iter, uid, f]
-dlmwrite(f{3}, [1, 3, 0.311, 3.], "\t")
+dlmwrite(f{1}, [1, 2, 0.21, 2.], "\t")
+dlmwrite(f{2}, [1, 2, 0.22, 2.2], "\t")
+dlmwrite(f{3}, [1, 2, 0.23, 2.3], "\t")
 
