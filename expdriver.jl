@@ -350,7 +350,7 @@ new params:
     1   2       3       4               5               6           7     8 
 the rest of the definitions are the same 
 """
-function main_obj(x)
+function main_obj(x; sim_id="")
     # process params:
 
     # determine n_af and n_mf:
@@ -384,10 +384,10 @@ function main_obj(x)
 
     println([n_mf, n_af, n_basis, feature_name, normalize_atom, normalize_mol, feature_path, model, c])
 
-    foldername = "exp_hyperparamopt"; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
+    foldername = "exp_hyperparamopt"*sim_id; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
     
     data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
-        normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = true, num_center_sets = 1)
+        normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1)
     GC.gc() # always gc after each run
     fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=false)
     GC.gc() # always gc after each run
