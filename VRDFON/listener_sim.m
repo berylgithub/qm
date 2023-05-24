@@ -23,7 +23,13 @@ function [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim
                     sl_fid = sinfo(3); % the id of sim comp 
                     sl_f = sinfo(4); % last fobj of the observed simulator
                     fid_sim{id} = sl_fid; % set fid
-                    f_sim{iter_tracker} = [f_sim{iter_tracker}, sl_f]; % add f and iter id
+                    %f_sim{iter_tracker} = [f_sim{iter_tracker}, sl_f]; % add f and iter id. (?): probably logic incorrect, should init fsim[simiter] if it's empty, otherwise add to it.
+                    %s probably should be this instead (NOT YET TESTED):
+                    if isempty(f_sim{sl_iter})
+                        f_sim{sl_iter} = [];
+                    else
+                        f_sim{sl_iter} = [f_sim{sl_iter}, sl_f];
+                    end
                 end
                 % give x if sim is idle (0):
                 if !isempty(sinfo)

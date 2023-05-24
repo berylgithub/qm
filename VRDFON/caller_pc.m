@@ -116,6 +116,7 @@ dlmwrite(f{3}, [0, 4, 333.], "\t")
 %}
 
 % [state, iter, uid, f]
-dlmwrite(f{1}, [1, 1, 0.24341, 11.], "\t")
-%delete(f{3})
 
+c = {}
+c{1} = []
+isempty(c{1})

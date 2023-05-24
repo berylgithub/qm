@@ -54,7 +54,7 @@ while true
     % if iter_tracker is changed (incremented):
     if iter_tracker != prev_iter
         xlist = [] % reset xlist
-        f_sim{prev_iter} = [] % empty previous cell 
+        f_sim{prev_iter} = [] % empty previous cell, memory reason
         f_sim{iter_tracker} = [] % initialize next iter's cell
         prev_iter = iter_tracker; % reset prev iter since iter tracker is changed
     end
