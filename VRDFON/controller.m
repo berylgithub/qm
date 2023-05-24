@@ -55,7 +55,9 @@ while true
     if iter_tracker != prev_iter
         xlist = [] % reset xlist
         f_sim{prev_iter} = [] % empty previous cell, memory reason
-        f_sim{iter_tracker} = [] % initialize next iter's cell
+        if numel(f_sim) < iter_tracker
+            f_sim{iter_tracker} = [] % initialize next iter's cell if it's not yet there
+        end
         prev_iter = iter_tracker; % reset prev iter since iter tracker is changed
     end
     xlist

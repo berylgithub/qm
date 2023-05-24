@@ -25,11 +25,10 @@ function [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim
                     fid_sim{id} = sl_fid; % set fid
                     %f_sim{iter_tracker} = [f_sim{iter_tracker}, sl_f]; % add f and iter id. (?): probably logic incorrect, should init fsim[simiter] if it's empty, otherwise add to it.
                     %s probably should be this instead (NOT YET TESTED):
-                    if isempty(f_sim{sl_iter})
+                    if numel(f_sim) < sl_iter % if the number of cells is less than the found iteration in the simulator, initialize, otherwise just add
                         f_sim{sl_iter} = [];
-                    else
-                        f_sim{sl_iter} = [f_sim{sl_iter}, sl_f];
                     end
+                    f_sim{sl_iter} = [f_sim{sl_iter}, sl_f];
                 end
                 % give x if sim is idle (0):
                 if !isempty(sinfo)
@@ -47,6 +46,9 @@ function [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim
                     sl_f = sinfo(4); % sim fobj
                     % it the fid is different than the previous one, then update f:
                     if fid_sim{id} != sl_fid
+                        if numel(f_sim) < sl_iter % if the number of cells is less than the found iteration in the simulator, initialize, otherwise just add
+                            f_sim{sl_iter} = [];
+                        end
                         f_sim{sl_iter} = [f_sim{sl_iter}, sl_f]; % set f in the cell
                         fid_sim{id} = sl_fid;
                     end

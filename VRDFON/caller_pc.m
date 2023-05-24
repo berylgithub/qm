@@ -110,13 +110,8 @@ f = {"../data/hyperparamopt/sim/f/sim_11.txt";"../data/hyperparamopt/sim/f/sim_2
 for i=1:length(f)
     delete(f{i})
 end
-dlmwrite(f{1}, [0, 3, 1234.], "\t")
-dlmwrite(f{2}, [0, 2, 22.], "\t")
-dlmwrite(f{3}, [0, 4, 333.], "\t")
 %}
 
 % [state, iter, uid, f]
+dlmwrite(f{3}, [1, 3, 0.311, 3.], "\t")
 
-c = {}
-c{1} = []
-isempty(c{1})
