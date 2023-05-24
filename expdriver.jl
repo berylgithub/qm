@@ -289,7 +289,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
                         f = tracker[idx, 3]
                     else
                         println("x not found in tracker, computing f(x)...")
-                        f = fx(x) # compute f=f(x)
+                        f = fx(x; sim_id = "_$sim_id") # compute f=f(x)
                         if trackx # write to tracker:
                             writestringline(string.(vcat(sim_id, fuid, f, x)'), path_tracker; mode="a") # [fuid, f, x]
                         end
@@ -637,6 +637,19 @@ function dataqueryref()
     for i ∈ eachindex(cidx)
         table_centers[1, i] = L"$k=$"*string(cidx[i])
     end
+end
+
+"""
+sanity check whenever there is a change in the Julia env (in particular in VSC)
+"""
+function sanity_check()
+    println("SANITY CHECK!")
+    centers = readdlm("data/centers.txt")[38, 3:end]
+    E_atom = readdlm("data/atomic_energies.txt")
+    data_setup("exp_reduced_energy", 20, 16, 3, 100, "data/qm9_dataset_old.jld", "data/ACSF.jld", "ACSF"; save_global_centers = false, num_center_sets=1)
+    fit_atom("exp_reduced_energy", "data/qm9_dataset_old.jld", "data/atomref_features.jld"; center_ids=centers)
+    fit_🌹_and_atom("exp_reduced_energy", "data/qm9_dataset_old.jld"; model = "REAPER", E_atom = E_atom, cσ = 2048., scaler = 2048., center_ids = centers)
+    println("SANITY CHECK DONE!")
 end
 
 
