@@ -117,3 +117,13 @@ dlmwrite(f{1}, [1, 2, 0.21, 2.], "\t")
 dlmwrite(f{2}, [1, 2, 0.22, 2.2], "\t")
 dlmwrite(f{3}, [1, 2, 0.23, 2.3], "\t")
 
+% for resetting file trackers:
+path_trackx = '../data/hyperparamopt/xlist.txt'; 
+path_trackxraw = '../data/hyperparamopt/xrawlist.txt';
+path_trackf = '../data/hyperparamopt/flist.txt';
+path_simtracker = "../data/hyperparamopt/sim/sim_tracker.txt";
+tlist = {path_trackx, path_trackxraw, path_trackf, path_simtracker};
+for t = 1:length(tlist)
+    dlmwrite(tlist{t}, []) % write empty files
+end
+
