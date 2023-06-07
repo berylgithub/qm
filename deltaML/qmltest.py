@@ -28,7 +28,7 @@ for line in lines:
     Edftb = float(tokens[2])
     Edelta = Ehof - Edftb
     Ehofs.append(Ehof); Edftbs.append(Edftb); Edeltas.append(Edelta)
-
+Ehofs = np.array(Ehofs); Edftbs = np.array(Edftbs); Edeltas = np.array(Edeltas)
 # extract features while also saving it to text file for Julia later
 for mol in compounds:
     mol.generate_coulomb_matrix(size=23, sorting="row-norm")
