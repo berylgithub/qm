@@ -1,5 +1,6 @@
 import qml
 import numpy as np
+import os
 from os import listdir, makedirs
 from os.path import isfile, join, exists
 import time
@@ -15,9 +16,10 @@ print(mol.representation)
 # Follow the QML tutorial until delta learning:
 # extract features while also saving it to text file for Julia later
 geopath = "/users/baribowo/Dataset/tutorial/qm7"
-onlyfiles = [f for f in listdir(geopath) if isfile(join(geopath, f))] # remove errorfiles
-onlyfiles = sorted(onlyfiles)
-print(onlyfiles)
+compounds = [qml.Compound(xyz="qm7/"+f) for f in sorted(os.listdir(geopath))]
+print(compounds[1])
 # fit and test standard QM7 curve
+
+
 # fit and test delta curve
 # see if E = deltaE + Ebase is more accurate
