@@ -25,12 +25,13 @@ for line in lines:
     Edelta = Ehof - Edftb
     Ehofs.append(Ehof); Edftbs.append(Edftb); Edeltas.append(Edelta)
 
-print(Ehofs[0:10])
-print(Edftbs[0:10])
-print(Edeltas[0:10])
 # extract features while also saving it to text file for Julia later
+for mol in compounds:
+    mol.generate_coulomb_matrix(size=23, sorting="row-norm")
 
-
+print(compounds[1].representation)
+X = np.array([mol.representation for mol in compounds])
+print(X)
 # fit and test standard QM7 curve
 
 
