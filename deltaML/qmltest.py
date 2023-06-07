@@ -15,7 +15,7 @@ compounds = [qml.Compound(xyz=geopath+"/"+f) for f in sorted(os.listdir(geopath)
 Ehofs = []; Edftbs = []; Edeltas = []
 efile = "/users/baribowo/Dataset/tutorial/hof_qm7.txt"
 f = open(efile, "r")
-lines = f.readlines
+lines = f.readlines()
 f.close()
 for line in lines:
     tokens = line.split()
