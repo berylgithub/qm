@@ -34,11 +34,9 @@ X = np.array([mol.representation for mol in compounds])
 
 random.seed(603)
 Ndata = len(compounds)
-print(Ndata)
 idtrain = random.sample(range(Ndata), 1000)
 idtest = np.setdiff1d(list(range(Ndata)), idtrain)
-print(len(idtrain))
-print(len(idtest))
+print(len(Ehofs), Ndata, len(idtrain), len(idtest))
 
 # fit and test standard QM7 curve
 
