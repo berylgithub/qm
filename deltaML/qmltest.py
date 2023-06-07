@@ -13,92 +13,65 @@ from warnings import catch_warnings
 # Follow the QML tutorial until delta learning:
 
 # data setup
-geopath = "/users/baribowo/Dataset/tutorial/qm7"
-compounds = [qml.Compound(xyz=geopath+"/"+f) for f in sorted(os.listdir(geopath))]
 
-Ehofs = []; Edftbs = []; Edeltas = []
-efile = "/users/baribowo/Dataset/tutorial/hof_qm7.txt"
-f = open(efile, "r")
-lines = f.readlines()
-f.close()
-for line in lines:
-    tokens = line.split()
-    molname = tokens[0]
-    Ehof = float(tokens[1])
-    Edftb = float(tokens[2])
-    Edelta = Ehof - Edftb
-    Ehofs.append(Ehof); Edftbs.append(Edftb); Edeltas.append(Edelta)
-Ehofs = np.array(Ehofs); Edftbs = np.array(Edftbs); Edeltas = np.array(Edeltas)
-# extract features while also saving it to text file for Julia later
-for mol in compounds:
-    mol.generate_coulomb_matrix(size=23, sorting="row-norm")
+def test_qml_deltaML():
+    geopath = "/users/baribowo/Dataset/tutorial/qm7"
+    compounds = [qml.Compound(xyz=geopath+"/"+f) for f in sorted(os.listdir(geopath))]
 
-X = np.array([mol.representation for mol in compounds])
-np.savetxt("/users/baribowo/Dataset/qm7coulomb.txt", X, delimiter="\t") #write to file for Julia purposes
-random.seed(603)
-Ndata = len(compounds)
-sigma = 700.
+    Ehofs = []; Edftbs = []; Edeltas = []
+    efile = "/users/baribowo/Dataset/tutorial/hof_qm7.txt"
+    f = open(efile, "r")
+    lines = f.readlines()
+    f.close()
+    for line in lines:
+        tokens = line.split()
+        molname = tokens[0]
+        Ehof = float(tokens[1])
+        Edftb = float(tokens[2])
+        Edelta = Ehof - Edftb
+        Ehofs.append(Ehof); Edftbs.append(Edftb); Edeltas.append(Edelta)
+    Ehofs = np.array(Ehofs); Edftbs = np.array(Edftbs); Edeltas = np.array(Edeltas)
+    # extract features while also saving it to text file for Julia later
+    for mol in compounds:
+        mol.generate_coulomb_matrix(size=23, sorting="row-norm")
 
-idtrain = random.sample(range(Ndata), 1000)
-idtest = np.setdiff1d(list(range(Ndata)), idtrain)
-print(Ndata, len(idtrain), len(idtest))
-Xtrain = X[idtrain]; Xtest = X[idtest]
+    X = np.array([mol.representation for mol in compounds])
+    np.savetxt("/users/baribowo/Dataset/qm7coulomb.txt", X, delimiter="\t") #write to file for Julia purposes
+    random.seed(603)
+    Ndata = len(compounds)
+    sigma = 700.
 
-# fit and test standard QM7 curve
-Ytrain = Ehofs[idtrain]; Ytest = Ehofs[idtest] 
-K = gaussian_kernel(Xtrain, Xtrain, sigma)
-K[np.diag_indices_from(K)] += 1e-8
+    # fitting with incremental dataset for training
+    Ntrain = [1000, 2000, 4000]
+    for n in Ntrain:
+        idtrain = random.sample(range(Ndata), n)
+        idtest = np.setdiff1d(list(range(Ndata)), idtrain)
+        print("num of (total, train, test) data = ",Ndata, len(idtrain), len(idtest))
+        Xtrain = X[idtrain]; Xtest = X[idtest]
 
-alpha = cho_solve(K, Ytrain)
-K = gaussian_kernel(Xtest, Xtrain, sigma)
-Ypred = K@alpha
-print("MAE Et = ", np.mean(np.abs(Ypred - Ytest)))
+        # fit and test standard QM7 curve
+        Ytrain = Ehofs[idtrain]; Ytest = Ehofs[idtest] 
+        K = gaussian_kernel(Xtrain, Xtrain, sigma)
+        K[np.diag_indices_from(K)] += 1e-8
 
-# fit and test delta curve
-Ytrain = Edeltas[idtrain]; Ytest = Edeltas[idtest] 
-K = gaussian_kernel(Xtrain, Xtrain, sigma)
-K[np.diag_indices_from(K)] += 1e-8
+        alpha = cho_solve(K, Ytrain)
+        K = gaussian_kernel(Xtest, Xtrain, sigma)
+        Ypred = K@alpha
+        print("MAE Etot = ", np.mean(np.abs(Ypred - Ytest)))
 
-alpha = cho_solve(K, Ytrain)
-K = gaussian_kernel(Xtest, Xtrain, sigma)
-Ypred = K@alpha
-print("MAE Edelta = ", np.mean(np.abs(Ypred - Ytest)))
+        # fit and test delta curve
+        Ytrain = Edeltas[idtrain]; Ytest = Edeltas[idtest] 
+        K = gaussian_kernel(Xtrain, Xtrain, sigma)
+        K[np.diag_indices_from(K)] += 1e-8
 
-# see if E = deltaE + Ebase is more accurate
-Etot = Ehofs[idtest]; Ebase = Edftbs[idtest]; Edelta = Ypred; 
-Etotpred = Ebase + Edelta
-print("MAE after magnitude addition back = ", np.mean(np.abs(Etotpred - Etot)))
+        alpha = cho_solve(K, Ytrain)
+        K = gaussian_kernel(Xtest, Xtrain, sigma)
+        Ypred = K@alpha
+        print("MAE Edelta = ", np.mean(np.abs(Ypred - Ytest)))
 
-# fitting with incremental dataset for training
-Ntrain = [1000, 2000, 4000]
-for n in Ntrain:
-    print("num of train data = ",n)
-    idtrain = random.sample(range(Ndata), n)
-    idtest = np.setdiff1d(list(range(Ndata)), idtrain)
-    print(Ndata, len(idtrain), len(idtest))
-    Xtrain = X[idtrain]; Xtest = X[idtest]
+        # see if E = deltaE + Ebase is more accurate
+        #Etot = Ehofs[idtest]; Ebase = Edftbs[idtest]; Edelta = Ypred; 
+        #Etotpred = Ebase + Edelta
+        #print("MAE Etarget = ", np.mean(np.abs(Etotpred - Etot)))
 
-    # fit and test standard QM7 curve
-    Ytrain = Ehofs[idtrain]; Ytest = Ehofs[idtest] 
-    K = gaussian_kernel(Xtrain, Xtrain, sigma)
-    K[np.diag_indices_from(K)] += 1e-8
-
-    alpha = cho_solve(K, Ytrain)
-    K = gaussian_kernel(Xtest, Xtrain, sigma)
-    Ypred = K@alpha
-    print("MAE Etot = ", np.mean(np.abs(Ypred - Ytest)))
-
-    # fit and test delta curve
-    Ytrain = Edeltas[idtrain]; Ytest = Edeltas[idtest] 
-    K = gaussian_kernel(Xtrain, Xtrain, sigma)
-    K[np.diag_indices_from(K)] += 1e-8
-
-    alpha = cho_solve(K, Ytrain)
-    K = gaussian_kernel(Xtest, Xtrain, sigma)
-    Ypred = K@alpha
-    print("MAE Edelta = ", np.mean(np.abs(Ypred - Ytest)))
-
-    # see if E = deltaE + Ebase is more accurate
-    Etot = Ehofs[idtest]; Ebase = Edftbs[idtest]; Edelta = Ypred; 
-    Etotpred = Ebase + Edelta
-    print("MAE Etarget = ", np.mean(np.abs(Etotpred - Etot)))
+test_qml_deltaML()
