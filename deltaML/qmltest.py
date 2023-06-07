@@ -16,7 +16,7 @@ print(mol.representation)
 # Follow the QML tutorial until delta learning:
 # extract features while also saving it to text file for Julia later
 geopath = "/users/baribowo/Dataset/tutorial/qm7"
-compounds = [qml.Compound(xyz="qm7/"+f) for f in sorted(os.listdir(geopath))]
+compounds = [qml.Compound(xyz=geopath+f) for f in sorted(os.listdir(geopath))]
 print(compounds[1])
 # fit and test standard QM7 curve
 
