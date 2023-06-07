@@ -71,6 +71,7 @@ def test_qml_deltaML():
         MAEdelta = np.mean(np.abs(Ypred - Ytest))
         print("MAE Edelta = ", MAEdelta)
 
+        np.savetxt("train_indexes_"*str(n)*".txt", idtrain, delimiter="\n")
         output[i,0] = n; output[i,1] = MAEtot; output[i,2] = MAEdelta
 
         # see if E = deltaE + Ebase is more accurate
