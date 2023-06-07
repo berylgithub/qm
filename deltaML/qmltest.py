@@ -52,7 +52,20 @@ K[np.diag_indices_from(K)] += 1e-8
 alpha = cho_solve(K, Ytrain)
 K = gaussian_kernel(Xtest, Xtrain, sigma)
 Ypred = K@alpha
-print(np.mean(np.abs(Ypred - Ytest)))
+print("MAE Et = ", np.mean(np.abs(Ypred - Ytest)))
 
 # fit and test delta curve
+Ytrain = Edeltas[idtrain]; Ytest = Edeltas[idtest] 
+K = gaussian_kernel(Xtrain, Xtrain, sigma)
+K[np.diag_indices_from(K)] += 1e-8
+
+alpha = cho_solve(K, Ytrain)
+K = gaussian_kernel(Xtest, Xtrain, sigma)
+Ypred = K@alpha
+print("MAE Edelta = ", np.mean(np.abs(Ypred - Ytest)))
+
 # see if E = deltaE + Ebase is more accurate
+Etot = Ehof[idtest]; Ebase = Edftbs[idtest]; Edelta = Ypred; 
+Etotpred = Ebase + Edelta
+print("MAE after magnitude addition back = ", np.mean(np.abs(Etotpred - Etot)))
+
