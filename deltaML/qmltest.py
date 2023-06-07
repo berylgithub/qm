@@ -65,7 +65,7 @@ Ypred = K@alpha
 print("MAE Edelta = ", np.mean(np.abs(Ypred - Ytest)))
 
 # see if E = deltaE + Ebase is more accurate
-Etot = Ehof[idtest]; Ebase = Edftbs[idtest]; Edelta = Ypred; 
+Etot = Ehofs[idtest]; Ebase = Edftbs[idtest]; Edelta = Ypred; 
 Etotpred = Ebase + Edelta
 print("MAE after magnitude addition back = ", np.mean(np.abs(Etotpred - Etot)))
 
