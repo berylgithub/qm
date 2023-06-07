@@ -51,7 +51,7 @@ K[np.diag_indices_from(K)] += 1e-8
 
 alpha = cho_solve(K, Ytrain)
 K = gaussian_kernel(Xtest, Xtrain, sigma)
-Ypred = K*alpha
+Ypred = K@alpha
 print(np.mean(np.abs(Ypred - Ytest)))
 
 # fit and test delta curve
