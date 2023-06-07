@@ -25,9 +25,9 @@ for line in lines:
     Edelta = Ehof - Edftb
     Ehofs.append(Ehof); Edftbs.append(Edftb); Edeltas.append(Edelta)
 
-print(Ehofs)
-print(Edftbs)
-print(Edeltas)
+print(Ehofs[0:10])
+print(Edftbs[0:10])
+print(Edeltas[0:10])
 # extract features while also saving it to text file for Julia later
 
 
