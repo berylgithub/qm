@@ -43,7 +43,7 @@ def test_qml_deltaML():
 
     # fitting with incremental dataset for training
     Ntrain = [1000, 2000, 4000]
-    output = np.zeros(len(Ntrain), 3) # (ntrain, MAE target, MAE delta)
+    output = np.zeros((len(Ntrain), 3)) # (ntrain, MAE target, MAE delta)
     for i,n in enumerate(Ntrain):
         # data indexing
         idtrain = random.sample(range(Ndata), n)
