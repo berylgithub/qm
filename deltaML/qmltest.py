@@ -1,5 +1,6 @@
 import qml
 import numpy as np
+import random
 import os
 from os import listdir, makedirs
 from os.path import isfile, join, exists
@@ -29,9 +30,15 @@ for line in lines:
 for mol in compounds:
     mol.generate_coulomb_matrix(size=23, sorting="row-norm")
 
-print(compounds[1].representation)
 X = np.array([mol.representation for mol in compounds])
-print(X)
+
+random.seed(603)
+Ndata = len(compounds)
+idtrain = random.sample(range(Ndata), 1000)
+idtest = np.setdiff1d(list(range(Ndata)), idtrain)
+print(idtrain, len(idtrain))
+print(idtest, len(idtest))
+
 # fit and test standard QM7 curve
 
 
