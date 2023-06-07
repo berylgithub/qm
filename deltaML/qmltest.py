@@ -43,7 +43,9 @@ def test_qml_deltaML():
 
     # fitting with incremental dataset for training
     Ntrain = [1000, 2000, 4000]
-    for n in Ntrain:
+    output = np.zeros(len(Ntrain), 3) # (ntrain, MAE target, MAE delta)
+    for i,n in enumerate(Ntrain):
+        # data indexing
         idtrain = random.sample(range(Ndata), n)
         idtest = np.setdiff1d(list(range(Ndata)), idtrain)
         print("num of (total, train, test) data = ",Ndata, len(idtrain), len(idtest))
@@ -53,25 +55,34 @@ def test_qml_deltaML():
         Ytrain = Ehofs[idtrain]; Ytest = Ehofs[idtest] 
         K = gaussian_kernel(Xtrain, Xtrain, sigma)
         K[np.diag_indices_from(K)] += 1e-8
-
         alpha = cho_solve(K, Ytrain)
         K = gaussian_kernel(Xtest, Xtrain, sigma)
         Ypred = K@alpha
-        print("MAE Etot = ", np.mean(np.abs(Ypred - Ytest)))
+        MAEtot = np.mean(np.abs(Ypred - Ytest))
+        print("MAE Etot = ", MAEtot)
 
         # fit and test delta curve
         Ytrain = Edeltas[idtrain]; Ytest = Edeltas[idtest] 
         K = gaussian_kernel(Xtrain, Xtrain, sigma)
         K[np.diag_indices_from(K)] += 1e-8
-
         alpha = cho_solve(K, Ytrain)
         K = gaussian_kernel(Xtest, Xtrain, sigma)
         Ypred = K@alpha
-        print("MAE Edelta = ", np.mean(np.abs(Ypred - Ytest)))
+        MAEdelta = np.mean(np.abs(Ypred - Ytest))
+        print("MAE Edelta = ", MAEdelta)
+
+        output[i,0] = n; output[i,1] = MAEtot; output[i,2] = MAEdelta
 
         # see if E = deltaE + Ebase is more accurate
         #Etot = Ehofs[idtest]; Ebase = Edftbs[idtest]; Edelta = Ypred; 
         #Etotpred = Ebase + Edelta
         #print("MAE Etarget = ", np.mean(np.abs(Etotpred - Etot)))
+    np.savetxt("qm7_MAE.txt", output, delimiter="\t")
+
+def zaspel_deltaML():
+    # Etarget =
+    # Ebase = 
+    return None
+
 
 test_qml_deltaML()
