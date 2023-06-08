@@ -1,8 +1,8 @@
 import qml
 from qml.kernels import gaussian_kernel
 from qml.math import cho_solve
-
 import numpy as np
+
 import random
 import os
 from os import listdir, makedirs
@@ -83,7 +83,9 @@ def test_qml_deltaML():
 def extract_QML_features():
     # extract features then save to file, takes in path of the geometries and outputs the features in text file
     geopath = "/users/baribowo/Dataset/zaspel_supp/supplementary/geometry" # OMP1 geometry filepath
-    compounds = [qml.Compound(xyz=geopath+"/"+f) for f in sorted(os.listdir(geopath))]
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    compounds = [qml.Compound(xyz=geopath+"/"+f) for f in onlyfiles]
+    
     for mol in compounds:
         mol.generate_coulomb_matrix(size=23, sorting="row-norm")
     X = np.array([mol.representation for mol in compounds])

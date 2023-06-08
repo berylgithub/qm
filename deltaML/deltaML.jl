@@ -2,12 +2,13 @@ using Krylov
 using DelimitedFiles
 using Statistics
 using LinearAlgebra
+using Base.Threads
 
 function gaussian_kernel(A, B, σ)
     # gaussian kernel of two matrices, B is columnwise
     K = zeros(size(A, 1), size(B, 1))
-    @simd for j ∈ axes(B, 1)
-        @simd for i ∈ axes(A, 1)
+    @threads for j ∈ axes(B, 1)
+        @threads for i ∈ axes(A, 1)
             @inbounds K[i,j] = norm(A[i,:] - B[j,:])^2
         end
     end
