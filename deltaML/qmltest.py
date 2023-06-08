@@ -80,10 +80,19 @@ def test_qml_deltaML():
         #print("MAE Etarget = ", np.mean(np.abs(Etotpred - Etot)))
     np.savetxt("qm7_MAE.txt", output, delimiter="\t")
 
+def extract_QML_features():
+    # extract features then save to file, takes in path of the geometries and outputs the features in text file
+    geopath = "/users/baribowo/Dataset/zaspel_supp/supplementary/geometry" # OMP1 geometry filepath
+    compounds = [qml.Compound(xyz=geopath+"/"+f) for f in sorted(os.listdir(geopath))]
+    for mol in compounds:
+        mol.generate_coulomb_matrix(size=23, sorting="row-norm")
+    X = np.array([mol.representation for mol in compounds])
+    np.savetxt("/users/baribowo/Dataset/coulomb_zaspel.txt", X, delimiter="\t")
+
 def zaspel_deltaML():
     # Etarget =
     # Ebase = 
     return None
 
-
-test_qml_deltaML()
+#test_qml_deltaML()
+extract_QML_features()

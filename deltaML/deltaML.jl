@@ -20,14 +20,14 @@ function compare_fit()
     # main obj: fit using julia's CGLS, compare result with cho_solve
 
     # load X:
-    X = readdlm("deltaML/qm7coulomb.txt")
+    X = readdlm("deltaML/data/qm7coulomb.txt")
 
     # load E:
-    E = readdlm("deltaML/hof_qm7.txt")
+    E = readdlm("deltaML/data/hof_qm7.txt")
     E_hof = vec(float.(E[:, 2])); E_dftb = vec(float.(E[:, 3])); E_delta = E_hof-E_dftb
     
     # load ids
-    basepath = "deltaML/train_indexes_"
+    basepath = "deltaML/data/train_indexes_"
     ndata = length(E_hof); rangedata = range(1,ndata)
     idtrains = [vec(Int.(readdlm(basepath*"1000.txt"))).+1, vec(Int.(readdlm(basepath*"2000.txt"))).+1, vec(Int.(readdlm(basepath*"4000.txt"))).+1]
     idtests = [setdiff(rangedata, ids) for ids ∈ idtrains]
