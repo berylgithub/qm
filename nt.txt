@@ -278,3 +278,5 @@ Quests:
 08.06.2023:
 - reproduced delta ML testing from QML tutorial
 - reproduced kernel result of Python QML in julia, by using the direct solve and regularizer, the result is exactly the same.
+? see Unit Testing of Julia for more comprehensive unit tests
+? for more threading parallelization: see https://levelup.gitconnected.com/parallel-code-in-julia-with-threads-b2e7c97f071b
