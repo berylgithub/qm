@@ -1,16 +1,17 @@
 using Krylov
 using DelimitedFiles
 using Statistics
+using LinearAlgebra
 
 function gaussian_kernel(A, B, σ)
     # gaussian kernel of two matrices, B is columnwise
     K = zeros(size(A, 1), size(B, 1))
-    for j ∈ axes(B, 1)
-        for i ∈ axes(A, 1)
-            K[i,j] = norm(A[i,:] - B[j,:])^2
+    @simd for j ∈ axes(B, 1)
+        @simd for i ∈ axes(A, 1)
+            @inbounds K[i,j] = norm(A[i,:] - B[j,:])^2
         end
     end
-    K = exp.( -K ./ (2*(σ^2)))
+    K = exp.( -K ./ (2*σ^2))
     return K
 end
 
@@ -40,7 +41,9 @@ function compare_fit()
         Xtrain = X[idtrains[i], :]; Xtest = X[idtests[i], :]
         Ytrain = E_hof[idtrains[i]]; Ytest = E_hof[idtests[i]] 
         K = gaussian_kernel(Xtrain, Xtrain, σ)
-        α, stat = cgls(K, Ytrain, itmax = 500, λ = 1e-8)
+        #α, stat = cgls(K, Ytrain, itmax = 500, λ = 1e-8)
+        K[diagind(K)] .+= 1e-8
+        α = K\Ytrain
         K = gaussian_kernel(Xtest, Xtrain, σ)
         Ypred = K*α
         MAEtot = mean(abs.(Ypred - Ytest))
@@ -48,7 +51,9 @@ function compare_fit()
         Xtrain = X[idtrains[i], :]; Xtest = X[idtests[i], :]
         Ytrain = E_delta[idtrains[i]]; Ytest = E_delta[idtests[i]] 
         K = gaussian_kernel(Xtrain, Xtrain, σ)
-        α, stat = cgls(K, Ytrain, itmax = 500, λ = 1e-8)
+        #α, stat = cgls(K, Ytrain, itmax = 500, λ = 1e-8)
+        K[diagind(K)] .+= 1e-8
+        α = K\Ytrain
         K = gaussian_kernel(Xtest, Xtrain, σ)
         Ypred = K*α
         MAEdelta = mean(abs.(Ypred - Ytest))

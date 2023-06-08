@@ -274,3 +274,7 @@ Quests:
     - if uid is different, check x: 
       - if x exists in tracker: write the corresponding f. Otherwise: run f = f(x) and write f, 
     - set state = idle
+
+08.06.2023:
+- reproduced delta ML testing from QML tutorial
+- reproduced kernel result of Python QML in julia, by using the direct solve and regularizer, the result is exactly the same.
