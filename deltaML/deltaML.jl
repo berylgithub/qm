@@ -1,8 +1,4 @@
-using Krylov
-using DelimitedFiles
-using Statistics
-using LinearAlgebra
-using Base.Threads
+using Base.Threads, DelimitedFiles, LinearAlgebra, Random, StatsBase, Statistics, Krylov 
 
 function gaussian_kernel(A, B, σ)
     # gaussian kernel of two matrices, B determines the number of columns
@@ -86,13 +82,60 @@ function fit_zaspel()
     other info:
      ? $s$ as the ratio of dataset is still unclear
      ? probably the indices of has a pattern if the sum of indices = max index, then it's +, otherwise -, (for β)
-    for zaspel guess i can start by doing both direct and multitrain using the end basis+corr as target while taking any intermediates as bases
+    for zaspel guess i can start by doing both direct and multitrain using the end basis+corr as target while taking any intermediates as bases -> turns out this doesnt use the target energy (?)
     =#
     # load data:
     datapath = "C:/Users/beryl/OneDrive/Dokumente/Dataset/zaspel_supp/"
     X = readdlm(datapath*"features_coulomb_zaspel.txt")
     l_basis = ["E_sto3g", "E_631g", "E_ccpvdz"] # ordered from the cheapest
-    l_corr = ["hf", "mp2", "ccsd(t)"] # same
+    l_corr = ["E_hf", "E_mp2", "E_ccsdt"] # same
+    E = Dict() # nested dict of energy, inner = corr, outer = base
+    for basis ∈ l_basis
+        etemp = readdlm(datapath*basis*".txt")
+        E[basis] = Dict()
+        for (i,corr) ∈ enumerate(l_corr)
+            E[basis][corr] = etemp[:, i]
+        end 
+    end
+    
+    # define EΔ and Etarget
+    EΔ = E["E_ccpvdz"]["E_ccsdt"] - E["E_sto3g"]["E_hf"] # change here manually
+    Etarget = E["E_ccpvdz"]["E_ccsdt"]
+
+    # shuffled index for training
+    Random.seed!(603)
+    ndata = size(X, 1); nrange = range(1, ndata)
+    trainsize = [100, 1000, 4000]
+    idtrains = [sample(1:ndata, siz, replace=false) for siz ∈ trainsize]
+    idtests = [setdiff(nrange, ids) for ids ∈ idtrains]
+
+    # fit target
+    σ = 400.
+    for i ∈ eachindex(idtrains)
+        # Etarget fitting:
+        Xtrain = X[idtrains[i], :]; Xtest = X[idtests[i], :]
+        Ytrain = Etarget[idtrains[i]]; Ytest = Etarget[idtests[i]] 
+        K = laplacian_kernel(Xtrain, Xtrain, σ)
+        K[diagind(K)] .+= 1e-8
+        α = K\Ytrain
+        K = laplacian_kernel(Xtest, Xtrain, σ)
+        Ypred = K*α
+        MAEtot = mean(abs.(Ypred - Ytest))
+        
+        # EΔ fitting:
+        Ytrain = EΔ[idtrains[i]]; Ytest = EΔ[idtests[i]] 
+        K = laplacian_kernel(Xtrain, Xtrain, σ)
+        K[diagind(K)] .+= 1e-8
+        α = K\Ytrain
+        K = laplacian_kernel(Xtest, Xtrain, σ)
+        Ypred = K*α
+        MAEΔ = mean(abs.(Ypred - Ytest))
+        
+        println("(Ntrain, MAEtot, MAEΔ) = ",[length(idtrains[i]), MAEtot, MAEΔ])
+
+        # ΔML:
+
+    end
 
 end
 
