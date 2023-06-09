@@ -5,7 +5,7 @@ using LinearAlgebra
 using Base.Threads
 
 function gaussian_kernel(A, B, σ)
-    # gaussian kernel of two matrices, B is columnwise
+    # gaussian kernel of two matrices, B determines the number of columns
     K = zeros(size(A, 1), size(B, 1))
     @threads for j ∈ axes(B, 1)
         @threads for i ∈ axes(A, 1)
@@ -16,8 +16,19 @@ function gaussian_kernel(A, B, σ)
     return K
 end
 
+function laplacian_kernel(A, B, σ)
+    # laplacian kernel of two matrices, B determines the number of columns
+    K = zeros(size(A, 1), size(B, 1))
+    @threads for j ∈ axes(B, 1)
+        @threads for i ∈ axes(A, 1)
+            @inbounds K[i,j] = norm(A[i,:] - B[j,:], 1)
+        end
+    end
+    K = exp.( -K ./ σ)
+    return K
+end
+
 function compare_fit()
-    # !!! missing the kernels!! print it to file using the py code, or just write, simple
     # main obj: fit using julia's CGLS, compare result with cho_solve
 
     # load X:
@@ -62,4 +73,22 @@ function compare_fit()
     end
 end
 
-compare_fit()
+function fit_zaspel()
+    #= 
+    zaspel either did (perhaps i try both):
+     - directly use energy as base
+     - multilevel training, the bases are also trained
+    some infos in the plot (fig 5):
+     - the target is always the highest basis+corr combo: CCSDT+ccpvfdz for any plots
+     - upper left: 2DCQML with fixed basis set: ccpvdz, but varying the corr
+     - upper right: 2/3D, varying 
+    =#
+    # load data:
+    datapath = "C:/Users/beryl/OneDrive/Dokumente/Dataset/zaspel_supp/"
+    X = readdlm(datapath*"features_coulomb_zaspel.txt")
+    l_basis = ["E_sto3g", "E_631g", "E_ccpvdz"] # ordered from the cheapest
+    l_corr = ["hf", "mp2", "ccsd(t)"] # same
+
+end
+
+fit_zaspel()
