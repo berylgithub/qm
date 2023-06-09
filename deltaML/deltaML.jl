@@ -81,7 +81,12 @@ function fit_zaspel()
     some infos in the plot (fig 5):
      - the target is always the highest basis+corr combo: CCSDT+ccpvfdz for any plots
      - upper left: 2DCQML with fixed basis set: ccpvdz, but varying the corr
-     - upper right: 2/3D, varying 
+     - upper right: 2D fixed corr=ccsdt, 3D varying corr+base+data obviously 
+     - bottom: MAE and RMSE
+    other info:
+     ? $s$ as the ratio of dataset is still unclear
+     ? probably the indices of has a pattern if the sum of indices = max index, then it's +, otherwise -, (for β)
+    for zaspel guess i can start by doing both direct and multitrain using the end basis+corr as target while taking any intermediates as bases
     =#
     # load data:
     datapath = "C:/Users/beryl/OneDrive/Dokumente/Dataset/zaspel_supp/"
