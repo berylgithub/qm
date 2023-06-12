@@ -36,7 +36,7 @@ function getDistances(R)
     return D
 end
 
-function sumpairpot(Z, D; α = 1., δ = 1.) # hyperparameters for later use
+function sumpairpot(Z, D; α = 1., δ = 6.) # hyperparameters for later use
     # sum of pair potentials given list of atom nuclear charges and interatomi distances (the atomic order must be the same)
     # the output is symm-like, hence we only take the upper triangular to avoid double count
     natom = length(Z)
@@ -126,11 +126,11 @@ function fit_zaspel()
     end
     
     # define EΔ and Etarget
-    EΔ = E["E_ccpvdz"]["E_ccsdt"] - E["E_sto3g"]["E_hf"] # change here manually
-    Etarget = E["E_ccpvdz"]["E_ccsdt"]
+    Etarget = E["E_ccpvdz"]["E_ccsdt"]; Ebase = vec(readdlm("deltaML/data/zaspel_Epp.txt")) #E["E_sto3g"]["E_hf"] # change target and base here manually 
+    EΔ = Etarget - Ebase
 
     # shuffled index for training
-    Random.seed!(603)
+    Random.seed!(603) # for reproducibility
     ndata = size(X, 1); nrange = range(1, ndata)
     trainsize = [100, 1000, 4000]
     idtrains = [sample(1:ndata, siz, replace=false) for siz ∈ trainsize]

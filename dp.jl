@@ -222,9 +222,13 @@ function getDistances(R) # copied from ΔML
     return D
 end
 
+
+"""
+function to prepare nuclear charges and distances, change logic whenever needed (e.g., if the dataset is different)
+"""
 function generate_charges_distances()
     # readpath and prep info
-    geopath = "../../Dataset/zaspel_supp/geometry/" # geometry  path, can be used for other dataset too as long as the format is the same
+    geopath = "../../Dataset/zaspel_supp/geometry/" # geometry filepath, can be used for other dataset too as long as the format is the same
     ncpath = "deltaML/data/nuclear_charges.txt" # 
     geos = readdir(geopath)
     ncinfo = readdlm(ncpath)
@@ -242,6 +246,5 @@ function generate_charges_distances()
         moldata[i]["nc"] = map(j -> ncdict[molinfos[i][j, 1]], 2:molinfos[i][1,1]+1) # fill nuclear charges, probably will need to be changed depending on the geometry format
         moldata[i]["d"] = getDistances(molinfos[i][2:end,2:end])
     end
-    display(moldata)
     save("deltaML/data/zaspel_ncd.jld", "data", moldata)
 end
