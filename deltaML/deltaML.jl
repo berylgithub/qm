@@ -24,6 +24,33 @@ function laplacian_kernel(A, B, σ)
     return K
 end
 
+function getDistances(R)
+    # computes interatomic distances given coordinates
+    # R row := number of atoms
+    natom = size(R, 1)
+    D = zeros(natom, natom)
+    ids = 1:natom
+    for c ∈ Iterators.product(ids, ids)
+        D[c[1],c[2]] = norm(R[c[1],:]-R[c[2],:])
+    end
+    return D
+end
+
+function sumpairpot(Z, D; α = 1., δ = 1.) # hyperparameters for later use
+    # sum of pair potentials given list of atom nuclear charges and interatomi distances (the atomic order must be the same)
+    # the output is symm-like, hence we only take the upper triangular to avoid double count
+    natom = length(Z)
+    ids = 1:natom
+    E = 0. #zeros(natom, natom)
+    for c ∈ Iterators.product(ids, ids)
+        if c[1] < c[2] # only count upper triangular
+            E += Z[c[1]]*Z[c[2]]/D[c[1], c[2]]
+        end
+    end
+    return E
+end
+
+
 function compare_fit()
     # main obj: fit using julia's CGLS, compare result with cho_solve
 
@@ -139,4 +166,3 @@ function fit_zaspel()
 
 end
 
-fit_zaspel()
