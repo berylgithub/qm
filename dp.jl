@@ -1,9 +1,11 @@
 """
 !!! TRANSFORM THE COORDS TO HARTREE!
+
+The collection of functions for (d)ata (p)reparation
 """
 
 
-using DelimitedFiles, DataStructures, HDF5, JLD, BenchmarkTools, Printf
+using DelimitedFiles, DataStructures, JLD, BenchmarkTools, Printf
 
 
 """
@@ -206,4 +208,40 @@ function timeload()
         load("data/qm9_dataset.jld")["data"][1]
     end
     println(t)
+end
+
+function getDistances(R) # copied from ΔML
+    # computes interatomic distances given coordinates
+    # R row := number of atoms
+    natom = size(R, 1)
+    D = zeros(natom, natom)
+    ids = 1:natom
+    for c ∈ Iterators.product(ids, ids)
+        D[c[1],c[2]] = norm(R[c[1],:]-R[c[2],:])
+    end
+    return D
+end
+
+function generate_charges_distances()
+    # readpath and prep info
+    geopath = "../../Dataset/zaspel_supp/geometry/" # geometry  path, can be used for other dataset too as long as the format is the same
+    ncpath = "deltaML/data/nuclear_charges.txt" # 
+    geos = readdir(geopath)
+    ncinfo = readdlm(ncpath)
+    ncdict = Dict()
+    for (i, nckey) ∈ enumerate(ncinfo[:, 1])
+        ncdict[nckey] = ncinfo[:, 2][i]
+    end
+    # get Z and D and store in file
+    ndata = length(geos)
+    moldata = Vector{Any}(undef, ndata) # list of dicts
+    Z = Dict(); R = zeros(ndata, 3)
+    molinfos = map(geo -> readdlm(geopath*geo), geos)
+    for i ∈ eachindex(molinfos)
+        moldata[i] = Dict()
+        moldata[i]["nc"] = map(j -> ncdict[molinfos[i][j, 1]], 2:molinfos[i][1,1]+1) # fill nuclear charges, probably will need to be changed depending on the geometry format
+        moldata[i]["d"] = getDistances(molinfos[i][2:end,2:end])
+    end
+    display(moldata)
+    save("deltaML/data/zaspel_ncd.jld", "data", moldata)
 end
