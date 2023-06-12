@@ -44,7 +44,7 @@ function sumpairpot(Z, D; α = 1., δ = 1.) # hyperparameters for later use
     E = 0. #zeros(natom, natom)
     for c ∈ Iterators.product(ids, ids)
         if c[1] < c[2] # only count upper triangular
-            E += Z[c[1]]*Z[c[2]]/D[c[1], c[2]]
+            E += Z[c[1]]*Z[c[2]]/(D[c[1], c[2]])^δ
         end
     end
     return E
