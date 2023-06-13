@@ -89,7 +89,7 @@ def extract_QML_features():
     mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
     print(mbtypes)
 
-    for mol in compounds[0]:
+    for mol in compounds[0:1]:
         mol.generate_slatm(mbtypes, local=True)
         #mol.generate_coulomb_matrix(size=23, sorting="row-norm")
     X = np.array([mol.representation for mol in compounds])
