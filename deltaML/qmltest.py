@@ -92,7 +92,7 @@ def extract_QML_features():
     for mol in compounds[0:1]:
         mol.generate_slatm(mbtypes, local=True)
         #mol.generate_coulomb_matrix(size=23, sorting="row-norm")
-    X = np.array([mol.representation for mol in compounds])
+    #X = np.array([mol.representation for mol in compounds])
     print(compounds[0].representation.shape)
     #np.savetxt("/users/baribowo/Dataset/coulomb_zaspel.txt", X, delimiter="\t")
 

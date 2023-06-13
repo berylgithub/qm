@@ -287,4 +287,5 @@ Quests:
 13.06.2023:
 ! maybe try triplet features
 ! check out SLATM representation (maybe doesnt require specialized kernel)
+  checked SLATM, turns out it has 17895 features! (very large), around 22gb for all qm9 data
 - added overleaf shared with prof.lilienfeld
