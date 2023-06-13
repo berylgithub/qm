@@ -126,7 +126,7 @@ function fit_zaspel()
     end
     
     # define EΔ and Etarget
-    Etarget = E["E_ccpvdz"]["E_ccsdt"]; Ebase = vec(readdlm("deltaML/data/zaspel_Epp.txt")) #E["E_sto3g"]["E_hf"] # change target and base here manually 
+    Etarget = E["E_ccpvdz"]["E_ccsdt"]; Ebase = E["E_sto3g"]["E_hf"] #vec(readdlm("deltaML/data/zaspel_Epp.txt")) # change target and base here manually 
     EΔ = Etarget - Ebase
 
     # shuffled index for training

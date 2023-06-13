@@ -283,3 +283,8 @@ Quests:
 
 12.06.2023:
 - tried naive pairpot as base energy, turns out to be worse than standard ML, probably need to tune the hyperparameters (alpha, delta, set their dependencies, etc)
+
+13.06.2023:
+! maybe try triplet features
+! check out SLATM representation (maybe doesnt require specialized kernel)
+- added overleaf shared with prof.lilienfeld

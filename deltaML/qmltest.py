@@ -1,5 +1,6 @@
 import qml
 from qml.kernels import gaussian_kernel
+from qml.representations import get_slatm_mbtypes
 from qml.math import cho_solve
 import numpy as np
 
@@ -89,12 +90,9 @@ def extract_QML_features():
     for mol in compounds:
         mol.generate_coulomb_matrix(size=23, sorting="row-norm")
     X = np.array([mol.representation for mol in compounds])
-    np.savetxt("/users/baribowo/Dataset/coulomb_zaspel.txt", X, delimiter="\t")
+    #np.savetxt("/users/baribowo/Dataset/coulomb_zaspel.txt", X, delimiter="\t")
 
-def zaspel_deltaML():
-    # Etarget =
-    # Ebase = 
-    return None
+
 
 #test_qml_deltaML()
 extract_QML_features()
