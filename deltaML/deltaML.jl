@@ -132,12 +132,13 @@ function fit_zaspel()
     # shuffled index for training
     Random.seed!(603) # for reproducibility
     ndata = size(X, 1); nrange = range(1, ndata)
-    trainsize = [100, 1000, 4000]
+    trainsize = [100, 500, 1000, 4000]
     idtrains = [sample(1:ndata, siz, replace=false) for siz ∈ trainsize]
     idtests = [setdiff(nrange, ids) for ids ∈ idtrains]
 
     # fit target
     σ = 400.
+    outputs = zeros(length(trainsize), 3)
     for i ∈ eachindex(idtrains)
         # Etarget fitting:
         Xtrain = X[idtrains[i], :]; Xtest = X[idtests[i], :]
@@ -158,11 +159,11 @@ function fit_zaspel()
         Ypred = K*α
         MAEΔ = mean(abs.(Ypred - Ytest))
         
-        println("(Ntrain, MAEtot, MAEΔ) = ",[length(idtrains[i]), MAEtot, MAEΔ])
-
-        # ΔML:
-
+        println("(Ntrain, MAEtot, MAEΔ) = ",[trainsize[i], MAEtot, MAEΔ])
+        outputs[i,2] = MAEtot; outputs[i,3] = MAEΔ
     end
+    outputs[:,1] = trainsize
+    writedlm("deltaML/result/zaspel_earlytest_out.txt", outputs)
 
 end
 
