@@ -239,6 +239,7 @@ simulators spawner for parallel hyperparam
 - states: 0 = idle, 1 = running, 2 = killed (or killed is no file found)
 """
 function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
+    println("simulator", sim_id, " has been initialized!!")
     # paths to necessary folders:
     path_f = "data/hyperparamopt/sim/f/"
     path_x = "data/hyperparamopt/sim/x/"

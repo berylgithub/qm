@@ -13,7 +13,7 @@ function iter_tracker = finfo_updater(iter_tracker, f_sim, thres, path_fun)
             end
         end
         fbest
-        iter_tracker +=1;
+        iter_tracker += 1;
         % store fbest in fun,txt:
         dlmwrite(path_fun, [rand(1), fbest], "\t");
     end
