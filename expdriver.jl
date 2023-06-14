@@ -262,7 +262,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
     path_sim_x = path_x*"sim_$sim_id.txt"
     try
         while true
-            if filesize(path_sim_x) > 0 && isfile(path_sim_x) # check if file is not empty
+            if filesize(path_sim_x) > 1 && isfile(path_sim_x) # check if file is not empty
                 try # for some reason sometimes the written x is empty, HELLO OCTAVE??
                     xinfo = readdlm(path_sim_x)
                 catch ArgumentError
