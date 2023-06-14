@@ -10,8 +10,11 @@ paths = ["data/hyperparamopt/fun.txt",
         "data/hyperparamopt/sim/sim_tracker.txt"]
 
 for pt ∈ paths
-    run(`rm $pt`)
-    run(`touch $pt`)
+    rm(pt)
+    io = open("/path/to/file.txt", "w")
+    close(io)
 end
-run(`rm "-r data/hyperparamopt/sim/f/*"`)
-run(`rm "-r data/hyperparamopt/sim/x/*"`)
+files = vcat(readdir("data/hyperparamopt/sim/f/"), readdir("data/hyperparamopt/sim/x/"))
+for f ∈ files
+    rm(f)
+end
