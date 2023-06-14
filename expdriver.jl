@@ -275,7 +275,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
                     println("new incoming xinfo!", x)
                     # find if x is in the repo/tracker:
                     idx = nothing
-                    if filesize(path_tracker) > 0
+                    if filesize(path_tracker) > 1
                         tracker = readdlm(path_tracker)
                         for i ∈ axes(tracker, 1)
                             if x == tracker[i, 4:end] # [sim_id, fuid, f, x]
