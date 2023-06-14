@@ -1,8 +1,8 @@
-# resets all hyperparameter optimization outputs
+# resets all hyperparameter optimization outputs (for linux)
 
 paths = ["data/hyperparamopt/fun.txt",
         "data/hyperparamopt/params.txt",
-        "data/hyperparamopt/raw_params.txt"
+        "data/hyperparamopt/raw_params.txt",
         "data/hyperparamopt/flist.txt",
         "data/hyperparamopt/xlist.txt",
         "data/hyperparamopt/xrawlist.txt",
