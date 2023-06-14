@@ -289,3 +289,8 @@ Quests:
 ! check out SLATM representation (maybe doesnt require specialized kernel)
   checked SLATM, turns out it has 17895 features! (very large), around 22gb for all qm9 data
 - added overleaf shared with prof.lilienfeld
+
+14.06.2023:
+- slaves can be spawned as much as possible in the VSC
+! try separating simulator output files for parallel hyperparam
+! test using actual fobj
