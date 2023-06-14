@@ -13,5 +13,5 @@ for pt ∈ paths
     run(`rm $pt`)
     run(`touch $pt`)
 end
-run(`rm -r "data/hyperparamopt/sim/f/*"`)
-run(`rm -r "data/hyperparamopt/sim/x/*"`)
+run(`rm "-r data/hyperparamopt/sim/f/*"`)
+run(`rm "-r data/hyperparamopt/sim/x/*"`)
