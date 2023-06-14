@@ -15,8 +15,14 @@ for pt ∈ paths
     close(io)
 end
 # remove only:
-pathf = "data/hyperparamopt/sim/f/"; pathx = "data/hyperparamopt/sim/x/"
-files = vcat(readdir(pathf), readdir(pathx))
+pathf = "data/hyperparamopt/sim/f/"
+files = readdir(pathf)
 for f ∈ files
-    rm(pathf*f); rm(pathx*f)
+    rm(pathf*f)
+end
+
+pathx = "data/hyperparamopt/sim/x/"
+files = readdir(pathx)
+for f ∈ files
+    rm(pathx*f)
 end
