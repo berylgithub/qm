@@ -11,7 +11,7 @@ paths = ["data/hyperparamopt/fun.txt",
 
 for pt ∈ paths
     rm(pt)
-    io = open("/path/to/file.txt", "w")
+    io = open(pt, "w")
     close(io)
 end
 files = vcat(readdir("data/hyperparamopt/sim/f/"), readdir("data/hyperparamopt/sim/x/"))
