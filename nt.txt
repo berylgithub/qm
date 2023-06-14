@@ -294,3 +294,5 @@ Quests:
 - slaves can be spawned as much as possible in the VSC
 ! try separating simulator output files for parallel hyperparam
 ! test using actual fobj
+! add automatic "garbage" remover (reset files to empty)
+! need to add automatic simulator spawner
