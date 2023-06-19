@@ -6,6 +6,7 @@ The collection of functions for (d)ata (p)reparation
 
 
 using DelimitedFiles, DataStructures, JLD, BenchmarkTools, Printf
+using MolecularGraph
 
 
 """
@@ -247,4 +248,13 @@ function generate_charges_distances()
         moldata[i]["d"] = getDistances(molinfos[i][2:end,2:end])
     end
     save("deltaML/data/zaspel_ncd.jld", "data", moldata)
+end
+
+"""
+(prototype) get the 
+"""
+function get_orders_from_SMILES()
+    for e in edges(mol)
+        println(get_prop(mol, src(e), :symbol)," ",get_prop(mol, dst(e), :symbol), ", order = ", get_prop(mol, e, :order))
+    end
 end

@@ -294,5 +294,8 @@ Quests:
 - slaves can be spawned as much as possible in the VSC
 ! try separating simulator output files for parallel hyperparam
 ! test using actual fobj
-! add automatic "garbage" remover (reset files to empty)
+! add automatic "garbage" remover (reset files to empty) || 1
 ! need to add automatic simulator spawner
+
+19.06.2023:
+- get_prop(mol, n1, n2, :order) gives the bond order from MolecularGraph (see dp.jl).
