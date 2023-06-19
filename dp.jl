@@ -6,7 +6,7 @@ The collection of functions for (d)ata (p)reparation
 
 
 using DelimitedFiles, DataStructures, JLD, BenchmarkTools, Printf
-using MolecularGraph
+using MolecularGraph, Combinatorics # stuffs for ΔML
 
 
 """
@@ -251,11 +251,22 @@ function generate_charges_distances()
 end
 
 """
-(prototype) get the 
+(prototype) get the bond order given smiles string
+returns dict
 """
 function get_orders_from_SMILES(str)
     mol = smilestomol(str)
     for e in edges(mol)
         println(get_prop(mol, src(e), :symbol)," ",get_prop(mol, dst(e), :symbol), ", order = ", get_prop(mol, e, :order))
     end
+end
+
+function get_qm9_bondtypes()
+    atoms = ["C", "N", "O", "F"] # exclude H for now
+    bond_level = [1,2,3]
+    acs = Combinatorics.combinations(atoms, 2)
+    acstr = vcat([ac[1]*ac[2] for ac ∈ acs], [at*at for at ∈ atoms])
+    acbl = Iterators.product(acstr, bond_level)
+    acblstr = [ac[1]*string(ac[2]) for ac ∈ acbl]
+    return acblstr
 end
