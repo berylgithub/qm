@@ -251,14 +251,20 @@ function generate_charges_distances()
 end
 
 """
-(prototype) get the bond order given smiles string
-returns dict
+(prototype) get the bond order given smiles string of a molecule
+returns dict of bondtype => count
 """
-function get_orders_from_SMILES(str)
+function get_bonds_from_SMILES(bondtypes, str)
     mol = smilestomol(str)
-    for e in edges(mol)
-        println(get_prop(mol, src(e), :symbol)," ",get_prop(mol, dst(e), :symbol), ", order = ", get_prop(mol, e, :order))
+    md = Dict()
+    for key ∈ bondtypes # init dict
+        md[key] = 0
     end
+    for e in edges(mol) # fill dict
+        key = join(sort([string(get_prop(mol, src(e), :symbol)), string(get_prop(mol, dst(e), :symbol)), string(get_prop(mol, e, :order))]))
+        md[key] += 1
+    end
+    return md
 end
 
 function get_qm9_bondtypes()
@@ -268,5 +274,21 @@ function get_qm9_bondtypes()
     acstr = vcat([ac[1]*ac[2] for ac ∈ acs], [at*at for at ∈ atoms])
     acbl = Iterators.product(acstr, bond_level)
     acblstr = [ac[1]*string(ac[2]) for ac ∈ acbl]
-    return acblstr
+    return join.(sort.(collect.(acblstr))) # sort alphabetically
+end
+
+function get_qm9_bondcounts()
+    bondtypes = get_qm9_bondtypes() # get qm9 bondtypes, the keys of dict
+    println(bondtypes)
+    fpath = "C:/Users/beryl/OneDrive/Dokumente/Dataset/qm9/geometries/" # absolute path to qm9 dataset
+    exfiles = readdlm("data/qm9_error.txt") # excluded geometries
+    files = readdir(fpath)
+    files = [file for file ∈ files if file ∉ exfiles] # included geom only
+    #for file ∈ files
+    content = readdlm(fpath*files[1460])
+    natom = content[1,1]
+    smiles = content[natom+4, 1]
+    display(smiles)
+    display(get_bonds_from_SMILES(bondtypes, smiles))
+    # verify the keys later
 end
