@@ -253,7 +253,8 @@ end
 """
 (prototype) get the 
 """
-function get_orders_from_SMILES()
+function get_orders_from_SMILES(str)
+    mol = smilestomol(str)
     for e in edges(mol)
         println(get_prop(mol, src(e), :symbol)," ",get_prop(mol, dst(e), :symbol), ", order = ", get_prop(mol, e, :order))
     end
