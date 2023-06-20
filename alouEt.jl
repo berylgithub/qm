@@ -1494,8 +1494,6 @@ function test_ΔML()
     MAE = mean(abs.(Et[idtest] - E_pred[idtest]))*627.503
     MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls[idtest]))*627.503
     println("BEST model w/ E - Enull - Esob =: Et = ", [MAE, MAEcgls])
-
-
 end
 
 
