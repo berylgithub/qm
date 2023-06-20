@@ -311,7 +311,7 @@ function get_qm9_bondcounts()
     end
 end
 
-function test_stat()
+function test_postprocess()
     bondtypes = get_qm9_bondtypes(;remove_hydrogens=false) # get qm9 bondtypes, the keys of dict
     bondfs = JSON.parsefile("deltaML/data/features_qm9_covalentbondsH.json")
     # get stats ∀keys:
@@ -325,6 +325,22 @@ function test_stat()
         end        
     end
     println(sort(collect(stat), by=x->x[2])) # get stat counts
-    
-    # transform to n×30 matrix:
+    # get nnnz:
+    count = 0;
+    for key ∈ bondtypes
+        if stat[key] > 0
+            count += 1
+        end
+    end
+    println(count)
+    # transform to nqm9×nf matrix for fitting:
+    nrow = length(bondfs); ncol = length(bondtypes)
+    F = zeros(nrow, ncol)
+    @simd for j ∈ eachindex(bondtypes)
+        @simd for i ∈ eachindex(bondfs)
+            @inbounds F[i, j] = bondfs[i][bondtypes[j]]
+        end
+    end
+    display(F)
+    writedlm("deltaML/data/featuresmat_qm9_covalentbondsH.txt", F)
 end
