@@ -1,5 +1,6 @@
 using Krylov, Flux, Printf, DelimitedFiles
-using ProgressMeter, Dates, BenchmarkTools 
+using ProgressMeter, Dates, BenchmarkTools
+using Random, StatsBase
 
 """
 contains all tests and experiments
@@ -1419,6 +1420,38 @@ function fit_all_null(foldername, file_dataset, file_atomref_features; center_id
     Ed["atomic_energies"] = E_atom # sum of the atom ref energy
     save("result/$foldername/atom_energies.jld","data",Ed) # save also the reduced energy
 end
+
+
+"""
+======== ΔML stuffs ============
+"""
+
+"""
+try out fitting with current best found feature and current best found model
+WITHOUT data selection for: Ebase = nothing, Ebase = NullModel, Ebase = SoB
+"""
+function test_ΔML()
+    # def:
+    E = readdlm("data/energies.txt")
+    F = readdlm("deltaML/data/featuresmat_qm9_covalentbondsH.txt")
+    nrow = length(E); ntrain = 100
+    # select indexes:
+    Random.seed!(603)
+    idall = 1:nrow
+    idtrain = sample(1:nrow, ntrain, replace=false)
+    idtest = setdiff(idall, idtrain)
+    # fit the Ebase = SoB and see the MAE:
+    #F[diagind(F)] .+= 1e-8 # regularization
+    #θ = F[idtrain, :]\E[idtrain]
+    θ, stat = cgls(F[idtrain, :], E[idtrain], itmax=500)
+    Epred = F[idtest, :]*θ
+    MAE = mean(abs.(E[idtest] - Epred))*627.503
+    display(MAE)
+    
+    # fit with Ebase = nothing:
+
+end
+
 
 
 """
