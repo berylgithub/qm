@@ -274,8 +274,11 @@ function get_bonds_from_SMILES(bondtypes, str; remove_hydrogens=true)
     return md
 end
 
-function get_qm9_bondtypes()
-    atoms = ["C", "N", "O", "F"] # exclude H for now
+function get_qm9_bondtypes(;remove_hydrogens=true)
+    atoms = ["H", "C", "N", "O", "F"]
+    if remove_hydrogens
+        atoms = atoms[2:end]
+    end
     bond_level = [1,2,3]
     acs = Combinatorics.combinations(atoms, 2)
     acstr = vcat([ac[1]*ac[2] for ac ∈ acs], [at*at for at ∈ atoms])
@@ -285,30 +288,32 @@ function get_qm9_bondtypes()
 end
 
 function get_qm9_bondcounts()
-    function extract_bonds!(bondfs, bondtypes, fpath, file)
+    function extract_bonds!(bondfs, bondtypes, fpath, file; remove_hydrogens=true)
         content = readdlm(fpath*file)
         natom = content[1,1]
         smiles = content[natom+4, 1]
-        bondf = get_bonds_from_SMILES(bondtypes, smiles)
+        bondf = get_bonds_from_SMILES(bondtypes, smiles; remove_hydrogens=remove_hydrogens)
         push!(bondfs, bondf)
         #println(file, " is done!")
     end
-    bondtypes = get_qm9_bondtypes() # get qm9 bondtypes, the keys of dict
+    remove_hydrogens = false
+    bondtypes = get_qm9_bondtypes(;remove_hydrogens = remove_hydrogens) # get qm9 bondtypes, the keys of dict
     fpath = "C:/Users/beryl/OneDrive/Dokumente/Dataset/qm9/geometries/" # absolute path to qm9 dataset
     exfiles = readdlm("data/qm9_error.txt") # excluded geometries
     files = readdir(fpath)
     files = [file for file ∈ files if file ∉ exfiles] # included geom only
     bondfs = []
     @simd for file ∈ files
-        @inbounds extract_bonds!(bondfs, bondtypes, fpath, file)
+        @inbounds extract_bonds!(bondfs, bondtypes, fpath, file; remove_hydrogens = remove_hydrogens)
     end
-    open("deltaML/data/features_qm9_covalentbonds.json", "w") do f
+    open("deltaML/data/features_qm9_covalentbondsH.json", "w") do f
         JSON.print(f, bondfs)
     end
 end
 
 function test_stat()
-    bondfs = JSON.parsefile("deltaML/data/features_qm9_covalentbonds.json")
+    bondtypes = get_qm9_bondtypes(;remove_hydrogens=false) # get qm9 bondtypes, the keys of dict
+    bondfs = JSON.parsefile("deltaML/data/features_qm9_covalentbondsH.json")
     # get stats ∀keys:
     stat = Dict() 
     for key ∈ bondtypes
@@ -319,6 +324,7 @@ function test_stat()
             stat[key] += bondf[key]
         end        
     end
-    println(stat)
+    println(sort(collect(stat), by=x->x[2])) # get stat counts
+    
     # transform to n×30 matrix:
 end
