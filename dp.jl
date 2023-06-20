@@ -312,8 +312,8 @@ function get_qm9_bondcounts()
 end
 
 function test_postprocess()
-    bondtypes = get_qm9_bondtypes(;remove_hydrogens=false) # get qm9 bondtypes, the keys of dict
-    bondfs = JSON.parsefile("deltaML/data/features_qm9_covalentbondsH.json")
+    bondtypes = get_qm9_bondtypes(;remove_hydrogens=true) # get qm9 bondtypes, the keys of dict
+    bondfs = JSON.parsefile("deltaML/data/features_qm9_covalentbonds.json")
     # get stats ∀keys:
     stat = Dict() 
     for key ∈ bondtypes
@@ -342,5 +342,5 @@ function test_postprocess()
         end
     end
     display(F)
-    writedlm("deltaML/data/featuresmat_qm9_covalentbondsH.txt", F)
+    writedlm("deltaML/data/featuresmat_qm9_covalentbonds.txt", F)
 end

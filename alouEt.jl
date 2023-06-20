@@ -1433,23 +1433,41 @@ WITHOUT data selection for: Ebase = nothing, Ebase = NullModel, Ebase = SoB
 function test_ΔML()
     # def:
     E = readdlm("data/energies.txt")
-    F = readdlm("deltaML/data/featuresmat_qm9_covalentbondsH.txt")
     nrow = length(E); ntrain = 100
     # select indexes:
     Random.seed!(603)
     idall = 1:nrow
     idtrain = sample(1:nrow, ntrain, replace=false)
     idtest = setdiff(idall, idtrain)
-    # fit the Ebase = SoB and see the MAE:
-    #F[diagind(F)] .+= 1e-8 # regularization
-    #θ = F[idtrain, :]\E[idtrain]
-    θ, stat = cgls(F[idtrain, :], E[idtrain], itmax=500)
+    
+    # fit Ebase := Nullmodel:
+    F = load("data/atomref_features.jld", "data")
+    θ = F[idtrain, :]\E[idtrain]
+    Enull = F*θ
+    MAE = mean(abs.(E[idtest] - Enull[idtest]))*627.503
+    println("null = ", MAE)
+
+    # fit the Ebase := SoB and see the MAE:
+    F = readdlm("deltaML/data/featuresmat_qm9_covalentbonds.txt")
+    θ = F[idtrain, :]\E[idtrain]
+    #θ, stat = cgls(F[idtrain, :], E[idtrain], itmax=500)
+    Esob = F*θ
+    MAE = mean(abs.(E[idtest] - Esob[idtest]))*627.503
+    println("SoB = ", MAE)
+    # fit Esob with Ebase := Enull:
+    Et = E - Enull
+    θ = F[idtrain, :]\Et[idtrain]
+    Et_pred = F*θ
+    E_pred = Enull + Et_pred #return the magnitude, not actually necessary
+    MAE = mean(abs.(E[idtest] - E_pred[idtest]))*627.503
+    println("SoB w/ E - Enull =: Et = ", MAE)
+
+    # fit with Ebase = nothing:
+    F = load("data/exp_reduced_energy/features.jld", "data")
+    θ = F[idtrain, :]\E[idtrain]
     Epred = F[idtest, :]*θ
     MAE = mean(abs.(E[idtest] - Epred))*627.503
-    display(MAE)
-    
-    # fit with Ebase = nothing:
-
+    println("nobase = ",MAE)
 end
 
 
