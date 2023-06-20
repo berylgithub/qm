@@ -285,7 +285,7 @@ function get_qm9_bondtypes()
 end
 
 function get_qm9_bondcounts()
-    function extract_bonds!(bondfs, fpath, file)
+    function extract_bonds!(bondfs, bondtypes, fpath, file)
         content = readdlm(fpath*file)
         natom = content[1,1]
         smiles = content[natom+4, 1]
@@ -300,12 +300,15 @@ function get_qm9_bondcounts()
     files = [file for file ∈ files if file ∉ exfiles] # included geom only
     bondfs = []
     @simd for file ∈ files
-        @inbounds extract_bonds!(bondfs, fpath, file)
+        @inbounds extract_bonds!(bondfs, bondtypes, fpath, file)
     end
-    open(jpath, "w") do f
+    open("deltaML/data/features_qm9_covalentbonds.json", "w") do f
         JSON.print(f, bondfs)
     end
-    bondfs = JSON.parsefile(jpath)
+end
+
+function test_stat()
+    bondfs = JSON.parsefile("deltaML/data/features_qm9_covalentbonds.json")
     # get stats ∀keys:
     stat = Dict() 
     for key ∈ bondtypes
