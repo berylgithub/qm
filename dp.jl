@@ -5,8 +5,8 @@ The collection of functions for (d)ata (p)reparation
 """
 
 
-using DelimitedFiles, DataStructures, JLD, BenchmarkTools, Printf
-using MolecularGraph, Combinatorics # stuffs for ΔML
+using DelimitedFiles, DataStructures, JSON, JLD, BenchmarkTools, Printf
+using Graphs, MolecularGraph, Combinatorics # stuffs for ΔML
 
 
 """
@@ -211,6 +211,10 @@ function timeload()
     println(t)
 end
 
+"""
+========== ΔML stuffs ==========
+"""
+
 function getDistances(R) # copied from ΔML
     # computes interatomic distances given coordinates
     # R row := number of atoms
@@ -254,8 +258,11 @@ end
 (prototype) get the bond order given smiles string of a molecule
 returns dict of bondtype => count
 """
-function get_bonds_from_SMILES(bondtypes, str)
+function get_bonds_from_SMILES(bondtypes, str; remove_hydrogens=true)
     mol = smilestomol(str)
+    if remove_hydrogens
+        remove_hydrogens!(mol)
+    end
     md = Dict()
     for key ∈ bondtypes # init dict
         md[key] = 0
@@ -278,17 +285,37 @@ function get_qm9_bondtypes()
 end
 
 function get_qm9_bondcounts()
+    function extract_bonds!(bondfs, fpath, file)
+        content = readdlm(fpath*file)
+        natom = content[1,1]
+        smiles = content[natom+4, 1]
+        bondf = get_bonds_from_SMILES(bondtypes, smiles)
+        push!(bondfs, bondf)
+        #println(file, " is done!")
+    end
     bondtypes = get_qm9_bondtypes() # get qm9 bondtypes, the keys of dict
-    println(bondtypes)
     fpath = "C:/Users/beryl/OneDrive/Dokumente/Dataset/qm9/geometries/" # absolute path to qm9 dataset
     exfiles = readdlm("data/qm9_error.txt") # excluded geometries
     files = readdir(fpath)
     files = [file for file ∈ files if file ∉ exfiles] # included geom only
-    #for file ∈ files
-    content = readdlm(fpath*files[1460])
-    natom = content[1,1]
-    smiles = content[natom+4, 1]
-    display(smiles)
-    display(get_bonds_from_SMILES(bondtypes, smiles))
-    # verify the keys later
+    bondfs = []
+    @simd for file ∈ files
+        @inbounds extract_bonds!(bondfs, fpath, file)
+    end
+    open(jpath, "w") do f
+        JSON.print(f, bondfs)
+    end
+    bondfs = JSON.parsefile(jpath)
+    # get stats ∀keys:
+    stat = Dict() 
+    for key ∈ bondtypes
+        stat[key] = 0
+    end
+    for bondf ∈ bondfs
+        for key ∈ bondtypes
+            stat[key] += bondf[key]
+        end        
+    end
+    println(stat)
+    # transform to n×30 matrix:
 end
