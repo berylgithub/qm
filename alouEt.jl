@@ -1524,7 +1524,7 @@ function test_ΔML()
     # KRR:
     K = get_norms(F, idtrain, idtrain)  
     comp_gaussian_kernel!(K, σ) # generate the kernel
-    θ = cgls(K, Et[idtrain], itmax=500)
+    θ, stat = cgls(K, Et[idtrain], itmax=500)
     MAEtrain = mean(abs.(Et[idtrain] - K*θ))
     println("KRR w/ E - Enull - Esob =: Et, MAEtrain = ", MAEtrain)
     K = get_norms(F, idtest, idtrain)
