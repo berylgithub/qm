@@ -1500,15 +1500,37 @@ function test_ΔML()
     println("BEST model w/ E - Enull =: Et = ", [MAE, MAEcgls]) =#
     # Ebase = Enull + Esob:
     Et = E - Enull - Esob
-    K = get_gaussian_kernel(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]], 2048.)
+    σ = 2048.
+    # REAPER:
+    K = get_repker_atom(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]])
     θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
     MAEtrains = [mean(abs.(Et[idtrain] - K*θ)), mean(abs.(Et[idtrain] - K*θcgls))]
-    println("BEST model w/ E - Enull - Esob =: Et, MAEtrains = ", MAEtrains)
-    K = get_gaussian_kernel(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]], 2048.)
+    println("REAPER w/ E - Enull - Esob =: Et, MAEtrains = ", MAEtrains)
+    K = get_repker_atom(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]])
     E_pred = K*θ; E_pred_cgls = K*θcgls
     MAE = mean(abs.(Et[idtest] - E_pred))*627.503
     MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
     println("MAEtest = ", [MAE, MAEcgls])
+    # GAK:
+    K = get_gaussian_kernel(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]], σ)
+    θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
+    MAEtrains = [mean(abs.(Et[idtrain] - K*θ)), mean(abs.(Et[idtrain] - K*θcgls))]
+    println("GAK w/ E - Enull - Esob =: Et, MAEtrains = ", MAEtrains)
+    K = get_gaussian_kernel(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]], σ)
+    E_pred = K*θ; E_pred_cgls = K*θcgls
+    MAE = mean(abs.(Et[idtest] - E_pred))*627.503
+    MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
+    println("MAEtest = ", [MAE, MAEcgls])
+    # KRR:
+    K = get_norms(F, idtrain, idtrain)  
+    comp_gaussian_kernel!(K, σ) # generate the kernel
+    θ = cgls(K, Et[idtrain], itmax=500)
+    MAEtrain = mean(abs.(Et[idtrain] - K*θ))
+    println("KRR w/ E - Enull - Esob =: Et, MAEtrain = ", MAEtrain)
+    K = get_norms(F, idtest, idtrain)
+    comp_gaussian_kernel!(K, σ)
+    MAE = mean(abs.(Et[idtest] - K*θ))*627.503
+    println("MAEtest = ", MAE)
 end
 
 
