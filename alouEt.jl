@@ -1483,17 +1483,28 @@ function test_ΔML()
     E_pred = F*θ
     MAE = mean(abs.(Et[idtest] - E_pred[idtest]))*627.503
     println("HL model w/ E - Enull - Esob =: Et = ", MAE)
-    # try with the best model and both direct solve and cgls:
+    
+    # fit "best model" with Ebase = Enull:
+    Et = E - Enull
     dataset = load("data/qm9_dataset_old.jld", "data")
     f = load("data/exp_reduced_energy/features_atom.jld", "data")
-    println(length(f))
+    K = get_repker_atom(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]])
+    θ = K\Et[idtrain]
+    K = get_repker_atom(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]])
+    E_pred = K*θ
+    MAE = mean(abs.(Et[idtest] - E_pred))*627.503
+    println("BEST model w/ E - Enull =: Et = ", [MAE, MAEcgls])
+
+    # try with the best model and both direct solve and cgls:
+    #= println(length(f))
+    Et = E - Enull - Esob
     K = get_repker_atom(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]])
     θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
     K = get_repker_atom(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]])
     E_pred = K*θ; E_pred_cgls = K*θcgls
     MAE = mean(abs.(Et[idtest] - E_pred))*627.503
     MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
-    println("BEST model w/ E - Enull - Esob =: Et = ", [MAE, MAEcgls])
+    println("BEST model w/ E - Enull - Esob =: Et = ", [MAE, MAEcgls]) =#
 end
 
 
