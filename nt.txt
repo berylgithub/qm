@@ -299,3 +299,9 @@ Quests:
 
 19.06.2023:
 - get_prop(mol, n1, n2, :order) gives the bond order from MolecularGraph (see dp.jl).
+
+20.06.2023:
+- Ebase = Enull + Esob for LLS model gives ~6kcal/mol accuracy reduction, BUT for the prev best found model turns out this overfits, train = 1e-12 but test is 1e+2
+
+21.06.23:
+! for aslatm look at https://github.com/lcmd-epfl/intro-to-qml/blob/master/Introduction%20to%20QML.ipynb, there also math desc of aSLATM and FCHL18.

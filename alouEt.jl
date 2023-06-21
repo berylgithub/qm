@@ -1475,37 +1475,40 @@ function test_ΔML()
     θ = F[idtrain, :]\Et[idtrain]
     E_pred = F*θ
     MAE = mean(abs.(Et[idtest] - E_pred[idtest]))*627.503
-    println("HL model w/ E - Enull =: Et = ", MAE)
+    println("standard LLS model w/ E - Enull =: Et = ", MAE)
 
     # fit E with Ebase = Enull + Esob:
     Et = E - Enull - Esob
     θ = F[idtrain, :]\Et[idtrain]
+    MAEtrain = mean(abs.(Et[idtrain] - F[idtrain, :]*θ))*627.503
     E_pred = F*θ
     MAE = mean(abs.(Et[idtest] - E_pred[idtest]))*627.503
-    println("HL model w/ E - Enull - Esob =: Et = ", MAE)
+    println("standard LLS model w/ E - Enull - Esob =: Et = ", MAE, ", MAEtrain = ",MAEtrain)
     
-    # fit "best model" with Ebase = Enull:
-    Et = E - Enull
+    # fit "best model":
     dataset = load("data/qm9_dataset_old.jld", "data")
     f = load("data/exp_reduced_energy/features_atom.jld", "data")
+    println("feature size = ", size(f[1]))
+    # with Ebase = Enull:
+    #= Et = E - Enull
     K = get_repker_atom(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]])
     θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
     K = get_repker_atom(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]])
     E_pred = K*θ; E_pred_cgls = K*θcgls
     MAE = mean(abs.(Et[idtest] - E_pred))*627.503
     MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
-    println("BEST model w/ E - Enull =: Et = ", [MAE, MAEcgls])
-
-    # try with the best model and both direct solve and cgls:
-    #= println(length(f))
+    println("BEST model w/ E - Enull =: Et = ", [MAE, MAEcgls]) =#
+    # Ebase = Enull + Esob:
     Et = E - Enull - Esob
-    K = get_repker_atom(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]])
+    K = get_gaussian_kernel(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]], 2048.)
     θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
-    K = get_repker_atom(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]])
+    MAEtrains = [mean(abs.(Et[idtrain] - K*θ)), mean(abs.(Et[idtrain] - K*θcgls))]
+    println("BEST model w/ E - Enull - Esob =: Et, MAEtrains = ", MAEtrains)
+    K = get_gaussian_kernel(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]], 2048.)
     E_pred = K*θ; E_pred_cgls = K*θcgls
     MAE = mean(abs.(Et[idtest] - E_pred))*627.503
     MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
-    println("BEST model w/ E - Enull - Esob =: Et = ", [MAE, MAEcgls]) =#
+    println("MAEtest = ", [MAE, MAEcgls])
 end
 
 
