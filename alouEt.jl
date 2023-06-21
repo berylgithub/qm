@@ -1489,10 +1489,11 @@ function test_ΔML()
     dataset = load("data/qm9_dataset_old.jld", "data")
     f = load("data/exp_reduced_energy/features_atom.jld", "data")
     K = get_repker_atom(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]])
-    θ = K\Et[idtrain]
+    θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
     K = get_repker_atom(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]])
-    E_pred = K*θ
+    E_pred = K*θ; E_pred_cgls = K*θcgls
     MAE = mean(abs.(Et[idtest] - E_pred))*627.503
+    MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
     println("BEST model w/ E - Enull =: Et = ", [MAE, MAEcgls])
 
     # try with the best model and both direct solve and cgls:
