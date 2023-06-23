@@ -542,8 +542,8 @@ where $i$ indexes the query molecule and $j$ indexes the feature column of $i$th
 \label{subsec:NN}
 \at{insert standard neural network formula here}
 
-\subsection{Gaussian atomic kernel (GAK)}
-The entries of the data matrix for the atomic Gaussian kernel are \at{\cite[Eq. (10)]{Faber et al} from \url{https://aip.scitation.org/doi/10.1063/1.5126701}}
+\subsection{Atomic kernels}
+The entries of the data matrix for the Gaussian atomic kernel (\textbf{GAK}) are \at{\cite[Eq. (10)]{Faber et al} from \url{https://aip.scitation.org/doi/10.1063/1.5126701}}
 \iffalse
 \begin{equation}
 	A_{l' l} = \sum_P \sum_{Z^{l'}_i = P} \sum_{Z^{l}_j = P} A^\text{atom}(f^{l'}_i, f^l_j)
@@ -559,6 +559,12 @@ where $Z_i^l$ and $Z_j^{l'}$ are the nuclear charges of atom $i$ and $j$ in mole
 	A^\text{atom}(u, v) = \text{ exp}\Big( - \frac{\|u - v \|^2_2}{2 \sigma^2} \Big).
 \end{equation}
 where $\sigma \in \mathbb{R}$ is a hyperparameter, typically $\sigma = 2^k$ where $k \in \mathbb{Z}_{\geq 0}$.
+
+Another variation of the $A^\text{atom}$ would be the reproducible atomic kernel (\textbf{REAPER}), which is simply the inner product of the features,
+\begin{equation}
+	A^\text{atom}(u, v) = u^\top v.
+	\label{eq:reaper_atom}
+\end{equation}
 
 \iffalse
 &= \frac{\D \left(\sum_{k\in K} \frac{E_k + \sum_l \theta_{kl} \phi_{kl}(w)}{D_k(w)} / S_K(w)\right) - \left(E_j + \sum_l \theta_{jl} \phi_{jl}(w)\right)}{D_j(w)S_K(w)-1}, \\
@@ -982,6 +988,7 @@ The null model serves to reduce the molecular energy fitting difficulty by decre
 where the null energy is
 \begin{equation}
 	E^\text{null} = \sum_{j \in P} N_j E^\text{atom}_j,
+	\label{eq:nullmodel}
 \end{equation}
 where $P$ is a set of atom types, $N_j$ is the count of the atom type $j$ within a fixed molecule, and $E^\text{atom}_j$ is the the energy of atom type $j$.
 
@@ -1032,6 +1039,7 @@ The full MAE from fitting the atomic energies is in fact refers to the mean abso
 \end{figure}
 
 \subsubsection{Fitting reduced energies}
+\label{subsubsec:nullmodelfit}
 The fitting experiments with $E^\text{red}$ as the target are run by varying the models, the set of features and the training labels. In total there are 50 instances, 10 of which with the lowest MAE are shown in Table \ref{tab:best_10_exp}.
 One set of features and one set of training labels from the lowest fitting MAE is chosen to compare the models, the results are shown in Table \ref{tab:model_comparison}. Here the MAEs are computed from the original energies, since the predicted energies are actually the predicted reduced energies,
 \begin{equation}
@@ -1256,6 +1264,129 @@ Table \ref{tb:hyperopt_spec_res} shows the samples of hyperparameters found and 
 	\label{tb:hyperopt_spec_res}
 \end{table}
 
+\at{section for parallelization of tuning somewhere here}
+
+\section{$\Delta$ML for QM9 challenge}
+The crux of $\Delta$ML is to take out as much low--level energy as possible before learning the rest of the high--level energy, i,e., to reduce the workload of the machine to learn the complicated relation between the molecular geometries and the high--level energies. As described by \at{ Zaspel et al}, the general form of the $\Delta$ML is
+\begin{equation}
+    E^l = E^{l-1} + \codeword{ML}^l(\theta^l, F^l), ~~ E^0 = \codeword{ML}^0(\theta^0, F^0)
+    \label{eq:deltaML}
+\end{equation}
+where $\codeword{ML}^l$ is a function to learn and predict $E^l - E^{l-1}$, which is the difference between two energy levels, given $\theta^l$ as the set of parameters and $F^l$ as the set of features. This recipe implies a multi--level and recursive learning scheme for different levels of energies. In general it is expected that the lowest level of energy will have the largest magnitude, with decaying magnitude of energy as we traverse up the stairs of energy levels. \at{not sure if this implies the decay of the rate of the eror too, can be the case if we assume only training error, but overfitting can still happen for test error}
+\begin{equation*}
+    \mathbf{E}[\Delta \text{MAE}] \approx \log f(c,l) 
+\end{equation*}
+
+
+\subsection{Null and sum--over--bonds (SoB) as baseline}
+As we did in the numerical experiments in section \ref{subsubsec:ered}, as it turns out, it is also a form of $\Delta$ML with the null model as the baseline. For this scenario, the target was formulated as
+\begin{equation}
+    E^t = E - E^\text{null},
+\end{equation}
+which is basically equivalent to (\ref{eq:ered}).
+Apart from the atomic energies, molecules also inherently contain the bonding--energies, in which they depend on the bond--types and the bond--level. The model to predict the bond--energies is referred as the sum--over--bonds (SoB). Therefore we should also eliminate this level of energy from the total energy of the molecular system, then the energy target $E^t$ becomes
+\begin{equation}
+    E^t = E - E^\text{null} - E^\text{sob}.
+    \label{eq:null_sob_base}
+\end{equation}
+The SoB energy is defined by
+\begin{equation}
+    E^\text{sob} = \sum_{b\in B} N_b E^\text{bond}_b, 
+    \label{eq:sobmodel}
+\end{equation}
+where $B$ is the set of bond types. Here $E^\text{bond}_b$ is learned in a similar manner as the atomic energies in (\ref{eq:nullmodel}). We can have several variations of sets of bond types based on how we classify the covalent bonds. Here we distinguish the orders of the bonds (1, 2, 3, etc), and the types of bonds (C--C, C--H, C--O, etc), therefore, with
+\begin{equation*}
+        \codeword{bond_orders} := \{1, 2, 3\}, ~~ 
+        \codeword{atom_types} := \{\text{C, H, O, N, F}\}, ~~
+\end{equation*}
+we can construct
+\begin{equation*}
+    B := C^R(\codeword{atom_types}, 2) \times \codeword{bond_orders}, 
+\end{equation*}
+where $C^R(S, r)$ is the combination with replacement given a set $S$ and number of sample $r$. Therefore explicitly we have
+\begin{equation*}
+    B := \{\text{1CC, 2CC, ..., 1CH,..., 1FF,...,3OO}\}, ~~ |B| = 45.
+\end{equation*}
+
+A common practice for molecular data processing, in particular when directly related to the structure of the molecules, is to pre--process the molecules such that the Hydrogens are removed \at{forgot where I read this}. 
+Here we also do the same thing, by doing so, $|B| = 30$ since the bond types containing "H" are removed.
+
+\subsubsection{The SMILES string}
+Typically, the graphical structure of a molecule is encoded in a line of string called the \textbf{simplified molecular--input--line--entry system} (\textbf{SMILES}) string \at{cite SMILES string doc}. 
+In the context of extracting the information of atomic covalent bonds, the only rules that we are interested in from the SMILES encoding are the ones that dictate the atom types -- in particular only H, C, N, O, F atoms (the ones contained in the QM9 dataset); and the rules that determine the bond--types and bond--levels, simply we restrict to parsing:
+\begin{equation*}
+     (\codeword{-},\codeword{=},\codeword{#}) \implies (1, 2, 3)
+\end{equation*}
+where the left hand side triplet is the encoded SMILES tokens of the corresponding right hand side triplet of bond--levels.  
+
+Let us see an example of the SMILES string of \codeword{dsgdb9nsd_066222.xyz} geometry from the QM9 dataset:
+\begin{equation*}
+    \text{ CC1(CNCC\#N)CN1 } \implies \text{ C$_6$H$_{11}$N$_3$},
+\end{equation*}
+this means given a SMILES string on the left hand side, a correct parser will output the molecular formula on the right side. However we are interested in the graphical structure rather than molecular formula. In order to extract the graphical structure, we parse the SMILES string in a depth--first--search (DFS) way, with some backtrack mechanism spawned whenever:
+\begin{itemize}
+    \item A branch exists, a branch starts by "\codeword{(}" token and ends on "\codeword{)}" token (without quotes). In the above SMILES, a branch starts from the third C and ends on the first N, this implies a bond between the second C and the third C.
+    \item A cyclical structure exists, a cycle starts from a numbered atom and ends on an atom with the same number. In the above SMILES, a cycle starts from "C1" and ends on "N1", this implies a bond between C and N.
+\end{itemize}
+It can be noticed that in this case the single bond "\codeword{-}" is omitted, (in fact, it is the general convention). From the mentioned rules, we can extract the graphical structure of the above SMILES string where the atoms act as nodes while the bonds act as edges, given that, the parser outputs:
+\begin{equation*}
+    \codeword{bonds} := \{\text{C1C, C1C, C1C, C1N, C1N, N1C, C1C, C3N, C1N}\},
+\end{equation*}
+where for each entry, the format is 
+\begin{equation*}
+    \codeword{concat(source_atom, bond_level, destination_atom)}.
+\end{equation*}
+Notice that the implicit H atoms are not parsed; also notice the occurrence of "C1N" and "N1C", in our case we treat those two as the same bond--type, i.e., we encode the data structure as undirected graph, hence the reason why we chose the combination with replacement to sample the bond--types in the previous section.
+
+
+\subsubsection{Numerical experiment}
+Here we would like to see how much the decrease of the errors are if we fit the target energies with different combinations of simple scenarios involving the null and SoB energies. Several models are hand picked from section \ref{sec:model}, in particular: 
+\begin{equation*}
+    \codeword{models} := \{\text{LLS, KRR, GAK, REAPER}\},
+\end{equation*}
+in which for the current experiments, they make use of the "previously best found" feature configuration in section \ref{subsubsec:nullmodelfit}:
+\begin{equation*}
+    (\codeword{ftype}, n_{af}, n_{mf}) := \text{(ACSF, 20, 16)}    
+\end{equation*}
+while the Null and SoB models are (\ref{eq:nullmodel}) and (\ref{eq:sobmodel}) respectively.  
+
+For particular scenario when the target is (\ref{eq:null_sob_base}), $E^{\text{null}}$ here acts as the lowest level of energy with respect to (\ref{eq:deltaML}). 
+All of the scenarios tested here are \textbf{without} any training set preselection, rather a random seed is used for simplicity purpose; the training set selection tests will be conducted in the later series of experiments.
+
+All of the experiment results are collected in Table \ref{tb:delta1}. Chronologically, we tested the Null and SoB models by themselves first with $E$ as the target; 
+then we applied the multi--level $\Delta$ML with $E - E^{\text{null}}$ to fit the SoB model; 
+interestingly here the MAE difference between the SoB model fitted to the $E$ and the SoB model fitted to $E - E^{\text{null}}$ is very large (3 orders of magnitude), further investigation of the SoB model's feature may be required (e.g., including H atoms, simplifying bond--levels, etc).
+
+The rest of the experiments are conducted to find out the errors of mostly the kernel models with $E - E^{\text{null}} - E^{\text{sob}}$ target. One thing to note is that even without dataset pre-selection, a lower MAE than the previous best which was 10.914 \at{add details of prev results later in tuning sections} is found, which is 9.129; experiments with data selections will be conducted in later series. 
+
+
+
+\begin{table}[H]
+    \centering
+    \caption{The results of first series of $\Delta$ML experiments. \textbf{model} is the type of fitting ansatz used. \textbf{target} is the target energy in which the \textbf{model} is fitted to. \textbf{split} indicates the subset of data used for prediction, "train" means the prediction uses the training data, "test" means the prediction uses out of sample data. \textbf{solver} indicates the type of solver used, this is done to see how much the solvers affect the MAE. \textbf{MAE} is in kcal/mol. The row with bolded text is the configuration with the best test--MAE found.}
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{model}	& \textbf{target}	& \textbf{split}	& \textbf{solver}	& \textbf{MAE}	\\ \hline
+        Null	& $E$	& test	& direct	& 20.312	\\ \hline
+        SoB	& $E$	& test	& direct	& 17062.854	\\ \hline
+        SoB	& $E-E^\text{null}$	& test	& direct	& 13.161	\\ \hline
+        LLS	& $E$	& test	& direct	& 742.946	\\ \hline
+        LLS	& $E-E^\text{null}$	& test	& direct	& 18.860	\\ \hline
+        LLS	& $E-E^\text{null}-E^\text{sob}$	& test	& direct	& 12.567	\\ \hline
+        LLS	& $E-E^\text{null}-E^\text{sob}$	& train	& direct	& 9.927	\\ \hline
+        REAPER	& $E-E^\text{null}-E^\text{sob}$	& train	& direct	& 0.008	\\ \hline
+        REAPER	& $E-E^\text{null}-E^\text{sob}$	& train	& CGLS	& 0.007	\\ \hline
+        REAPER	& $E-E^\text{null}-E^\text{sob}$	& test	& direct	& 25.902	\\ \hline
+        \textbf{REAPER}	& $\mathbf{E-E^\text{null}-E^\text{sob}}$	& \textbf{test}	& \textbf{CGLS}	& \textbf{9.129}	\\ \hline
+        GAK	& $E-E^\text{null}-E^\text{sob}$	& train	& direct	& 1e-6	\\ \hline
+        GAK	& $E-E^\text{null}-E^\text{sob}$	& train	& CGLS	& 0.010	\\ \hline
+        GAK	& $E-E^\text{null}-E^\text{sob}$	& test	& direct	& 11.273	\\ \hline
+        GAK	& $E-E^\text{null}-E^\text{sob}$	& test	& CGLS	& 10.817	\\ \hline
+        KRR	& $E-E^\text{null}-E^\text{sob}$	& train	& CGLS	& 0.016	\\ \hline
+        KRR	& $E-E^\text{null}-E^\text{sob}$	& test	& CGLS	& 12.498	\\ \hline
+        \end{tabular}
+    \label{tb:delta1}
+\end{table}
 
 \newpage
 \begin{appendices}	
