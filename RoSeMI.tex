@@ -51,6 +51,8 @@
 \begin{document}
 \maketitle
 
+\tableofcontents
+
 \section{Feature extraction}
 \label{sec:feature_extraction}
 
@@ -1357,7 +1359,8 @@ All of the experiment results are collected in Table \ref{tb:delta1}. Chronologi
 then we applied the multi--level $\Delta$ML with $E - E^{\text{null}}$ to fit the SoB model; 
 interestingly here the MAE difference between the SoB model fitted to the $E$ and the SoB model fitted to $E - E^{\text{null}}$ is very large (3 orders of magnitude), further investigation of the SoB model's feature may be required (e.g., including H atoms, simplifying bond--levels, etc).
 
-The rest of the experiments are conducted to find out the errors of mostly the kernel models with $E - E^{\text{null}} - E^{\text{sob}}$ target. One thing to note is that even without dataset pre-selection, a lower MAE than the previous best which was 10.914 \at{add details of prev results later in tuning sections} is found, which is 9.129; experiments with data selections will be conducted in later series. 
+The rest of the experiments are conducted to find out the errors of mostly the kernel models with $E - E^{\text{null}} - E^{\text{sob}}$ target. 
+One thing to note is that even without dataset pre-selection, a lower out of sample (test) MAE than the previous best which was 10.914 \at{add details of prev results later in tuning sections} is found, which is 9.129; experiments with data selections will be conducted in later series. 
 
 
 
