@@ -306,4 +306,4 @@ Quests:
 21.06.23:
 ! for math desc of aSLATM and FCHL18 look at https://github.com/lcmd-epfl/intro-to-qml/blob/master/Introduction%20to%20QML.ipynb.
 ! try to get the FCHL19 first, simpler representation.
-! see qmml.org for preprocessed qm9 dataset
+! see qmml.org for preprocessed qm9 dataset and probably usew it

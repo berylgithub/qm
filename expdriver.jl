@@ -643,6 +643,13 @@ function dataqueryref()
 end
 
 """
+cleans the structure data of floats into 3 digits-behind-comma format
+"""
+function clean_float(data)
+    return map(el -> @sprintf("%.3f", el), data)
+end
+
+"""
 sanity check whenever there is a change in the Julia env (in particular in VSC)
 """
 function sanity_check()
