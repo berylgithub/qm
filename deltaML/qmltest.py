@@ -97,6 +97,7 @@ def extract_QML_features():
     rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements)
     print(rep.shape)
     print(rep)
+    np.savetxt("/users/baribowo/Dataset/gdb9-14b/fchl19/0.txt", rep, delimiter="\t")
 
     ##for mol in compounds[0:1]:
         #mol.generate_slatm(mbtypes, local=True)
