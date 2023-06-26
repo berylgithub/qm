@@ -4,8 +4,6 @@ from qml.representations import get_slatm_mbtypes
 from qml.math import cho_solve
 import numpy as np
 import scipy.sparse
-from scipy.sparse import io
-
 
 import random
 import os
