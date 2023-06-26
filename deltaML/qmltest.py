@@ -82,6 +82,15 @@ def test_qml_deltaML():
         #print("MAE Etarget = ", np.mean(np.abs(Etotpred - Etot)))
     np.savetxt("qm7_MAE.txt", output, delimiter="\t")
 
+def sparse_to_file(fpath, spA):
+    # save sparse matrix to file
+    file = open(fpath,'w')
+
+    for i in range(spA.shape[0]):
+        for j in spA[i].nonzero()[1]:
+            file.write(str(i)+'\t'+str(j)+'\t'+str(spA[i,j])+'\n')
+    file.close()
+
 def extract_QML_features():
     # extract features then save to file, takes in path of the geometries and outputs the features in text file
     #geopath = "/users/baribowo/Dataset/zaspel_supp/supplementary/geometry" # OMP1 geometry filepath
@@ -100,8 +109,8 @@ def extract_QML_features():
     print(rep)
     sp = sparse_matrix = scipy.sparse.csc_matrix(rep)
     #np.savetxt("/users/baribowo/Dataset/gdb9-14b/fchl19/0.txt", rep, delimiter="\t")
-    scipy.sparse.save_npz('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
-
+    #scipy.sparse.save_npz('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
+    sparse_to_file('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
     ##for mol in compounds[0:1]:
         #mol.generate_slatm(mbtypes, local=True)
         #mol.generate_coulomb_matrix(size=23, sorting="row-norm")
