@@ -92,7 +92,7 @@ def extract_QML_features():
     print(elements)
     coor = compounds[0].coordinates
     nc = compounds[0].nuclear_charges
-    rep = qml.representations.generate_fchl_acsf(nc, coor, elements=elements)
+    rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements)
     print(rep.shape)
     print(rep)
 
