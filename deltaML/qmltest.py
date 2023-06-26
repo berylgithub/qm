@@ -86,14 +86,15 @@ def extract_QML_features():
     geopath = "/users/baribowo/Dataset/zaspel_supp/supplementary/geometry" # OMP1 geometry filepath
     onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
     compounds = [qml.Compound(xyz=geopath+"/"+f) for f in onlyfiles]
-    mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
-    print(mbtypes)
+    #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
+    nc = [(mol.nuclear_charges) for mol in compounds]
+    print(nc)
 
-    for mol in compounds[0:1]:
-        mol.generate_slatm(mbtypes, local=True)
+    ##for mol in compounds[0:1]:
+        #mol.generate_slatm(mbtypes, local=True)
         #mol.generate_coulomb_matrix(size=23, sorting="row-norm")
     #X = np.array([mol.representation for mol in compounds])
-    print(compounds[0].representation.shape)
+    #print(compounds[0].representation.shape)
     #np.savetxt("/users/baribowo/Dataset/coulomb_zaspel.txt", X, delimiter="\t")
 
 
