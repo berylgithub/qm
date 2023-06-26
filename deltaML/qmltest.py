@@ -83,8 +83,10 @@ def test_qml_deltaML():
 
 def extract_QML_features():
     # extract features then save to file, takes in path of the geometries and outputs the features in text file
-    geopath = "/users/baribowo/Dataset/zaspel_supp/supplementary/geometry" # OMP1 geometry filepath
+    #geopath = "/users/baribowo/Dataset/zaspel_supp/supplementary/geometry" # OMP1 geometry filepath
+    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry"
     onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    print("Ndata = ",len(onlyfiles))
     compounds = [qml.Compound(xyz=geopath+"/"+f) for f in onlyfiles]
     #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
     ncs = [(mol.nuclear_charges) for mol in compounds]
