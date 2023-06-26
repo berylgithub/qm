@@ -108,7 +108,7 @@ def extract_QML_features():
     print(rep.shape)
     print(rep)
     sp = sparse_matrix = scipy.sparse.csc_matrix(rep)
-    #np.savetxt("/users/baribowo/Dataset/gdb9-14b/fchl19/0.txt", rep, delimiter="\t")
+    np.savetxt("/users/baribowo/Dataset/gdb9-14b/fchl19/0.txt", rep, delimiter="\t")
     #scipy.sparse.save_npz('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
     sparse_to_file('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
     ##for mol in compounds[0:1]:
