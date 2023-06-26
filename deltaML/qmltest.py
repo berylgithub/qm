@@ -88,7 +88,7 @@ def extract_QML_features():
     compounds = [qml.Compound(xyz=geopath+"/"+f) for f in onlyfiles]
     #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
     nc = [(mol.nuclear_charges) for mol in compounds]
-    print(nc)
+    print(nc[0])
 
     ##for mol in compounds[0:1]:
         #mol.generate_slatm(mbtypes, local=True)
