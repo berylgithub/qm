@@ -307,3 +307,6 @@ Quests:
 ! for math desc of aSLATM and FCHL18 look at https://github.com/lcmd-epfl/intro-to-qml/blob/master/Introduction%20to%20QML.ipynb.
 ! try to get the FCHL19 first, simpler representation.
 ! see qmml.org for preprocessed qm9 dataset and probably usew it
+
+26.06.23:
+- nRs2 = 12, nRs3 = 10, rcut = 6˚A and nmax = lmax = 3, σ = 0.1, rcut = 6˚A (for fchl19 and aSLATM respectively from mbdf paper)

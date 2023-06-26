@@ -97,13 +97,12 @@ def extract_QML_features():
     print(elements)
     coor = compounds[0].coordinates
     nc = compounds[0].nuclear_charges
-    rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements)
+    rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements, nRs2=12, nRs3=10, rcut=6)
     print(rep.shape)
     print(rep)
     sp = sparse_matrix = scipy.sparse.csc_matrix(rep)
     #np.savetxt("/users/baribowo/Dataset/gdb9-14b/fchl19/0.txt", rep, delimiter="\t")
-    #scipy.sparse.save_npz('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
-    io.mmwrite('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse', sp)
+    scipy.sparse.save_npz('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
 
     ##for mol in compounds[0:1]:
         #mol.generate_slatm(mbtypes, local=True)
