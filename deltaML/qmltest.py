@@ -110,7 +110,7 @@ def extract_QML_features():
     sp = sparse_matrix = scipy.sparse.csc_matrix(rep) 
     # np.savetxt("/users/baribowo/Dataset/gdb9-14b/fchl19/0.txt", rep, delimiter="\t")
     # sparse_to_file('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp) """
-    for i, mol in enumerate(compounds[0:2]):
+    for i, mol in enumerate(compounds):
         molid = i+1
         coor = mol.coordinates
         nc = mol.nuclear_charges
