@@ -4,6 +4,8 @@ from qml.representations import get_slatm_mbtypes
 from qml.math import cho_solve
 import numpy as np
 import scipy.sparse
+from scipy.sparse import io
+
 
 import random
 import os
@@ -100,7 +102,8 @@ def extract_QML_features():
     print(rep)
     sp = sparse_matrix = scipy.sparse.csc_matrix(rep)
     #np.savetxt("/users/baribowo/Dataset/gdb9-14b/fchl19/0.txt", rep, delimiter="\t")
-    scipy.sparse.save_npz('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
+    #scipy.sparse.save_npz('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp)
+    io.mmwrite('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse', sp)
 
     ##for mol in compounds[0:1]:
         #mol.generate_slatm(mbtypes, local=True)
