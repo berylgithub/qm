@@ -87,8 +87,14 @@ def extract_QML_features():
     onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
     compounds = [qml.Compound(xyz=geopath+"/"+f) for f in onlyfiles]
     #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
-    nc = [(mol.nuclear_charges) for mol in compounds]
-    print(nc[0])
+    ncs = [(mol.nuclear_charges) for mol in compounds]
+    elements = np.unique(np.concatenate(ncs))
+    print(elements)
+    coor = compounds[0].coordinates
+    nc = compounds[0].nuclear_charges
+    rep = qml.representations.generate_fchl_acsf(nc, coor, elements=elements)
+    print(rep.shape)
+    print(rep)
 
     ##for mol in compounds[0:1]:
         #mol.generate_slatm(mbtypes, local=True)
