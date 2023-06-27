@@ -356,8 +356,9 @@ function load_sparse()
     for file ∈ files[1:3]
         spg = readdlm(fpath*file)
         rows = spg[:, 1] .+ 1; cols = spg[:, 2] .+ 1; entries = spg[:, 3] # the +1s due to py indexing
-        spA = spzeros(length(rows), nf) # s.t. the columns are equal accross all dataset
-        spA[:, 1:length(rows)] = sparse(rows, cols, entries)
+        sp_temp = sparse(rows, cols, entries)
+        spA = spzeros(size(sp_temp, 1), nf) # s.t. the columns are equal accross all dataset
+        spA[:, 1:length(rows)] = sp_temp
         push!(A, spA)
     end
     display(A)
