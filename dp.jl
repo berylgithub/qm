@@ -353,7 +353,7 @@ function load_sparse()
     files = readdir(fpath)
     ndata = length(files); nf = 360 # need to know the length of features (column) beforehand
     A = []
-    for file ∈ files[1:3]
+    for file ∈ files
         spg = readdlm(fpath*file)
         rows = spg[:, 1] .+ 1; cols = spg[:, 2] .+ 1; entries = spg[:, 3] # the +1s due to py indexing
         sp_temp = sparse(rows, cols, entries)
@@ -361,6 +361,7 @@ function load_sparse()
         spA = spzeros(natom, nf) # s.t. the columns are equal accross all dataset
         spA[:, 1:ncols] = sp_temp
         push!(A, spA)
+        println(file, "done!!")
     end
     save("data/FCHL19.jld", "data", A)
 end
