@@ -6,7 +6,7 @@ The collection of functions for (d)ata (p)reparation
 
 
 using DelimitedFiles, DataStructures, JSON, JLD, BenchmarkTools, Printf
-using Graphs, MolecularGraph, Combinatorics # stuffs for ΔML
+using Graphs, MolecularGraph, Combinatorics, SparseArrays # stuffs for ΔML
 
 
 """
@@ -343,4 +343,24 @@ function test_postprocess()
     end
     display(F)
     writedlm("deltaML/data/featuresmat_qm9_covalentbonds.txt", F)
+end
+
+"""
+for fchl, but can be used for general sparse
+"""
+function load_sparse()
+    fpath = "/users/baribowo/Dataset/gdb9-14b/fchl19/"
+    files = readdir(fpath)
+    ndata = length(files); nf = 360 # need to know the length of features (column) beforehand
+    A = []
+    for file ∈ files[1:3]
+        spg = readdlm(fpath*file)
+        rows = spg[:, 1] .+ 1; cols = spg[:, 2] .+ 1; entries = spg[:, 3] # the +1s due to py indexing
+        spA = spzeros(length(rows), nf) # s.t. the columns are equal accross all dataset
+        spA[:, 1:length(rows)] = sparse(rows, cols, entries)
+        push!(A, spA)
+    end
+    display(A)
+    println([size(A[1]), size(A[2])])
+    display(A[1])
 end
