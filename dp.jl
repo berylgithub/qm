@@ -43,8 +43,8 @@ function data_transformer()
 
     list_data = []
     list_error_file = []
-    files = readdir("data/qm9/")
-    dir = "data/qm9/"
+    dir = "/users/baribowo/Dataset/gdb9-14b/fchl19/"
+    files = readdir(dir)
     count = 0
     # loop all data here:
     for f ∈ files
@@ -362,7 +362,5 @@ function load_sparse()
         spA[:, 1:ncols] = sp_temp
         push!(A, spA)
     end
-    display(A)
-    println([size(A[1]), size(A[2])])
-    display(A[1])
+    save("data/FCHL19.jld", "data", A)
 end
