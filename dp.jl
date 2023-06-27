@@ -43,7 +43,7 @@ function data_transformer()
 
     list_data = []
     list_error_file = []
-    dir = "/users/baribowo/Dataset/gdb9-14b/fchl19/"
+    dir = "/users/baribowo/Dataset/gdb9-14b/geometry/"
     files = readdir(dir)
     count = 0
     # loop all data here:
