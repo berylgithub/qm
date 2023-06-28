@@ -12,6 +12,8 @@ from dscribe.descriptors import SOAP
 import qml
 from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
 from qml.math import cho_solve
+import scipy.sparse
+
 
 
 def sparse_to_file(fpath, spA):
@@ -46,7 +48,7 @@ def extract_atoms(folderdir, filedir):
 def extract_SOAP():
     mypath = "/users/baribowo/Dataset/gdb9-14b/geometry"
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-
+    print(onlyfiles)
     # extract coords here:
     start = time.time() # timer
     mols = []
@@ -111,6 +113,7 @@ def extract_SOAP():
         # save numpy array to files, each mol = 1 file:
         for i, mol in enumerate(mols[batch[0]:batch[1]]): # batch
             #np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
+            sp = scipy.sparse.csc_matrix(feature_vectors[i])
             sparse_to_file(outfolder+mol["filename"]+'.txt', feature_vectors[i])
 
     print("elapsed time = ", time.time()-start, "s")
