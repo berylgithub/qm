@@ -14,6 +14,15 @@ from qml.fchl import generate_representation, get_local_kernels, get_atomic_kern
 from qml.math import cho_solve
 
 
+def sparse_to_file(fpath, spA):
+    # save sparse matrix to file
+    file = open(fpath,'w')
+
+    for i in range(spA.shape[0]):
+        for j in spA[i].nonzero()[1]:
+            file.write(str(i)+'\t'+str(j)+'\t'+str(spA[i,j])+'\n')
+    file.close()
+
 def extract_atoms(folderdir, filedir):
     #folder = "data/qm9/"
     #filedir= folder + "dsgdb9nsd_000001.xyz"
@@ -35,7 +44,7 @@ def extract_atoms(folderdir, filedir):
     return atomdata
 
 def extract_SOAP():
-    mypath = "data/qm9/"
+    mypath = "/users/baribowo/Dataset/gdb9-14b/geometry"
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 
     # extract coords here:
@@ -67,9 +76,10 @@ def extract_SOAP():
     soap = SOAP(
         species=species,
         periodic=False,
-        rcut=8.,
-        nmax=5,
-        lmax=5,
+        rcut=6.,
+        nmax=3,
+        lmax=3,
+        sigma=0.1,
         average="off", #"inner",
         sparse=False
     )
@@ -89,18 +99,19 @@ def extract_SOAP():
     batches.append([bend, bend+bendsize+2])
     print(batches)
 
-    outfolder = "data/SOAP/"
+    outfolder = "/users/baribowo/Dataset/gdb9-14b/soap"
     if not exists(outfolder):
         makedirs(outfolder)
 
-    for i, batch in enumerate(batches):
+    for i, batch in enumerate(batches[0]):
         print("batch number ",i)
         feature_vectors = soap.create(structures[batch[0]:batch[1]], n_jobs=4) # batch
         feature_vectors = np.array(feature_vectors)
 
         # save numpy array to files, each mol = 1 file:
         for i, mol in enumerate(mols[batch[0]:batch[1]]): # batch
-            np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
+            #np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
+            sparse_to_file(outfolder+mol["filename"]+'.txt', feature_vectors[i])
 
     print("elapsed time = ", time.time()-start, "s")
 
@@ -262,6 +273,6 @@ def getatom_FCHL():
 
 
 # main:
-train_FCHL()
+#train_FCHL()
 #getatom_FCHL()
-#extract_SOAP()
+extract_SOAP()
