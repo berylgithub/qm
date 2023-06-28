@@ -114,8 +114,8 @@ def extract_SOAP():
         for i, mol in enumerate(mols[batch[0]:batch[1]]): # batch
             #np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
             sp = scipy.sparse.csc_matrix(feature_vectors[i])
-            sparse_to_file(outfolder+mol["filename"]+'.txt', sp)
-            print(mols[i]["filename"], "done!", feature_vectors[i].shape)
+            sparse_to_file(outfolder+mol["filename"], sp)
+            print(mol["filename"], "done!", feature_vectors[i].shape)
 
     print("elapsed time = ", time.time()-start, "s")
 
