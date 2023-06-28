@@ -66,9 +66,9 @@ def extract_SOAP():
 
     structures = []
     for mol in mols:
-        print(mol["filename"])
         structures.append(Atoms(symbols=mol["symbols"], positions = mol["coords"]))
 
+    print(len(structures))
     species = set(["H", "C", "N", "O", "F"])
     #for structure in structures:
     #    species.update(structure.get_chemical_symbols())
@@ -105,7 +105,7 @@ def extract_SOAP():
     if not exists(outfolder):
         makedirs(outfolder)
 
-    for i, batch in enumerate(batches[0]):
+    for i, batch in enumerate(batches[0:1]):
         print("batch number ",i)
         feature_vectors = soap.create(structures[batch[0]:batch[1]], n_jobs=4) # batch
         feature_vectors = np.array(feature_vectors)
