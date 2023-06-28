@@ -1486,7 +1486,7 @@ function test_ΔML()
     println("standard LLS model w/ E - Enull - Esob =: Et = ", MAE, ", MAEtrain = ",MAEtrain)
     
     # fit "best model":
-    dataset = load("data/qm9_dataset_old.jld", "data")
+    dataset = load("data/qm9_dataset.jld", "data")
     f = load("data/exp_reduced_energy/features_atom.jld", "data")
     println("feature size = ", size(f[1]))
     # with Ebase = Enull:
@@ -1535,7 +1535,15 @@ end
 
 function test_largedata()
     f = load("data/FCHL19.jld", "data")
-    data_setup("exp_reduced_energy", 360, 100, 5, 100, "data/qm9_dataset.jld", "data/FCHL19.jld", "FCHL19")
+    D = load("data/qm9_dataset.jld", "data")
+    td = @elapsed begin
+        data_setup("exp_reduced_energy", 360, 100, 5, 100, "data/qm9_dataset.jld", "data/FCHL19.jld", "FCHL19") 
+    end
+    t = @elapsed begin
+        subK = get_repker_atom(f[1:100], f[1:100], [d["atoms"] for d in D[1:100]], [d["atoms"] for d in D[1:100]])
+    end
+    display(subK)
+    println(t," ",td)
 end
 
 """

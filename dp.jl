@@ -347,6 +347,7 @@ end
 
 """
 for fchl, but can be used for general sparse
+    nf: fchl = 360, soap = 480
 """
 function load_sparse()
     fpath = "/users/baribowo/Dataset/gdb9-14b/fchl19/"
