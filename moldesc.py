@@ -46,9 +46,9 @@ def extract_atoms(folderdir, filedir):
     return atomdata
 
 def extract_SOAP():
-    mypath = "/users/baribowo/Dataset/gdb9-14b/geometry"
+    mypath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    print(onlyfiles)
+
     # extract coords here:
     start = time.time() # timer
     mols = []
