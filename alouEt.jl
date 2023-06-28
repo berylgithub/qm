@@ -1533,7 +1533,10 @@ function test_ΔML()
     println("MAEtest = ", MAE)
 end
 
-
+function test_largedata()
+    f = load("data/FCHL19.jld", "data")
+    data_setup("exp_reduced_energy", 360, 100, 5, 100, "data/qm9_dataset.jld", "data/FCHL19.jld", "FCHL19")
+end
 
 """
 test PyCall for QML
