@@ -927,8 +927,8 @@ function get_gaussian_kernel(F1, F2, L1, L2, cσ; threading=true)
     nm1 = length(L1); nm2 = length(L2)
     A = zeros(nm1, nm2)
     if threading
-        @threads for j ∈ eachindex(L2) # col
-            @threads for i ∈ eachindex(L1) # row
+        @simd for j ∈ eachindex(L2) # col
+            @simd for i ∈ eachindex(L1) # row
                 @inbounds A[i, j] = comp_atomic_gaussian_entry(F1[i], F2[j], L1[i], L2[j], cσ)
             end
         end
@@ -954,8 +954,8 @@ compute repker given 2 feature matrices
 """
 function comp_repker(f1, f2)
     K = zeros(size(f1, 1), size(f2, 1))
-    @threads for i ∈ axes(f2, 1)
-        @threads for j ∈ axes(f1, 1)
+    @simd for i ∈ axes(f2, 1)
+        @simd for j ∈ axes(f1, 1)
             @inbounds K[j,i] = f1[j, :]'f2[i,:]
         end
     end
@@ -968,8 +968,8 @@ similar to gaussian kernel entry
 """
 function comp_atomic_repker_entry(f1, f2, l1, l2)
     entry = 0.
-    @threads for i ∈ eachindex(l1)
-        @threads for j ∈ eachindex(l2)
+    @simd for i ∈ eachindex(l1)
+        @simd for j ∈ eachindex(l2)
             @inbounds begin
                 if l1[i] == l2[j] # manually set Kronecker delta using if 
                     d = comp_repker_entry(f1[i, :], f2[j, :]) # (vector, vector, scalar)
@@ -984,8 +984,8 @@ end
 function get_repker_atom(F1, F2, L1, L2)
     nm1 = length(L1); nm2 = length(L2)
     A = zeros(nm1, nm2)
-    @threads for j ∈ eachindex(L2) # col
-        @threads for i ∈ eachindex(L1) # row
+    @simd for j ∈ eachindex(L2) # col
+        @simd for i ∈ eachindex(L1) # row
             @inbounds A[i, j] = comp_atomic_repker_entry(F1[i], F2[j], L1[i], L2[j])
         end
     end
@@ -1471,12 +1471,12 @@ function mp_step(H, n_select; e=[], PCA = true, PCA_params=Dict())
     nf = size(H[1], 2); nf2 = 2*nf+1 # init feature sizes
     if isempty(e) # check if e is empty ⟹ not yet computed
         e = Vector{Dict}(undef, size(H, 1))
-        @threads for l ∈ eachindex(H)
+        @simd for l ∈ eachindex(H)
             @inbounds e[l] = mp_getedgef(H[l])
         end
     end
     # aggregation phase 1, concat and sum:
-    @threads for l ∈ eachindex(H)
+    @simd for l ∈ eachindex(H)
         @inbounds H[l] = mp_agg(H[l], e[l], nf2)
     end
     # aggregation pahse 2, PCA:
@@ -1513,8 +1513,8 @@ Mt is assumed to be asymmetric, only the distances are ⟹ Mt_vw != Mt_wv ∩ e_
 function mp_agg(h, e, nf2)
     nnodes = size(h, 1) # numofatom
     mt = zeros(nnodes, nf2) # empty vectors of size relevant to the aggregation function, now it is 2nf+1
-    @threads for v ∈ axes(h, 1) # loop nodes first
-        @threads for w ∈ axes(h, 1) # its "neighbours"
+    @simd for v ∈ axes(h, 1) # loop nodes first
+        @simd for w ∈ axes(h, 1) # its "neighbours"
             @inbounds begin
                 if v != w # no diag, asymmetry is assumed, can't be neougbours to itself:
                     # only the distances are symmetric:
