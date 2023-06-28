@@ -1430,7 +1430,7 @@ end
 try out fitting with current best found feature and current best found model
 WITHOUT data selection for: Ebase = nothing, Ebase = NullModel, Ebase = SoB
 """
-function test_ΔML()
+function test_DeltaML()
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E); ntrain = 100
