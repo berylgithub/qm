@@ -101,22 +101,21 @@ def extract_SOAP():
     batches.append([bend, bend+bendsize+2])
     print(batches)
 
-    outfolder = "/users/baribowo/Dataset/gdb9-14b/soap"
+    outfolder = "/users/baribowo/Dataset/gdb9-14b/soap/"
     if not exists(outfolder):
         makedirs(outfolder)
 
-    for j, batch in enumerate(batches[0:1]):
+    for j, batch in enumerate(batches):
         print("batch number ",j)
         feature_vectors = soap.create(structures[batch[0]:batch[1]], n_jobs=4) # batch
         feature_vectors = np.array(feature_vectors)
-        print(feature_vectors[0].shape)
 
         # save numpy array to files, each mol = 1 file:
         for i, mol in enumerate(mols[batch[0]:batch[1]]): # batch
             #np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
             sp = scipy.sparse.csc_matrix(feature_vectors[i])
             sparse_to_file(outfolder+mol["filename"]+'.txt', sp)
-            print(mols[i]["filename"], "done!")
+            print(mols[i]["filename"], "done!", feature_vectors[i].shape)
 
     print("elapsed time = ", time.time()-start, "s")
 
