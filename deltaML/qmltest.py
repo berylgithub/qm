@@ -94,10 +94,10 @@ def sparse_to_file(fpath, spA):
 def extract_QML_features():
     # extract features then save to file, takes in path of the geometries and outputs the features in text file
     #geopath = "/users/baribowo/Dataset/zaspel_supp/supplementary/geometry" # OMP1 geometry filepath
-    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry"
+    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
     onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
     print("Ndata = ",len(onlyfiles))
-    compounds = [qml.Compound(xyz=geopath+"/"+f) for f in onlyfiles]
+    compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
     #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
     ncs = [(mol.nuclear_charges) for mol in compounds]
     elements = np.unique(np.concatenate(ncs))
@@ -114,10 +114,11 @@ def extract_QML_features():
         molid = i+1
         coor = mol.coordinates
         nc = mol.nuclear_charges
-        rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements, nRs2=12, nRs3=10, rcut=6)
+        #rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements, nRs2=12, nRs3=10, rcut=6)
+        rep = qml.representations.generate_acsf(nc, coor)
         sp = sparse_matrix = scipy.sparse.csc_matrix(rep)
         print(molid, rep.shape)
-        sparse_to_file('/users/baribowo/Dataset/gdb9-14b/fchl19/'+onlyfiles[i], sp)
+        sparse_to_file('/users/baribowo/Dataset/gdb9-14b/acsf/'+onlyfiles[i], sp)
         #mol.generate_slatm(mbtypes, local=True)
         #mol.generate_coulomb_matrix(size=23, sorting="row-norm")
     #X = np.array([mol.representation for mol in compounds])
