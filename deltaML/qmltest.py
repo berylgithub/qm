@@ -112,11 +112,13 @@ def extract_QML_features():
     # sparse_to_file('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp) """
     for i, mol in enumerate(compounds):
         molid = i+1
+        if molid == 184: # not sure why mol num 184 cause error for acsf, check later
+            continue
         coor = mol.coordinates
         nc = mol.nuclear_charges
         #rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements, nRs2=12, nRs3=10, rcut=6)
         rep = qml.representations.generate_acsf(nc, coor)
-        sp = sparse_matrix = scipy.sparse.csc_matrix(rep)
+        sp = scipy.sparse.csc_matrix(rep)
         print(molid, rep.shape)
         sparse_to_file('/users/baribowo/Dataset/gdb9-14b/acsf/'+onlyfiles[i], sp)
         #mol.generate_slatm(mbtypes, local=True)
