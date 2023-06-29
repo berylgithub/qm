@@ -384,7 +384,7 @@ function feature_slicer()
             F = load(feature_paths[i], "data")
             ndata = size(F, 1) #nrow
             sliced = setdiff(1:ndata, slicer)
-            save(feature_paths[i]*".old", "data", F) # unsliced
+            save("OLD_"*feature_paths[i], "data", F) # unsliced
             if length(size(F)) > 1 # sliced:
                 save(feature_paths[i], "data", F[sliced, :])
             else
