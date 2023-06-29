@@ -7,6 +7,7 @@ The collection of functions for (d)ata (p)reparation
 
 using DelimitedFiles, DataStructures, JSON, JLD, BenchmarkTools, Printf
 using Graphs, MolecularGraph, Combinatorics, SparseArrays # stuffs for ΔML
+using LinearAlgebra
 
 
 """
@@ -376,8 +377,8 @@ remove the molids of uncharacterized ∪ non converged geos
 """
 function feature_slicer()
     slicer = vec(Int.(readdlm("data/exids.txt")))
-    feature_paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", 
-                    "data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
+    #feature_paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", 
+    feature_paths = ["data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
     for i ∈ eachindex(feature_paths)
         println("proc ",feature_paths[i], " ...")
         t = @elapsed begin
