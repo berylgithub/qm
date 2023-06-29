@@ -380,11 +380,13 @@ function feature_slicer()
                     "data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
     for i ∈ eachindex(feature_paths)
         println("proc ",feature_paths[i], " ...")
-        F = load(feature_paths[i], "data")
-        ndata = size(F, 1) #nrow
-        sliced = setdiff(1:ndata, slicer)
-        save(feature_paths[i]*".old", "data", F) # unsliced
-        save(feature_paths[i], "data", F[sliced]) # sliced
-        println("proc finished!")
+        t = @elapsed begin
+            F = load(feature_paths[i], "data")
+            ndata = size(F, 1) #nrow
+            sliced = setdiff(1:ndata, slicer)
+            save(feature_paths[i]*".old", "data", F) # unsliced
+            save(feature_paths[i], "data", F[sliced]) # sliced
+        end
+        println("proc finished! ", t)
     end
 end
