@@ -347,12 +347,14 @@ end
 
 """
 for fchl, but can be used for general sparse
-    nf: fchl = 360, soap = 480
+    nf: 
+        fchl = 360, 
+        soap = 480
 """
 function load_sparse()
-    fpath = "/users/baribowo/Dataset/gdb9-14b/fchl19/"
+    fpath = "/users/baribowo/Dataset/gdb9-14b/soap/"
     files = readdir(fpath)
-    ndata = length(files); nf = 360 # need to know the length of features (column) beforehand
+    ndata = length(files); nf = 480 # need to know the length of features (column) beforehand
     A = []
     for file ∈ files
         spg = readdlm(fpath*file)
@@ -364,5 +366,5 @@ function load_sparse()
         push!(A, spA)
         println(file, "done!!")
     end
-    save("data/FCHL19.jld", "data", A)
+    save("data/SOAP.jld", "data", A)
 end
