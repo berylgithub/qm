@@ -296,24 +296,24 @@ function get_qm9_bondcounts()
         push!(bondfs, bondf)
         #println(file, " is done!")
     end
-    remove_hydrogens = false
+    remove_hydrogens = true
     bondtypes = get_qm9_bondtypes(;remove_hydrogens = remove_hydrogens) # get qm9 bondtypes, the keys of dict
-    fpath = "C:/Users/beryl/OneDrive/Dokumente/Dataset/qm9/geometries/" # absolute path to qm9 dataset
-    exfiles = readdlm("data/qm9_error.txt") # excluded geometries
+    fpath = "/users/baribowo/Dataset/gdb9-14b/geometry/" # absolute path to qm9 dataset
+    #exfiles = readdlm("data/qm9_error.txt") # excluded geometries
     files = readdir(fpath)
-    files = [file for file ∈ files if file ∉ exfiles] # included geom only
+    #files = [file for file ∈ files if file ∉ exfiles] # included geom only
     bondfs = []
     @simd for file ∈ files
         @inbounds extract_bonds!(bondfs, bondtypes, fpath, file; remove_hydrogens = remove_hydrogens)
     end
-    open("deltaML/data/features_qm9_covalentbondsH.json", "w") do f
+    open("data/features_qm9_covalentbonds.json", "w") do f
         JSON.print(f, bondfs)
     end
 end
 
-function test_postprocess()
+function postprocess_bonds()
     bondtypes = get_qm9_bondtypes(;remove_hydrogens=true) # get qm9 bondtypes, the keys of dict
-    bondfs = JSON.parsefile("deltaML/data/features_qm9_covalentbonds.json")
+    bondfs = JSON.parsefile("data/features_qm9_covalentbonds.json")
     # get stats ∀keys:
     stat = Dict() 
     for key ∈ bondtypes
@@ -342,7 +342,7 @@ function test_postprocess()
         end
     end
     display(F)
-    writedlm("deltaML/data/featuresmat_qm9_covalentbonds.txt", F)
+    writedlm("data/featuresmat_qm9_covalentbonds.txt", F)
 end
 
 """
@@ -367,4 +367,7 @@ function load_sparse()
         println(file, "done!!")
     end
     save("data/SOAP.jld", "data", A)
+end
+
+function feature_slicer()
 end
