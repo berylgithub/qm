@@ -342,7 +342,8 @@ function postprocess_bonds()
         end
     end
     display(F)
-    writedlm("data/featuresmat_qm9_covalentbonds.txt", F)
+    #writedlm("data/featuresmat_qm9_covalentbonds.txt", F)
+    save("data/featuresmat_qm9_covalentbonds.jld", "data", F)
 end
 
 """
@@ -369,5 +370,21 @@ function load_sparse()
     save("data/SOAP.jld", "data", A)
 end
 
+
+"""
+remove the molids of uncharacterized ∪ non converged geos
+"""
 function feature_slicer()
+    slicer = vec(Int.(readdlm("data/exids.txt")))
+    feature_paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", 
+                    "data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
+    for i ∈ eachindex(feature_paths)
+        println("proc ",feature_paths[i], " ...")
+        F = load(feature_paths[i], "data")
+        ndata = size(F, 1) #nrow
+        sliced = setdiff(1:ndata, slicer)
+        save(feature_paths[i]*".old", "data", F) # unsliced
+        save(feature_paths[i], "data", F[sliced]) # sliced
+        println("proc finished!")
+    end
 end
