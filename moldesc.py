@@ -172,15 +172,16 @@ def extract_ACSF():
 
     print(species)
 
-    soap = SOAP(
+    acsf = ACSF(
+        6.0,
         species=species,
-        periodic=False,
-        rcut=6.,
-        nmax=3,
-        lmax=3,
-        sigma=0.1,
-        average="off", #"inner",
-        sparse=False
+        g2_params=[[2, 1], [1, 1], [.5, 1], [.1, 1], [.01, 1],
+                   [2, 4], [1, 4], [.5, 4], [.1, 4], [.01, 4]],
+        g3_params=[1, 2, -1, -2],
+        g4_params=[[2, 1, 1], [1, 1, 1], [.1, 1, -1], [.01, 1, -1],
+                   [2, 16, 1], [1, 16, 1], [.1, 16, -1], [.01, 16, -1]],
+        g5_params=[[2, 1, 1], [1, 1, 1], [.1, 1, -1], [.01, 1, -1],
+                   [2, 16, 1], [1, 16, 1], [.1, 16, -1], [.01, 16, -1]],
     )
 
     # batch here:
@@ -198,13 +199,13 @@ def extract_ACSF():
     batches.append([bend, bend+bendsize+2])
     print(batches)
 
-    outfolder = "/users/baribowo/Dataset/gdb9-14b/soap/"
+    outfolder = "/users/baribowo/Dataset/gdb9-14b/acsf/"
     if not exists(outfolder):
         makedirs(outfolder)
 
     for j, batch in enumerate(batches):
         print("batch number ",j)
-        feature_vectors = soap.create(structures[batch[0]:batch[1]], n_jobs=4) # batch
+        feature_vectors = acsf.create(structures[batch[0]:batch[1]], n_jobs=4) # batch
         feature_vectors = np.array(feature_vectors)
 
         # save numpy array to files, each mol = 1 file:
