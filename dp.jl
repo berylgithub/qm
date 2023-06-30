@@ -351,12 +351,13 @@ end
 for fchl, but can be used for general sparse
     nf: 
         fchl = 360, 
-        soap = 480
+        soap = 480,
+        acsf = 315
 """
 function load_sparse()
-    fpath = "/users/baribowo/Dataset/gdb9-14b/soap/"
+    fpath = "/users/baribowo/Dataset/gdb9-14b/acsf/"
     files = readdir(fpath)
-    ndata = length(files); nf = 480 # need to know the length of features (column) beforehand
+    ndata = length(files); nf = 315 # need to know the length of features (column) beforehand
     A = []
     for file ∈ files
         spg = readdlm(fpath*file)
@@ -368,7 +369,7 @@ function load_sparse()
         push!(A, spA)
         println(file, "done!!")
     end
-    save("data/SOAP.jld", "data", A)
+    save("data/ACSF_new.jld", "data", A)
 end
 
 
@@ -377,8 +378,9 @@ remove the molids of uncharacterized ∪ non converged geos
 """
 function feature_slicer()
     slicer = vec(Int.(readdlm("data/exids.txt")))
-    #feature_paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", 
-    feature_paths = ["data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
+    #feature_paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", "data/SOAP.jld"] 
+    #feature_paths = ["data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
+    feature_paths = ["data/ACSF.jld"]
     for i ∈ eachindex(feature_paths)
         println("proc ",feature_paths[i], " ...")
         t = @elapsed begin
