@@ -376,4 +376,4 @@ def getatom_FCHL():
 
 
 # main:
-test_ACSF()
+extract_ACSF()
