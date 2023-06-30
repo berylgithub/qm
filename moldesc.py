@@ -7,7 +7,7 @@ from warnings import catch_warnings
 from ase.io import read
 from ase.build import molecule
 from ase import Atoms
-from dscribe.descriptors import SOAP
+from dscribe.descriptors import SOAP, ACSF
 
 import qml
 from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
@@ -118,6 +118,100 @@ def extract_SOAP():
             print(mol["filename"], "done!", feature_vectors[i].shape)
 
     print("elapsed time = ", time.time()-start, "s")
+
+def test_ACSF():
+
+    # Setting up the ACSF descriptor
+    acsf = ACSF(
+        species=["H", "O"],
+        r_cut=6.0,
+        g2_params=[[1, 1], [1, 2], [1, 3]],
+        g4_params=[[1, 1, 1], [1, 2, 1], [1, 1, -1], [1, 2, -1]],
+    )
+
+    # Creating an atomic system as an ase.Atoms-object
+    water = molecule("H2O")
+
+    # Create MBTR output for the hydrogen atom at index 1
+    acsf_water = acsf.create(water, centers=[1])
+
+    print(acsf_water)
+    print(acsf_water.shape)
+
+def extract_ACSF():
+    mypath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+
+    # extract coords here:
+    start = time.time() # timer
+    mols = []
+    errfiles = []
+    for f in sorted(onlyfiles):
+        try:
+            mols.append(extract_atoms(mypath, f))
+        except:
+            errfiles.append(f)
+
+    with open("data/qm9_error_acsf.txt", "w") as f:
+        for errf in errfiles:
+            f.write(errf+"\n")
+
+
+    structures = []
+    for mol in mols:
+        structures.append(Atoms(symbols=mol["symbols"], positions = mol["coords"]))
+
+    print(len(structures))
+    species = set(["H", "C", "N", "O", "F"])
+    #for structure in structures:
+    #    species.update(structure.get_chemical_symbols())
+
+    print(species)
+
+    soap = SOAP(
+        species=species,
+        periodic=False,
+        rcut=6.,
+        nmax=3,
+        lmax=3,
+        sigma=0.1,
+        average="off", #"inner",
+        sparse=False
+    )
+
+    # batch here:
+    ndata= len(onlyfiles)
+    bsize = 1000
+    blength = ndata // bsize
+
+    batches = []
+    c = range(0, blength)
+    for i in c:
+        n = i*bsize
+        batches.append([n, n+bsize])
+    bend = batches[-1][-1]
+    bendsize = ndata - (blength*bsize)
+    batches.append([bend, bend+bendsize+2])
+    print(batches)
+
+    outfolder = "/users/baribowo/Dataset/gdb9-14b/soap/"
+    if not exists(outfolder):
+        makedirs(outfolder)
+
+    for j, batch in enumerate(batches):
+        print("batch number ",j)
+        feature_vectors = soap.create(structures[batch[0]:batch[1]], n_jobs=4) # batch
+        feature_vectors = np.array(feature_vectors)
+
+        # save numpy array to files, each mol = 1 file:
+        for i, mol in enumerate(mols[batch[0]:batch[1]]): # batch
+            #np.savetxt(outfolder+mol["filename"]+'.txt', feature_vectors[i], delimiter='\t')
+            sp = scipy.sparse.csc_matrix(feature_vectors[i])
+            sparse_to_file(outfolder+mol["filename"], sp)
+            print(mol["filename"], "done!", feature_vectors[i].shape)
+
+    print("elapsed time = ", time.time()-start, "s")
+
 
 
 def extract_FCHL():
@@ -277,6 +371,4 @@ def getatom_FCHL():
 
 
 # main:
-#train_FCHL()
-#getatom_FCHL()
-extract_SOAP()
+test_ACSF()

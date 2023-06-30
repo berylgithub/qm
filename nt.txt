@@ -312,4 +312,5 @@ Quests:
 - nRs2 = 12, nRs3 = 10, rcut = 6˚A and nmax = lmax = 3, σ = 0.1, rcut = 6˚A (for fchl19 and aSLATM respectively from mbdf paper)
 
 28.06.23:
-! recompute features for dressed atoms := null, and features for dressed bonds, using new full set of data
+(DONE) ! recompute features for dressed atoms := null, and features for dressed bonds, using new full set of data
+? index 184 cause error for QML's ACSF, use dscribe or the ol julia acsf instead
