@@ -132,7 +132,7 @@ def test_ACSF():
     water = molecule("H2O")
 
     # Create MBTR output for the hydrogen atom at index 1
-    acsf_water = acsf.create(water, centers=[1])
+    acsf_water = acsf.create(water, [1])
 
     print(acsf_water)
     print(acsf_water.shape)
