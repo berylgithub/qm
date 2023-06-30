@@ -120,11 +120,10 @@ def extract_SOAP():
     print("elapsed time = ", time.time()-start, "s")
 
 def test_ACSF():
-
     # Setting up the ACSF descriptor
     acsf = ACSF(
+        6.0,
         species=["H", "O"],
-        r_cut=6.0,
         g2_params=[[1, 1], [1, 2], [1, 3]],
         g4_params=[[1, 1, 1], [1, 2, 1], [1, 1, -1], [1, 2, -1]],
     )
