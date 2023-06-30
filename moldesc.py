@@ -125,8 +125,9 @@ def test_ACSF():
         6.0,
         species=["H", "O"],
         g2_params=[[1, 1], [1, 2], [1, 3]],
-        g3_params = [1, 2, -1],
+        g3_params=[1, 2, -1],
         g4_params=[[1, 1, 1], [1, 2, 1], [1, 1, -1], [1, 2, -1]],
+        g5_params=[[1, 1, 1], [1, 2, 1], [1, 1, -1], [1, 2, -1]],
     )
 
     # Creating an atomic system as an ase.Atoms-object
