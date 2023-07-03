@@ -1442,12 +1442,10 @@ function test_DeltaML()
     features = ["ACSF", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"]
     n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
-
-    outs = Matrix{Any}(undef, length(features)*length(n_trains)*8 + 1, 7) # output table, |solver|*|Elevel×solver| = 8
-    outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevelxsolver", "MAEtrain", "MAEtest"]
+    outs = Matrix{Any}(undef, length(features)*length(n_trains)*4 + 1, 7) # output table, |solver|*|Elevel| = 4
+    outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
     
-
-    # select split indexes:
+    # select split indexes, will be used for baseline and last level fitting:
     Random.seed!(603)
     idall = 1:nrow
     idtrain = sample(1:nrow, 100, replace=false)
@@ -1455,30 +1453,39 @@ function test_DeltaML()
     
     # fit the baselines, dressed_atom and dressed_bonds:
     MAEs = Matrix{Any}(undef, 5,4)
-    MAEs[1,:] = ["Elevel", "solver", "MAEtrain", "MAEtest"]; MAEs[2:5, 1] = ["dressed atom", "dressed atom", "dressed bond", "dressed bond"] # MAEs of base models
+    MAEs[1,:] = ["Elevel", "solver", "MAEtrain", "MAEtest"]; 
+    MAEs[2:5, 1] = ["dressed_atom", "dressed_atom", "dressed_bond", "dressed_bond"] # MAEs of base models
+    MAEs[[2,4],2] = ["direct", "direct"]; MAEs[[3,5],2] = ["CGLS", "CGLS"]
+    # dressed atom:
     F = load("data/atomref_features.jld", "data")
-    θ1 = F[idtrain, :]\E[idtrain]; θ2, stat = cgls(F[idtrain, :], E[idtrain], itmax=1_000)
+    θ1 = F[idtrain, :]\E[idtrain]; θ2, stat = cgls(F[idtrain, :], E[idtrain], itmax=500)
     Edas = []
     push!(Edas, F*θ1)
     MAEs[2,3] = mean(abs.(E[idtrain] - Edas[1][idtrain]))*627.503
     MAEs[2,4] = mean(abs.(E[idtest] - Edas[1][idtest]))*627.503
     push!(Edas, F*θ2)
-    display(Edas[1])
     MAEs[3,3] = mean(abs.(E[idtrain] - Edas[2][idtrain]))*627.503
     MAEs[3,4] = mean(abs.(E[idtest] - Edas[2][idtest]))*627.503
     println("dressed_atom: ", MAEs[2:3, 3:4])
-    # save energies with the lowest MAE
-    Eda = Edas[argmin(MAEs[2:3,4])]
-    display(Eda)
-    display(argmin(MAEs[2:3,4]))
+    Eda = Edas[argmin(MAEs[2:3,4])] # save energies with the lowest MAE
+    # dressed bonds:
+    F = load("data/featuresmat_qm9_covalentbonds.jld", "data")
+    Et = E - Eda # take out parts of the energy
+    θ1 = F[idtrain, :]\Et[idtrain]; θ2, stat = cgls(F[idtrain, :], Et[idtrain], itmax=500)
+    Edbs = []
+    push!(Edbs, F*θ1)
+    MAEs[4,3] = mean(abs.(Et[idtrain] - Edbs[1][idtrain]))*627.503
+    MAEs[4,4] = mean(abs.(Et[idtest] - Edbs[1][idtest]))*627.503
+    push!(Edbs, F*θ2)
+    MAEs[5,3] = mean(abs.(Et[idtrain] - Edbs[2][idtrain]))*627.503
+    MAEs[5,4] = mean(abs.(Et[idtest] - Edbs[2][idtest]))*627.503
+    println("dressed_atom: ", MAEs[4:5, 3:4])
+    Edb = Edbs[argmin(MAEs[4:5,4])] # save energies with the lowest MAE
+    writedlm("result/deltaML/MAE_base.txt", MAEs)
+    writedlm("data/energy_clean_db.txt", E-Eda-Edb) # save cleaned energy
 
-    #= F = load("data/featuresmat_qm9_covalentbonds.jld", "data")
-    θ = F[idtrain, :]\E[idtrain]
-    #θ, stat = cgls(F[idtrain, :], E[idtrain], itmax=500)
-    Esob = F*θ
-    MAE = mean(abs.(E[idtest] - Esob[idtest]))*627.503
-    println("SoB = ", MAE)
 
+    #= 
     # fit Esob with Ebase := Enull:
     Et = E - Enull
     θ = F[idtrain, :]\Et[idtrain]
