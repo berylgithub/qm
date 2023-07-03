@@ -1429,26 +1429,50 @@ end
 """
 try out fitting with current best found feature and current best found model
 WITHOUT data selection for: Ebase = nothing, Ebase = NullModel, Ebase = SoB
+
+now rerun with all the new features (large sparse ones) and filtered dataset, save the MAEs in table, therefore:
+table rows = features × models × solver × n_splits
+cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
 function test_DeltaML()
     # def:
     E = readdlm("data/energies.txt")
-    nrow = length(E); ntrain = 100
-    # select indexes:
+    nrow = length(E)
+    datapath = "data/"
+    features = ["ACSF", "SOAP", "FCHL19"] # outtest loop
+    models = ["LLS", "GAK", "REAPER"]
+    n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
+
+    outs = Matrix{Any}(undef, length(features)*length(n_trains)*8 + 1, 7) # output table, |solver|*|Elevel×solver| = 8
+    outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevelxsolver", "MAEtrain", "MAEtest"]
+    
+
+    # select split indexes:
     Random.seed!(603)
     idall = 1:nrow
-    idtrain = sample(1:nrow, ntrain, replace=false)
+    idtrain = sample(1:nrow, 100, replace=false)
     idtest = setdiff(idall, idtrain)
     
-    # fit Ebase := Nullmodel:
+    # fit the baselines, dressed_atom and dressed_bonds:
+    MAEs = Matrix{Any}(undef, 5,4)
+    MAEs[1,:] = ["Elevel", "solver", "MAEtrain", "MAEtest"]; MAEs[2:5, 1] = ["dressed atom", "dressed atom", "dressed bond", "dressed bond"] # MAEs of base models
     F = load("data/atomref_features.jld", "data")
-    θ = F[idtrain, :]\E[idtrain]
-    Enull = F*θ
-    MAE = mean(abs.(E[idtest] - Enull[idtest]))*627.503
-    println("null = ", MAE)
+    θ1 = F[idtrain, :]\E[idtrain]; θ2, stat = cgls(F[idtrain, :], E[idtrain], itmax=1_000)
+    Edas = []
+    push!(Edas, F*θ1)
+    MAEs[2,3] = mean(abs.(E[idtrain] - Edas[1][idtrain]))*627.503
+    MAEs[2,4] = mean(abs.(E[idtest] - Edas[1][idtest]))*627.503
+    push!(Edas, F*θ2)
+    display(Edas[1])
+    MAEs[3,3] = mean(abs.(E[idtrain] - Edas[2][idtrain]))*627.503
+    MAEs[3,4] = mean(abs.(E[idtest] - Edas[2][idtest]))*627.503
+    println("dressed_atom: ", MAEs[2:3, 3:4])
+    # save energies with the lowest MAE
+    Eda = Edas[argmin(MAEs[2:3,4])]
+    display(Eda)
+    display(argmin(MAEs[2:3,4]))
 
-    # fit the Ebase := SoB and see the MAE:
-    F = readdlm("deltaML/data/featuresmat_qm9_covalentbonds.txt")
+    #= F = load("data/featuresmat_qm9_covalentbonds.jld", "data")
     θ = F[idtrain, :]\E[idtrain]
     #θ, stat = cgls(F[idtrain, :], E[idtrain], itmax=500)
     Esob = F*θ
@@ -1530,7 +1554,7 @@ function test_DeltaML()
     K = get_norms(F, idtest, idtrain)
     comp_gaussian_kernel!(K, σ)
     MAE = mean(abs.(Et[idtest] - K*θ))*627.503
-    println("MAEtest = ", MAE)
+    println("MAEtest = ", MAE) =#
 end
 
 function test_largedata()

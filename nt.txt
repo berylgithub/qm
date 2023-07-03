@@ -314,3 +314,6 @@ Quests:
 28.06.23:
 (DONE) ! recompute features for dressed atoms := null, and features for dressed bonds, using new full set of data
 (DONE) using dscribe ? index 184 cause error for QML's ACSF, use dscribe or the ol julia acsf instead
+
+30.06.23:
+- can use MolecularGraph's neighbors(atom) to get the triplet (probably for angle?)
