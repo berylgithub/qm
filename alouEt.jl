@@ -1478,7 +1478,7 @@ function test_DeltaML()
     writedlm("result/deltaML/MAE_base.txt", MAEs)
     writedlm("data/energy_clean_db.txt", E-Eda-Edb) # save cleaned energy
 
-    # test ONE feature--model first:
+    #= # test ONE feature--model first:
     Et = E - Eda
     dataset = load("data/qm9_dataset.jld", "data")
     f = load("data/SOAP.jld", "data")
@@ -1489,10 +1489,10 @@ function test_DeltaML()
     display(θ)
     Epred = K*θ
     MAE = mean(abs.(Et[idtrain] - Epred))*627.503
-    display(MAE)
+    display(MAE) =#
 
 
-    #= # test diverse models: check TRAIN first for correctness
+    # test diverse models: check TRAIN first for correctness
     features = ["ACSF", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"]
     solvers = ["direct", "cgls"]
@@ -1505,7 +1505,7 @@ function test_DeltaML()
     cr = 2
     dataset = load("data/qm9_dataset.jld", "data")
     σ = 2048.
-    for feat ∈ features[1:1]
+    for feat ∈ features[3:3] # skip ACSF for now due to NaNs
         f = load("data/"*feat*".jld", "data")
         for it ∈ iters
             n = it[1]; solver = it[2]; model = it[3]; lv = it[4]
@@ -1539,7 +1539,8 @@ function test_DeltaML()
             cr += 1
         end
     end
-    display(outs) =#
+    display(outs)
+    writedlm("result/deltaML/MAE_enum.txt", outs[1:cr, 1:6])
 end
 
 function test_largedata()
