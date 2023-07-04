@@ -1540,7 +1540,7 @@ function test_DeltaML()
         end
     end
     display(outs)
-    writedlm("result/deltaML/MAE_enum.txt", outs[1:cr, 1:6])
+    writedlm("result/deltaML/MAE_enum.txt", outs[1:cr-1, 1:6])
 end
 
 function test_largedata()
