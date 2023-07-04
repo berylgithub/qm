@@ -1438,12 +1438,6 @@ function test_DeltaML()
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E)
-    datapath = "data/"
-    features = ["ACSF", "SOAP", "FCHL19"] # outtest loop
-    models = ["LLS", "GAK", "REAPER"]
-    n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
-    outs = Matrix{Any}(undef, length(features)*length(n_trains)*4 + 1, 7) # output table, |solver|*|Elevel| = 4
-    outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
     
     # select split indexes, will be used for baseline and last level fitting:
     Random.seed!(603)
@@ -1467,7 +1461,7 @@ function test_DeltaML()
     MAEs[3,3] = mean(abs.(E[idtrain] - Edas[2][idtrain]))*627.503
     MAEs[3,4] = mean(abs.(E[idtest] - Edas[2][idtest]))*627.503
     println("dressed_atom: ", MAEs[2:3, 3:4])
-    Eda = Edas[argmin(MAEs[2:3,4])] # save energies with the lowest MAE
+    Eda = Edas[argmin(MAEs[2:3,4])] # save dressed atom energies with the lowest MAE
     # dressed bonds:
     F = load("data/featuresmat_qm9_covalentbonds.jld", "data")
     Et = E - Eda # take out parts of the energy
@@ -1480,88 +1474,57 @@ function test_DeltaML()
     MAEs[5,3] = mean(abs.(Et[idtrain] - Edbs[2][idtrain]))*627.503
     MAEs[5,4] = mean(abs.(Et[idtest] - Edbs[2][idtest]))*627.503
     println("dressed_atom: ", MAEs[4:5, 3:4])
-    Edb = Edbs[argmin(MAEs[4:5,4])] # save energies with the lowest MAE
+    Edb = Edbs[argmin(MAEs[4:5,4])] # save dressed bond energies with the lowest MAE
     writedlm("result/deltaML/MAE_base.txt", MAEs)
     writedlm("data/energy_clean_db.txt", E-Eda-Edb) # save cleaned energy
 
-
-    #= 
-    # fit Esob with Ebase := Enull:
-    Et = E - Enull
-    θ = F[idtrain, :]\Et[idtrain]
-    Esob = F*θ
-    #E_pred = Enull + Et_pred # return the magnitude, not actually necessary, could just predict directly
-    MAE = mean(abs.(Et[idtest] - Esob[idtest]))*627.503
-    println("SoB w/ E - Enull =: Et = ", MAE)
-
-    # fit E with Ebase = nothing:
-    F = load("data/exp_reduced_energy/features.jld", "data")
-    θ = F[idtrain, :]\E[idtrain]
-    Epred = F[idtest, :]*θ
-    MAE = mean(abs.(E[idtest] - Epred))*627.503
-    println("nobase = ",MAE)
-
-    # fit E with Ebase = Enull:
-    Et = E - Enull
-    θ = F[idtrain, :]\Et[idtrain]
-    E_pred = F*θ
-    MAE = mean(abs.(Et[idtest] - E_pred[idtest]))*627.503
-    println("standard LLS model w/ E - Enull =: Et = ", MAE)
-
-    # fit E with Ebase = Enull + Esob:
-    Et = E - Enull - Esob
-    θ = F[idtrain, :]\Et[idtrain]
-    MAEtrain = mean(abs.(Et[idtrain] - F[idtrain, :]*θ))*627.503
-    E_pred = F*θ
-    MAE = mean(abs.(Et[idtest] - E_pred[idtest]))*627.503
-    println("standard LLS model w/ E - Enull - Esob =: Et = ", MAE, ", MAEtrain = ",MAEtrain)
-    
-    # fit "best model":
+    # test diverse models: check TRAIN first for correctness
+    features = ["ACSF", "SOAP", "FCHL19"] # outtest loop
+    models = ["LLS", "GAK", "REAPER"]
+    solvers = ["direct", "cgls"]
+    elvs = ["dressed_atom", "dressed_bond"]
+    n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
+    outs = Matrix{Any}(undef, length(features)*length(n_trains)*4 + 1, 7) # output table, |solver|*|Elevel| = 4
+    outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
+    # enumerate (cartesian product):
+    iters = Iterators.product(n_trains[end:end], solvers, models, elvs)
+    cr = 2
     dataset = load("data/qm9_dataset.jld", "data")
-    f = load("data/exp_reduced_energy/features_atom.jld", "data")
-    println("feature size = ", size(f[1]))
-    # with Ebase = Enull:
-    #= Et = E - Enull
-    K = get_repker_atom(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]])
-    θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
-    K = get_repker_atom(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]])
-    E_pred = K*θ; E_pred_cgls = K*θcgls
-    MAE = mean(abs.(Et[idtest] - E_pred))*627.503
-    MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
-    println("BEST model w/ E - Enull =: Et = ", [MAE, MAEcgls]) =#
-    # Ebase = Enull + Esob:
-    Et = E - Enull - Esob
     σ = 2048.
-    # REAPER:
-    K = get_repker_atom(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]])
-    θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
-    MAEtrains = [mean(abs.(Et[idtrain] - K*θ)), mean(abs.(Et[idtrain] - K*θcgls))]
-    println("REAPER w/ E - Enull - Esob =: Et, MAEtrains = ", MAEtrains)
-    K = get_repker_atom(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]])
-    E_pred = K*θ; E_pred_cgls = K*θcgls
-    MAE = mean(abs.(Et[idtest] - E_pred))*627.503
-    MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
-    println("MAEtest = ", [MAE, MAEcgls])
-    # GAK:
-    K = get_gaussian_kernel(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]], σ)
-    θ = K\Et[idtrain]; θcgls, stat = cgls(K, Et[idtrain], itmax=500)
-    MAEtrains = [mean(abs.(Et[idtrain] - K*θ)), mean(abs.(Et[idtrain] - K*θcgls))]
-    println("GAK w/ E - Enull - Esob =: Et, MAEtrains = ", MAEtrains)
-    K = get_gaussian_kernel(f[idtest], f[idtrain], [d["atoms"] for d ∈ dataset[idtest]], [d["atoms"] for d ∈ dataset[idtrain]], σ)
-    E_pred = K*θ; E_pred_cgls = K*θcgls
-    MAE = mean(abs.(Et[idtest] - E_pred))*627.503
-    MAEcgls = mean(abs.(Et[idtest] - E_pred_cgls))*627.503
-    println("MAEtest = ", [MAE, MAEcgls])
-    # KRR:
-    K = get_norms(F, idtrain, idtrain)  
-    comp_gaussian_kernel!(K, σ) # generate the kernel
-    θ, stat = cgls(K, Et[idtrain], itmax=500)
-    MAEtrain = mean(abs.(Et[idtrain] - K*θ))
-    println("KRR w/ E - Enull - Esob =: Et, MAEtrain = ", MAEtrain)
-    K = get_norms(F, idtest, idtrain)
-    comp_gaussian_kernel!(K, σ)
-    MAE = mean(abs.(Et[idtest] - K*θ))*627.503
-    println("MAEtest = ", MAE) =#
+    for feat ∈ features[1:1]
+        f = load("data/"*feat*".jld", "data")
+        for it ∈ iters
+            n = it[1]; solver = it[2]; model = it[3]; lv = it[4]
+            # indexes:
+            idtr = idtrain[1:n]
+            idts = setdiff(idall, idtr)
+            # Elevel:
+            if lv == "dressed_atom"
+                Et = E-Eda
+            elseif lv == "dressed_bond"
+                Et = E-Eda-Edb
+            end
+            # model:
+            if model == "LLS"
+            elseif model == "GAK"
+                K = get_gaussian_kernel(f[idtr], f[idtr], [d["atoms"] for d ∈ dataset[idtr]], [d["atoms"] for d ∈ dataset[idtr]], σ)
+            elseif model == "REAPER"
+                K = get_repker_atom(f[idtr], f[idtr], [d["atoms"] for d ∈ dataset[idtr]], [d["atoms"] for d ∈ dataset[idtr]])
+            end
+            # solver:
+            if solver == "direct"
+                θ = K\Et[idtr]
+            elseif solver == "cgls"
+                θ = cgls(K, Et[idtr], itmax=500)
+            end
+            Epred = K*θ
+            MAE = mean(abs.(Et[idtr] - Epred))*627.503
+            outs[cr, 1] = n; outs[cr, 2] = feat; outs[cr, 3] = model; outs[cr, 4] = solver; outs[cr, 5] = lv; outs[cr, 6] = MAE  
+            println(outs[cr, :])
+            cr += 1
+        end
+    end
+    display(outs)
 end
 
 function test_largedata()
