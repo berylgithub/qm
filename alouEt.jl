@@ -1478,7 +1478,20 @@ function test_DeltaML()
     writedlm("result/deltaML/MAE_base.txt", MAEs)
     writedlm("data/energy_clean_db.txt", E-Eda-Edb) # save cleaned energy
 
-    # test diverse models: check TRAIN first for correctness
+    # test ONE feature--model first:
+    Et = E - Eda
+    f = load("data/ACSF.jld", "data")
+    K = get_gaussian_kernel(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]], 2048.)
+    K[diagind(K)] += 1e-8
+    θ = K\Et[idtrain]
+    display(K)
+    display(θ)
+    Epred = K*θ
+    MAE = mean(abs.(Et[idtrain] - Epred))*627.503
+    display(MAE)
+
+
+    #= # test diverse models: check TRAIN first for correctness
     features = ["ACSF", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"]
     solvers = ["direct", "cgls"]
@@ -1495,6 +1508,7 @@ function test_DeltaML()
         f = load("data/"*feat*".jld", "data")
         for it ∈ iters
             n = it[1]; solver = it[2]; model = it[3]; lv = it[4]
+            println(it)
             # indexes:
             idtr = idtrain[1:n]
             idts = setdiff(idall, idtr)
@@ -1505,9 +1519,9 @@ function test_DeltaML()
                 Et = E-Eda-Edb
             end
             # model:
-            if model == "LLS"
-            elseif model == "GAK"
+            if model == "GAK"
                 K = get_gaussian_kernel(f[idtr], f[idtr], [d["atoms"] for d ∈ dataset[idtr]], [d["atoms"] for d ∈ dataset[idtr]], σ)
+                K[diagind(K)] += 1e-8
             elseif model == "REAPER"
                 K = get_repker_atom(f[idtr], f[idtr], [d["atoms"] for d ∈ dataset[idtr]], [d["atoms"] for d ∈ dataset[idtr]])
             end
@@ -1515,7 +1529,7 @@ function test_DeltaML()
             if solver == "direct"
                 θ = K\Et[idtr]
             elseif solver == "cgls"
-                θ = cgls(K, Et[idtr], itmax=500)
+                θ, stat = cgls(K, Et[idtr], itmax=500)
             end
             Epred = K*θ
             MAE = mean(abs.(Et[idtr] - Epred))*627.503
@@ -1524,7 +1538,7 @@ function test_DeltaML()
             cr += 1
         end
     end
-    display(outs)
+    display(outs) =#
 end
 
 function test_largedata()
