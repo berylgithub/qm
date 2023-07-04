@@ -1483,9 +1483,9 @@ function test_DeltaML()
     dataset = load("data/qm9_dataset.jld", "data")
     f = load("data/ACSF.jld", "data")
     K = get_gaussian_kernel(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]], 2048.)
-    K[diagind(K)] += 1e-8
-    θ = K\Et[idtrain]
+    K[diagind(K)] .+= 1e-8
     display(K)
+    θ = K\Et[idtrain]
     display(θ)
     Epred = K*θ
     MAE = mean(abs.(Et[idtrain] - Epred))*627.503
@@ -1522,7 +1522,7 @@ function test_DeltaML()
             # model:
             if model == "GAK"
                 K = get_gaussian_kernel(f[idtr], f[idtr], [d["atoms"] for d ∈ dataset[idtr]], [d["atoms"] for d ∈ dataset[idtr]], σ)
-                K[diagind(K)] += 1e-8
+                K[diagind(K)] .+= 1e-8
             elseif model == "REAPER"
                 K = get_repker_atom(f[idtr], f[idtr], [d["atoms"] for d ∈ dataset[idtr]], [d["atoms"] for d ∈ dataset[idtr]])
             end
