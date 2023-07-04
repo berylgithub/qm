@@ -317,3 +317,7 @@ Quests:
 
 30.06.23:
 - can use MolecularGraph's neighbors(atom) to get the triplet (probably for angle?)
+
+04.07.23:
+- check ACSF: kernels (GAK, repker) gave NaNs
+- check whether i can get extra disk space for VSC
