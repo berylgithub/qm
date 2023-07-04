@@ -1481,7 +1481,7 @@ function test_DeltaML()
     # test ONE feature--model first:
     Et = E - Eda
     dataset = load("data/qm9_dataset.jld", "data")
-    f = load("data/ACSF.jld", "data")
+    f = load("data/FCHL19.jld", "data")
     K = get_gaussian_kernel(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]], 2048.)
     K[diagind(K)] .+= 1e-8
     display(K)
