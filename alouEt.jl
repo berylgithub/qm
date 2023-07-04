@@ -1520,7 +1520,7 @@ function test_DeltaML()
             Epred = K*θ
             MAE = mean(abs.(Et[idtr] - Epred))*627.503
             outs[cr, 1] = n; outs[cr, 2] = feat; outs[cr, 3] = model; outs[cr, 4] = solver; outs[cr, 5] = lv; outs[cr, 6] = MAE  
-            println(outs[cr, :])
+            println(outs[cr, 1:6])
             cr += 1
         end
     end
