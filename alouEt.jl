@@ -1487,7 +1487,7 @@ function test_DeltaML()
     outs = Matrix{Any}(undef, length(features)*length(n_trains)*4 + 1, 7) # output table, |solver|*|Elevel| = 4
     outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
     # enumerate (cartesian product):
-    iters = Iterators.product(n_trains[end:end], solvers, models, elvs)
+    iters = Iterators.product(n_trains[end:end], solvers, models[2:end], elvs)
     cr = 2
     dataset = load("data/qm9_dataset.jld", "data")
     σ = 2048.
