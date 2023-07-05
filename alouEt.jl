@@ -1493,20 +1493,23 @@ function test_DeltaML()
 
 
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF", "SOAP", "FCHL19"] # outtest loop
-    models = ["LLS", "GAK", "REAPER"]
+    features = ["ACSF", "SOAP", "FCHL19"][3:3] # outtest loop, # skip ACSF for now due to NaNs
+    models = ["LLS", "GAK", "REAPER"][2:2]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond"]
     n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
     outs = Matrix{Any}(undef, length(features)*length(n_trains)*4 + 1, 7) # output table, |solver|*|Elevel| = 4
     outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
     # enumerate (cartesian product):
-    iters = Iterators.product(n_trains, solvers, models[2:end], elvs)
+    iters = Iterators.product(n_trains, solvers, models, elvs)
     cr = 2
     dataset = load("data/qm9_dataset.jld", "data")
     σ = 2048.
-    for feat ∈ features[2:3] # skip ACSF for now due to NaNs
+    for feat ∈ features
         f = load("data/"*feat*".jld", "data")
+        # compute all kernels here once per feature to save computation time:
+        Kg = get_gaussian_kernel(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]], σ)
+        #Kr = get_repker_atom(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]])
         for it ∈ iters
             n = it[1]; solver = it[2]; model = it[3]; lv = it[4]
             println(it)
@@ -1521,10 +1524,11 @@ function test_DeltaML()
             end
             # model train:
             if model == "GAK"
-                K = get_gaussian_kernel(f[idtr], f[idtr], [d["atoms"] for d ∈ dataset[idtr]], [d["atoms"] for d ∈ dataset[idtr]], σ)
+                K = Kg[idtr, idtr] 
                 K[diagind(K)] .+= 1e-8
+                display(K)
             elseif model == "REAPER"
-                K = get_repker_atom(f[idtr], f[idtr], [d["atoms"] for d ∈ dataset[idtr]], [d["atoms"] for d ∈ dataset[idtr]])
+                K = Kr[idtr, idtr]
             end
             # solver:
             if solver == "direct"
@@ -1536,20 +1540,23 @@ function test_DeltaML()
             MAEtrain = mean(abs.(Et[idtr] - Epred))*627.503
             # model test:
             if model == "GAK"
-                K = get_gaussian_kernel(f[idts], f[idtr], [d["atoms"] for d ∈ dataset[idts]], [d["atoms"] for d ∈ dataset[idtr]], σ)
+                K = Kg[idts, idtr] 
             elseif model == "REAPER"
-                K = get_repker_atom(f[idts], f[idtr], [d["atoms"] for d ∈ dataset[idts]], [d["atoms"] for d ∈ dataset[idtr]])
+                K = Kr[idts, idtr] 
             end
             Epred = K*θ
             MAE = mean(abs.(Et[idts] - Epred))*627.503
+            # data output:
             outs[cr, 1] = n; outs[cr, 2] = feat; outs[cr, 3] = model; 
             outs[cr, 4] = solver; outs[cr, 5] = lv; outs[cr, 6] = MAEtrain; outs[cr, 7] = MAE 
-            println(outs[cr, :])
+            println(outs[cr, :], "done !")
+            open("result/deltaML/MAE_enum.txt", "a") do io # writefile by batch
+                writedlm(io, outs[cr,:]')
+            end
             cr += 1
         end
     end
     display(outs)
-    writedlm("result/deltaML/MAE_enum.txt", outs[1:cr-1, :])
 end
 
 function test_largedata()
