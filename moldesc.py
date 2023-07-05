@@ -69,7 +69,7 @@ def extract_SOAP():
         structures.append(Atoms(symbols=mol["symbols"], positions = mol["coords"]))
 
     print(len(structures))
-    species = set(["H", "C", "N", "O", "F"])
+    species = ["H", "C", "N", "O", "F"]
     #for structure in structures:
     #    species.update(structure.get_chemical_symbols())
 
@@ -121,24 +121,9 @@ def extract_SOAP():
 
 def test_ACSF():
     # Setting up the ACSF descriptor
-    g4eta = [   1.0,    1.0,    1.0,    1.0,   30.0,   30.0,   30.0,   30.0,  
-           80.0,   80.0,   80.0,   80.0,  150.0,  150.0,  150.0,  150.0, 
-          150.0,  150.0,  150.0,  150.0,  250.0,  250.0,  250.0,  250.0, 
-          250.0,  250.0,  250.0,  250.0,  450.0,  450.0,  450.0,  450.0, 
-          450.0,  450.0,  450.0,  450.0,  800.0,  800.0,  800.0,  800.0, 
-          800.0,  800.0,  800.0]
-    g4lambda = [  -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,  
-           -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,  
-           -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,  
-           -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,  
-           -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,   -1.0,    1.0,
-           -1.0,    1.0,    1.0]
-    g4zeta =  [   1.0,    1.0,    2.0,    2.0,    1.0,    1.0,    2.0,    2.0,
-            1.0,    1.0,    2.0,    2.0,    1.0,    1.0,    2.0,    2.0,
-            4.0,    4.0,   16.0,   16.0,    1.0,    1.0,    2.0,    2.0,   
-            4.0,    4.0,   16.0,   16.0,    1.0,    1.0,    2.0,    2.0,
-            4.0,    4.0,   16.0,   16.0,    1.0,    1.0,    2.0,    2.0,
-            4.0,    4.0,   16.0]
+    g4eta = [   1.0,    1.0]
+    g4lambda = [  -1.0,    1.0]
+    g4zeta =  [   1.0,    1.0]
     g4 = np.zeros((len(g4eta), 3))
     for i, _ in enumerate(g4eta):
         g4[i, 0] = g4eta[i]
@@ -148,18 +133,29 @@ def test_ACSF():
     acsf = ACSF(
         6.0,
         species=["H", "O"],
-        g2_params=[[9.0, 1.],  [100.0, 1.],  [200.0, 1.],  [350.0, 1.],  [600.0, 1.], [1000.0, 1.], [2000.0, 1.], [4000.0, 1.]],
+        g2_params=[[9.0, 1.],  [100.0, 1.]],
         g3_params=[1, 2],
         g4_params=g4,
         g5_params=g4,
     )
-
     # Creating an atomic system as an ase.Atoms-object
     water = molecule("H2O")
-
     # Create MBTR output for the hydrogen atom at index 1
     acsf_water = acsf.create(water)
+    print(acsf_water)
+    print(acsf_water.shape)
 
+    acsf = ACSF(
+        6.0,
+        species=["O", "H"],
+        g2_params=[[9.0, 1.],  [100.0, 1.]],
+        g3_params=[1, 2],
+        g4_params=g4,
+        g5_params=g4,
+    )
+    water = molecule("H2O")
+    # Create MBTR output for the hydrogen atom at index 1
+    acsf_water = acsf.create(water)
     print(acsf_water)
     print(acsf_water.shape)
 
@@ -193,6 +189,7 @@ def extract_ACSF():
 
     print(species)
 
+    # g4s from descriptorzoo
     g4eta = [   1.0,    1.0,    1.0,    1.0,  
            80.0,   80.0,   80.0,   80.0,    250.0,  250.0,  250.0,  250.0, 
           250.0,  250.0,  250.0,  250.0,    800.0,  800.0,  800.0,  800.0, 
@@ -214,7 +211,7 @@ def extract_ACSF():
     acsf = ACSF(
         6.0,
         species=species,
-        g2_params=[[9.0, 1.],  [100.0, 1.],  [200.0, 1.],  [350.0, 1.],  [600.0, 1.], [1000.0, 1.], [2000.0, 1.], [4000.0, 1.]],
+        g2_params=[[9.0, 1.],  [100.0, 1.], [1000.0, 1.], [4000.0, 1.]],
         g3_params=[1, 2],
         g4_params=g4,
         g5_params=g4,
@@ -412,4 +409,4 @@ def getatom_FCHL():
 
 
 # main:
-extract_ACSF()
+test_ACSF()
