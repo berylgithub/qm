@@ -1493,8 +1493,8 @@ function test_DeltaML()
 
 
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF", "SOAP", "FCHL19"][3:3] # outtest loop, # skip ACSF for now due to NaNs
-    models = ["LLS", "GAK", "REAPER"][2:2]
+    features = ["ACSF", "SOAP", "FCHL19"][2:3] # outtest loop, # skip ACSF for now due to NaNs
+    models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond"]
     n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
@@ -1509,14 +1509,19 @@ function test_DeltaML()
         f = load("data/"*feat*".jld", "data")
         # compute all kernels here once per feature to save computation time:
         println("computing kernels...")
-        Kg = get_gaussian_kernel(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]], σ)
-        #Kr = get_repker_atom(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]])
+        t = @elapsed begin
+            Kg = get_gaussian_kernel(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]], σ)
+            Kr = get_repker_atom(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]]) 
+        end
+        println("kernel computation is finished in ",t)
         for it ∈ iters
             n = it[1]; solver = it[2]; model = it[3]; lv = it[4]
             println(it)
             # indexes:
             idtr = idtrain[1:n]
             idts = setdiff(idall, idtr)
+            ktrid = indexin(idtr, idall) # kernel relative train index, these indexes are needed if the feature vector is sliced
+            ktsid = indexin(idts, idall) # kernel relative test index
             # Elevel:
             if lv == "dressed_atom"
                 Et = E-Eda
@@ -1525,11 +1530,11 @@ function test_DeltaML()
             end
             # model train:
             if model == "GAK"
-                K = Kg[idtr, idtr] 
+                K = Kg[ktrid, :] 
                 K[diagind(K)] .+= 1e-8
                 display(K)
             elseif model == "REAPER"
-                K = Kr[idtr, idtr]
+                K = Kr[ktrid, :]
             end
             # solver:
             if solver == "direct"
@@ -1541,9 +1546,9 @@ function test_DeltaML()
             MAEtrain = mean(abs.(Et[idtr] - Epred))*627.503
             # model test:
             if model == "GAK"
-                K = Kg[idts, idtr] 
+                K = Kg[ktsid, :] 
             elseif model == "REAPER"
-                K = Kr[idts, idtr] 
+                K = Kr[ktsid, :] 
             end
             Epred = K*θ
             MAE = mean(abs.(Et[idts] - Epred))*627.503
