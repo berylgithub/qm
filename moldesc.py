@@ -141,9 +141,9 @@ def test_ACSF():
             4.0,    4.0,   16.0]
     g4 = np.zeros((len(g4eta), 3))
     for i, _ in enumerate(g4eta):
-        g4[i, 1] = g4eta[i]
-        g4[i, 2] = g4zeta[i]
-        g4[i, 3] = g4lambda[i]
+        g4[i, 0] = g4eta[i]
+        g4[i, 1] = g4zeta[i]
+        g4[i, 2] = g4lambda[i]
     
     acsf = ACSF(
         6.0,
@@ -213,9 +213,9 @@ def extract_ACSF():
             4.0,    4.0,   16.0]
     g4 = np.zeros((len(g4eta), 3))
     for i, _ in enumerate(g4eta):
-        g4[i, 1] = g4eta[i]
-        g4[i, 2] = g4zeta[i]
-        g4[i, 3] = g4lambda[i]
+        g4[i, 0] = g4eta[i]
+        g4[i, 1] = g4zeta[i]
+        g4[i, 2] = g4lambda[i]
     
     acsf = ACSF(
         6.0,
