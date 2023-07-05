@@ -905,12 +905,14 @@ gaussian scaler scalar σ
 """
 function comp_atomic_gaussian_entry(f1, f2, l1, l2, cσ)
     entry = 0.
-    for i ∈ eachindex(l1)
-        for j ∈ eachindex(l2)
-            if l1[i] == l2[j] # manually set Kronecker delta using if 
-                d = comp_gauss_atom(f1[i, :], f2[j, :], cσ) # (vector, vector, scalar)
-                #println(i," ", j, l1[i], l2[j], " ",d)
-                entry += d
+    @simd for i ∈ eachindex(l1)
+        @simd for j ∈ eachindex(l2)
+            @inbounds begin
+                if l1[i] == l2[j] # manually set Kronecker delta using if 
+                    d = comp_gauss_atom(f1[i, :], f2[j, :], cσ) # (vector, vector, scalar)
+                    #println(i," ", j, l1[i], l2[j], " ",d)
+                    entry += d
+                end 
             end
         end
     end
