@@ -1508,6 +1508,7 @@ function test_DeltaML()
     for feat ∈ features
         f = load("data/"*feat*".jld", "data")
         # compute all kernels here once per feature to save computation time:
+        println("computing kernels...")
         Kg = get_gaussian_kernel(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]], σ)
         #Kr = get_repker_atom(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]])
         for it ∈ iters
