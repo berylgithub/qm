@@ -214,7 +214,6 @@ def extract_ACSF():
         g2_params=[[9.0, 1.],  [100.0, 1.], [1000.0, 1.], [4000.0, 1.]],
         g3_params=[1, 2],
         g4_params=g4,
-        g5_params=g4,
     )
 
     # batch here:
