@@ -982,12 +982,19 @@ function comp_atomic_repker_entry(f1, f2, l1, l2)
     return entry
 end
 
-function get_repker_atom(F1, F2, L1, L2)
-    nm1 = length(L1); nm2 = length(L2)
-    A = zeros(nm1, nm2)
-    @simd for j ∈ eachindex(L2) # col
-        @simd for i ∈ eachindex(L1) # row
-            @inbounds A[i, j] = comp_atomic_repker_entry(F1[i], F2[j], L1[i], L2[j])
+function get_repker_atom(F1, F2, L1, L2; threading=true)
+    if threading
+        Fiter = Iterators.product(F1, F2)
+        Liter = Iterators.product(L1, L2)
+        A = ThreadsX.map((f, l) -> comp_atomic_repker_entry(f[1], f[2], l[1], l[2]),
+            Fiter, Liter)
+    else
+        nm1 = length(L1); nm2 = length(L2)
+        A = zeros(nm1, nm2)
+        @simd for j ∈ eachindex(L2) # col
+            @simd for i ∈ eachindex(L1) # row
+                @inbounds A[i, j] = comp_atomic_repker_entry(F1[i], F2[j], L1[i], L2[j])
+            end
         end
     end
     return A
