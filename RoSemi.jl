@@ -1,5 +1,5 @@
 using JLD, SparseArrays, Distributions, Statistics, StatsBase, ForwardDiff, ReverseDiff, LinearOperators, Krylov
-using .Threads
+using ThreadsX
 
 include("voronoi.jl")
 include("linastic.jl")
@@ -925,19 +925,18 @@ params:
     - Fn: vector of atomic features of several molecules
     - Ln: vector of list of atoms
 """
-function get_gaussian_kernel(F1, F2, L1, L2, cσ; threading=true)
-    nm1 = length(L1); nm2 = length(L2)
-    A = zeros(nm1, nm2)
+function get_gaussian_kernel(F1, F2, L1, L2, c; threading=true)
     if threading
+        Fiter = Iterators.product(F1, F2)
+        Liter = Iterators.product(L1, L2)
+        A = ThreadsX.map((f, l) -> comp_atomic_gaussian_entry(f[1], f[2], l[1], l[2], c),
+            Fiter, Liter)
+    else
+        nm1 = length(L1); nm2 = length(L2)
+        A = zeros(nm1, nm2)
         @simd for j ∈ eachindex(L2) # col
             @simd for i ∈ eachindex(L1) # row
-                @inbounds A[i, j] = comp_atomic_gaussian_entry(F1[i], F2[j], L1[i], L2[j], cσ)
-            end
-        end
-    else
-        for j ∈ eachindex(L2) # col
-            for i ∈ eachindex(L1) # row
-                A[i, j] = comp_atomic_gaussian_entry(F1[i], F2[j], L1[i], L2[j], cσ)
+                @inbounds A[i, j] = comp_atomic_gaussian_entry(F1[i], F2[j], L1[i], L2[j], c)
             end
         end
     end
@@ -1576,5 +1575,3 @@ function testmsg()
     K = get_repker_atom(f[testids], f[centers], [d["atoms"] for d ∈ dataset[testids]], [d["atoms"] for d ∈ dataset[centers]])
     display(mean(abs.(K*θ + Eatom[testids] - E[testids]))*627.503) #err test
 end
-
-
