@@ -408,7 +408,7 @@ function sparse_to_dense()
         f = load(fpath, "data")
         ndata = length(f)
         idx = 1:ndata
-        fdense = Vector{Matrix{Float64}}(undef, idx)
+        fdense = Vector{Matrix{Float64}}(undef, ndata)
         for i ∈ idx
             fdense[i] = Matrix(f[i])
         end
