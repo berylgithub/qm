@@ -397,3 +397,19 @@ function feature_slicer()
         println("proc finished! ", t)
     end
 end
+
+"""
+turn sparse features to dense
+"""
+function sparse_to_dense(fpath)
+    f = load(fpath, "data")
+    ndata = length(f)
+    idx = 1:ndata
+    fdense = Vector{Matrix{Float64}}(undef, idx)
+    for i ∈ idx
+        fdense[i] = Matrix(f[i])
+    end
+    outpath = split(fpath, ".")
+    outpath = outpath[1]*"_dense.jld"
+    save(outpath, "data", fdense)
+end
