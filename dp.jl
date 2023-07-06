@@ -401,15 +401,18 @@ end
 """
 turn sparse features to dense
 """
-function sparse_to_dense(fpath)
-    f = load(fpath, "data")
-    ndata = length(f)
-    idx = 1:ndata
-    fdense = Vector{Matrix{Float64}}(undef, idx)
-    for i ∈ idx
-        fdense[i] = Matrix(f[i])
+function sparse_to_dense()
+    fnames = ["ACSF", "SOAP", "FCHL19"]
+    for fname ∈ fnames
+        fpath = "data/"*fname*".jld"
+        f = load(fpath, "data")
+        ndata = length(f)
+        idx = 1:ndata
+        fdense = Vector{Matrix{Float64}}(undef, idx)
+        for i ∈ idx
+            fdense[i] = Matrix(f[i])
+        end
+        outpath = "data/"*fname*"_dense.jld"
+        save(outpath, "data", fdense)
     end
-    outpath = split(fpath, ".")
-    outpath = outpath[1]*"_dense.jld"
-    save(outpath, "data", fdense)
 end
