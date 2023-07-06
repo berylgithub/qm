@@ -1532,7 +1532,6 @@ function test_DeltaML()
             if model == "GAK"
                 K = Kg[ktrid, :] 
                 K[diagind(K)] .+= 1e-8
-                display(K)
             elseif model == "REAPER"
                 K = Kr[ktrid, :]
             end
@@ -1557,7 +1556,7 @@ function test_DeltaML()
             outs[cr, 4] = solver; outs[cr, 5] = lv; outs[cr, 6] = MAEtrain; outs[cr, 7] = MAE 
             println(outs[cr, :], "done !")
             open("result/deltaML/MAE_enum.txt", "a") do io # writefile by batch
-                writedlm(io, outs[cr,:]')
+                writedlm(io, permutedims(outs[cr,:]))
             end
             cr += 1
         end
