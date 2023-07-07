@@ -1493,7 +1493,7 @@ function test_DeltaML()
 
 
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF", "SOAP", "FCHL19"][2:3] # outtest loop, # skip ACSF for now due to NaNs
+    features = ["ACSF", "SOAP", "FCHL19"][3:3] # outtest loop, # skip ACSF for now due to NaNs
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond"]
@@ -1516,7 +1516,7 @@ function test_DeltaML()
         println("kernel computation is finished in ",t)
         for it ∈ iters
             n = it[1]; solver = it[2]; model = it[3]; lv = it[4]
-            println(it)
+            println(it, " ",feat)
             # indexes:
             idtr = idtrain[1:n]
             idts = setdiff(idall, idtr)
