@@ -1,4 +1,5 @@
 using LinearAlgebra, Statistics, StatsBase, Distributions, Plots, LaTeXStrings, DataFrames
+using ThreadsX
 
 """
 placeholder for linear algebra and statistics operations, if RoSemi is overcrowded, or when the need arises
@@ -180,27 +181,13 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     # cut number of features:
     N, n_f = (length(f), size(f[1], 2))
     # compute mean vector:
-    s = zeros(n_f); ∑ = zeros(n_f)
-    @simd for l ∈ 1:N
-        n_atom = size(f[l], 1)
-        @simd for i ∈ 1:n_atom
-            @inbounds ∑ .= ∑ .+ f[l][i,:] 
-        end
-        ∑ .= ∑ ./ n_atom
-        s .= s .+ ∑
-        fill!(∑, 0.) # reset
-    end
-    s ./= N
-    # intermediate matrix:
-    S = zeros(n_f, n_f); ∑S = zeros(n_f, n_f)
-    @simd for l ∈ 1:N
-        n_atom = size(f[l], 1)
-        @simd for i ∈ 1:n_atom
-            @inbounds ∑S .= ∑S .+ (f[l][i,:]*f[l][i,:]')
-        end
-        ∑S .= ∑S ./ n_atom
-        S .= S .+ ∑S
-        fill!(∑S, 0.)
+    s = transpose(mean(ThreadsX.map(X->mean(X, dims=1), f)))
+    # std matrix:
+    S = ThreadsX.mapreduce(+, f) do fl
+        fl = Matrix(fl)
+        idrow = axes(fl, 1)
+        s = map(i -> fl[i,:]*fl[i,:]', idrow)
+        mean(s)
     end
     S ./= N
     # covariance matrix:
@@ -796,4 +783,30 @@ function process_FCHL()
         fp[l] = f[l, 1:natom, :, 1:natom]
     end
     save("data/FCHL.jld", "data", fp)
+end
+
+function test_std_matrix(f)
+    N, n_f = (length(f), size(f[1], 2))
+    S = zeros(n_f, n_f); ∑S = zeros(n_f, n_f)
+    @simd for l ∈ 1:N
+        n_atom = size(f[l], 1)
+        @simd for i ∈ 1:n_atom
+            @inbounds ∑S .= ∑S .+ (f[l][i,:]*f[l][i,:]')
+        end
+        ∑S .= ∑S ./ n_atom
+        S .= S .+ ∑S
+        fill!(∑S, 0.)
+    end
+    S ./= N
+end
+
+function std_matrixX(f)
+    N = length(f)
+    S = ThreadsX.mapreduce(+, f) do fl
+        fl = Matrix(fl)
+        idrow = axes(fl, 1)
+        s = map(i -> fl[i,:]*fl[i,:]', idrow)
+        mean(s)
+    end
+    return S ./= N
 end
