@@ -1493,12 +1493,12 @@ function test_DeltaML()
 
 
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF", "SOAP", "FCHL19"][3:3] # outtest loop, # skip ACSF for now due to NaNs
+    features = ["ACSF", "SOAP", "FCHL19"][2:3] # outtest loop, # skip ACSF for now due to NaNs
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond"]
     n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
-    outs = Matrix{Any}(undef, length(features)*length(n_trains)*4 + 1, 7) # output table, |solver|*|Elevel| = 4
+    outs = Matrix{Any}(undef, length(features)*length(n_trains)*length(solvers)*length(elvs) + 1, 7) # output table
     outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
     # enumerate (cartesian product):
     iters = Iterators.product(n_trains, solvers, models, elvs)

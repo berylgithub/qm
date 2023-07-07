@@ -321,3 +321,6 @@ Quests:
 04.07.23:
 - check ACSF: kernels (GAK, repker) gave NaNs
 - check whether i can get extra disk space for VSC
+
+06.07.23:
+- ThreadsX works well! especially on VSC, now computation is blazing fast!, other functions should be chagned to ThreadsX
