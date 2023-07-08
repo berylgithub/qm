@@ -190,6 +190,8 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     end
     S ./= N
     # covariance matrix:
+    display(S)
+    dispay(s)
     C = S - s*s'
     if save_cov
         save("data/covariance_matrix_atomic.jld", "data", C)
