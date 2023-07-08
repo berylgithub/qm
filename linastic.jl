@@ -184,7 +184,6 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     s = transpose(mean(ThreadsX.map(X->mean(X, dims=1), f)))
     # std matrix:
     S = ThreadsX.mapreduce(+, f) do fl
-        fl = Matrix(fl)
         idrow = axes(fl, 1)
         s = map(i -> fl[i,:]*fl[i,:]', idrow)
         mean(s)
@@ -227,37 +226,41 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
         f_new[l] = temp_A
     end =#
     # try memory efficient op, but more risky!:
-    @simd for l ∈ 1:N
-        n_atom = size(f[l], 1)
-        temp_A = zeros(n_atom, n_select)
-        @simd for i ∈ 1:n_atom
-            @inbounds temp_A[i,:] .= Q'*(f[l][i,:] - s)
+    f = ThreadsX.map(f) do fl
+        idatom = axes(fl, 1)
+        temp = zeros(n_atom, n_select)
+        @simd for i ∈ idatom
+            @inbounds temp[i,:] .= Q'*(fl[i,:] - s)
         end
-        f[l] = temp_A
+        temp
     end
-    # normalize
+    # normalize:
     if normalize
         if normalize_mode == "minmax"
-            maxs = map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
-            mins = map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
-            @simd for l ∈ 1:N
-                n_atom = size(f[l], 1)
-                @simd for i ∈ 1:n_atom
-                    @inbounds f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
+            maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+            mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+            f = ThreadsX.map(f) do fl
+                idatom = axes(fl, 1)
+                temp = zeros(size(fl))
+                @simd for i ∈ idatom
+                    @inbounds temp[i,:] .= (fl[i,:] .- mins) ./ (maxs .- mins) 
                 end
+                temp
             end
         elseif normalize_mode == "ecdf" # empirical CDF scaler, UNFINISHED, DONT USE!
-            maxs = map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
-            mins = map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
-            @simd for l ∈ 1:N
-                n_atom = size(f[l], 1)
-                @simd for i ∈ 1:n_atom
-                    f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
+            maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+            mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+            f = ThreadsX.map(f) do fl
+                idatom = axes(fl, 1)
+                temp = zeros(size(fl))
+                @simd for i ∈ idatom
+                    @inbounds temp[i,:] .= (fl[i,:] .- mins) ./ (maxs .- mins) 
                 end
+                temp
             end    
         end
     end
-    s = ∑ = S = ∑S = C = D = e = temp_A = nothing; GC.gc() # clear memory
+    s = S = C = D = e = temp = nothing; GC.gc() # clear memory
     return f
 end
 
@@ -785,28 +788,31 @@ function process_FCHL()
     save("data/FCHL.jld", "data", fp)
 end
 
-function test_std_matrix(f)
-    N, n_f = (length(f), size(f[1], 2))
-    S = zeros(n_f, n_f); ∑S = zeros(n_f, n_f)
+
+
+function normalizef(f)
+    N = length(f)
+    n_f = size(f, 2)
+    mins = zeros(n_f); maxs = ones(n_f); 
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         @simd for i ∈ 1:n_atom
-            @inbounds ∑S .= ∑S .+ (f[l][i,:]*f[l][i,:]')
+            @inbounds f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
         end
-        ∑S .= ∑S ./ n_atom
-        S .= S .+ ∑S
-        fill!(∑S, 0.)
     end
-    S ./= N
+    return f
 end
 
-function std_matrixX(f)
-    N = length(f)
-    S = ThreadsX.mapreduce(+, f) do fl
-        fl = Matrix(fl)
-        idrow = axes(fl, 1)
-        s = map(i -> fl[i,:]*fl[i,:]', idrow)
-        mean(s)
+function normalizeX(f)
+    maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+    mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+    f = ThreadsX.map(f) do fl
+        idatom = axes(fl, 1)
+        temp = zeros(size(fl))
+        @simd for i ∈ idatom
+            @inbounds temp[i,:] .= (fl[i,:] .- mins) ./ (maxs .- mins) 
+        end
+        temp
     end
-    return S ./= N
+    return f
 end
