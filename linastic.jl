@@ -211,8 +211,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     Q = Q[:, 1:n_select]
     # project to eigenvectors
     f = ThreadsX.map(f) do fl
-        temp = (Q'*(fl .- s')')' # much faster to compute, (Q^T (f - s^T)^T)^T
-        temp
+        (Q'*(fl .- s')')' # much faster to compute, (Q^T (f - s^T)^T)^T
     end
     # normalize:
     if normalize
@@ -220,15 +219,13 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
             maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
             mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
             f = ThreadsX.map(f) do fl
-                temp = (fl .- mins') ./ (maxs .- mins)'
-                temp
+                (fl .- mins') ./ (maxs .- mins)'
             end
         elseif normalize_mode == "ecdf" # empirical CDF scaler, UNFINISHED, DONT USE!
             maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
             mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
             f = ThreadsX.map(f) do fl
-                temp = (fl .- mins') ./ (maxs .- mins)'
-                temp
+                (fl .- mins') ./ (maxs .- mins)'
             end    
         end
     end
