@@ -212,6 +212,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     # project to eigenvectors
     f = ThreadsX.map(f) do fl
         idatom = axes(fl, 1)
+        n_atom = size(fl, 1)
         temp = zeros(n_atom, n_select)
         @simd for i ∈ idatom
             @inbounds temp[i,:] .= Q'*(fl[i,:] - s)
