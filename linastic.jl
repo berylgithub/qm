@@ -210,7 +210,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     v = v[1:n_select]
     Q = Q[:, 1:n_select]
     # project to eigenvectors
-    f = map(f) do fl
+    f = ThreadsX.map(f) do fl
         idatom = axes(fl, 1)
         n_atom = size(fl, 1)
         temp = zeros(n_atom, n_select)
@@ -224,7 +224,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
         if normalize_mode == "minmax"
             maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
             mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
-            f = map(f) do fl
+            f = ThreadsX.map(f) do fl
                 idatom = axes(fl, 1)
                 temp = zeros(size(fl))
                 @simd for i ∈ idatom
@@ -789,6 +789,7 @@ function intmatrix(f)
             @inbounds temp_A[i,:] .= Q'*(f[l][i,:] - s)
         end
         f[l] = temp_A
+        display(temp_A)
     end
     return f
 end
@@ -802,12 +803,14 @@ function intmatrixX(f)
     Q = Q[:, 1:n_select]
     f = ThreadsX.map(f) do fl
         idatom = axes(fl, 1)
-        n_atom = size(fl, 1)
-        println(n_atom)
+        #= n_atom = size(fl, 1)
         temp = zeros(n_atom, n_select)
         @simd for i ∈ idatom
             @inbounds temp[i,:] .= Q'*(fl[i,:] - s)
-        end
+        end =#
+        temp = map(i -> Q'*(fl[i,:] - s), idatom)
+        display(temp)
+        display(reduce(vcat, temp))
         temp
     end
     return f
