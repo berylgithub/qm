@@ -181,7 +181,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     # cut number of features:
     N, n_f = (length(f), size(f[1], 2))
     # compute mean vector:
-    s = transpose(mean(ThreadsX.map(X->mean(X, dims=1), f)))
+    s = vec(mean(ThreadsX.map(X->mean(X, dims=1), f)))
     # std matrix:
     S = ThreadsX.mapreduce(+, f) do fl
         idrow = axes(fl, 1)
@@ -204,30 +204,14 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     v = e.values # temporary fix of small imag part rounding errors: use real(e.values)
     Q = e.vectors
     #display(v)
-    # plot here:
-    #plot_ev(v, Int.(round.(LinRange(1, n_f, n_select))), "plot/ev_atom_"*fname_plot_at)
-    #= U, sing, V = svd(C) # for comparison if numerical instability ever arise, SVD is more stable
-    display(sing) =#
-    # check if there exist large negative eigenvalues (most likely from numerical overflow), if there is try include it:
     # sort from largest eigenvalue instead:
     sidx = sortperm(v, rev=true)
     v = v[sidx]
     Q = Q[:, sidx]
     # select eigenvalues:
     v = v[1:n_select]
-    #display(v)
     Q = Q[:, 1:n_select]
-    #display(norm(C-Q*diagm(v)*Q'))
-    #= f_new = Vector{Matrix{Float64}}(undef, N)
-    @simd for l ∈ 1:N
-        n_atom = size(f[l], 1)
-        temp_A = zeros(n_atom, n_select)
-        @simd for i ∈ 1:n_atom
-            temp_A[i,:] .= Q'*(f[l][i,:] - s)
-        end
-        f_new[l] = temp_A
-    end =#
-    # try memory efficient op, but more risky!:
+    # project to eigenvectors
     f = ThreadsX.map(f) do fl
         idatom = axes(fl, 1)
         temp = zeros(n_atom, n_select)
@@ -792,29 +776,24 @@ end
 
 
 
-function normalizef(f)
+function intmatrix(f)
     N = length(f)
-    n_f = size(f, 2)
-    mins = zeros(n_f); maxs = ones(n_f); 
+    n_f = size(f[1], 2)
+    s = zeros(n_f); ∑ = zeros(n_f)
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
         @simd for i ∈ 1:n_atom
-            @inbounds f[l][i,:] .= (f[l][i,:] .- mins) ./ (maxs .- mins) 
+            @inbounds ∑ .= ∑ .+ f[l][i,:] 
         end
+        ∑ .= ∑ ./ n_atom
+        s .= s .+ ∑
+        fill!(∑, 0.) # reset
     end
-    return f
+    s ./= N
+    return s
 end
 
-function normalizeX(f)
-    maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
-    mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
-    f = ThreadsX.map(f) do fl
-        idatom = axes(fl, 1)
-        temp = zeros(size(fl))
-        @simd for i ∈ idatom
-            @inbounds temp[i,:] .= (fl[i,:] .- mins) ./ (maxs .- mins) 
-        end
-        temp
-    end
-    return f
+function intmatrixX(f)
+    s = vec(mean(ThreadsX.map(X->mean(X, dims=1), f)))
+    s
 end
