@@ -220,22 +220,14 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
             maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
             mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
             f = ThreadsX.map(f) do fl
-                idatom = axes(fl, 1)
-                temp = zeros(size(fl))
-                @simd for i ∈ idatom
-                    @inbounds temp[i,:] .= (fl[i,:] .- mins) ./ (maxs .- mins) 
-                end
+                temp = (fl .- mins') ./ (maxs .- mins)'
                 temp
             end
         elseif normalize_mode == "ecdf" # empirical CDF scaler, UNFINISHED, DONT USE!
             maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
             mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
             f = ThreadsX.map(f) do fl
-                idatom = axes(fl, 1)
-                temp = zeros(size(fl))
-                @simd for i ∈ idatom
-                    @inbounds temp[i,:] .= (fl[i,:] .- mins) ./ (maxs .- mins) 
-                end
+                temp = (fl .- mins') ./ (maxs .- mins)'
                 temp
             end    
         end
@@ -783,16 +775,10 @@ function intmatrix(f)
 end
 
 function intmatrixX(f)
-    N = length(f)
-    n_f = size(f[1], 2)
-    n_select = 10
-    s = vec(mean(ThreadsX.map(X->mean(X, dims=1), f)))
-    Q = Matrix{Float64}(LinearAlgebra.I, n_f, n_f)
-    Q = Q[:, 1:n_select]
-    f = map(f) do fl
-        temp = (Q'*(fl .- s')')' # much faster projection to compute, (Q^T (f - s^T)^T)^T
-        display(temp)
+    maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+    mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+    f = ThreadsX.map(f) do fl
+        temp = (fl .- mins') ./ (maxs .- mins)'
         temp
     end
-    return f
 end
