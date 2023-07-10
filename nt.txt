@@ -324,3 +324,6 @@ Quests:
 
 06.07.23:
 - ThreadsX works well! especially on VSC, now computation is blazing fast!, other functions should be chagned to ThreadsX
+
+07.07.23:
+- std matrix threadsx gives an error, correct later
