@@ -492,14 +492,9 @@ function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_tes
         F = F_new
         n_f = size(F, 2)
     end
-    s = zeros(n_f); #S = zeros(n_f, n_f)
-    #comp_mol_l!(s, S, F, N)
-    for i ∈ 1:N
-        s .= s .+ F[i, :]
-    end
-    s ./= N; #S ./= N
-    
-    #C = S - s*s' # covariance matrix
+
+    # mean vector:
+    s = vec(mean(F, dims=1))
 
     # correlation matrix:
     C = cor(F) # more accurate than the D*C*D somehow
@@ -519,18 +514,13 @@ function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_tes
     v = v[1:n_select]
     Q = Q[:, 1:n_select]
 
-    F_new = zeros(N, n_select)
-    for l ∈ 1:N
-        F_new[l,:] .= Q'*(F[l,:] - s)
-    end
+    F_new = (Q'*(F .- s')')' # projection
 
     if normalize
         if normalize_mode == "minmax"
             maxs = vec(maximum(F_new, dims=1))
             mins = vec(minimum(F_new, dims=1))
-            for l ∈ 1:N
-                F_new[l,:] .= (F_new[l,:] .- mins) ./ (maxs .- mins)
-            end
+            F_new = (F_new .- mins') ./ (maxs .- mins)'
         elseif normalize_mode == "ecdf" # empirical CDF scaler
             @simd for k ∈ axes(F_new, 2)
                 ec = ecdf(F_new[:, k]) # fit CDF
