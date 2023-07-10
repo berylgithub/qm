@@ -214,6 +214,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
         idatom = axes(fl, 1)
         n_atom = size(fl, 1)
         temp = zeros(n_atom, n_select)
+        println(n_atom)
         @simd for i ∈ idatom
             @inbounds temp[i,:] .= Q'*(fl[i,:] - s)
         end
@@ -778,21 +779,37 @@ end
 function intmatrix(f)
     N = length(f)
     n_f = size(f[1], 2)
-    s = zeros(n_f); ∑ = zeros(n_f)
+    n_select = 10
+    s = vec(mean(ThreadsX.map(X->mean(X, dims=1), f)))
+    Q = Matrix{Float64}(LinearAlgebra.I, n_f, n_f)
+    Q = Q[:, 1:n_select]
     @simd for l ∈ 1:N
         n_atom = size(f[l], 1)
+        temp_A = zeros(n_atom, n_select)
         @simd for i ∈ 1:n_atom
-            @inbounds ∑ .= ∑ .+ f[l][i,:] 
+            @inbounds temp_A[i,:] .= Q'*(f[l][i,:] - s)
         end
-        ∑ .= ∑ ./ n_atom
-        s .= s .+ ∑
-        fill!(∑, 0.) # reset
+        f[l] = temp_A
     end
-    s ./= N
-    return s
+    return f
 end
 
 function intmatrixX(f)
+    N = length(f)
+    n_f = size(f[1], 2)
+    n_select = 10
     s = vec(mean(ThreadsX.map(X->mean(X, dims=1), f)))
-    s
+    Q = Matrix{Float64}(LinearAlgebra.I, n_f, n_f)
+    Q = Q[:, 1:n_select]
+    f = ThreadsX.map(f) do fl
+        idatom = axes(fl, 1)
+        n_atom = size(fl, 1)
+        println(n_atom)
+        temp = zeros(n_atom, n_select)
+        @simd for i ∈ idatom
+            @inbounds temp[i,:] .= Q'*(fl[i,:] - s)
+        end
+        temp
+    end
+    return f
 end
