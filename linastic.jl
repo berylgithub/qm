@@ -211,12 +211,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
     Q = Q[:, 1:n_select]
     # project to eigenvectors
     f = ThreadsX.map(f) do fl
-        idatom = axes(fl, 1)
-        n_atom = size(fl, 1)
-        temp = zeros(n_atom, n_select)
-        @simd for i ∈ idatom
-            @inbounds temp[i,:] .= Q'*(fl[i,:] - s)
-        end
+        temp = (Q'*(fl .- s')')' # much faster to compute, (Q^T (f - s^T)^T)^T
         temp
     end
     # normalize:
@@ -773,23 +768,16 @@ function process_FCHL()
     save("data/FCHL.jld", "data", fp)
 end
 
-
-
 function intmatrix(f)
-    N = length(f)
-    n_f = size(f[1], 2)
-    n_select = 10
-    s = vec(mean(ThreadsX.map(X->mean(X, dims=1), f)))
-    Q = Matrix{Float64}(LinearAlgebra.I, n_f, n_f)
-    Q = Q[:, 1:n_select]
-    @simd for l ∈ 1:N
-        n_atom = size(f[l], 1)
-        temp_A = zeros(n_atom, n_select)
-        @simd for i ∈ 1:n_atom
-            @inbounds temp_A[i,:] .= Q'*(f[l][i,:] - s)
+    maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
+    mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
+    f = ThreadsX.map(f) do fl
+        idatom = axes(fl, 1)
+        temp = zeros(size(fl))
+        @simd for i ∈ idatom
+            @inbounds temp[i,:] .= (fl[i,:] .- mins) ./ (maxs .- mins) 
         end
-        f[l] = temp_A
-        display(temp_A)
+        temp
     end
     return f
 end
@@ -801,16 +789,9 @@ function intmatrixX(f)
     s = vec(mean(ThreadsX.map(X->mean(X, dims=1), f)))
     Q = Matrix{Float64}(LinearAlgebra.I, n_f, n_f)
     Q = Q[:, 1:n_select]
-    f = ThreadsX.map(f) do fl
-        idatom = axes(fl, 1)
-        #= n_atom = size(fl, 1)
-        temp = zeros(n_atom, n_select)
-        @simd for i ∈ idatom
-            @inbounds temp[i,:] .= Q'*(fl[i,:] - s)
-        end =#
-        temp = map(i -> Q'*(fl[i,:] - s), idatom)
+    f = map(f) do fl
+        temp = (Q'*(fl .- s')')' # much faster projection to compute, (Q^T (f - s^T)^T)^T
         display(temp)
-        display(reduce(vcat, temp))
         temp
     end
     return f
