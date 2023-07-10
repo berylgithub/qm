@@ -214,7 +214,6 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
         idatom = axes(fl, 1)
         n_atom = size(fl, 1)
         temp = zeros(n_atom, n_select)
-        println(n_atom)
         @simd for i ∈ idatom
             @inbounds temp[i,:] .= Q'*(fl[i,:] - s)
         end
@@ -225,7 +224,7 @@ function PCA_atom(f, n_select; normalize=true, normalize_mode="minmax", fname_pl
         if normalize_mode == "minmax"
             maxs = ThreadsX.map(f_el -> maximum(f_el, dims=1), f); maxs = vec(maximum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), maxs)), dims=1))
             mins = ThreadsX.map(f_el -> minimum(f_el, dims=1), f); mins = vec(minimum(mapreduce(permutedims, vcat, map(m_el -> vec(m_el), mins)), dims=1))
-            f = ThreadsX.map(f) do fl
+            f = map(f) do fl
                 idatom = axes(fl, 1)
                 temp = zeros(size(fl))
                 @simd for i ∈ idatom
