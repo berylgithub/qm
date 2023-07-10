@@ -1478,22 +1478,9 @@ function test_DeltaML()
     writedlm("result/deltaML/MAE_base.txt", MAEs)
     writedlm("data/energy_clean_db.txt", E-Eda-Edb) # save cleaned energy
 
-    #= # test ONE feature--model first:
-    Et = E - Eda
-    dataset = load("data/qm9_dataset.jld", "data")
-    f = load("data/SOAP.jld", "data")
-    K = get_gaussian_kernel(f[idtrain], f[idtrain], [d["atoms"] for d ∈ dataset[idtrain]], [d["atoms"] for d ∈ dataset[idtrain]], 2048.)
-    K[diagind(K)] .+= 1e-8
-    display(K)
-    θ = K\Et[idtrain]
-    display(θ)
-    Epred = K*θ
-    MAE = mean(abs.(Et[idtrain] - Epred))*627.503
-    display(MAE) =#
-
 
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF", "SOAP", "FCHL19"][3:3] # outtest loop, # skip ACSF for now due to NaNs
+    features = ["ACSF_51", "SOAP", "FCHL19"][1:1] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond"]
