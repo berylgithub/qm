@@ -1556,31 +1556,31 @@ test data selection given a feature WITHOUT PCA,
 
 """
 function test_selection_delta()
+    # Scenario 1: compute centers(feature) -> 5 sets of centers ∀features, get the set of centers with the lowest MAE(Edb):
     dataset = load("data/qm9_dataset.jld", "data")
-    f = load("data/FCHL19.jld", "data")
-    tF = @elapsed begin
-        F = extract_mol_features(f, dataset)[:, 1:end-5] 
+    features = ["ACSF_51", "SOAP", "FCHL19"]
+    all_centers = []
+    for feat ∈ features
+        println(feat)
+        f = load("data/"*feat*".jld", "data")
+        tF = @elapsed begin
+            F = extract_mol_features(f, dataset)[:, 1:end-5] 
+        end
+        println("moltransform elapsed = ", tF)
+        display(F)
+        tC = @elapsed begin
+            centers = set_cluster(F, 200; universe_size = 1000, num_center_sets = 5)
+        end
+        println("selection elapsed = ", tC)
+        centers = reduce(hcat, centers)
+        if isempty(all_centers)
+            all_centers = centers
+        else
+            all_centers = hcat(all_centers, centers)
+        end
     end
-    println("moltransform elapsed = ", tF)
-    display(F)
-    tC = @elapsed begin
-        centers = set_cluster(F, 200; universe_size = 1000, num_center_sets = 5)
-    end
-    println("selection elapsed = ", tC)
-    display(centers)
-end
-
-function test_largedata()
-    f = load("data/FCHL19.jld", "data")
-    D = load("data/qm9_dataset.jld", "data")
-    td = @elapsed begin
-        data_setup("exp_reduced_energy", 360, 100, 5, 100, "data/qm9_dataset.jld", "data/FCHL19.jld", "FCHL19") 
-    end
-    t = @elapsed begin
-        subK = get_repker_atom(f[1:100], f[1:100], [d["atoms"] for d in D[1:100]], [d["atoms"] for d in D[1:100]])
-    end
-    display(subK)
-    println(t," ",td)
+    writedlm("data/all_centers_deltaML.txt", all_centers)
+    # Scenario 2: get the lowest MAE(Edb) for each feature type from the above sets
 end
 
 """
