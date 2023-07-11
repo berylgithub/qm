@@ -1589,7 +1589,7 @@ function test_selection_delta()
         println(feat)
         f = load("data/"*feat*".jld", "data")
         tF = @elapsed begin
-            F = extract_mol_features(f, dataset)[:, 1:end-5] 
+            F = extract_mol_features(f, dataset)[:, 1:end-6] 
         end
         println("moltransform elapsed = ", tF)
         display(F)
@@ -1633,6 +1633,7 @@ function test_get_MAE_table()
     ids = sortperm(MAE_tb[:, 3]) # sort by dressed bond training MAE
     writedlm("result/deltaML/sorted_set_ids.txt", ids)
     writedlm("data/E_clean_sorted.txt", E_tb[:, ids]) # sort the Energies by the lowest dressed bonds MAE
+    writedlm("result/deltaML/MAE_base_sorted.txt", MAE_tb[ids, :])
     display(E_tb[:, ids])  
     display(MAE_tb[ids, :])
 end
