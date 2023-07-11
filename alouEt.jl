@@ -1551,6 +1551,25 @@ function test_DeltaML()
     display(outs)
 end
 
+"""
+test data selection given a feature WITHOUT PCA,
+
+"""
+function test_selection_delta()
+    dataset = load("data/qm9_dataset.jld", "data")
+    f = load("data/FCHL19.jld", "data")
+    tF = @elapsed begin
+        F = extract_mol_features(f, dataset)[:, 1:end-5] 
+    end
+    println("moltransform elapsed = ", tF)
+    display(F)
+    tC = @elapsed begin
+        centers = set_cluster(F, 200; universe_size = 1000, num_center_sets = 5)
+    end
+    println("selection elapsed = ", tC)
+    display(centers)
+end
+
 function test_largedata()
     f = load("data/FCHL19.jld", "data")
     D = load("data/qm9_dataset.jld", "data")
