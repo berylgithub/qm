@@ -1427,6 +1427,31 @@ end
 """
 
 """
+computes E_db as the highest level, given a set of training indices
+"""
+function get_delta_Edb(E, Fda, Fdb, idtrain, idtest)
+    # fit the baselines, dressed_atom and dressed_bonds:
+    # vector structure for each set: [MAE_train_eda, MAE_test_eda, MAE_train_edb, MAE_test_edb]
+    MAEs = []
+    θ = Fda[idtrain, :]\E[idtrain]
+    Eda = Fda*θ
+    MAEtrain = mean(abs.(E[idtrain] - Eda[idtrain]))*627.503
+    MAEtest = mean(abs.(E[idtest] - Eda[idtest]))*627.503
+    println("dressed_atom: ", MAEtrain, " ",MAEtest)
+    push!(MAEs, MAEtrain); push!(MAEs, MAEtest)
+    # dressed bonds:
+    Et = E - Eda # take out parts of the energy
+    θ = Fdb[idtrain, :]\Et[idtrain]
+    Edb = Fdb*θ 
+    MAEtrain = mean(abs.(Et[idtrain] - Edb[idtrain]))*627.503
+    MAEtest = mean(abs.(Et[idtest] - Edb[idtest]))*627.503
+    println("dressed_bonds: ", MAEtrain, " ",MAEtest)
+    push!(MAEs, MAEtrain); push!(MAEs, MAEtest)
+    return E-Eda-Edb, MAEs # return the vector of MAEs and the vector of energies
+end
+
+
+"""
 try out fitting with current best found feature and current best found model
 WITHOUT data selection for: Ebase = nothing, Ebase = NullModel, Ebase = SoB
 
@@ -1581,6 +1606,24 @@ function test_selection_delta()
     end
     writedlm("data/all_centers_deltaML.txt", all_centers)
     # Scenario 2: get the lowest MAE(Edb) for each feature type from the above sets
+end
+
+function test_get_lowest_MAE()
+    E = readdlm("data/energies.txt")
+    all_centers = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, :])
+    idall = 1:length(E)
+    Fda = load("data/atomref_features.jld", "data")
+    Fdb = load("data/featuresmat_qm9_covalentbonds.jld", "data")
+    MAE_tb = []
+    for i ∈ axes(all_centers, 2)
+        idtrain = all_centers[:, i]
+        idtest = setdiff(idall, idtrain)
+        # compute Edb:
+        E_clean, MAEs = get_delta_Edb(E, Fda, Fdb, idtrain, idtest)
+        push!(MAE_tb, MAEs)
+    end
+    MAE_tb = reduce(vcat, MAE_tb')
+    display(MAE_tb)
 end
 
 """
