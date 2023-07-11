@@ -1480,7 +1480,7 @@ function test_DeltaML()
 
 
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF_51", "SOAP", "FCHL19"][1:1] # outtest loop
+    features = ["ACSF_51", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond"]
