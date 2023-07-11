@@ -1518,15 +1518,15 @@ function test_DeltaML()
             # model train:
             if model == "GAK"
                 K = Kg[ktrid, :] 
-                K[diagind(K)] .+= 1e-8
             elseif model == "REAPER"
                 K = Kr[ktrid, :]
             end
             # solver:
             if solver == "direct"
+                K[diagind(K)] .+= 1e-8
                 θ = K\Et[idtr]
             elseif solver == "cgls"
-                θ, stat = cgls(K, Et[idtr], itmax=500)
+                θ, stat = cgls(K, Et[idtr], itmax=500, λ = 1e-8)
             end
             Epred = K*θ
             MAEtrain = mean(abs.(Et[idtr] - Epred))*627.503
