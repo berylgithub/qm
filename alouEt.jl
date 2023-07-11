@@ -1437,7 +1437,7 @@ function get_delta_Edb(E, Fda, Fdb, idtrain, idtest)
     Eda = Fda*θ
     MAEtrain = mean(abs.(E[idtrain] - Eda[idtrain]))*627.503
     MAEtest = mean(abs.(E[idtest] - Eda[idtest]))*627.503
-    println("dressed_atom: ", MAEtrain, " ",MAEtest)
+    #println("dressed_atom: ", MAEtrain, " ",MAEtest)
     push!(MAEs, MAEtrain); push!(MAEs, MAEtest)
     # dressed bonds:
     Et = E - Eda # take out parts of the energy
@@ -1445,7 +1445,7 @@ function get_delta_Edb(E, Fda, Fdb, idtrain, idtest)
     Edb = Fdb*θ 
     MAEtrain = mean(abs.(Et[idtrain] - Edb[idtrain]))*627.503
     MAEtest = mean(abs.(Et[idtest] - Edb[idtest]))*627.503
-    println("dressed_bonds: ", MAEtrain, " ",MAEtest)
+    #println("dressed_bonds: ", MAEtrain, " ",MAEtest)
     push!(MAEs, MAEtrain); push!(MAEs, MAEtest)
     return E-Eda-Edb, MAEs # return the vector of MAEs and the vector of energies
 end
@@ -1594,7 +1594,7 @@ function test_selection_delta()
         println("moltransform elapsed = ", tF)
         display(F)
         tC = @elapsed begin
-            centers = set_cluster(F, 200; universe_size = 1000, num_center_sets = 5)
+            centers = set_cluster(F, 200; universe_size = 1000, num_center_sets = 20)
         end
         println("selection elapsed = ", tC)
         centers = reduce(hcat, centers)
@@ -1608,22 +1608,33 @@ function test_selection_delta()
     # Scenario 2: get the lowest MAE(Edb) for each feature type from the above sets
 end
 
-function test_get_lowest_MAE()
+"""
+get the table of MAE and some sets of energies with lowest training MAE of the dressed bond
+table of MAEs = stats ⟹ each vector of MAEs is row wise
+sets of energies = data ⟹ each set is column wise
+"""
+function test_get_MAE_table()
     E = readdlm("data/energies.txt")
     all_centers = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, :])
     idall = 1:length(E)
     Fda = load("data/atomref_features.jld", "data")
     Fdb = load("data/featuresmat_qm9_covalentbonds.jld", "data")
-    MAE_tb = []
+    MAE_tb = []; E_tb = []
     for i ∈ axes(all_centers, 2)
         idtrain = all_centers[:, i]
         idtest = setdiff(idall, idtrain)
         # compute Edb:
         E_clean, MAEs = get_delta_Edb(E, Fda, Fdb, idtrain, idtest)
         push!(MAE_tb, MAEs)
+        push!(E_tb, E_clean)
     end
-    MAE_tb = reduce(vcat, MAE_tb')
-    display(MAE_tb)
+    MAE_tb = reduce(vcat, MAE_tb'); E_tb = reduce(hcat, E_tb)
+    display(E_tb)
+    ids = sortperm(MAE_tb[:, 3]) # sort by dressed bond training MAE
+    writedlm("result/deltaML/sorted_set_ids.txt", ids)
+    writedlm("data/E_clean_sorted.txt", E_tb[:, ids]) # sort the Energies by the lowest dressed bonds MAE
+    display(E_tb[:, ids])  
+    display(MAE_tb[ids, :])
 end
 
 """
