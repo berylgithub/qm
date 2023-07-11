@@ -1467,9 +1467,14 @@ function test_DeltaML()
     # select split indexes, will be used for baseline and last level fitting:
     Random.seed!(603)
     idall = 1:nrow
-    idtrain = sample(1:nrow, 100, replace=false)
-    idtest = setdiff(idall, idtrain)
+    #idtrain = sample(1:nrow, 100, replace=false)
     
+    # use pre-selected training set:
+    rank = 2 #select set w/ 2nd ranked training MAE
+    id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
+    idtrain = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, id])
+    idtest = setdiff(idall, idtrain)
+
     # fit the baselines, dressed_atom and dressed_bonds:
     MAEs = Matrix{Any}(undef, 5,4)
     MAEs[1,:] = ["Elevel", "solver", "MAEtrain", "MAEtest"]; 
@@ -1500,8 +1505,8 @@ function test_DeltaML()
     MAEs[5,4] = mean(abs.(Et[idtest] - Edbs[2][idtest]))*627.503
     println("dressed_atom: ", MAEs[4:5, 3:4])
     Edb = Edbs[argmin(MAEs[4:5,4])] # save dressed bond energies with the lowest MAE
-    writedlm("result/deltaML/MAE_base.txt", MAEs)
-    writedlm("data/energy_clean_db.txt", E-Eda-Edb) # save cleaned energy
+    writedlm("result/deltaML/MAE_base_set-"*string(rank)*".txt", MAEs)
+    writedlm("data/energy_clean_db_set-"*string(rank)*".txt", E-Eda-Edb) # save cleaned energy
 
 
     # test diverse models: check TRAIN first for correctness
@@ -1567,7 +1572,7 @@ function test_DeltaML()
             outs[cr, 1] = n; outs[cr, 2] = feat; outs[cr, 3] = model; 
             outs[cr, 4] = solver; outs[cr, 5] = lv; outs[cr, 6] = MAEtrain; outs[cr, 7] = MAE 
             println(outs[cr, :], "done !")
-            open("result/deltaML/MAE_enum.txt", "a") do io # writefile by batch
+            open("result/deltaML/MAE_enum_set-"*string(rank)*".txt", "a") do io # writefile by batch
                 writedlm(io, permutedims(outs[cr,:]))
             end
             cr += 1
