@@ -1,4 +1,4 @@
-using Plots, DelimitedFiles, LaTeXStrings, Printf
+using Plots, DelimitedFiles, LaTeXStrings, Printf, Statistics
 
 
 function plot_mae()
@@ -47,9 +47,14 @@ end
 ΔML stuffs:
 """
 
+"""
+plot prototype for 
+"""
 function plot_MAE_db()
     tb = readdlm("result/deltaML/MAE_enum.txt")
     tbsel = readdlm("result/deltaML/MAE_enum_set-2.txt")
+    
+    # plot prototype for each {feature, model, solver}:
     tb_da = tb[13:16, :]
     tb_db = tb[29:32, :]
     tbsel_db = tbsel[29:32, :]
@@ -57,9 +62,23 @@ function plot_MAE_db()
     yticks = round.(vcat(maximum(MAEs), minimum(MAEs)), digits=3)
     yticks = vcat(yticks, range(10, 50, 5))
     ytformat = vcat(string.(yticks[1:2]), map(x -> @sprintf("%.0f",x), yticks[3:end]))
-    display(ytformat)
-    plot(tb_da[:, 1], [tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7]],
+    p = plot(tb_da[:, 1], [tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7]],
         yticks = (yticks, ytformat), xticks = tb_da[:, 1],
-        markershape = [:xcross :cross :rect], 
+        markershape = [:xcross :cross :rect], markersize = [6 6 4],
         labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
+    display(p)
+
+    # plot prototype for vs{features} in the same environment:
+    tb1 = tbsel[29:32, :] #ACSF
+    tb2 = tbsel[61:64, :] #SOAP
+    tb3 = tbsel[93:96, :] #FCHL19
+    MAEs = vcat(tb1[:, 7], tb2[:, 7], tb3[:, 7])
+    yticks = round.(vcat(maximum(MAEs), minimum(MAEs)), digits=3)
+    yticks = vcat(yticks, range(10, 50, 5))
+    ytformat = vcat(string.(yticks[1:2]), map(x -> @sprintf("%.0f",x), yticks[3:end]))
+    p = plot(tb1[:, 1], [tb1[:, 7], tb2[:, 7], tb3[:, 7]],
+        yticks = (yticks, ytformat), xticks = tb1[:, 1],
+        markershape = [:xcross :cross :rect], markersize = [6 6 4],
+        labels = ["MAE(ACSF)" "MAE(SOAP)" "MAE(FCHL19)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
+    display(p)
 end
