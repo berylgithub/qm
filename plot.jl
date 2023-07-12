@@ -42,3 +42,23 @@ function plot_mae_spec()
     display(s)
     savefig(s, "plot/MAE_$molname.png")
 end
+
+"""
+ΔML stuffs:
+"""
+
+function plot_MAE_db()
+    tb = readdlm("result/deltaML/MAE_enum.txt")
+    tbsel = readdlm("result/deltaML/MAE_enum_set-2.txt")
+    tb_da = tb[13:16, :]
+    tb_db = tb[29:32, :]
+    tbsel_db = tbsel[29:32, :]
+    yticks = round.(vcat(tb_da[1, 7], tbsel_db[end, 7]), digits=3)
+    yticks = vcat(yticks, range(10, 50, 5))
+    ytformat = string.(yticks)
+    display(ytformat)
+    plot(tb_da[:, 1], [tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7]],
+        yticks = (yticks, , xticks = tb_da[:, 1],
+        markershape = [:xcross :cross :rect], 
+        labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
+end
