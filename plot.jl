@@ -59,11 +59,14 @@ function plot_MAE_db()
     tb_db = tb[29:32, :]
     tbsel_db = tbsel[29:32, :]
     MAEs = vcat(tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7])
+    xticks = tb_da[:, 1]
+    xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
     yticks = round.(vcat(maximum(MAEs), minimum(MAEs)), digits=3)
     yticks = vcat(yticks, range(10, 50, 5))
     ytformat = vcat(string.(yticks[1:2]), map(x -> @sprintf("%.0f",x), yticks[3:end]))
     p = plot(tb_da[:, 1], [tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7]],
-        yticks = (yticks, ytformat), xticks = tb_da[:, 1],
+        yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+        xaxis = :log, yaxis = :log,
         markershape = [:xcross :cross :rect], markersize = [6 6 4],
         labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
@@ -73,11 +76,14 @@ function plot_MAE_db()
     tb2 = tbsel[61:64, :] #SOAP
     tb3 = tbsel[93:96, :] #FCHL19
     MAEs = vcat(tb1[:, 7], tb2[:, 7], tb3[:, 7])
+    xticks = tb1[:, 1]
+    xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
     yticks = round.(vcat(maximum(MAEs), minimum(MAEs)), digits=3)
     yticks = vcat(yticks, range(10, 50, 5))
     ytformat = vcat(string.(yticks[1:2]), map(x -> @sprintf("%.0f",x), yticks[3:end]))
     p = plot(tb1[:, 1], [tb1[:, 7], tb2[:, 7], tb3[:, 7]],
-        yticks = (yticks, ytformat), xticks = tb1[:, 1],
+        yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+        xaxis = :log, yaxis = :log,
         markershape = [:xcross :cross :rect], markersize = [6 6 4],
         labels = ["MAE(ACSF)" "MAE(SOAP)" "MAE(FCHL19)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
