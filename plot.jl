@@ -1,4 +1,4 @@
-using Plots, DelimitedFiles, LaTeXStrings
+using Plots, DelimitedFiles, LaTeXStrings, Printf
 
 
 function plot_mae()
@@ -53,12 +53,13 @@ function plot_MAE_db()
     tb_da = tb[13:16, :]
     tb_db = tb[29:32, :]
     tbsel_db = tbsel[29:32, :]
-    yticks = round.(vcat(tb_da[1, 7], tbsel_db[end, 7]), digits=3)
+    MAEs = vcat(tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7])
+    yticks = round.(vcat(maximum(MAEs), minimum(MAEs)), digits=3)
     yticks = vcat(yticks, range(10, 50, 5))
-    ytformat = string.(yticks)
+    ytformat = vcat(string.(yticks[1:2]), map(x -> @sprintf("%.0f",x), yticks[3:end]))
     display(ytformat)
     plot(tb_da[:, 1], [tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7]],
-        yticks = (yticks, , xticks = tb_da[:, 1],
+        yticks = (yticks, ytformat), xticks = tb_da[:, 1],
         markershape = [:xcross :cross :rect], 
         labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
 end
