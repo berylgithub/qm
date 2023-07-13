@@ -1,5 +1,44 @@
 using Plots, DelimitedFiles, LaTeXStrings, Printf, Statistics
 
+"""
+============
+useful data cleaning func
+============
+"""
+# cleans the structure data of floats into 3 digits-behind-comma format
+function clean_float(data)
+    return map(el -> @sprintf("%.3f", el), data)
+end
+
+# same as above but also handles scientific notaiton
+function clean_float_e(data)
+    return map(data) do el
+        s = ""
+        if occursin("e", string(el)) # retain scinetfigc notaioton
+            s = @sprintf "%.3e" el
+        else
+            s = @sprintf "%.3f" el
+        end
+        s
+    end
+end
+
+# script to write to latex table, given a Matrix{Any}
+function writelatextable(table, filename)
+    open(filename, "w") do io
+        for i ∈ axes(table, 1)
+            str = ""
+            for j ∈ axes(table, 2)
+                str *= string(table[i, j])*"\t"*"& "
+            end
+            str = str[1:end-2]
+            str *= raw"\\ \hline"*"\n"
+            print(io, str)
+        end
+    end
+end
+
+
 
 function plot_mae()
     molnames = readdir("result")[2:end]
@@ -55,6 +94,7 @@ function plot_MAE_db()
     tbsel = readdlm("result/deltaML/MAE_enum_set-2.txt")
     
     # plot prototype for each {feature, model, solver}:
+    # acsf:
     tb_da = tb[13:16, :]
     tb_db = tb[29:32, :]
     tbsel_db = tbsel[29:32, :]
