@@ -19,6 +19,19 @@ function clean_float(data)
     end
 end
 
+# add \ for latex underscore escape, only handles findfirst for now
+function latex_(data)
+    return map(data) do el
+        id = findfirst("_", el)
+        if id !== nothing
+            s = el[1 : id[1]-1]*raw"\_"*el[id[1]+1 : end]
+        else
+            s = el
+        end
+        s
+    end
+end
+
 # script to write to latex table, given a Matrix{Any}
 function writelatextable(table, filename)
     open(filename, "w") do io
