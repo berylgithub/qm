@@ -5,13 +5,9 @@ using Plots, DelimitedFiles, LaTeXStrings, Printf, Statistics
 useful data cleaning func
 ============
 """
+
 # cleans the structure data of floats into 3 digits-behind-comma format
 function clean_float(data)
-    return map(el -> @sprintf("%.3f", el), data)
-end
-
-# same as above but also handles scientific notaiton
-function clean_float_e(data)
     return map(data) do el
         s = ""
         if occursin("e", string(el)) # retain scinetfigc notaioton
