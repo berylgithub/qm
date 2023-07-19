@@ -2,6 +2,8 @@
 all kinds of utility functions
 """
 
+using LaTeXStrings
+
 # script to write string given a vector{string}
 function writestringline(strinput, filename; mode="w")
     open(filename, mode) do io
