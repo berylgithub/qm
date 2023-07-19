@@ -9,8 +9,7 @@ using Random, StatsBase
 include("utils.jl")
 include("voronoi.jl")
 include("linastic.jl")
-
-using RoSemi #try using
+include("RoSemi.jl")
 
 """
 timer callback for earlier stop by time duration
