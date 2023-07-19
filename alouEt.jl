@@ -5,7 +5,7 @@ using Random, StatsBase
 """
 contains all tests and experiments
 """
-
+include("utils.jl")
 include("voronoi.jl")
 include("linastic.jl")
 include("RoSemi.jl")
@@ -1263,6 +1263,114 @@ function fit_🌹_and_atom(foldername, file_dataset;
     # clear memory:
     dataset = E_dict = f = F = ϕ = dϕ = E = D = E_atom = Midx = Uidx = Widx = nothing; GC.gc()
 end
+
+
+"""
+simulator with memory persistence mode: computes PCA until fitting in one sweep
+"""
+function sim_🌹(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
+                universe_size=1_000, normalize_atom = true, normalize_mol = true, normalize_mode = "minmax", 
+                fit_ecdf = false, fit_ecdf_ids = [], ft_sos=false, ft_bin=false, 
+                molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false, num_center_sets = 1,
+                save_to_disk = false)
+    # === DATA SETUP === #
+    println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
+    t = @elapsed begin
+        path = mkpath("data/$foldername")
+        # load dataset:
+        dataset = load(dataset_file)["data"]
+        # PCA:
+        F = nothing
+        sens_mode = false
+        uid = replace(string(Dates.now()), ":" => ".") # generate uid
+        plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
+        if length(molf_file) == 0 # if molecular feature file is not provided:
+            println("atomic ⟹ mol mode!")
+            f = load(feature_file)["data"] # pre-extracted atomic features
+            println("PCA atom starts!")
+            if isempty(cov_file)
+                f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
+            else
+                sens_mode = true
+                C = load(cov_file)["data"]
+                σ = load(sensitivity_file)["data"]
+                f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
+            end
+            println("PCA atom done!")
+            println("mol feature processing starts!")
+            F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
+            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode)
+            println("mol feature processing finished!")
+        else
+            println("mol only mode!")
+            println("mol feature processing starts!")
+            F = load(molf_file)["data"]
+            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode, cov_test=feature_name=="FCHL" ? true : false)
+            println("mol feature processing finished!")
+        end
+        # compute bspline:
+        ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
+        # get centers:
+        println("computing centers...")
+        centers = set_cluster(F, num_centers, universe_size=universe_size, num_center_sets=num_center_sets)
+        if fit_ecdf # normalization by fitting the ecdf using the centers
+            println("fitting ecdf...")
+            ids = []
+            if isempty(fit_ecdf_ids) # if empty then use the first index centers
+                ids = centers[1]
+            else
+                ids = fit_ecdf_ids
+            end
+            f = comp_ecdf(f, ids; type="atom")
+            F = comp_ecdf(F, ids; type="mol")
+        end
+        # copy pre-computed atomref features:
+        redf = load("data/atomref_features.jld", "data")
+        # save files:
+    end
+    #save("data/$foldername/dataset.jld", "data", dataset)
+    if save_to_disk
+        save("data/$foldername/features_atom.jld", "data", f) # atomic features
+        save("data/$foldername/features.jld", "data", F) # molecular features
+        save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
+        save("data/$foldername/center_ids.jld", "data", centers)
+        save("data/$foldername/spline.jld", "data", ϕ)
+        save("data/$foldername/dspline.jld", "data", dϕ)
+    end
+    if save_global_centers # append centers to global directory
+        for i ∈ eachindex(centers)
+            kid = "K"*string(i)
+            strings = string.(vcat(uid, kid, centers[i]))
+            open("data/centers.txt", "a") do io
+                str = ""
+                for s ∈ strings
+                    str*=s*"\t"
+                end
+                print(io, str*"\n")
+            end
+        end
+    end
+    # write data setup info:
+    n_data = length(dataset)
+    machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
+    strlist = string.([uid, n_data, num_centers, feature_name, n_af, n_mf, ft_sos, ft_bin, normalize_atom, normalize_mol, sens_mode, n_basis+3, t, machine]) # dates serves as readable uid, n_basis + 3 by definition
+    
+    open("data/$foldername/setup_info.txt","a") do io
+        str = ""
+        for s ∈ strlist
+            str*=s*"\t"
+        end
+        print(io, str*"\n")
+    end
+    println("data setup is finished in ",t,"s")
+    # === FITTING === #
+
+
+    # clear memory, put at the end:
+    dataset=F=f=ϕ=dϕ=centers=redf=nothing
+    GC.gc()
+end
+
 
 """
 automatically generate data and fit based on list of molname, n_data, n_feature,M, and universe_size saved in json file 

@@ -1,54 +1,5 @@
 using Plots, DelimitedFiles, LaTeXStrings, Printf, Statistics
 
-"""
-============
-useful data cleaning func
-============
-"""
-
-# cleans the structure data of floats into 3 digits-behind-comma format
-function clean_float(data)
-    return map(data) do el
-        s = ""
-        if occursin("e", string(el)) # retain scinetfigc notaioton
-            s = @sprintf "%.3e" el
-        else
-            s = @sprintf "%.3f" el
-        end
-        s
-    end
-end
-
-# add \ for latex underscore escape, only handles findfirst for now
-function latex_(data)
-    return map(data) do el
-        id = findfirst("_", el)
-        if id !== nothing
-            s = el[1 : id[1]-1]*raw"\_"*el[id[1]+1 : end]
-        else
-            s = el
-        end
-        s
-    end
-end
-
-# script to write to latex table, given a Matrix{Any}
-function writelatextable(table, filename)
-    open(filename, "w") do io
-        for i ∈ axes(table, 1)
-            str = ""
-            for j ∈ axes(table, 2)
-                str *= string(table[i, j])*"\t"*"& "
-            end
-            str = str[1:end-2]
-            str *= raw"\\ \hline"*"\n"
-            print(io, str)
-        end
-    end
-end
-
-
-
 function plot_mae()
     molnames = readdir("result")[2:end]
     count = 1
