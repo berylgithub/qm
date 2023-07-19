@@ -390,8 +390,8 @@ function main_obj(x; sim_id="")
 
     foldername = "exp_hyperparamopt_"*sim_id; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
     
-    data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
-        normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1)
+    F, f, centers, ϕ, dϕ, redf = data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
+                                normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1)
     GC.gc() # always gc after each run
     fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=false)
     GC.gc() # always gc after each run
