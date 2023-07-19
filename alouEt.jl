@@ -226,6 +226,7 @@ end
 full data setup, in contrast to each molecule data setup, INCLUDES PCA!.
 takes in the data indices (relative to the qm9 dataset).
 if molf_file  is not empty then there will be no atomic feature extractions, only PCA on molecular level
+clean energy (highest level energy) computation is now separated, it's now set as input directly as target energy
 """
 function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, feature_file, feature_name; 
                     universe_size=1_000, normalize_atom = true, normalize_mol = true, normalize_mode = "minmax", 
@@ -283,13 +284,13 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
             F = comp_ecdf(F, ids; type="mol")
         end
         # copy pre-computed atomref features:
-        redf = load("data/atomref_features.jld", "data")
+        #redf = load("data/atomref_features.jld", "data")
         # save files:
     end
     if save_to_disk
         save("data/$foldername/features_atom.jld", "data", f) # atomic features
         save("data/$foldername/features.jld", "data", F) # molecular features
-        save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
+        #save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
         save("data/$foldername/center_ids.jld", "data", centers)
         save("data/$foldername/spline.jld", "data", ϕ)
         save("data/$foldername/dspline.jld", "data", dϕ)
@@ -309,10 +310,10 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
     println("data setup is finished in ",t,"s")
     # clear memory if everything is saved to disk, otherwise, return values:
     if save_to_disk
-        dataset=F=f=ϕ=dϕ=centers=redf=nothing
+        dataset=F=f=ϕ=dϕ=centers=nothing
         GC.gc()
     else
-        return F, f, centers, ϕ, dϕ, redf
+        return F, f, centers, ϕ, dϕ
     end
 end
 
@@ -1026,7 +1027,7 @@ end
 """
 atomic gaussian fitting (FCHL-ish)
 """
-function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; cσ = 2. * (2^5)^2, Er = Vector{Float64}()::Vector{Float64})
+function fitter_GAK(F, f, dataset, E, Midx, Widx, foldername, tlimit; c = 2048., Er = Vector{Float64}()::Vector{Float64})
     nK = length(Midx); Nqm9 = length(Widx); 
     n_f = 0
     if !isempty(F) # could be empty since GAK only depends on atomic features
@@ -1188,7 +1189,7 @@ currently excludes the active training
 """
 function fit_🌹_and_atom(foldername, file_dataset; 
                         bsize=1_000, tlimit=900, model="ROSEMI", 
-                        E_atom=[], cσ = 2. *(2. ^5)^2, scaler=2. *(2. ^5)^2, center_ids=[], uid="", kid="")
+                        E_atom=[], c = 2048, scaler=2048., center_ids=[], uid="", kid="")
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
@@ -1249,7 +1250,7 @@ function fit_🌹_and_atom(foldername, file_dataset;
     elseif model == "LLS"
         fitter_LLS(F', E, Midx, Widx, foldername, tlimit; Er = E_atom)
     elseif model == "GAK" # atomic model
-        fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; cσ=cσ, Er = E_atom) # takes atomic features instead
+        fitter_GAK(F', f, dataset, E, Midx, Widx, foldername, tlimit; c=c, Er = E_atom) # takes atomic features instead
     elseif model == "REAPER" # atomic model
         fitter_repker(F', f, dataset, E, Midx, Widx, foldername, tlimit; Er = E_atom)
     end
