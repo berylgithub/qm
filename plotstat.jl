@@ -119,7 +119,7 @@ function plot_MAE_db()
         markershape = [:xcross :cross :rect], markersize = [6 6 4],
         labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
-
+    savefig(p, "plot/deltaML/MAE_ACSF_best.png")
     # plot prototype for vs{features} in the same environment:
     tb1 = tbsel[29:32, :] #ACSF
     tb2 = tbsel[61:64, :] #SOAP
@@ -136,4 +136,5 @@ function plot_MAE_db()
         markershape = [:xcross :cross :rect], markersize = [6 6 4],
         labels = ["MAE(ACSF)" "MAE(SOAP)" "MAE(FCHL19)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
+    savefig(p, "plot/deltaML/MAE_features_vs.png")
 end

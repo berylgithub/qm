@@ -327,3 +327,6 @@ Quests:
 
 07.07.23:
 - std matrix threadsx gives an error, correct later
+
+19.07.23:
+! less file OP for faster speed for data_setup and fitter
