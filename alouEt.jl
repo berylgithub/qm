@@ -312,9 +312,8 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
     if save_to_disk
         dataset=F=f=ϕ=dϕ=centerss=nothing
         GC.gc()
-    else
-        return F, f, centerss, ϕ, dϕ, dataset
     end
+    return F, f, centerss, ϕ, dϕ, dataset
 end
 
 """
