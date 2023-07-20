@@ -526,8 +526,8 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     println("|K|*∑RMSD(w) = ", RMSD)
 
     # save also the nK indices and θ's to file!!:
-    data = Dict("centers"=>Midx, "theta"=>θ)
-    save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
+    #data = Dict("centers"=>Midx, "theta"=>θ)
+    #save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
     # clear variables:
     SKs_train = SKs = γ = α = B = klidx = cidx = Axtemp = tempsA = op = b = tempsb = θ = stat = VK = outs = v = vmat = MADs = batches = VK_fin = nothing; GC.gc()
     return MAE, MADmax_idxes, t_ls, t_batch
