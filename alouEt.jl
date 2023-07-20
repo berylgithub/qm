@@ -1185,7 +1185,7 @@ end
 """
 diskless version, should be faster than the counterpart
 """
-function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ; 
+function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername; 
                     bsize=1_000, tlimit=900, model="ROSEMI", ca = 2048., cm=2048., uid="", kid="")
     # file loaders:
     println("FITTING: $foldername")
