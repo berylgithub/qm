@@ -383,7 +383,7 @@ function main_obj(x; sim_id="")
 
     println([n_mf, n_af, n_basis, feature_name, normalize_atom, normalize_mol, feature_path, model, c])
 
-    foldername = "exp_hyperparamopt_"*sim_id; file_dataset = "data/qm9_dataset_old.jld";
+    foldername = "exp_hyperparamopt_"*sim_id; file_dataset = "data/qm9_dataset.jld";
     
     F, f, centers, ϕ, dϕ, dataset = data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
                                 normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1, save_to_disk = false)
