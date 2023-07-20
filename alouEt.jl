@@ -290,7 +290,6 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
     if save_to_disk
         save("data/$foldername/features_atom.jld", "data", f) # atomic features
         save("data/$foldername/features.jld", "data", F) # molecular features
-        #save("data/$foldername/atomref_features.jld", "data", redf) # features to compute sum of atomic energies
         save("data/$foldername/center_ids.jld", "data", centerss)
         save("data/$foldername/spline.jld", "data", ϕ)
         save("data/$foldername/dspline.jld", "data", dϕ)

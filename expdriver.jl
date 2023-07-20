@@ -385,7 +385,8 @@ function main_obj(x; sim_id="")
 
     foldername = "exp_hyperparamopt_"*sim_id; file_dataset = "data/qm9_dataset.jld";
     
-    F, f, centers, ϕ, dϕ, dataset = data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
+    # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
+    F, f, centerss, ϕ, dϕ, dataset = data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
                                 normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1, save_to_disk = false)
     full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername; 
                 bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
@@ -393,7 +394,7 @@ function main_obj(x; sim_id="")
     path_result = "result/$foldername/err_$foldername.txt"
     MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
 
-    F = f = centers = ϕ = dϕ = nothing # clear var
+    F = f = centerss = ϕ = dϕ = nothing # clear var
     GC.gc() # always gc after each run
     return MAE
 end
