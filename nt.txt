@@ -330,3 +330,7 @@ Quests:
 
 19.07.23:
 ! less file OP for faster speed for data_setup and fitter
+
+20.07.23:
+- difference in index and E between saint and vsc due to randomness
+- fileOP is still confusing for the deltaML, fix later

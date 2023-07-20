@@ -313,7 +313,7 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
         dataset=F=f=ϕ=dϕ=centerss=nothing
         GC.gc()
     else
-        return F, f, centerss, ϕ, dϕ
+        return F, f, centerss, ϕ, dϕ, dataset
     end
 end
 
@@ -1106,8 +1106,10 @@ function fit_atom(foldername, file_dataset, file_atomref_features; center_ids = 
 end
 
 """
+!! DEPRECATED
 this first fits the atomic reference energy, then fits model as usual using reduced energy
 currently excludes the active training
+
 """
 function fit_🌹_and_atom(foldername, file_dataset; 
                         bsize=1_000, tlimit=900, model="ROSEMI", 
@@ -1184,7 +1186,7 @@ end
 diskless version, should be faster than the counterpart
 """
 function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ; 
-                    bsize=1_000, tlimit=900, model="ROSEMI", ca = 2048, cm=2048., uid="", kid="")
+                    bsize=1_000, tlimit=900, model="ROSEMI", ca = 2048., cm=2048., uid="", kid="")
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
@@ -1471,12 +1473,12 @@ function test_DeltaML()
     MAEs[5,4] = mean(abs.(Et[idtest] - Edbs[2][idtest]))*627.503
     println("dressed_atom: ", MAEs[4:5, 3:4])
     Edb = Edbs[argmin(MAEs[4:5,4])] # save dressed bond energies with the lowest MAE
-    writedlm("E_recompute.txt", E-Eda-Edb)
-    #writedlm("result/deltaML/MAE_base_set-"*string(rank)*".txt", MAEs)
-    #writedlm("data/energy_clean_db_set-"*string(rank)*".txt", E-Eda-Edb) # save cleaned energy
+    #writedlm("E_recompute.txt", E-Eda-Edb)
+    writedlm("result/deltaML/MAE_base_set-"*string(rank)*".txt", MAEs)
+    writedlm("data/energy_clean_db_set-"*string(rank)*".txt", E-Eda-Edb) # save cleaned energy
     
 
-    #= # test diverse models: check TRAIN first for correctness
+    # test diverse models: check TRAIN first for correctness
     features = ["ACSF_51", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
@@ -1545,7 +1547,7 @@ function test_DeltaML()
             cr += 1
         end
     end
-    display(outs) =#
+    display(outs)
 end
 
 """

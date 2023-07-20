@@ -363,26 +363,14 @@ function main_obj(x; sim_id="")
 
     # determine feature_name and path:
     dftype = Dict()
-    dftype[1] = "ACSF"; dftype[2] = "SOAP"; dftype[3] = "FCHL";
+    dftype[1] = "ACSF_51"; dftype[2] = "SOAP"; dftype[3] = "FCHL";
     feature_name = dftype[Int(x[4])]; feature_path = "data/"*feature_name*".jld";
 
     # get centers indices:
     rank = 2 #select set w/ 2nd ranked training MAE
     id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
     centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id])
-
     E = vec(readdlm("data/E_clean_sorted.txt")[:, 2]) # load Etarget
-    display(E)
-    # crawl center_id by index, "data/centers.txt" must NOT be empty:
-    centers = readdlm("data/centers.txt")
-    center_idx = 38 # set it fixed as current "best" found training points
-    uid=""; kid= ""; uk_id = ""
-    uid = centers[center_idx,1]; kid = centers[center_idx,2]; uk_id = join([uid,"_",kid])
-    center = centers[center_idx, 3:end]
-    # get atom info global, to match center ids:
-    atomref = readdlm("data/atomref_info.txt")
-    f_atom = load("data/atomref_features.jld", "data")
-    E_atom = f_atom*atomref[center_idx,5:end]
 
     # determine normalize switches:
     norms = Dict()
@@ -395,21 +383,17 @@ function main_obj(x; sim_id="")
 
     println([n_mf, n_af, n_basis, feature_name, normalize_atom, normalize_mol, feature_path, model, c])
 
-    foldername = "exp_hyperparamopt_"*sim_id; file_dataset = "data/qm9_dataset_old.jld"; file_atomref_features = "data/atomref_features.jld"
+    foldername = "exp_hyperparamopt_"*sim_id; file_dataset = "data/qm9_dataset_old.jld";
     
-    F, f, centers, ϕ, dϕ, redf = data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
-                                normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1)
-    GC.gc() # always gc after each run
-    fit_atom(foldername, file_dataset, file_atomref_features; center_ids=center, uid=uid, kid=kid, save_global=false)
-    GC.gc() # always gc after each run
-    fit_🌹_and_atom(foldername, file_dataset; model = model, 
-        E_atom = E_atom, cσ = c, scaler = c, 
-        center_ids = center, uid = uid, kid = uk_id)
+    F, f, centers, ϕ, dϕ, dataset = data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
+                                normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1, save_to_disk = false)
+    full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ; 
+                bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
     # get MAE:
     path_result = "result/$foldername/err_$foldername.txt"
     MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
 
-    f_atom = E_atom = nothing # clear var
+    F = f = centers = ϕ = dϕ = nothing # clear var
     GC.gc() # always gc after each run
     return MAE
 end
