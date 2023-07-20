@@ -1209,7 +1209,7 @@ function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername;
     # model fitting:
     println("fitting starts!")
     if model=="ROSEMI"
-        D = fcenterdist(F, centers)
+        D = fcenterdist(F', centers)
         MAE, MADmax_idxes, t_ls, t_pred = fitter(F, E, D, ϕ, dϕ, Midx, centers, Uidx, Widx, n_feature, foldername, bsize, tlimit)
     elseif model == "KRR" 
         MAE, t_ls, t_pred = fitter_KRR(F', E, Midx, centers, Widx, 1:100, tlimit; scaler=cm)
