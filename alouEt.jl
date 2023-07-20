@@ -1189,7 +1189,6 @@ function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ;
     println("FITTING: $foldername")
     println("model type = ", model)
     # input files:
-    path = "data/$foldername/"
     mkpath("result/$foldername")
     # intermediate vals:
     F = F'
@@ -1219,7 +1218,7 @@ function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ;
     elseif model == "LLS"
         MAE, t_ls, t_pred = fitter_LLS(F', E, Midx, Widx, tlimit)
     elseif model == "GAK" # atomic model
-        MAE, t_ls, t_pred = fitter_GAK(F', f, dataset, E, Midx, Widx, tlimit; c=c) # takes atomic features instead
+        MAE, t_ls, t_pred = fitter_GAK(F', f, dataset, E, Midx, Widx, tlimit; c=ca) # takes atomic features instead
     elseif model == "REAPER" # atomic model
         MAE, t_ls, t_pred = fitter_repker(F', f, dataset, E, Midx, Widx, tlimit)
     end
@@ -1472,11 +1471,12 @@ function test_DeltaML()
     MAEs[5,4] = mean(abs.(Et[idtest] - Edbs[2][idtest]))*627.503
     println("dressed_atom: ", MAEs[4:5, 3:4])
     Edb = Edbs[argmin(MAEs[4:5,4])] # save dressed bond energies with the lowest MAE
-    writedlm("result/deltaML/MAE_base_set-"*string(rank)*".txt", MAEs)
-    writedlm("data/energy_clean_db_set-"*string(rank)*".txt", E-Eda-Edb) # save cleaned energy
+    writedlm("E_recompute.txt", E-Eda-Edb)
+    #writedlm("result/deltaML/MAE_base_set-"*string(rank)*".txt", MAEs)
+    #writedlm("data/energy_clean_db_set-"*string(rank)*".txt", E-Eda-Edb) # save cleaned energy
+    
 
-
-    # test diverse models: check TRAIN first for correctness
+    #= # test diverse models: check TRAIN first for correctness
     features = ["ACSF_51", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
@@ -1545,14 +1545,15 @@ function test_DeltaML()
             cr += 1
         end
     end
-    display(outs)
+    display(outs) =#
 end
 
 """
 test data selection given a feature WITHOUT PCA,
-
+!! this will recompute the centers, since it's stochastic, each run will be different (unless seeded)
 """
 function test_selection_delta()
+    Random.seed!(603)
     # Scenario 1: compute centers(feature) -> 5 sets of centers ∀features, get the set of centers with the lowest MAE(Edb):
     dataset = load("data/qm9_dataset.jld", "data")
     features = ["ACSF_51", "SOAP", "FCHL19"]

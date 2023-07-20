@@ -366,6 +366,13 @@ function main_obj(x; sim_id="")
     dftype[1] = "ACSF"; dftype[2] = "SOAP"; dftype[3] = "FCHL";
     feature_name = dftype[Int(x[4])]; feature_path = "data/"*feature_name*".jld";
 
+    # get centers indices:
+    rank = 2 #select set w/ 2nd ranked training MAE
+    id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
+    centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id])
+
+    E = vec(readdlm("data/E_clean_sorted.txt")[:, 2]) # load Etarget
+    display(E)
     # crawl center_id by index, "data/centers.txt" must NOT be empty:
     centers = readdlm("data/centers.txt")
     center_idx = 38 # set it fixed as current "best" found training points
