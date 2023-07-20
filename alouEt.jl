@@ -1225,7 +1225,7 @@ function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername;
     # write stats to file:
     ntrain = length(Midx); ntest = length(Widx)
     strlist = vcat(strlist, string.([MAE, ntest, ntrain, n_feature, t_ls, t_pred]))
-    writestringline(strlist, "result/$mol_name/err_$mol_name.txt"; mode="a")
+    writestringline(strlist, "result/$foldername/err_$foldername.txt"; mode="a")
     # clear memory:
     dataset = f = F = ϕ = dϕ = E = D = centers = Midx = Uidx = Widx = nothing; GC.gc()
 end
