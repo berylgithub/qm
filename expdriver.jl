@@ -363,7 +363,7 @@ function main_obj(x; sim_id="")
 
     # determine feature_name and path:
     dftype = Dict()
-    dftype[1] = "ACSF_51"; dftype[2] = "SOAP"; dftype[3] = "FCHL";
+    dftype[1] = "ACSF_51"; dftype[2] = "SOAP"; dftype[3] = "FCHL19";
     feature_name = dftype[Int(x[4])]; feature_path = "data/"*feature_name*".jld";
 
     # get centers indices:
