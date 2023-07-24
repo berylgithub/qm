@@ -406,6 +406,43 @@ def getatom_FCHL():
     sigmas = [32.]
     Ktrain = get_local_kernels(Xtrain, Xtrain, sigmas, cut_distance=cutoff)
 
+def extract_QML_features():
+    # extract features then save to file, takes in path of the geometries and outputs the features in text file
+    #geopath = "/users/baribowo/Dataset/zaspel_supp/supplementary/geometry" # OMP1 geometry filepath
+    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    print("Ndata = ",len(onlyfiles))
+    compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
+    #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
+    ncs = [(mol.nuclear_charges) for mol in compounds]
+    elements = np.unique(np.concatenate(ncs))
+    print(elements)
+    """ coor = compounds[0].coordinates
+    nc = compounds[0].nuclear_charges
+    rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements, nRs2=12, nRs3=10, rcut=6)
+    print(rep.shape)
+    print(rep) 
+    sp = sparse_matrix = scipy.sparse.csc_matrix(rep) 
+    # np.savetxt("/users/baribowo/Dataset/gdb9-14b/fchl19/0.txt", rep, delimiter="\t")
+    # sparse_to_file('/users/baribowo/Dataset/gdb9-14b/fchl19/0_sparse.txt', sp) """
+    for i, mol in enumerate(compounds):
+        molid = i+1
+        #if molid == 184: # not sure why mol num 184 cause error for acsf, check later
+        #    continue
+        coor = mol.coordinates
+        nc = mol.nuclear_charges
+        #rep = qml.representations.generate_fchl_acsf(nc, coor, gradients=False, elements=elements, nRs2=12, nRs3=10, rcut=6)
+        rep = qml.representations.generate_acsf(nc, coor, gradients=False, rcut=6)
+        sp = scipy.sparse.csc_matrix(rep)
+        print(molid, rep.shape)
+        sparse_to_file('/users/baribowo/Dataset/gdb9-14b/acsf/'+onlyfiles[i], sp)
+        #mol.generate_slatm(mbtypes, local=True)
+        #mol.generate_coulomb_matrix(size=23, sorting="row-norm")
+    #X = np.array([mol.representation for mol in compounds])
+    #print(compounds[0].representation.shape)
+    #np.savetxt("/users/baribowo/Dataset/coulomb_zaspel.txt", X, delimiter="\t")
+
+
 
 # main:
 extract_ACSF()
