@@ -2,7 +2,7 @@
 all kinds of utility functions
 """
 
-using LaTeXStrings, Printf
+using LaTeXStrings, Printf, DelimitedFiles
 
 # script to write string given a vector{string}
 function writestringline(strinput, filename; mode="w")
