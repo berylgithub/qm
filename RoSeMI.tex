@@ -199,7 +199,7 @@ The atomic features is often in the form of row vector $f^l_{i}$ with length $n_
     \item $l$th molecule contains $n^l_\text{atom}$ number of atoms and a set of atom types $P = \{\text{H}, \text{C}, \text{O}, ...\}$ with cardinality $n^l_\text{type}$,
 	the molecular features are computed by
         \begin{equation}
-			\label{eq:acsf}
+			\label{eq:atom_to_mol_feature}
             \begin{split}
                 s^l_{j} &= \sum_{m \in M_j} f^l_{m:}, \\
                 %S^l &= \sum_i f^l_{i:}(f^l_{i:})^\top,
