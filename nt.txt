@@ -334,3 +334,8 @@ Quests:
 20.07.23:
 - difference in index and E between saint and vsc due to randomness
 - fileOP is still confusing for the deltaML, fix later
+
+26.07.23:
+- C(n_neighbors, 2) = number of angles exist in a partition of n_atoms when observing a center atom.
+- for torsion, probably we can observe an edge, and see neighbours(src(e)) union neighbors(dst(e)) \ dst(e) union src(e)
+
