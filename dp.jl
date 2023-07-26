@@ -435,8 +435,10 @@ function get_angles(mol, atom) # atom can be the atom vertex object or just the 
     neighs = neighbors(mol, atom)
     n_angle = binomial(length(neighs), 2)
     # get angles:
-    angles = zeros(Int, n_angle, 3) # each angle is a triplet
-    println(n_angle)
+    angles = collect(Combinatorics.combinations(neighs, 2)) # each angle is a triplet
+    println(neighs)
     # get degrees:
-    
+    degrees = zeros(Int, n_angle, 2) # duplet, left bond degree and right bond degree
+    # use get_prop(mol, v_i, v_j, :order) with check: has_edge(mol, v_i, v_j) beforehand to avoid errors
+    return angles, degrees
 end
