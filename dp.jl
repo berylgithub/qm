@@ -255,7 +255,79 @@ function generate_charges_distances()
     save("deltaML/data/zaspel_ncd.jld", "data", moldata)
 end
 
+
 """
+for fchl, but can be used for general sparse
+    nf: 
+        fchl = 360, 
+        soap = 480,
+        acsf = 315
+"""
+function load_sparse()
+    fpath = "/users/baribowo/Dataset/gdb9-14b/acsf/"
+    files = readdir(fpath)
+    ndata = length(files); nf = 315 # need to know the length of features (column) beforehand
+    A = []
+    for file ∈ files
+        spg = readdlm(fpath*file)
+        rows = spg[:, 1] .+ 1; cols = spg[:, 2] .+ 1; entries = spg[:, 3] # the +1s due to py indexing
+        sp_temp = sparse(rows, cols, entries)
+        natom = size(sp_temp, 1); ncols = size(sp_temp, 2)
+        spA = spzeros(natom, nf) # s.t. the columns are equal accross all dataset
+        spA[:, 1:ncols] = sp_temp
+        push!(A, spA)
+        println(file, "done!!")
+    end
+    save("data/ACSF.jld", "data", A)
+end
+
+
+"""
+remove the molids of uncharacterized ∪ non converged geos
+"""
+function feature_slicer()
+    slicer = vec(Int.(readdlm("data/exids.txt")))
+    #feature_paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", "data/SOAP.jld"] 
+    #feature_paths = ["data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
+    feature_paths = ["data/ACSF.jld"]
+    for i ∈ eachindex(feature_paths)
+        println("proc ",feature_paths[i], " ...")
+        t = @elapsed begin
+            F = load(feature_paths[i], "data")
+            ndata = size(F, 1) #nrow
+            sliced = setdiff(1:ndata, slicer)
+            save("OLD_"*feature_paths[i], "data", F) # unsliced
+            if length(size(F)) > 1 # sliced:
+                save(feature_paths[i], "data", F[sliced, :])
+            else
+                save(feature_paths[i], "data", F[sliced])
+            end 
+        end
+        println("proc finished! ", t)
+    end
+end
+
+"""
+turn sparse features to dense
+"""
+function sparse_to_dense()
+    fnames = ["ACSF", "SOAP", "FCHL19"]
+    for fname ∈ fnames
+        fpath = "data/"*fname*".jld"
+        f = load(fpath, "data")
+        ndata = length(f)
+        idx = 1:ndata
+        for i ∈ idx
+            f[i] = Matrix(f[i])
+        end
+        outpath = "data/"*fname*"_dense.jld"
+        save(outpath, "data", f)
+    end
+end
+
+
+"""
+=== DRESSED BONDS ===
 (prototype) get the bond order given smiles string of a molecule
 returns dict of bondtype => count
 """
@@ -348,70 +420,23 @@ function postprocess_bonds()
 end
 
 """
-for fchl, but can be used for general sparse
-    nf: 
-        fchl = 360, 
-        soap = 480,
-        acsf = 315
+=== DRESSED ANGLES ===
+similar to dressed bonds, but it's angles
 """
-function load_sparse()
-    fpath = "/users/baribowo/Dataset/gdb9-14b/acsf/"
-    files = readdir(fpath)
-    ndata = length(files); nf = 315 # need to know the length of features (column) beforehand
-    A = []
-    for file ∈ files
-        spg = readdlm(fpath*file)
-        rows = spg[:, 1] .+ 1; cols = spg[:, 2] .+ 1; entries = spg[:, 3] # the +1s due to py indexing
-        sp_temp = sparse(rows, cols, entries)
-        natom = size(sp_temp, 1); ncols = size(sp_temp, 2)
-        spA = spzeros(natom, nf) # s.t. the columns are equal accross all dataset
-        spA[:, 1:ncols] = sp_temp
-        push!(A, spA)
-        println(file, "done!!")
-    end
-    save("data/ACSF.jld", "data", A)
-end
-
-
-"""
-remove the molids of uncharacterized ∪ non converged geos
-"""
-function feature_slicer()
-    slicer = vec(Int.(readdlm("data/exids.txt")))
-    #feature_paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", "data/SOAP.jld"] 
-    #feature_paths = ["data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
-    feature_paths = ["data/ACSF.jld"]
-    for i ∈ eachindex(feature_paths)
-        println("proc ",feature_paths[i], " ...")
-        t = @elapsed begin
-            F = load(feature_paths[i], "data")
-            ndata = size(F, 1) #nrow
-            sliced = setdiff(1:ndata, slicer)
-            save("OLD_"*feature_paths[i], "data", F) # unsliced
-            if length(size(F)) > 1 # sliced:
-                save(feature_paths[i], "data", F[sliced, :])
-            else
-                save(feature_paths[i], "data", F[sliced])
-            end 
-        end
-        println("proc finished! ", t)
-    end
+function get_angle_types(atom_types, bond_levels; remove_hydrogens=true)
+    
 end
 
 """
-turn sparse features to dense
+get the list of angles (triplets) given an observed atom (vertex) within a molecule
+use the formula: C(n_neighbours, 2) given an atom and a molecule
 """
-function sparse_to_dense()
-    fnames = ["ACSF", "SOAP", "FCHL19"]
-    for fname ∈ fnames
-        fpath = "data/"*fname*".jld"
-        f = load(fpath, "data")
-        ndata = length(f)
-        idx = 1:ndata
-        for i ∈ idx
-            f[i] = Matrix(f[i])
-        end
-        outpath = "data/"*fname*"_dense.jld"
-        save(outpath, "data", f)
-    end
+function get_angles(mol, atom) # atom can be the atom vertex object or just the index in the chain
+    neighs = neighbors(mol, atom)
+    n_angle = binomial(length(neighs), 2)
+    # get angles:
+    angles = zeros(Int, n_angle, 3) # each angle is a triplet
+    println(n_angle)
+    # get degrees:
+    
 end
