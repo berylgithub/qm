@@ -341,7 +341,7 @@ function get_bonds_from_SMILES(bondtypes, str; remove_hydrogens=true)
         md[key] = 0
     end
     for e in edges(mol) # fill dict
-        key = join(sort([string(get_prop(mol, src(e), :symbol)), string(get_prop(mol, dst(e), :symbol)), string(get_prop(mol, e, :order))]))
+        key = join(sort([string(get_prop(mol, src(e), :symbol)), string(get_prop(mol, dst(e), :symbol)), string(get_prop(mol, e, :order))])) # the sorting procedure is very improtant, s.t. permutation invariance
         md[key] += 1
     end
     return md
@@ -431,14 +431,26 @@ end
 get the list of angles (triplets) given an observed atom (vertex) within a molecule
 use the formula: C(n_neighbours, 2) given an atom and a molecule
 """
-function get_angles(mol, atom) # atom can be the atom vertex object or just the index in the chain
+function get_angles(mol, atom) # atom is the index of atom in the mol chain
     neighs = neighbors(mol, atom)
     n_angle = binomial(length(neighs), 2)
     # get angles:
-    angles = collect(Combinatorics.combinations(neighs, 2)) # each angle is a triplet
-    println(neighs)
+    angles_iter = Combinatorics.combinations(neighs, 2)
+    angles = zeros(Int, n_angle, 3) # triplets: (center, left, right)
+    for (i,angle) ∈ enumerate(angles_iter)
+       angles[i, 2:3] = angle
+    end
+    angles[:, 1] .= atom
     # get degrees:
     degrees = zeros(Int, n_angle, 2) # duplet, left bond degree and right bond degree
-    # use get_prop(mol, v_i, v_j, :order) with check: has_edge(mol, v_i, v_j) beforehand to avoid errors
+    # use get_prop(mol, v_i, v_j, :order) with check: has_edge(mol, v_i, v_j) beforehand to avoid errors || has_edge is not needed since neighbors implicitly includes edges
+    for i ∈ axes(angles, 1)
+        degrees[i, 1] = get_prop(mol, angles[i, 1], angles[i, 2], :order)
+        degrees[i, 2] = get_prop(mol, angles[i, 1], angles[i, 3], :order)
+    end
     return angles, degrees
+end
+
+function get_angles_from_SMILES(angle_types, str; remove_hydrogens=true)
+
 end
