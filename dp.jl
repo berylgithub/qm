@@ -422,9 +422,16 @@ end
 """
 === DRESSED ANGLES ===
 similar to dressed bonds, but it's angles
+! remove_hydrogens param is removed, since now atom_types is an input
 """
-function get_angle_types(atom_types, bond_levels; remove_hydrogens=true)
-    
+function get_angle_types(atom_types, bond_levels)
+    # for angles, each bond is unique, therefore just all possible combination, much larger degrees of freedom
+    at_iter = Iterators.product(bond_levels, bond_levels, atom_types, atom_types, atom_types)
+    ats = []
+    for at ∈ at_iter
+        push!(ats, join([string(at[1]), string(at[2]), at[3], at[4], at[5]]))
+    end
+    return ats
 end
 
 """
