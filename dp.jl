@@ -424,23 +424,20 @@ end
 similar to dressed bonds, but it's angles
 ! remove_hydrogens param is removed, since now atom_types is an input
 """
-function get_angle_types_dict(atom_types, bond_levels, n_data)
+function get_angle_types_dict(atom_types, bond_levels)
     # for angles, each bond is unique, therefore just all possible combination, much larger degrees of freedom
     at_iter = Iterators.product(bond_levels, bond_levels, atom_types, atom_types, atom_types)
     ats = []
     for at ∈ at_iter
         push!(ats, join([string(at[1]), string(at[2]), at[3], at[4], at[5]]))
     end
-    Dat = Dict()
-    for at ∈ ats
-        Dat[at] = zeros(Int, n_data)
-    end
-    return Dat
+    return ats
 end
 
 """
 get the list of angles (triplets) given an observed atom (vertex) within a molecule
 use the formula: C(n_neighbours, 2) given an atom and a molecule
+returns: 
 returns EMPTY if there's no angles found with atom atom as the center
 """
 function get_angles(mol, atom) # atom is the index of atom in the mol chain
@@ -467,6 +464,25 @@ end
 angle_types is a dict containing vectors of each angle type
 """
 function get_angles_from_SMILES(angle_types, str)
-    # 
-    # get angles and degrees
+    # Dict output:
+    dangle = Dict()
+    for type ∈ angle_types
+        dangle[type] = 0
+    end
+    # count 
+    mol = smilestomol(str)
+    atoms = vertices(mol) 
+    for atom ∈ atoms
+        angles = get_angles(mol, atom) # get angles and degrees from each atom 
+        if !isempty(angles)
+            for i ∈ axes(angles, 1)
+                angle = angles[i,:]
+                angle = join(string.([angle[1], angle[2], 
+                        get_prop(mol, angle[3], :symbol), get_prop(mol, angle[4], :symbol), get_prop(mol, angle[5], :symbol)])) # transform to string
+                dangle[angle] += 1
+                println(angle)
+            end
+        end
+    end
+    return dangle
 end
