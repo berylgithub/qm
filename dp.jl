@@ -8,7 +8,7 @@ The collection of functions for (d)ata (p)reparation
 using DelimitedFiles, DataStructures, JSON, JLD, BenchmarkTools, Printf
 using Graphs, MolecularGraph, Combinatorics, SparseArrays # stuffs for ΔML
 using LinearAlgebra
-
+using ThreadsX
 
 """
 generate molecular formula based on the list of atoms
@@ -484,7 +484,7 @@ function get_angles_from_SMILES(angle_types, str)
     # count 
     mol = smilestomol(str)
     atoms = vertices(mol) 
-    list_angles = []
+    #list_angles = [] # for debugging
     for atom ∈ atoms
         angles = get_angles(mol, atom) # get angles and degrees from each atom 
         if !isempty(angles)
@@ -493,11 +493,11 @@ function get_angles_from_SMILES(angle_types, str)
                 angle = join(string.([angle[1], angle[2], 
                         get_prop(mol, angle[3], :symbol), get_prop(mol, angle[4], :symbol), get_prop(mol, angle[5], :symbol)])) # transform to string
                 dangle[angle] += 1
-                push!(list_angles, angle)
+                # push!(list_angles, angle)
             end
         end
     end
-    return dangle, list_angles
+    return dangle #, list_angles
 end
 
 """
@@ -509,9 +509,15 @@ function main_get_qm9_angles()
     test_ids = [12034, 92943]
     atom_types = ["C","N","O","F"]; bond_levels = [1,2,3] 
     angle_types = get_angle_types(atom_types, bond_levels)
+    #= list_angles = [] # all list of dicts
     for id ∈ test_ids
         smiles = fetch_SMILES(path*files[id])
-        angles, list_angles = get_angles_from_SMILES(angle_types, smiles)
+        angles = get_angles_from_SMILES(angle_types, smiles)
+    end =#
+    list_angles = ThreadsX.map(test_ids) do id
+        smiles = fetch_SMILES(path*files[id])
+        angles = get_angles_from_SMILES(angle_types, smiles)
         display(angles["11CCC"])
     end
+    
 end
