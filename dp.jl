@@ -506,20 +506,12 @@ computes all angles from qm9 dataset
 function main_get_qm9_angles()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
-    test_ids = [12034, 92943]
     atom_types = ["C","N","O","F"]; bond_levels = [1,2,3] 
     angle_types = get_angle_types(atom_types, bond_levels)
-    #= list_angles = [] # all list of dicts
-    for id ∈ test_ids
-        smiles = fetch_SMILES(path*files[id])
+    list_angles = ThreadsX.map(files) do fil
+        smiles = fetch_SMILES(path*fil)
         angles = get_angles_from_SMILES(angle_types, smiles)
-    end =#
-    list_angles = ThreadsX.map(test_ids) do id
-        smiles = fetch_SMILES(path*files[id])
-        angles = get_angles_from_SMILES(angle_types, smiles)
-        display(angles["11CCC"])
         angles
     end
-    display(list_angles)
-    
+    save("data/features_qm9_angles.jld", "data", list_angles)    
 end
