@@ -501,17 +501,20 @@ function get_angles_from_SMILES(angle_types, str)
 end
 
 """
-computes all angles from qm9 dataset
+computes all angles from qm9 dataset (the excluded indices are removed manually, same as bond)
 """
 function main_get_qm9_angles()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
     atom_types = ["C","N","O","F"]; bond_levels = [1,2,3] 
     angle_types = get_angle_types(atom_types, bond_levels)
-    list_angles = ThreadsX.map(files) do fil
-        smiles = fetch_SMILES(path*fil)
-        angles = get_angles_from_SMILES(angle_types, smiles)
-        angles
+    t = @elapsed begin
+        list_angles = ThreadsX.map(files) do fil
+            smiles = fetch_SMILES(path*fil)
+            angles = get_angles_from_SMILES(angle_types, smiles)
+            angles
+        end
     end
+    println("elapsed = ",t)
     save("data/features_qm9_angles.jld", "data", list_angles)    
 end
