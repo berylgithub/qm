@@ -506,7 +506,7 @@ computes all angles from qm9 dataset (the excluded indices are removed manually,
 function main_get_qm9_angles()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
-    atom_types = ["C","N","O","F"]; bond_levels = [1,2,3] 
+    atom_types = ["H","C","N","O","F"]; bond_levels = [1,2,3] 
     angle_types = get_angle_types(atom_types, bond_levels)
     t = @elapsed begin
         list_angles = ThreadsX.map(files) do fil
