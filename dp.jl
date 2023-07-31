@@ -325,12 +325,23 @@ function sparse_to_dense()
     end
 end
 
+"""
+SMILES util
+"""
+function fetch_SMILES(fpath)
+    content = readdlm(fpath)
+    natom = content[1,1]
+    smiles = content[natom+4, 1]
+    return smiles
+end
 
 """
 === DRESSED BONDS ===
 (prototype) get the bond order given smiles string of a molecule
 returns dict of bondtype => count
 """
+
+
 function get_bonds_from_SMILES(bondtypes, str; remove_hydrogens=true)
     mol = smilestomol(str)
     if remove_hydrogens
@@ -359,6 +370,7 @@ function get_qm9_bondtypes(;remove_hydrogens=true)
     acblstr = [ac[1]*string(ac[2]) for ac ∈ acbl]
     return join.(sort.(collect.(acblstr))) # sort alphabetically
 end
+
 
 function get_qm9_bondcounts()
     function extract_bonds!(bondfs, bondtypes, fpath, file; remove_hydrogens=true)
@@ -485,4 +497,16 @@ function get_angles_from_SMILES(angle_types, str)
         end
     end
     return dangle
+end
+
+"""
+computes all angles from qm9 dataset
+"""
+function main_get_qm9_angles()
+    path = "../../../Dataset/gdb9-14b/geometry/" 
+    files = readdir(path)
+    test_ids = [12034, 92943]
+    for id ∈ test_ids
+        display(fetch_SMILES(path*files[id]))
+    end
 end
