@@ -518,6 +518,7 @@ function main_get_qm9_angles()
         smiles = fetch_SMILES(path*files[id])
         angles = get_angles_from_SMILES(angle_types, smiles)
         display(angles["11CCC"])
+        angles
     end
     display(list_angles)
     
