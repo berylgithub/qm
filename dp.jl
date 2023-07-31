@@ -436,7 +436,7 @@ end
 similar to dressed bonds, but it's angles
 ! remove_hydrogens param is removed, since now atom_types is an input
 """
-function get_angle_types_dict(atom_types, bond_levels)
+function get_angle_types(atom_types, bond_levels)
     # for angles, each bond is unique, therefore just all possible combination, much larger degrees of freedom
     at_iter = Iterators.product(bond_levels, bond_levels, atom_types, atom_types, atom_types)
     ats = []
@@ -479,11 +479,12 @@ function get_angles_from_SMILES(angle_types, str)
     # Dict output:
     dangle = Dict()
     for type ∈ angle_types
-        dangle[type] = 0
+        dangle[type] = 0 # if no angles are found
     end
     # count 
     mol = smilestomol(str)
     atoms = vertices(mol) 
+    list_angles = []
     for atom ∈ atoms
         angles = get_angles(mol, atom) # get angles and degrees from each atom 
         if !isempty(angles)
@@ -492,11 +493,11 @@ function get_angles_from_SMILES(angle_types, str)
                 angle = join(string.([angle[1], angle[2], 
                         get_prop(mol, angle[3], :symbol), get_prop(mol, angle[4], :symbol), get_prop(mol, angle[5], :symbol)])) # transform to string
                 dangle[angle] += 1
-                println(angle)
+                push!(list_angles, angle)
             end
         end
     end
-    return dangle
+    return dangle, list_angles
 end
 
 """
@@ -506,7 +507,11 @@ function main_get_qm9_angles()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
     test_ids = [12034, 92943]
+    atom_types = ["C","N","O","F"]; bond_levels = [1,2,3] 
+    angle_types = get_angle_types(atom_types, bond_levels)
     for id ∈ test_ids
-        display(fetch_SMILES(path*files[id]))
+        smiles = fetch_SMILES(path*files[id])
+        angles, list_angles = get_angles_from_SMILES(angle_types, smiles)
+        display(list_angles)
     end
 end
