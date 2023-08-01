@@ -529,5 +529,5 @@ function main_get_qm9_angles()
     display(F)
     println("elapsed = ",t, " ",t_t)
     writedlm("data/angle_types_qm9.txt", angle_types)
-    save("data/featuresmat_angles_qm9.jld", "data", list_angles)    
+    save("data/featuresmat_angles_qm9.jld", "data", F)    
 end
