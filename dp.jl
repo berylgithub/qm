@@ -516,6 +516,18 @@ function main_get_qm9_angles()
         end
     end
     display(list_angles)
-    println("elapsed = ",t)
-    save("data/features_qm9_angles.jld", "data", list_angles)    
+    # transform to matrix:
+    nrow = length(list_angles); ncol = length(angle_types)
+    F = zeros(nrow, ncol)
+    t_t = @elapsed begin
+        @simd for j ∈ eachindex(angle_types)
+            @simd for i ∈ eachindex(list_angles)
+                @inbounds F[i, j] = list_angles[i][angle_types[j]]
+            end
+        end
+    end
+    display(F)
+    println("elapsed = ",t, " ",t_t)
+    writedlm("data/angle_types_qm9.txt", angle_types)
+    save("data/featuresmat_angles_qm9.jld", "data", list_angles)    
 end
