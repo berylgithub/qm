@@ -531,3 +531,39 @@ function main_get_qm9_angles()
     writedlm("data/angle_types_qm9.txt", angle_types)
     save("data/featuresmat_angles_qm9.jld", "data", F)    
 end
+
+
+"""
+remove unnecessary columns (such as zeros, H, etc), practically manual PCA
+"""
+function main_postprocess_angles()
+    angle_types = readdlm("data/angle_types_qm9.txt")
+    F = load("data/featuresmat_angles_qm9.jld", "data")
+    # get statistics:
+    colsum = vec(sum(F, dims=1))
+    idnz = findall(colsum .> 0) # find nonzero indices
+    idz = setdiff(1:size(F, 2), idnz) # actually find zero is faster
+    println("(nz, z) = ", length.((idnz, idz)))
+    sid = sortperm(colsum[idnz]) # get sorted ids of the nz
+    display([colsum[idnz][sid] angle_types[idnz][sid]]) # sorted nz
+    at_sorted = angle_types[idnz][sid]
+    Hid = [] # check for "H" occurences
+    for i ∈ eachindex(at_sorted) 
+        if occursin("H", at_sorted[i])
+            push!(Hid, i)
+        end
+    end
+    #display([colsum[idnz][sid][Hid] at_sorted[Hid]]) # check how large the sum is before deleting the H
+    # remove H and zeros columns from the matrix:
+    Hid = []
+    for i ∈ eachindex(angle_types)
+        if occursin("H", angle_types[i])
+            push!(Hid, i)
+        end
+    end
+    #display(angle_types[Hid])
+    delids = Hid ∪ idz # all of the column ids that need to be removed
+    display([angle_types[delids] colsum[delids]])
+    F = F[:, setdiff(1:size(F, 2), delids)]
+    save("data/featuresmat_angles_qm9_post.jld", "data", F)
+end
