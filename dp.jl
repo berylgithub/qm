@@ -515,6 +515,7 @@ function main_get_qm9_angles()
             angles
         end
     end
+    display(list_angles)
     println("elapsed = ",t)
     save("data/features_qm9_angles.jld", "data", list_angles)    
 end
