@@ -1425,7 +1425,7 @@ now rerun with all the new features (large sparse ones) and filtered dataset, sa
 table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
-function test_DeltaML()
+function test_DeltaML(;use_preselected_train = false, postfix="")
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E)
@@ -1433,13 +1433,13 @@ function test_DeltaML()
     # select split indexes, will be used for baseline and last level fitting:
     Random.seed!(603)
     idall = 1:nrow
-    idtrain = sample(1:nrow, 100, replace=false)
-    
-    # use pre-selected training set:
-    #= rank = 2 #select set w/ 2nd ranked training MAE
-    id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
-    idtrain = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, id])
-     =#
+    if use_preselected_train
+        rank = 2 #select set w/ 2nd ranked training MAE
+        id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
+        idtrain = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, id])    
+    else
+        idtrain = sample(1:nrow, 100, replace=false)
+    end
     idtest = setdiff(idall, idtrain)
 
     # fit the baselines, dressed_atom and dressed_bonds:
@@ -1472,10 +1472,9 @@ function test_DeltaML()
     MAEs[4,3] = mean(abs.(Et[idtest] - Edn[idtest]))*627.503
     println("dressed_angle: ", MAEs[4, 2:3])
     display(MAEs)
-    #= writedlm("result/deltaML/MAE_base_set-"*string(rank)*".txt", MAEs)
-    writedlm("data/energy_clean_db_set-"*string(rank)*".txt", E-Eda-Edb) # save cleaned energy
+    writedlm("result/deltaML/MAE_base_"*postfix*".txt", MAEs)
+    writedlm("data/energy_clean_"*postfix*".txt", E-Eda-Edb) # save cleaned energy
     
-
     # test diverse models: check TRAIN first for correctness
     features = ["ACSF_51", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
@@ -1539,13 +1538,13 @@ function test_DeltaML()
             outs[cr, 1] = n; outs[cr, 2] = feat; outs[cr, 3] = model; 
             outs[cr, 4] = solver; outs[cr, 5] = lv; outs[cr, 6] = MAEtrain; outs[cr, 7] = MAE 
             println(outs[cr, :], "done !")
-            open("result/deltaML/MAE_enum_set-"*string(rank)*".txt", "a") do io # writefile by batch
+            open("result/deltaML/MAE_enum_"*postfix*".txt", "a") do io # writefile by batch
                 writedlm(io, permutedims(outs[cr,:]))
             end
             cr += 1
         end
     end
-    display(outs) =#
+    display(outs)
 end
 
 """
