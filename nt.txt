@@ -340,3 +340,5 @@ Quests:
 - for torsion, probably we can observe an edge, and see neighbours(src(e)) union neighbors(dst(e)) \ dst(e) union src(e)
 ! finish get angle then get angle type
 
+02.08.23:
+- try PCA or manual feature selection (removing some types of angles) for dressed angle.
