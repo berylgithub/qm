@@ -1443,9 +1443,9 @@ function test_DeltaML()
     idtest = setdiff(idall, idtrain)
 
     # fit the baselines, dressed_atom and dressed_bonds:
-    MAEs = Matrix{Any}(undef, 3,3) # output table
+    MAEs = Matrix{Any}(undef, 4,3) # output table
     MAEs[1,:] = ["Elevel", "MAEtrain", "MAEtest"]; 
-    MAEs[2:3, 1] = ["dressed_atom", "dressed_bond"] # MAEs of base models
+    MAEs[2:4, 1] = ["dressed_atom", "dressed_bond", "dressed_angle"] # MAEs of base models
     # dressed atom:
     F = load("data/atomref_features.jld", "data")
     θ = F[idtrain, :]\E[idtrain];
@@ -1454,16 +1454,22 @@ function test_DeltaML()
     MAEs[2,3] = mean(abs.(E[idtest] - Eda[idtest]))*627.503
     println("dressed_atom: ", MAEs[2, 2:3])
     # dressed bonds:
-    F = load("data/featuresmat_qm9_covalentbonds.jld", "data")
+    F = load("data/featuresmat_bonds_qm9.jld", "data")
     Et = E - Eda # take out parts of the energy
     θ = F[idtrain, :]\Et[idtrain]; 
     Edb = F*θ
     MAEs[3,2] = mean(abs.(Et[idtrain] - Edb[idtrain]))*627.503
     MAEs[3,3] = mean(abs.(Et[idtest] - Edb[idtest]))*627.503
     println("dressed_bond: ", MAEs[3, 2:3])
-    display(MAEs)
     # dressed angles:
-    
+    F = load("data/featuresmat_angles_qm9_post.jld", "data")
+    Et = E - Eda - Edb
+    θ = F[idtrain, :]\Et[idtrain]; 
+    Edn = F*θ
+    MAEs[4,2] = mean(abs.(Et[idtrain] - Edn[idtrain]))*627.503
+    MAEs[4,3] = mean(abs.(Et[idtest] - Edn[idtest]))*627.503
+    println("dressed_angle: ", MAEs[4, 2:3])
+    display(MAEs)
     #= writedlm("result/deltaML/MAE_base_set-"*string(rank)*".txt", MAEs)
     writedlm("data/energy_clean_db_set-"*string(rank)*".txt", E-Eda-Edb) # save cleaned energy
     
@@ -1583,7 +1589,7 @@ function test_get_MAE_table()
     all_centers = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, :])
     idall = 1:length(E)
     Fda = load("data/atomref_features.jld", "data")
-    Fdb = load("data/featuresmat_qm9_covalentbonds.jld", "data")
+    Fdb = load("data/featuresmat_bonds_qm9.jld", "data")
     MAE_tb = []; E_tb = []
     for i ∈ axes(all_centers, 2)
         idtrain = all_centers[:, i]
