@@ -1479,7 +1479,7 @@ function test_DeltaML(;use_preselected_train = false, postfix="")
     features = ["ACSF_51", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
-    elvs = ["dressed_atom", "dressed_bond"]
+    elvs = ["dressed_atom", "dressed_bond", "dressed_angle"]
     n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
     outs = Matrix{Any}(undef, length(features)*length(models)*length(n_trains)*length(solvers)*length(elvs) + 1, 7) # output table
     outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
@@ -1510,6 +1510,8 @@ function test_DeltaML(;use_preselected_train = false, postfix="")
                 Et = E-Eda
             elseif lv == "dressed_bond"
                 Et = E-Eda-Edb
+            elseif lv == "dressed_angle"
+                Et = E-Eda-Edb-Edn
             end
             # model train:
             if model == "GAK"
