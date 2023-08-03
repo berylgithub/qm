@@ -47,31 +47,35 @@ end
 """
 
 """
-plot prototype for 
+plot prototype for delta levels
 """
-function plot_MAE_db()
-    tb = readdlm("result/deltaML/MAE_enum.txt")
-    tbsel = readdlm("result/deltaML/MAE_enum_set-2.txt")
+function plot_MAE_delta()
+    tb = readdlm("result/deltaML/MAE_enum_ns_dn_PCAdn_020723.txt")
+    tbsel = readdlm("result/deltaML/MAE_enum_s2_dn_PCAdn_020723.txt")
     
     # plot prototype for each {feature, model, solver}:
     ind = Dict("acsf" => [13:16, 29:32], "soap" => [41:44, 57:60], "fchl19" => [77:80, 85:88]) # db indexing
-    # indices for dn output
-    tb_da = tb[ind["fchl19"][1], :]
-    tb_db = tb[ind["fchl19"][2], :]
-    tbsel_db = tbsel[ind["fchl19"][2], :]
-    MAEs = vcat(tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7])
+    inn = Dict("acsf" => [13:16, 29:32, 29:32, 45:48, 45:48], "soap" => [], "fchl19" => []) # indices for dn output
+
+    tb_da = tb[inn["acsf"][1], :]
+    tb_db = tb[inn["acsf"][2], :]
+    tbsel_db = tbsel[inn["acsf"][3], :]
+    tb_dn = tb[inn["acsf"][4], :]
+    tbsel_dn = tbsel[inn["acsf"][5], :]
+    
+    MAEs = vcat(tb_da[:, 7], tb_db[:, 7], tb_dn[:, 7], tbsel_db[:, 7], tbsel_dn[:, 7])
     xticks = tb_da[:, 1]
     xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
     yticks = round.(vcat(maximum(MAEs), minimum(MAEs)), digits=3)
     yticks = vcat(yticks, range(10, 50, 5))
     ytformat = vcat(string.(yticks[1:2]), map(x -> @sprintf("%.0f",x), yticks[3:end]))
-    p = plot(tb_da[:, 1], [tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7]],
+    p = plot(tb_da[:, 1], [tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7], tb_dn[:, 7], tbsel_dn[:, 7]],
         yticks = (yticks, ytformat), xticks = (xticks, xtformat),
         xaxis = :log, yaxis = :log,
-        markershape = [:xcross :cross :rect], markersize = [6 6 4],
-        labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
+        markershape = [:xcross :cross :rect :auto :auto], markersize = [6 6 4 5 5],
+        labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)" "MAE(dn)" "MAE(dn,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
-    savefig(p, "plot/deltaML/MAE_FCHL19_best.png")
+    savefig(p, "plot/deltaML/MAE_PCAdn_ACSF_best.png")
 
     # plot prototype for vs{features} in the same environment:
     tb1 = tbsel[29:32, :] #ACSF
