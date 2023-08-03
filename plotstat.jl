@@ -47,6 +47,24 @@ end
 """
 
 """
+very specific function, may be changed at will
+query the information from a table of the row with the minimum MAE
+"""
+function query_min(table, feature_type, Elevel)
+    # get the min MAE:
+    indices = []
+    for i ∈ axes(table, 1)
+        if (table[i, 2] == feature_type) && (table[i, 5] == Elevel)
+            push!(indices, i)
+        end
+    end
+    sliced = table[indices,:]
+    minid = argmin(sliced[:, 7])
+    selid = indices[minid-3]:indices[minid] # assume 100 Ntrain is always the lowest MAE
+    return selid
+end
+
+"""
 plot prototype for delta levels
 """
 function plot_MAE_delta()
@@ -55,13 +73,15 @@ function plot_MAE_delta()
     
     # plot prototype for each {feature, model, solver}:
     ind = Dict("acsf" => [13:16, 29:32], "soap" => [41:44, 57:60], "fchl19" => [77:80, 85:88]) # db indexing
-    inn = Dict("acsf" => [13:16, 29:32, 29:32, 45:48, 45:48], "soap" => [], "fchl19" => []) # indices for dn output
+    inn = Dict("acsf" => [13:16, 29:32, 29:32, 45:48, 45:48], 
+                "soap" => [57:60, 73:76, 73:76, 89:92, 89:92], 
+                "fchl19" => [97:100, 113:116, 117:120, 129:132, 133:136]) # indices for dn output
 
-    tb_da = tb[inn["acsf"][1], :]
-    tb_db = tb[inn["acsf"][2], :]
-    tbsel_db = tbsel[inn["acsf"][3], :]
-    tb_dn = tb[inn["acsf"][4], :]
-    tbsel_dn = tbsel[inn["acsf"][5], :]
+    tb_da = tb[inn["fchl19"][1], :]
+    tb_db = tb[inn["fchl19"][2], :]
+    tbsel_db = tbsel[inn["fchl19"][3], :]
+    tb_dn = tb[inn["fchl19"][4], :]
+    tbsel_dn = tbsel[inn["fchl19"][5], :]
     
     MAEs = vcat(tb_da[:, 7], tb_db[:, 7], tb_dn[:, 7], tbsel_db[:, 7], tbsel_dn[:, 7])
     xticks = tb_da[:, 1]
@@ -75,7 +95,7 @@ function plot_MAE_delta()
         markershape = [:xcross :cross :rect :auto :auto], markersize = [6 6 4 5 5],
         labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)" "MAE(dn)" "MAE(dn,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
-    savefig(p, "plot/deltaML/MAE_PCAdn_ACSF_best.png")
+    savefig(p, "plot/deltaML/MAE_PCAdn_FCHL19_best.png")
 
     # plot prototype for vs{features} in the same environment:
     tb1 = tbsel[29:32, :] #ACSF
