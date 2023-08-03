@@ -54,10 +54,11 @@ function plot_MAE_db()
     tbsel = readdlm("result/deltaML/MAE_enum_set-2.txt")
     
     # plot prototype for each {feature, model, solver}:
-    # acsf:
-    tb_da = tb[13:16, :]
-    tb_db = tb[29:32, :]
-    tbsel_db = tbsel[29:32, :]
+    ind = Dict("acsf" => [13:16, 29:32], "soap" => [41:44, 57:60], "fchl19" => [77:80, 85:88]) # db indexing
+    # indices for dn output
+    tb_da = tb[ind["fchl19"][1], :]
+    tb_db = tb[ind["fchl19"][2], :]
+    tbsel_db = tbsel[ind["fchl19"][2], :]
     MAEs = vcat(tb_da[:, 7], tb_db[:, 7], tbsel_db[:, 7])
     xticks = tb_da[:, 1]
     xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
@@ -70,7 +71,8 @@ function plot_MAE_db()
         markershape = [:xcross :cross :rect], markersize = [6 6 4],
         labels = ["MAE(da)" "MAE(db)" "MAE(db,sel)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
-    savefig(p, "plot/deltaML/MAE_ACSF_best.png")
+    savefig(p, "plot/deltaML/MAE_FCHL19_best.png")
+
     # plot prototype for vs{features} in the same environment:
     tb1 = tbsel[29:32, :] #ACSF
     tb2 = tbsel[61:64, :] #SOAP
@@ -87,5 +89,5 @@ function plot_MAE_db()
         markershape = [:xcross :cross :rect], markersize = [6 6 4],
         labels = ["MAE(ACSF)" "MAE(SOAP)" "MAE(FCHL19)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
-    savefig(p, "plot/deltaML/MAE_features_vs.png")
+    #savefig(p, "plot/deltaML/MAE_features_vs.png")
 end
