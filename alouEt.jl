@@ -1464,7 +1464,7 @@ function test_DeltaML(;use_preselected_train = false, postfix="")
     # dressed angles:
     F = load("data/featuresmat_angles_qm9_post.jld", "data")
     Et = E - Eda - Edb
-    F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
+    #F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
     #display(F)
     θ = F[idtrain, :]\Et[idtrain]; 
     Edn = F*θ
