@@ -342,3 +342,7 @@ Quests:
 
 02.08.23:
 - try PCA or manual feature selection (removing some types of angles) for dressed angle.
+
+04.08.23:
+- add manual readme for hyperparamopt parallel usage, often forgot how to use it.
+- need to change some hyperparam boundaries (due to changing hyperparamopt)
