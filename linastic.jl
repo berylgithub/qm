@@ -1,4 +1,4 @@
-using LinearAlgebra, Statistics, StatsBase, Distributions, Plots, LaTeXStrings, DataFrames
+using LinearAlgebra, Statistics, StatsBase, Distributions, Plots, LaTeXStrings, DataFrames, MultivariateStats
 using ThreadsX
 
 """
@@ -119,7 +119,7 @@ params:
 output:
     - U, the full data matrix but with n_select columns
 """
-function PCA(W, n_select)
+function unused_PCA(W, n_select)
     n_mol, n_f = size(W)
     s = vec(sum(W, dims=1)) # sum over all molecules
     # long ver, more accurate, memory safe, slower:
@@ -684,7 +684,7 @@ params:
 """
 function extract_binomial_feature(m)
     W_half = load("data/ACSF_symm.jld")["data"][:, 52:102] # only include the sum features
-    W_pca = PCA(W_half, m)
+    W_pca = unused_PCA(W_half, m)
     # generate index:
     bin = binomial(m, 2)
     b_ind = zeros(Int, bin, 2)
