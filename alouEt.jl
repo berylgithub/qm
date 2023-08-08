@@ -1425,7 +1425,7 @@ now rerun with all the new features (large sparse ones) and filtered dataset, sa
 table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
-function test_DeltaML(;use_preselected_train = false, postfix="")
+function main_DeltaML(;use_preselected_train = false, postfix="")
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E)
