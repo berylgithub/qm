@@ -567,3 +567,16 @@ function main_postprocess_angles()
     F = F[:, setdiff(1:size(F, 2), delids)]
     save("data/featuresmat_angles_qm9_post.jld", "data", F)
 end
+
+"""
+==== DRESSED TORSION ====
+"""
+
+function get_torsion_types(atom_types, bond_levels)
+    at_iter = Iterators.product(bond_levels, bond_levels, bond_levels, atom_types, atom_types, atom_types, atom_types)
+    ats = []
+    for at ∈ at_iter
+        push!(ats, join([string(at[1]), string(at[2]), string(at[3]), at[4], at[5], at[6], at[7]]))
+    end
+    return ats
+end

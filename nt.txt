@@ -346,3 +346,7 @@ Quests:
 04.08.23:
 - add manual readme for hyperparamopt parallel usage, often forgot how to use it.
 - need to change some hyperparam boundaries (due to changing hyperparamopt)
+
+08.08.23:
+- trial of built in Julia PCA
+- maybe try PCA bond energies too?
