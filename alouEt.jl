@@ -1425,7 +1425,7 @@ now rerun with all the new features (large sparse ones) and filtered dataset, sa
 table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
-function main_DeltaML(;use_preselected_train = false, postfix="")
+function main_DeltaML(;use_preselected_train = false, pca = false, postfix="")
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E)
@@ -1464,8 +1464,11 @@ function main_DeltaML(;use_preselected_train = false, postfix="")
     # dressed angles:
     F = load("data/featuresmat_angles_qm9_post.jld", "data")
     Et = E - Eda - Edb
-    #F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
-    #display(F)
+    if pca
+        #F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
+        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=5); # built in PCA
+        F = MultivariateStats.predict(M, F')'
+    end
     θ = F[idtrain, :]\Et[idtrain]; 
     Edn = F*θ
     MAEs[4,2] = mean(abs.(Et[idtrain] - Edn[idtrain]))*627.503
