@@ -1315,7 +1315,7 @@ function check_MAE()
     display(MAE_approx)
 end
 
-function test_FCHL()
+function main_FCHL()
     dataset = load("data/qm9_dataset_old.jld", "data")
     f = load("data/FCHL.jld", "data")
     centers = vec(readdlm("data/centers.txt", Int))
@@ -1553,7 +1553,7 @@ end
 test data selection given a feature WITHOUT PCA,
 !! this will recompute the centers, since it's stochastic, each run will be different (unless seeded)
 """
-function test_selection_delta()
+function main_selection_delta()
     Random.seed!(603)
     # Scenario 1: compute centers(feature) -> 5 sets of centers ∀features, get the set of centers with the lowest MAE(Edb):
     dataset = load("data/qm9_dataset.jld", "data")
@@ -1587,7 +1587,7 @@ get the table of MAE and some sets of energies with lowest training MAE of the d
 table of MAEs = stats ⟹ each vector of MAEs is row wise
 sets of energies = data ⟹ each set is column wise
 """
-function test_get_MAE_table()
+function main_get_MAE_table()
     E = readdlm("data/energies.txt")
     all_centers = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, :])
     idall = 1:length(E)
