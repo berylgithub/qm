@@ -10,6 +10,9 @@ using Graphs, MolecularGraph, Combinatorics, SparseArrays # stuffs for ΔML
 using LinearAlgebra
 using ThreadsX
 
+include("utils.jl") # bunch of utility functions
+
+
 """
 generate molecular formula based on the list of atoms
 the formula is in the form of ordered atoms: H_C_N_O_F

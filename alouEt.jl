@@ -1426,6 +1426,7 @@ table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
 function main_DeltaML(;use_preselected_train = false, pca = false, postfix="")
+    println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(pca), pca), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E)
@@ -1455,6 +1456,11 @@ function main_DeltaML(;use_preselected_train = false, pca = false, postfix="")
     println("dressed_atom: ", MAEs[2, 2:3])
     # dressed bonds:
     F = load("data/featuresmat_bonds_qm9.jld", "data")
+    if pca
+        #F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
+        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=5); # built in PCA
+        F = MultivariateStats.predict(M, F')'
+    end
     Et = E - Eda # take out parts of the energy
     θ = F[idtrain, :]\Et[idtrain]; 
     Edb = F*θ
@@ -1463,12 +1469,12 @@ function main_DeltaML(;use_preselected_train = false, pca = false, postfix="")
     println("dressed_bond: ", MAEs[3, 2:3])
     # dressed angles:
     F = load("data/featuresmat_angles_qm9_post.jld", "data")
-    Et = E - Eda - Edb
     if pca
         #F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
         M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=5); # built in PCA
         F = MultivariateStats.predict(M, F')'
     end
+    Et = E - Eda - Edb
     θ = F[idtrain, :]\Et[idtrain]; 
     Edn = F*θ
     MAEs[4,2] = mean(abs.(Et[idtrain] - Edn[idtrain]))*627.503
