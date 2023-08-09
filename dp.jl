@@ -583,3 +583,21 @@ function get_torsion_types(atom_types, bond_levels)
     end
     return ats
 end
+
+"""
+get the vector of torsions (4 body) given an observed edge
+"""
+function get_torsions(mol, edge)
+    sv = edge.src; dv = edge.dst # get source and dest
+    sneigh = setdiff(neighbors(mol, sv), dv); dneigh = setdiff(neighbors(mol, dv), sv) # get the neighbors which excludes the observed edge
+    println(sneigh, dneigh)
+    n_tor = length(sneigh)*length(dneigh) # number of torsions
+    T = zeros(Int, n_tor, 4) # output matrix
+    if !isempty(sneigh) && !isempty(dneigh)
+        torsions = Iterators.product(sneigh, dneigh)
+        for (i,t) ∈ enumerate(torsions)
+            T[i, :] = [t[1], sv, dv, t[2]] 
+        end
+    end
+    return T
+end
