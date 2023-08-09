@@ -1455,10 +1455,10 @@ function main_DeltaML(;use_preselected_train = false, pca = false, postfix="")
     MAEs[2,3] = mean(abs.(E[idtest] - Eda[idtest]))*627.503
     println("dressed_atom: ", MAEs[2, 2:3])
     # dressed bonds:
-    F = load("data/featuresmat_bonds_qm9.jld", "data")
+    F = load("data/featuresmat_bonds_qm9_post.jld", "data")
     if pca
         #F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
-        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=5); # built in PCA
+        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=8); # built in PCA
         F = MultivariateStats.predict(M, F')'
     end
     Et = E - Eda # take out parts of the energy
