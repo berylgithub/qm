@@ -4,6 +4,11 @@ all kinds of utility functions
 
 using LaTeXStrings, Printf, DelimitedFiles
 
+# get variable name
+macro Name(arg)
+    string(arg)
+end
+
 # script to write string given a vector{string}
 function writestringline(strinput, filename; mode="w")
     open(filename, mode) do io
