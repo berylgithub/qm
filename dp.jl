@@ -592,12 +592,29 @@ function get_torsions(mol, edge)
     sneigh = setdiff(neighbors(mol, sv), dv); dneigh = setdiff(neighbors(mol, dv), sv) # get the neighbors which excludes the observed edge
     println(sneigh, dneigh)
     n_tor = length(sneigh)*length(dneigh) # number of torsions
-    T = zeros(Int, n_tor, 4) # output matrix
+    T = zeros(Int, n_tor, 7) # 3 edges degrees + 4 vertices
     if !isempty(sneigh) && !isempty(dneigh)
         torsions = Iterators.product(sneigh, dneigh)
         for (i,t) ∈ enumerate(torsions)
-            T[i, :] = [t[1], sv, dv, t[2]] 
+            quad = [t[1], sv, dv, t[2]]
+            T[i, 4:7] = quad # vertices
+            T[i, 1:3] = [get_prop(mol, quad[1], quad[2], :order), 
+                        get_prop(mol, quad[2], quad[3], :order), 
+                        get_prop(mol, quad[3], quad[4], :order)] # edge degrees
         end
     end
     return T
+end
+
+
+"""
+copy paste content of the function to the terminal is probably better
+"""
+function test_dabat()
+    mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
+    e = collect(edges(mol))[3]
+    # each row is a sequence of a torsion:
+    T = get_torsions(mol, e)
+    display(T)
+    string.(map(x->get_prop(mol, x, :symbol), T[:, 4:7]))
 end
