@@ -351,3 +351,6 @@ Quests:
 - trial of built in Julia PCA
 - maybe try PCA bond energies too?
 ! think of the getting the torsion algorithm
+
+10.08.23:
+- 211CCOC == 112COCC, need to have symmetry check for torsions (perhaps angles too)
