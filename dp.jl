@@ -606,15 +606,45 @@ function get_torsions(mol, edge)
     return T
 end
 
+function get_torsions_from_SMILES(torsion_types, str)
+    mol = smilestomol(str)
+    # init empty dict:
+    dtorsion = Dict()
+    for key ∈ torsion_types
+        dtorsion[key] = 0
+    end
+    iter_edges = edges(mol) # get all edges
+    for edge ∈ iter_edges
+        T = get_torsions(mol, edge)
+        if !isempty(T) # if torsions exist
+            for i ∈ axes(T, 1)
+                tstr = join(string.([T[i, 1], T[i, 2], T[i, 3], 
+                                    get_prop(mol, T[i, 4], :symbol), 
+                                    get_prop(mol, T[i, 5], :symbol), 
+                                    get_prop(mol, T[i, 6], :symbol),
+                                    get_prop(mol, T[i, 7], :symbol)]))
+                println(tstr)
+                dtorsion[tstr] += 1
+            end
+        end
+    end
+    return dtorsion
+end
+
 
 """
 copy paste content of the function to the terminal is probably better
 """
 function test_dabat()
-    mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
+    str = "CC(=O)OC1=CC=CC=C1C(=O)O"
+    mol = smilestomol(str)
     e = collect(edges(mol))[3]
     # each row is a sequence of a torsion:
     T = get_torsions(mol, e)
     display(T)
     string.(map(x->get_prop(mol, x, :symbol), T[:, 4:7]))
+    atom_types = ["H","C","N","O","F"]; bond_levels = [1,2,3]
+    torsion_types = get_torsion_types(atom_types, bond_levels)
+    display(torsion_types)
+    get_torsions_from_SMILES(torsion_types, str)
 end
