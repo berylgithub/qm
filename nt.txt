@@ -353,4 +353,7 @@ Quests:
 ! think of the getting the torsion algorithm
 
 10.08.23:
-- 211CCOC == 112COCC, need to have symmetry check for torsions (perhaps angles too)
+! 211CCOC == 112COCC, need to have symmetry check for torsions (perhaps angles too)
+! need to check angular symmetry too!, e.g., 12CCO == 21COC, then rerun every experiment..
+
+12CCO == 21COC, but 12CCO != 12COC, instead 12COC == 21CCO
