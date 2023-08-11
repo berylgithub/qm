@@ -438,8 +438,9 @@ end
 === DRESSED ANGLES ===
 similar to dressed bonds, but it's angles
 ! remove_hydrogens param is removed, since now atom_types is an input
+!! need to be changed, this permutation need to account for symmetry
 """
-function get_angle_types(atom_types, bond_levels)
+function get_angle_types_INCORRECT(atom_types, bond_levels)
     # for angles, each bond is unique, therefore just all possible combination, much larger degrees of freedom
     at_iter = Iterators.product(bond_levels, bond_levels, atom_types, atom_types, atom_types)
     ats = []
@@ -447,6 +448,19 @@ function get_angle_types(atom_types, bond_levels)
         push!(ats, join([string(at[1]), string(at[2]), at[3], at[4], at[5]]))
     end
     return ats
+end
+
+function get_angle_types(types, degrees)
+    atuple = [t^2 for t in types] # atom types equal tuple
+    acomb = join.(collect(Combinatorics.combinations(types, 2))) # combination of atom types
+    dtuple = [string(d)^2 for d in degrees] # degrees equal tuple
+    dcomb = join.(collect(Combinatorics.combinations(degrees, 2))) # combination of degrees
+    denum = join.(collect(Iterators.product(degrees, degrees))) # enumeration of degrees
+    
+    atdtuc = vec(join.(collect(Iterators.product(vcat(dcomb, dtuple), atuple)))) # product of atom tuple and degree tuple union combination
+    acde = vec(join.(collect(Iterators.product(denum, acomb)))) # product of atom combination and degree enumeration
+    chains = vcat(atdtuc, acde) # all except center of symmetry
+    return join.(collect(Iterators.product(types, chains))) # join with center of symmetry
 end
 
 """

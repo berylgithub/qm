@@ -365,8 +365,8 @@ sort symmetry fragments?:
 12OCH => 12OCH -> natural indexing perserved, but is not the above case
 
 let X = center, Y = non centers,
-YY degrees: 11, 12, 22
-YZ degrees: 11, 12, 21, 22
+YY degrees (tuple): 11, 12, 22 -> degree tuple union combination
+YZ degrees (combination): 11, 12, 21, 22 -> degree enumeration
 
 algo for generating the classes:
 - generate type combinations, product it with enumerated degrees
