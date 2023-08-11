@@ -357,3 +357,24 @@ Quests:
 ! need to check angular symmetry too!, e.g., 12CCO == 21COC, then rerun every experiment..
 
 12CCO == 21COC, but 12CCO != 12COC, instead 12COC == 21CCO
+12CCO != 21CCO
+
+sort symmetry fragments?:
+11COC => 11CCO, 11FHF => 11FFH, 12OCH => 12OCH, 21OHC => 12OCH, 12OHC => 21OCH
+12OCC == 21OCC, need to account for the case when left and right atoms are the same. -> check if the symmetry atoms are equal, if yes then sort the degrees
+12OCH => 12OCH -> natural indexing perserved, but is not the above case
+
+let X = center, Y = non centers,
+YY degrees: 11, 12, 22
+YZ degrees: 11, 12, 21, 22
+
+algo for generating the classes:
+- generate type combinations, product it with enumerated degrees
+- generate type tuple of equal types, product it with degree combinations
+- concat both
+
+algo for grouping: 
+- check if the left and right atoms are equal, if not then:
+  - sort symmetry fragment either by the alphabetical atomic element or the bond degree, then the rest should follow the permutation index.
+
+does this apply for torsion? probably sort by the block of atoms? -> 211CCOC => 
