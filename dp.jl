@@ -450,6 +450,10 @@ function get_angle_types_INCORRECT(atom_types, bond_levels)
     return ats
 end
 
+
+"""
+get SYMMETRIC angle types given set of atoms and bonds
+"""
 function get_angle_types(types, degrees)
     atuple = [t^2 for t in types] # atom types equal tuple
     acomb = join.(collect(Combinatorics.combinations(types, 2))) # combination of atom types
@@ -462,6 +466,24 @@ function get_angle_types(types, degrees)
     chains = vcat(atdtuc, acde) # all except center of symmetry
     return join.(collect(Iterators.product(types, chains))) # join with center of symmetry
 end
+
+"""
+symmetrize an angle type given the string sequence
+"""
+function symmetrize_angle(s)
+    # if the non-center atoms are equal, then sort the bond levels, otherwise sort the non center atoms then the bonds
+    if s[end] == s[end-1]
+        sid = sortperm([s[2], s[3]])
+        bondstr = join([s[2], s[3]][sid])
+        atomstr = join([s[end-1], s[end]])
+    else
+        sid = sortperm([s[end-1], s[end]])
+        bondstr = join([s[2], s[3]][sid])
+        atomstr = join([s[end-1], s[end]][sid])
+    end
+    return join([s[1], bondstr, atomstr])
+end
+
 
 """
 get the list of angles (triplets) given an observed atom (vertex) within a molecule
