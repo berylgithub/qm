@@ -468,7 +468,7 @@ function get_angle_types(types, degrees)
 end
 
 """
-symmetrize an angle type given the string sequence
+symmetrize an angle type given the string sequence (or vector)
 """
 function symmetrize_angle(s)
     # if the non-center atoms are equal, then sort the bond levels, otherwise sort the non center atoms then the bonds
@@ -491,24 +491,20 @@ use the formula: C(n_neighbours, 2) given an atom and a molecule
 returns: 
 returns EMPTY if there's no angles found with atom atom as the center
 """
-function get_angles(mol, atom) # atom is the index of atom in the mol chain
-    neighs = neighbors(mol, atom)
+function get_angles(mol, center_atom) # atom is the index of atom in the mol chain
+    neighs = neighbors(mol, center_atom)
     n_angle = binomial(length(neighs), 2)
     # get angles:
     angles_iter = Combinatorics.combinations(neighs, 2)
-    angles = zeros(Int, n_angle, 3) # triplets: (center, left, right)
+    angles = zeros(Int, n_angle, 5) # triplets: (center, left, right) ∪ duplet: (left, right) bonds
     for (i,angle) ∈ enumerate(angles_iter)
-       angles[i, 2:3] = angle
+        angles[i, end-1:end] = angle # atom triplets
+        angles[i, 2:3] = [get_prop(mol, center_atom, angle[1], :order),
+                        get_prop(mol, center_atom, angle[2], :order)]
+        angles[i, 1] = center_atom
+
     end
-    angles[:, 1] .= atom
-    # get degrees:
-    degrees = zeros(Int, n_angle, 2) # duplet, left bond degree and right bond degree
-    # use get_prop(mol, v_i, v_j, :order) with check: has_edge(mol, v_i, v_j) beforehand to avoid errors || has_edge is not needed since neighbors implicitly includes edges
-    for i ∈ axes(angles, 1)
-        degrees[i, 1] = get_prop(mol, angles[i, 1], angles[i, 2], :order)
-        degrees[i, 2] = get_prop(mol, angles[i, 1], angles[i, 3], :order)
-    end
-    return hcat(degrees, angles)
+    return angles
 end
 
 """
@@ -529,10 +525,13 @@ function get_angles_from_SMILES(angle_types, str)
         if !isempty(angles)
             for i ∈ axes(angles, 1)
                 angle = angles[i,:]
-                angle = join(string.([angle[1], angle[2], 
-                        get_prop(mol, angle[3], :symbol), get_prop(mol, angle[4], :symbol), get_prop(mol, angle[5], :symbol)])) # transform to string
+                angle = join(string.([get_prop(mol, angle[1], :symbol),
+                        angle[2], angle[3], 
+                        get_prop(mol, angle[4], :symbol), 
+                        get_prop(mol, angle[5], :symbol)])) # transform to string
+                angle = symmetrize_angle(angle) # symmetrize angle 
                 dangle[angle] += 1
-                # push!(list_angles, angle)
+                #push!(list_angles, angle)
             end
         end
     end
