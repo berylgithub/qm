@@ -464,7 +464,7 @@ function get_angle_types(types, degrees)
     atdtuc = vec(join.(collect(Iterators.product(vcat(dcomb, dtuple), atuple)))) # product of atom tuple and degree tuple union combination
     acde = vec(join.(collect(Iterators.product(denum, acomb)))) # product of atom combination and degree enumeration
     chains = vcat(atdtuc, acde) # all except center of symmetry
-    return join.(collect(Iterators.product(types, chains))) # join with center of symmetry
+    return symmetrize_angle.(join.(collect(Iterators.product(types, chains)))) # join with center of symmetry
 end
 
 """
