@@ -1425,7 +1425,7 @@ now rerun with all the new features (large sparse ones) and filtered dataset, sa
 table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
-function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, postfix="")
+function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, pca_dt = 0, postfix="")
     println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
@@ -1444,9 +1444,9 @@ function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, po
     idtest = setdiff(idall, idtrain)
 
     # fit the baselines, dressed_atom and dressed_bonds:
-    MAEs = Matrix{Any}(undef, 4,3) # output table
+    MAEs = Matrix{Any}(undef, 5,3) # output table
     MAEs[1,:] = ["Elevel", "MAEtrain", "MAEtest"]; 
-    MAEs[2:4, 1] = ["dressed_atom", "dressed_bond", "dressed_angle"] # MAEs of base models
+    MAEs[2:5, 1] = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"] # MAEs of base models
     # dressed atom:
     F = load("data/atomref_features.jld", "data")
     θ = F[idtrain, :]\E[idtrain];
@@ -1479,15 +1479,25 @@ function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, po
     MAEs[4,2] = mean(abs.(Et[idtrain] - Edn[idtrain]))*627.503
     MAEs[4,3] = mean(abs.(Et[idtest] - Edn[idtest]))*627.503
     println("dressed_angle: ", MAEs[4, 2:3])
+    # dressed torsions:
+    F = load("data/featuresmat_torsions_qm9_post.jld", "data")
+    if pca_dt > 0
+        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=pca_dt); # built in PCA
+        F = MultivariateStats.predict(M, F')'
+    end
+    Et = E - Eda - Edb - Edn
+    θ = F[idtrain, :]\Et[idtrain];
+    Edt = F*θ
+    MAEs[5,2] = mean(abs.(Et[idtrain] - Edt[idtrain]))*627.503
+    MAEs[5,3] = mean(abs.(Et[idtest] - Edt[idtest]))*627.503
     display(MAEs)
     writedlm("result/deltaML/MAE_base_"*postfix*".txt", MAEs)
-    writedlm("data/energy_clean_"*postfix*".txt", E-Eda-Edb) # save cleaned energy
-    
+    writedlm("data/energy_clean_"*postfix*".txt", E-Eda-Edb-Edn-Edt) # save cleaned energy
     # test diverse models: check TRAIN first for correctness
     features = ["ACSF_51", "SOAP", "FCHL19"] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
-    elvs = ["dressed_atom", "dressed_bond", "dressed_angle"]
+    elvs = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"]
     n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
     outs = Matrix{Any}(undef, length(features)*length(models)*length(n_trains)*length(solvers)*length(elvs) + 1, 7) # output table
     outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
@@ -1520,6 +1530,8 @@ function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, po
                 Et = E-Eda-Edb
             elseif lv == "dressed_angle"
                 Et = E-Eda-Edb-Edn
+            elseif lv == "dressed_torsion"
+                Et = E-Eda-Edb-Edn-Edt
             end
             # model train:
             if model == "GAK"
