@@ -640,7 +640,15 @@ function get_torsion_types(atom_types, bond_levels)
     for at ∈ at_iter
         push!(ats, join([string(at[1]), string(at[2]), string(at[3]), at[4], at[5], at[6], at[7]]))
     end
-    return ats
+    # symmetrize types:
+    ats_symm = []
+    for at ∈ ats
+        at_sym = symmetrize_torsion(at)
+        if at_sym ∉ ats_symm
+            push!(ats_symm, at_sym)
+        end
+    end
+    return ats_symm
 end
 
 """
