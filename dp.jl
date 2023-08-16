@@ -610,6 +610,21 @@ end
 ==== DRESSED TORSION ====
 """
 
+function symmetrize_torsion(s)
+    swap_bonds = false
+    if s[2] > s[end]
+        temp = s[2]; s[2] = s[end]; s[end] = temp; # swap end to end
+        temp = s[3]; s[3] = s[end-1]; s[end-1] = temp; # swap middle
+        swap_bonds = true
+    elseif s[1] == s[end]
+        if s[3] > s[end-1]
+            temp = s[3]; s[3] = s[end-1]; s[end-1] = temp; # swap middle
+            swap_bonds = true
+        end
+    end
+    #...
+end
+
 function get_torsion_types(atom_types, bond_levels)
     at_iter = Iterators.product(bond_levels, bond_levels, bond_levels, atom_types, atom_types, atom_types, atom_types)
     ats = []

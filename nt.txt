@@ -396,4 +396,7 @@ torsion types:
 algo:
 if all atoms are the same OR left and right symmetric OR no atoms get swapped, then bonds are sorted independently  
 if 1 > end: then swap (1,end) and (2,end-1)
-else if 1 = end: if 2 > end-1, swap (2,end-1) 
+else if 1 = end: if 2 > end-1, swap (2,end-1)
+check for symmetric duplets: 
+if symmetric or no atoms get swapped then bonds independent swap
+else, swap bonds by atom's permsort
