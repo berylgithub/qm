@@ -663,11 +663,11 @@ function get_torsions(mol, edge)
     if !isempty(sneigh) && !isempty(dneigh)
         torsions = Iterators.product(sneigh, dneigh)
         for (i,t) ∈ enumerate(torsions)
-            quad = [t[1], sv, dv, t[2]]
+            quad = [t[1], sv, dv, t[2]] # left, source, dest, right atoms
             T[i, 4:7] = quad # vertices
-            T[i, 1:3] = [get_prop(mol, quad[1], quad[2], :order), 
-                        get_prop(mol, quad[2], quad[3], :order), 
-                        get_prop(mol, quad[3], quad[4], :order)] # edge degrees
+            T[i, 1:3] = [get_prop(mol, quad[2], quad[3], :order), # center edge
+                        get_prop(mol, quad[1], quad[2], :order), # left edge
+                        get_prop(mol, quad[3], quad[4], :order)] # right edge
         end
     end
     return T
@@ -690,8 +690,9 @@ function get_torsions_from_SMILES(torsion_types, str)
                                     get_prop(mol, T[i, 5], :symbol), 
                                     get_prop(mol, T[i, 6], :symbol),
                                     get_prop(mol, T[i, 7], :symbol)]))
-                println(tstr)
-                dtorsion[tstr] += 1
+                s_symm = symmetrize_torsion(tstr)
+                #println([tstr, s_symm])
+                dtorsion[s_symm] += 1
             end
         end
     end
@@ -709,9 +710,10 @@ function test_dabat()
     # each row is a sequence of a torsion:
     T = get_torsions(mol, e)
     display(T)
-    string.(map(x->get_prop(mol, x, :symbol), T[:, 4:7]))
-    atom_types = ["H","C","N","O","F"]; bond_levels = [1,2,3]
+    display(string.(map(x->get_prop(mol, x, :symbol), T[:, 4:7])))
+    atom_types = ["H","C","N","O","F"]; bond_levels = [1,2,3];
     torsion_types = get_torsion_types(atom_types, bond_levels)
     display(torsion_types)
-    get_torsions_from_SMILES(torsion_types, str)
+    T = get_torsions_from_SMILES(torsion_types, str)
+    display(T["112CCCO"])
 end
