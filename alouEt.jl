@@ -1426,7 +1426,7 @@ table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
 function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, postfix="")
-    println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(pca), pca), (@Name(postfix), postfix))
+    println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E)
