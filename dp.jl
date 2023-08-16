@@ -657,7 +657,7 @@ get the vector of torsions (4 body) given an observed edge
 function get_torsions(mol, edge)
     sv = edge.src; dv = edge.dst # get source and dest
     sneigh = setdiff(neighbors(mol, sv), dv); dneigh = setdiff(neighbors(mol, dv), sv) # get the neighbors which excludes the observed edge
-    println(sneigh, dneigh)
+    #println(sneigh, dneigh)
     n_tor = length(sneigh)*length(dneigh) # number of torsions
     T = zeros(Int, n_tor, 7) # 3 edges degrees + 4 vertices
     if !isempty(sneigh) && !isempty(dneigh)
@@ -697,6 +697,35 @@ function get_torsions_from_SMILES(torsion_types, str)
         end
     end
     return dtorsion
+end
+
+function main_get_qm9_torsions()
+    path = "../../../Dataset/gdb9-14b/geometry/" 
+    files = readdir(path)
+    atom_types = ["H","C","N","O","F"]; bond_levels = [1,2,3] 
+    torsion_types = get_torsion_types(atom_types, bond_levels)
+    t = @elapsed begin
+        list_torsions = ThreadsX.map(files) do fil
+            smiles = fetch_SMILES(path*fil)
+            torsions = get_torsions_from_SMILES(torsion_types, smiles)
+            torsions
+        end
+    end
+    display(list_torsions)
+    # transform to matrix:
+    nrow = length(list_torsions); ncol = length(torsion_types)
+    F = zeros(nrow, ncol)
+    t_t = @elapsed begin
+        @simd for j ∈ eachindex(torsion_types)
+            @simd for i ∈ eachindex(list_torsions)
+                @inbounds F[i, j] = list_torsions[i][torsion_types[j]]
+            end
+        end
+    end
+    display(F)
+    println("elapsed = ",t, " ",t_t)
+    writedlm("data/torsion_types_qm9.txt", torsion_types)
+    save("data/featuresmat_torsion_qm9.jld", "data", F)
 end
 
 
