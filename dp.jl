@@ -611,18 +611,27 @@ end
 """
 
 function symmetrize_torsion(s)
-    swap_bonds = false
-    if s[2] > s[end]
-        temp = s[2]; s[2] = s[end]; s[end] = temp; # swap end to end
-        temp = s[3]; s[3] = s[end-1]; s[end-1] = temp; # swap middle
+    s = collect(s) # operation on array instead of strings
+    swap_bonds = false; sort_bonds = false
+    if s[4] > s[end]
+        temp = s[4]; s[4] = s[end]; s[end] = temp; # swap end to end
+        temp = s[5]; s[5] = s[end-1]; s[end-1] = temp; # swap middle
         swap_bonds = true
-    elseif s[1] == s[end]
-        if s[3] > s[end-1]
-            temp = s[3]; s[3] = s[end-1]; s[end-1] = temp; # swap middle
+    elseif s[4] == s[end]
+        if s[5] == s[end-1] # symmetric or uniform
+            sort_bonds = true
+        elseif s[5] > s[end-1]
+            temp = s[5]; s[5] = s[end-1]; s[end-1] = temp; # swap middle
             swap_bonds = true
         end
     end
-    #...
+    # check for bonds swapping:
+    if swap_bonds # swapping following the swaps of atoms
+        temp = s[2]; s[2] = s[3]; s[3] = temp; # swap bonds
+    elseif sort_bonds # independent sort, only for symmetric or uniform atom
+        s[2:3] = sort([s[2], s[3]])
+    end
+    return join(s)
 end
 
 function get_torsion_types(atom_types, bond_levels)
