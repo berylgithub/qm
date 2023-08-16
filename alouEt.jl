@@ -1425,7 +1425,7 @@ now rerun with all the new features (large sparse ones) and filtered dataset, sa
 table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
-function main_DeltaML(;use_preselected_train = false, pca = false, postfix="")
+function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, postfix="")
     println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(pca), pca), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
@@ -1456,8 +1456,8 @@ function main_DeltaML(;use_preselected_train = false, pca = false, postfix="")
     println("dressed_atom: ", MAEs[2, 2:3])
     # dressed bonds:
     F = load("data/featuresmat_bonds_qm9_post.jld", "data")
-    if pca
-        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=8); # built in PCA
+    if pca_db > 0
+        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=pca_db); # built in PCA
         F = MultivariateStats.predict(M, F')'
     end
     Et = E - Eda # take out parts of the energy
@@ -1468,9 +1468,9 @@ function main_DeltaML(;use_preselected_train = false, pca = false, postfix="")
     println("dressed_bond: ", MAEs[3, 2:3])
     # dressed angles:
     F = load("data/featuresmat_angles_qm9_post.jld", "data")
-    if pca
+    if pca_dn > 0
         #F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
-        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=10); # built in PCA
+        M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=pca_dn); # built in PCA
         F = MultivariateStats.predict(M, F')'
     end
     Et = E - Eda - Edb
