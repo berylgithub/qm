@@ -4,7 +4,7 @@ contains all tests and experiments
 
 using Krylov, Flux, Printf, DelimitedFiles
 using ProgressMeter, Dates, BenchmarkTools
-using Random, StatsBase
+using Random, StatsBase, Combinatorics
 
 include("utils.jl")
 include("voronoi.jl")
@@ -1568,6 +1568,41 @@ function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, pc
     end
     display(outs)
 end
+
+
+"""
+fits combination of baselines, with not just limited to 100 data points
+"""
+function main_base_fitting()
+    # define parameter space: ntrain × baselines
+    bases = ["b","a","t"]
+    basepowers = join.(collect(powerset(bases, 1)))
+    ntrains = [50, 100, 1_000, 10_000, 100_000]
+    iters = Iterators.product(basepowers, ntrains)
+    for it ∈ iters
+        println(it[1], it[2])
+    end
+
+    Random.seed!(603) # setseed for reproducibilty
+    E = readdlm("data/energies.txt")
+    nrow = length(E)
+    
+    
+    idall = 1:nrow
+    idtrain = sample(1:nrow, ntrain, replace=false)
+    idtest = setdiff(idall, idtrain)
+
+
+    # always fit dressed atom:
+    #= F = load("data/atomref_features.jld", "data")
+    θ = F[idtrain, :]\E[idtrain];
+    Eda = F*θ
+    MAEs[2,2] = mean(abs.(E[idtrain] - Eda[idtrain]))*627.503
+    MAEs[2,3] = mean(abs.(E[idtest] - Eda[idtest]))*627.503
+    println("dressed_atom: ", MAEs[2, 2:3])
+ =#
+end
+
 
 """
 test data selection given a feature WITHOUT PCA,
