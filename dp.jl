@@ -706,6 +706,7 @@ function main_get_qm9_torsions()
     torsion_types = get_torsion_types(atom_types, bond_levels)
     t = @elapsed begin
         list_torsions = ThreadsX.map(files) do fil
+            println(fil)
             smiles = fetch_SMILES(path*fil)
             torsions = get_torsions_from_SMILES(torsion_types, smiles)
             torsions
