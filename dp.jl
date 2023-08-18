@@ -733,8 +733,19 @@ function postprocess_torsion()
     F = load("data/featuresmat_torsion_qm9_post.jld", "data")
     tts = vec(readdlm("data/torsion_types_qm9.txt"))
     exids = readdlm("data/exids.txt")
-    
-    F = setdiff(1:size(F, 1), )
+
+    F = F[setdiff(1:size(F, 1), exids), :] # remove excluded molecules
+    # remove H:
+    idnH = []
+    for (i, tt) ∈ tts
+        if !occursin("H", tt)
+            push!(idnH, i)
+        end
+    end
+    colsum = vec(sum(F[:, idnH], dims=1))
+    idnz = findall(colsum .> 0)
+    writedlm("data/torsion_types_post.txt", tts[idnH][idnz]) # nonzero nonH torsion types
+    save("data/featuresmat_torsion_qm9_post.jld", "data", F[:, idnH][:, idnz]) # nonzero nonH matrix
 end
 
 """
