@@ -711,7 +711,6 @@ function main_get_qm9_torsions()
             torsions
         end
     end
-    display(list_torsions)
     # transform to matrix:
     nrow = length(list_torsions); ncol = length(torsion_types)
     F = zeros(nrow, ncol)
@@ -722,7 +721,6 @@ function main_get_qm9_torsions()
             end
         end
     end
-    display(F)
     println("elapsed = ",t, " ",t_t)
     writedlm("data/torsion_types_qm9.txt", torsion_types)
     save("data/featuresmat_torsion_qm9.jld", "data", F)
