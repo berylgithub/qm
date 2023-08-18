@@ -726,6 +726,16 @@ function main_get_qm9_torsions()
     save("data/featuresmat_torsion_qm9.jld", "data", F)
 end
 
+"""
+got OOM on OMP1, need to do it in VSC5
+"""
+function postprocess_torsion()
+    F = load("data/featuresmat_torsion_qm9_post.jld", "data")
+    tts = vec(readdlm("data/torsion_types_qm9.txt"))
+    exids = readdlm("data/exids.txt")
+    
+    F = setdiff(1:size(F, 1), )
+end
 
 """
 copy paste content of the function to the terminal is probably better
