@@ -1426,7 +1426,7 @@ table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
 function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, pca_dt = 0, postfix="")
-    println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(postfix), postfix))
+    println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(pca_dt), pca_dt), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E)
@@ -1480,7 +1480,7 @@ function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, pc
     MAEs[4,3] = mean(abs.(Et[idtest] - Edn[idtest]))*627.503
     println("dressed_angle: ", MAEs[4, 2:3])
     # dressed torsions:
-    F = load("data/featuresmat_torsions_qm9_post.jld", "data")
+    F = load("data/featuresmat_torsion_qm9_post.jld", "data")
     if pca_dt > 0
         M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=pca_dt); # built in PCA
         F = MultivariateStats.predict(M, F')'
