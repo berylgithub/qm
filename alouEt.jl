@@ -1574,23 +1574,60 @@ end
 fits combination of baselines, with not just limited to 100 data points
 """
 function main_base_fitting()
+    # pre-computations:
+    Random.seed!(603) # setseed for reproducibilty
+    E = readdlm("data/energies.txt")
+    nrow = length(E)
+    idall = 1:nrow
+    max_ntrain = 100_000
+    idtrain_max = sample(1:nrow, max_ntrain, replace=false)
+    F = load("data/atomref_features.jld", "data")
+    Fb = load("data/featuresmat_bonds_qm9_post.jld", "data")
+    Fa = load("data/featuresmat_angles_qm9_post.jld", "data")
+    Ft = load("data/featuresmat_torsion_qm9_post.jld", "data")
+    
     # define parameter space: ntrain × baselines
     bases = ["b","a","t"]
     basepowers = join.(collect(powerset(bases, 1)))
     ntrains = [50, 100, 1_000, 10_000, 100_000]
-    iters = Iterators.product(basepowers, ntrains)
-    for it ∈ iters
-        println(it[1], it[2])
-    end
+    outs = Matrix{Any}(undef, length(ntrains)*length(basepowers)+1, 4) # output table
+    outs[1,:] = ["ntrain", "baseline", "MAEtrain", "MAEtest"] 
+    iters = Iterators.product(ntrains, basepowers)
 
-    Random.seed!(603) # setseed for reproducibilty
-    E = readdlm("data/energies.txt")
-    nrow = length(E)
+    # the loop:
+    cr = 2
+    for it ∈ iters
+        ET = E # reset ETarget
+        ntrain = it[1]; base = it[2]
+        idtrain = idtrain_max[1:ntrain]
+        idtest = setdiff(idall, idtrain)
+        println("\n", cr," ",ntrain, " ",base)
+        # fit dressed atom first:
+        θ = F[idtrain, :]\ET[idtrain];
+        Eda = F*θ
+        MAEtrain = mean(abs.(ET[idtrain] - Eda[idtrain]))*627.503
+        MAEtest = mean(abs.(ET[idtest] - Eda[idtest]))*627.503
+        println([MAEtrain, MAEtest])
+        ET -= Eda
+        if occursin("b", base)
+            θ = Fb[idtrain, :]\ET[idtrain];
+            Eb = Fb*θ
+            ET -= Eb
+        end
+        if occursin("a", base)
+            #ET -= Ea
+        end
+        if occursin("t", base)
+            #ET -= Et
+        end
+        outs[cr,[1,2]] = [ntrain, base]
+        cr += 1
+    end
+    display(outs)
+
     
     
-    idall = 1:nrow
-    idtrain = sample(1:nrow, ntrain, replace=false)
-    idtest = setdiff(idall, idtrain)
+    
 
 
     # always fit dressed atom:
@@ -1600,7 +1637,7 @@ function main_base_fitting()
     MAEs[2,2] = mean(abs.(E[idtrain] - Eda[idtrain]))*627.503
     MAEs[2,3] = mean(abs.(E[idtest] - Eda[idtest]))*627.503
     println("dressed_atom: ", MAEs[2, 2:3])
- =#
+    =#
 end
 
 
