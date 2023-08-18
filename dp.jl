@@ -737,7 +737,7 @@ function postprocess_torsion()
     F = F[setdiff(1:size(F, 1), exids), :] # remove excluded molecules
     # remove H:
     idnH = []
-    for (i, tt) ∈ tts
+    for (i, tt) ∈ enumerate(tts)
         if !occursin("H", tt)
             push!(idnH, i)
         end
