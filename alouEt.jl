@@ -1573,7 +1573,7 @@ end
 """
 fits combination of baselines, with not just limited to 100 data points
 """
-function main_base_fitting()
+function main_base_fitting(; postfix = "")
     # pre-computations:
     Random.seed!(603) # setseed for reproducibilty
     E = readdlm("data/energies.txt")
@@ -1590,8 +1590,8 @@ function main_base_fitting()
     bases = ["b","a","t"]
     basepowers = join.(collect(powerset(bases, 1)))
     ntrains = [50, 100, 1_000, 10_000, 100_000]
-    outs = Matrix{Any}(undef, length(ntrains)*length(basepowers)+1, 4) # output table
-    outs[1,:] = ["ntrain", "baseline", "MAEtrain", "MAEtest"] 
+    outs = Matrix{Any}(undef, length(ntrains)*length(basepowers)+1, 5) # output table
+    outs[1,:] = ["ntrain", "baseline", "MAEtrain", "MAEtest", "MAEtot"] 
     iters = Iterators.product(ntrains, basepowers)
 
     # the loop:
@@ -1607,37 +1607,41 @@ function main_base_fitting()
         Eda = F*θ
         MAEtrain = mean(abs.(ET[idtrain] - Eda[idtrain]))*627.503
         MAEtest = mean(abs.(ET[idtest] - Eda[idtest]))*627.503
-        println([MAEtrain, MAEtest])
+        MAEtot = mean(abs.(ET - Eda))*627.503
+        println([MAEtrain, MAEtest, MAEtot])
         ET -= Eda
         if occursin("b", base)
             θ = Fb[idtrain, :]\ET[idtrain];
             Eb = Fb*θ
+            MAEtrain = mean(abs.(ET[idtrain] - Eb[idtrain]))*627.503
+            MAEtest = mean(abs.(ET[idtest] - Eb[idtest]))*627.503
+            MAEtot = mean(abs.(ET - Eb))*627.503
+            println([MAEtrain, MAEtest, MAEtot])
             ET -= Eb
         end
         if occursin("a", base)
-            #ET -= Ea
+            θ = Fa[idtrain, :]\ET[idtrain];
+            Ea = Fa*θ
+            MAEtrain = mean(abs.(ET[idtrain] - Ea[idtrain]))*627.503
+            MAEtest = mean(abs.(ET[idtest] - Ea[idtest]))*627.503
+            MAEtot = mean(abs.(ET - Ea))*627.503
+            println([MAEtrain, MAEtest, MAEtot])
+            ET -= Ea
         end
         if occursin("t", base)
-            #ET -= Et
+            θ = Ft[idtrain, :]\ET[idtrain];
+            Et = Ft*θ
+            MAEtrain = mean(abs.(ET[idtrain] - Et[idtrain]))*627.503
+            MAEtest = mean(abs.(ET[idtest] - Et[idtest]))*627.503
+            MAEtot = mean(abs.(ET - Et))*627.503
+            println([MAEtrain, MAEtest, MAEtot])
+            #ET -= Ea # not needed for baseline fitting
         end
-        outs[cr,[1,2]] = [ntrain, base]
+        outs[cr,:] = [ntrain, base, MAEtrain, MAEtest, MAEtot]
         cr += 1
     end
     display(outs)
-
-    
-    
-    
-
-
-    # always fit dressed atom:
-    #= F = load("data/atomref_features.jld", "data")
-    θ = F[idtrain, :]\E[idtrain];
-    Eda = F*θ
-    MAEs[2,2] = mean(abs.(E[idtrain] - Eda[idtrain]))*627.503
-    MAEs[2,3] = mean(abs.(E[idtest] - Eda[idtest]))*627.503
-    println("dressed_atom: ", MAEs[2, 2:3])
-    =#
+    writedlm("result/deltaML/MAE_baselines_enum_"*postfix*".txt", outs)
 end
 
 
