@@ -402,3 +402,6 @@ else if 1 = end: if 2 > end-1, swap (2,end-1)
 check for symmetric duplets: 
 if symmetric then bonds independent swap
 else, swap bonds by atom's permsort
+
+21.08.23:
+- as thought, angle and torsion dont improve the MAE, hypothesis: what if they improve on ntrain > 100?
