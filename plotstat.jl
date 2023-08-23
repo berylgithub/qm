@@ -141,8 +141,9 @@ function plot_MAE_db()
 end
 
 function plot_MAE_dt()
-    tb = readdlm("result/deltaML/MAE_enum_ns_dt_180823.txt")
-    tbsel = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
+    tbns = readdlm("result/deltaML/MAE_enum_ns_dt_180823.txt")
+    tbs = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
+    tb = tbs #
     # see effect of dressed on each feature:
     d_minind = Dict("acsf" => query_min(tb, "ACSF_51"), 
                 "soap" => query_min(tb, "SOAP"), 
@@ -154,7 +155,7 @@ function plot_MAE_dt()
                 "soap"=>query_indices(tb, [2,3,4], d_colq["soap"]), 
                 "fchl19"=>query_indices(tb, [2,3,4], d_colq["fchl19"]))
     # observe per feature:
-    ind = d_ind["soap"]
+    ind = d_ind["fchl19"]
     MAEs = vcat(tb[ind, end])
     xticks = tb[:, 1][1:4]
     xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
@@ -163,12 +164,12 @@ function plot_MAE_dt()
     yticks = yticks .- (yticks .% 10) # round with 10 as multiplier
     yticks = yticks[yticks .> 0.] # remove zeros
     yticks = vcat(minimum(MAEs), yticks, maximum(MAEs)) # concat with min and max
-    ytformat = vcat(string.(round.(yticks[1,end], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]))
+    ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
     display(tb[ind, :][end-3:end, :])
     p = plot(xticks, [tb[ind, :][1:4, end], tb[ind, :][5:8, end], tb[ind, :][9:12, end], tb[ind, :][end-3:end, end]],
         yticks = (yticks, ytformat), xticks = (xticks, xtformat),
         xaxis = :log, yaxis = :log,
-        markershape = :auto, markersize = (ones(5)*6)',
+        markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
         labels = ["MAE(da)" "MAE(db)" "MAE(dn)" "MAE(dt)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
 end
