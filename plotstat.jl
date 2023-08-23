@@ -150,10 +150,25 @@ function plot_MAE_dt()
     d_colq = Dict("acsf" =>tb[d_minind["acsf"],[2,3,4]], 
                 "soap" =>tb[d_minind["soap"],[2,3,4]], 
                 "fchl19"=>tb[d_minind["fchl19"],[2,3,4]])
-    #  [da,db,dn,dt]:
     d_ind = Dict("acsf"=>query_indices(tb, [2,3,4], d_colq["acsf"]),
                 "soap"=>query_indices(tb, [2,3,4], d_colq["soap"]), 
-                "fchl19"=>query_indices(tb, [2,3,4], d_colq["soap"]))
-    display(tbsel[d_ind["acsf"], :][end-3:end, :])
-    d_indsel = Dict("acsf"=>[], "soap"=>[], "fchl19"=>[])
+                "fchl19"=>query_indices(tb, [2,3,4], d_colq["fchl19"]))
+    # observe per feature:
+    ind = d_ind["soap"]
+    MAEs = vcat(tb[ind, end])
+    xticks = tb[:, 1][1:4]
+    xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
+    yticks = round.(vcat(maximum(MAEs), minimum(MAEs)), digits=3)
+    yticks = range(minimum(MAEs), maximum(MAEs), 5)
+    yticks = yticks .- (yticks .% 10) # round with 10 as multiplier
+    yticks = yticks[yticks .> 0.] # remove zeros
+    yticks = vcat(minimum(MAEs), yticks, maximum(MAEs)) # concat with min and max
+    ytformat = vcat(string.(round.(yticks[1,end], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]))
+    display(tb[ind, :][end-3:end, :])
+    p = plot(xticks, [tb[ind, :][1:4, end], tb[ind, :][5:8, end], tb[ind, :][9:12, end], tb[ind, :][end-3:end, end]],
+        yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+        xaxis = :log, yaxis = :log,
+        markershape = :auto, markersize = (ones(5)*6)',
+        labels = ["MAE(da)" "MAE(db)" "MAE(dn)" "MAE(dt)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
+    display(p)
 end
