@@ -50,17 +50,17 @@ end
 very specific function, may be changed at will
 query the information from a table of the row with the minimum MAE
 """
-function query_min(table, feature_type, Elevel)
+function query_min(table, feature_type)
     # get the min MAE:
     indices = []
     for i ∈ axes(table, 1)
-        if (table[i, 2] == feature_type) && (table[i, 5] == Elevel)
+        if (table[i, 2] == feature_type)
             push!(indices, i)
         end
     end
     sliced = table[indices,:]
     minid = argmin(sliced[:, 7])
-    selid = indices[minid-3]:indices[minid] # assume 100 Ntrain is always the lowest MAE
+    selid = indices[minid] # assume 100 Ntrain is always the lowest MAE
     return selid
 end
 
@@ -143,7 +143,17 @@ end
 function plot_MAE_dt()
     tb = readdlm("result/deltaML/MAE_enum_ns_dt_180823.txt")
     tbsel = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
-    # see effect of dressed on each feature [da,db]:
-    ind = Dict("acsf"=>[], "soap"=>[], "fchl19"=>[])
-    indsel = Dict("acsf"=>[], "soap"=>[], "fchl19"=>[])
+    # see effect of dressed on each feature:
+    d_minind = Dict("acsf" => query_min(tb, "ACSF_51"), 
+                "soap" => query_min(tb, "SOAP"), 
+                "fchl19" => query_min(tb, "FCHL19"))
+    d_colq = Dict("acsf" =>tb[d_minind["acsf"],[2,3,4]], 
+                "soap" =>tb[d_minind["soap"],[2,3,4]], 
+                "fchl19"=>tb[d_minind["fchl19"],[2,3,4]])
+    #  [da,db,dn,dt]:
+    d_ind = Dict("acsf"=>query_indices(tb, [2,3,4], d_colq["acsf"]),
+                "soap"=>query_indices(tb, [2,3,4], d_colq["soap"]), 
+                "fchl19"=>query_indices(tb, [2,3,4], d_colq["soap"]))
+    display(tbsel[d_ind["acsf"], :][end-3:end, :])
+    d_indsel = Dict("acsf"=>[], "soap"=>[], "fchl19"=>[])
 end
