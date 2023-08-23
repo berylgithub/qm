@@ -65,9 +65,33 @@ function query_min(table, feature_type, Elevel)
 end
 
 """
+query the row index of data by column info
+params:
+    - colids = list of column ids
+    - coldatas = list of data entry corresponding to the colids
+"""
+function query_indices(tb, colids, coldatas)
+    ids = []
+    for i ∈ axes(tb, 1)
+        c = 0;
+        # loop all column ids:
+        for (j,colid) ∈ enumerate(colids)
+            if tb[i, colid] == coldatas[j]
+                c += 1
+            end
+        end
+        if c == length(colids)
+            push!(ids, i)
+        end
+    end
+    return ids
+end
+
+
+"""
 plot prototype for delta levels
 """
-function plot_MAE_delta()
+function plot_MAE_db()
     tb = readdlm("result/deltaML/MAE_enum_ns_dn_PCAdn_020723.txt")
     tbsel = readdlm("result/deltaML/MAE_enum_s2_dn_PCAdn_020723.txt")
     
@@ -114,4 +138,12 @@ function plot_MAE_delta()
         labels = ["MAE(ACSF)" "MAE(SOAP)" "MAE(FCHL19)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
     #savefig(p, "plot/deltaML/MAE_features_vs.png")
+end
+
+function plot_MAE_dt()
+    tb = readdlm("result/deltaML/MAE_enum_ns_dt_180823.txt")
+    tbsel = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
+    # see effect of dressed on each feature [da,db]:
+    ind = Dict("acsf"=>[], "soap"=>[], "fchl19"=>[])
+    indsel = Dict("acsf"=>[], "soap"=>[], "fchl19"=>[])
 end
