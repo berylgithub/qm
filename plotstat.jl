@@ -96,18 +96,20 @@ automatic yticks generator given the number of desired points, and data points
 """
 function yticks_generator(data, n)
     n = n+1
-    min = minimum(data); max = maximum(data)
+    mind = minimum(data); maxd = maximum(data)
+    q25 = quantile(data, .1); q75 = quantile(data, .9); # quantiles
     mid = median(data)
     # generate left range and right range of median:
     nhalf = n ÷ 2;
+    # split to 4 parts rather than 2?:
     # left:
-    mult = 10^(ndigits(Int(round(abs(mid - min)))) - 1)
-    rl = range(min, mid, nhalf); rl = rl .- (rl .% mult)
+    mult = max(10^(ndigits(Int(round(abs(mid - q25)))) - 1), 10)
+    rl = range(q25, mid, nhalf); rl = rl .- (rl .% mult)
     # right: 
-    mult = 10^(ndigits(Int(round(abs(max - mid)))) - 1)
-    rr = range(mid, max, nhalf); rr = rr .- (rr .% mult)
+    mult = max(10^(ndigits(Int(round(abs(q75 - mid)))) - 1), 10)
+    rr = range(mid, q75, nhalf); rr = rr .- (rr .% mult)
     # combine:
-    yticks = [min; rl; rr; max]
+    yticks = [mind; rl; rr; maxd]
     yticks = yticks[yticks .> 0]
     return yticks
 end
@@ -191,11 +193,8 @@ function plot_MAE_dt()
         MAEs = tb[ind, end]
         xticks = tb[:, 1][1:4]
         xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
-        minMAE = minimum(MAEs); maxMAE = maximum(MAEs);
-        yticks = range(minMAE, maxMAE, 7)
-        yticks = yticks[2:end-1] .- (yticks[2:end-1] .% 10) # round with 10 as multiplier
-        yticks = yticks[yticks .> 0.] # remove zeros
-        yticks = vcat(minMAE, yticks, maxMAE) # concat with min and max
+        y = tb[ind, 7]
+        yticks = yticks_generator(y, 5)
         ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
         p = plot(xticks, [tb[ind, :][1:4, end], tb[ind, :][5:8, end], tb[ind, :][9:12, end], tb[ind, :][end-3:end, end]],
             yticks = (yticks, ytformat), xticks = (xticks, xtformat),
