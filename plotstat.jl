@@ -50,17 +50,21 @@ end
 very specific function, may be changed at will
 query the information from a table of the row with the minimum MAE
 """
-function query_min(table, feature_type)
+function query_min(table; feature_type = "")
     # get the min MAE:
     indices = []
-    for i ∈ axes(table, 1)
-        if (table[i, 2] == feature_type)
-            push!(indices, i)
+    if !isempty(feature_type)
+        for i ∈ axes(table, 1)
+            if (table[i, 2] == feature_type)
+                push!(indices, i)
+            end
         end
+        sliced = table[indices,:]
+        minid = argmin(sliced[:, 7])
+        selid = indices[minid] # assume 100 Ntrain is always the lowest MAE
+    else
+        selid = argmin(table[:, 7])
     end
-    sliced = table[indices,:]
-    minid = argmin(sliced[:, 7])
-    selid = indices[minid] # assume 100 Ntrain is always the lowest MAE
     return selid
 end
 
@@ -143,7 +147,7 @@ end
 function plot_MAE_dt()
     tbns = readdlm("result/deltaML/MAE_enum_ns_dt_180823.txt")
     tbs = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
-    tb = tbs #
+    tb = tbs # select which table
     # see effect of dressed on each feature:
     d_minind = Dict("acsf" => query_min(tb, "ACSF_51"), 
                 "soap" => query_min(tb, "SOAP"), 
@@ -165,7 +169,8 @@ function plot_MAE_dt()
     yticks = yticks[yticks .> 0.] # remove zeros
     yticks = vcat(minimum(MAEs), yticks, maximum(MAEs)) # concat with min and max
     ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
-    display(tb[ind, :][end-3:end, :])
+    display(tb[ind, :][5:8, :])
+    display(tb[ind, :][9:12, :])
     p = plot(xticks, [tb[ind, :][1:4, end], tb[ind, :][5:8, end], tb[ind, :][9:12, end], tb[ind, :][end-3:end, end]],
         yticks = (yticks, ytformat), xticks = (xticks, xtformat),
         xaxis = :log, yaxis = :log,
