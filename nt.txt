@@ -405,3 +405,9 @@ else, swap bonds by atom's permsort
 
 21.08.23:
 - as thought, angle and torsion dont improve the MAE, hypothesis: what if they improve on ntrain > 100?
+
+24.08.23:
+! result org:
+  - fix the best hyperparameter from ns and sx data then compare up to dt (see the effect of baselines)
+  - compare the best dx of ns and sx
+  - fix sx and compare each feature performance up to dt (see the effect of feature)
