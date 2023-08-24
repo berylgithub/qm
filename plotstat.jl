@@ -149,9 +149,9 @@ function plot_MAE_dt()
     tbs = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
     tb = tbs # select which table
     # see effect of dressed on each feature:
-    d_minind = Dict("acsf" => query_min(tb, "ACSF_51"), 
-                "soap" => query_min(tb, "SOAP"), 
-                "fchl19" => query_min(tb, "FCHL19"))
+    d_minind = Dict("acsf" => query_min(tb, feature_type = "ACSF_51"), 
+                "soap" => query_min(tb, feature_type = "SOAP"), 
+                "fchl19" => query_min(tb, feature_type = "FCHL19"))
     d_colq = Dict("acsf" =>tb[d_minind["acsf"],[2,3,4]], 
                 "soap" =>tb[d_minind["soap"],[2,3,4]], 
                 "fchl19"=>tb[d_minind["fchl19"],[2,3,4]])
@@ -159,22 +159,34 @@ function plot_MAE_dt()
                 "soap"=>query_indices(tb, [2,3,4], d_colq["soap"]), 
                 "fchl19"=>query_indices(tb, [2,3,4], d_colq["fchl19"]))
     # observe per feature:
-    ind = d_ind["fchl19"]
-    MAEs = vcat(tb[ind, end])
-    xticks = tb[:, 1][1:4]
-    xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
-    yticks = round.(vcat(maximum(MAEs), minimum(MAEs)), digits=3)
-    yticks = range(minimum(MAEs), maximum(MAEs), 5)
-    yticks = yticks .- (yticks .% 10) # round with 10 as multiplier
-    yticks = yticks[yticks .> 0.] # remove zeros
-    yticks = vcat(minimum(MAEs), yticks, maximum(MAEs)) # concat with min and max
-    ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
-    display(tb[ind, :][5:8, :])
-    display(tb[ind, :][9:12, :])
-    p = plot(xticks, [tb[ind, :][1:4, end], tb[ind, :][5:8, end], tb[ind, :][9:12, end], tb[ind, :][end-3:end, end]],
-        yticks = (yticks, ytformat), xticks = (xticks, xtformat),
-        xaxis = :log, yaxis = :log,
-        markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
-        labels = ["MAE(da)" "MAE(db)" "MAE(dn)" "MAE(dt)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
-    display(p)
+    # ind = d_ind["acsf"] # example of selecting column by feature type
+
+    # 1) fix the best hyperparameter from ns and sx data then compare up to dt (see the effect of baselines):
+    tables = [tbns, tbs] # noselect and select
+    tbnames = ["ns", "s2"]
+    for (i,tb) ∈ enumerate(tables)
+        minid = query_min(tb)
+        qcol = tb[minid, [2,3,4]]
+        ind = query_indices(tb, [2,3,4], qcol)
+        MAEs = vcat(tb[ind, end])
+        xticks = tb[:, 1][1:4]
+        xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
+        minMAE = minimum(MAEs); maxMAE = maximum(MAEs);
+        yticks = range(minMAE, maxMAE, 7)
+        yticks = yticks[2:end-1] .- (yticks[2:end-1] .% 10) # round with 10 as multiplier
+        yticks = yticks[yticks .> 0.] # remove zeros
+        yticks = vcat(minMAE, yticks, maxMAE) # concat with min and max
+        println(yticks)
+        ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
+        p = plot(xticks, [tb[ind, :][1:4, end], tb[ind, :][5:8, end], tb[ind, :][9:12, end], tb[ind, :][end-3:end, end]],
+            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            xaxis = :log, yaxis = :log,
+            markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
+            labels = ["MAE(da)" "MAE(db)" "MAE(dn)" "MAE(dt)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
+        display(p)
+        println(join(tb[ind, [2,3,4]][1,:], "-"))
+        savefig(p, "plot/deltaML/MAE_bh-"*join(tb[ind, [2,3,4]][1,:], "-")*"_"*tbnames[i]*"_upto-dt.png")
+    end
+    # 2) compare best dx of both ns and s:
+
 end
