@@ -409,5 +409,6 @@ else, swap bonds by atom's permsort
 24.08.23:
 ! result org:
   - fix the best hyperparameter from ns and sx data then compare up to dt (see the effect of baselines)
-  - compare the best dx of ns and sx (see effect of data selection)
-  - fix sx and compare each feature performance up to dt (see the effect of feature)
+  - compare the best dx of ns and sx (see effect of data selection), and from the best of both fix the hyperparam and compare from each
+  - (skip?) fix sx and compare each feature performance up to dt (see the effect of feature)
+  - best of each feature

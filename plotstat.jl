@@ -91,6 +91,26 @@ function query_indices(tb, colids, coldatas)
     return ids
 end
 
+"""
+automatic yticks generator given the number of desired points, and data points
+"""
+function yticks_generator(data, n)
+    n = n+1
+    min = minimum(data); max = maximum(data)
+    mid = median(data)
+    # generate left range and right range of median:
+    nhalf = n ÷ 2;
+    # left:
+    mult = 10^(ndigits(Int(round(abs(mid - min)))) - 1)
+    rl = range(min, mid, nhalf); rl = rl .- (rl .% mult)
+    # right: 
+    mult = 10^(ndigits(Int(round(abs(max - mid)))) - 1)
+    rr = range(mid, max, nhalf); rr = rr .- (rr .% mult)
+    # combine:
+    yticks = [min; rl; rr; max]
+    yticks = yticks[yticks .> 0]
+    return yticks
+end
 
 """
 plot prototype for delta levels
@@ -168,7 +188,7 @@ function plot_MAE_dt()
         minid = query_min(tb)
         qcol = tb[minid, [2,3,4]]
         ind = query_indices(tb, [2,3,4], qcol)
-        MAEs = vcat(tb[ind, end])
+        MAEs = tb[ind, end]
         xticks = tb[:, 1][1:4]
         xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
         minMAE = minimum(MAEs); maxMAE = maximum(MAEs);
@@ -176,7 +196,6 @@ function plot_MAE_dt()
         yticks = yticks[2:end-1] .- (yticks[2:end-1] .% 10) # round with 10 as multiplier
         yticks = yticks[yticks .> 0.] # remove zeros
         yticks = vcat(minMAE, yticks, maxMAE) # concat with min and max
-        println(yticks)
         ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
         p = plot(xticks, [tb[ind, :][1:4, end], tb[ind, :][5:8, end], tb[ind, :][9:12, end], tb[ind, :][end-3:end, end]],
             yticks = (yticks, ytformat), xticks = (xticks, xtformat),
@@ -187,6 +206,37 @@ function plot_MAE_dt()
         println(join(tb[ind, [2,3,4]][1,:], "-"))
         savefig(p, "plot/deltaML/MAE_bh-"*join(tb[ind, [2,3,4]][1,:], "-")*"_"*tbnames[i]*"_upto-dt.png")
     end
-    # 2) compare best dx of both ns and s:
+
+    # 2) - get the best from ns and s then fix hyperparam then plot for each ns and s,
+    #   - get each best of ns and s
+    # (4 curves total) 
+    # fix the hyperparameters in which the best from both ns and s:
+    jointb = vcat(tbns, tbs)
+    minid = query_min(jointb)
+    qcol = jointb[minid, [2,3,4,5]]
+    id_ns = query_indices(tbns, [2,3,4,5], qcol)
+    id_s = query_indices(tbs, [2,3,4,5], qcol)
+    # best of ns mode:
+    minid = query_min(tbns)
+    id_bns = query_indices(tbns, [2,3,4,5], tbns[minid, [2,3,4,5]])
+    jointb = vcat(tbns[id_ns, :], tbns[id_bns, :], tbs[id_s, :])
+
+    xticks = jointb[:, 1][1:4]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
+    MAEs = jointb[:, end]; minMAE = minimum(MAEs); maxMAE = maximum(MAEs);
+    yticks = range(minMAE, maxMAE, 7)
+    y = sort(vcat(tbns[id_ns, 7], tbns[id_bns, 7], tbs[id_s, 7]))
+    yticks = yticks_generator(y, 5)
+    #= yticks = yticks[2:end-1] .- (yticks[2:end-1] .% 10) # round with 10 as multiplier
+    yticks = yticks[yticks .> 0.] # remove zeros
+    yticks = vcat(minMAE, yticks, maxMAE) # concat with min and max =#
+    ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
+    p = plot(xticks, [tbns[id_ns, 7], tbns[id_bns, 7], tbs[id_s, 7]],
+        yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+        xaxis = :log, yaxis = :log,
+        markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
+        labels = ["MAE(ns)" "MAE(bons)" "MAE(bos)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
+    display(p)
+
+    # 3) 
 
 end
