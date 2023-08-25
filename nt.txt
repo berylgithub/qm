@@ -413,3 +413,7 @@ else, swap bonds by atom's permsort
   - (skip?) fix sx and compare each feature performance up to dt (see the effect of feature)
   - best of each feature
 ! need to also store the plot information
+
+25.08.23:
+! include elvl into hyperparameterspace (see baseline fitting)
+! need to also give indication when PCA is switched off

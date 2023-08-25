@@ -388,6 +388,7 @@ function main_obj(x; sim_id="")
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
     F, f, centerss, ϕ, dϕ, dataset = data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
                                 normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1, save_to_disk = false)
+    # add baseline fitter here before feeding it to the main fitter
     full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername; 
                 bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
     # get MAE:

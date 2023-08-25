@@ -1569,6 +1569,13 @@ function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, pc
     display(outs)
 end
 
+"""
+baseline fitting, this is used for main hyperopt 
+"""
+function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains; sb=true, sn=true, st=true)
+    
+end
+
 
 """
 fits combination of baselines, with not just limited to 100 data points
