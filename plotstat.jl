@@ -204,6 +204,7 @@ function plot_MAE_dt()
         display(p)
         println(join(tb[ind, [2,3,4]][1,:], "-"))
         savefig(p, "plot/deltaML/MAE_bh-"*join(tb[ind, [2,3,4]][1,:], "-")*"_"*tbnames[i]*"_upto-dt.png")
+        writedlm("plot/deltaML/MAE_bh-"*join(tb[ind, [2,3,4]][1,:], "-")*"_"*tbnames[i]*"_upto-dt.txt", [tb[ind, :][1:4, :]; tb[ind, :][5:8, :]; tb[ind, :][9:12, :]; tb[ind, :][end-3:end, :]]) # store the plot information
     end
 
     # 2) - get the best from ns and s then fix hyperparam then plot for each ns and s,
@@ -225,9 +226,6 @@ function plot_MAE_dt()
     yticks = range(minMAE, maxMAE, 7)
     y = sort(vcat(tbns[id_ns, 7], tbns[id_bns, 7], tbs[id_s, 7]))
     yticks = yticks_generator(y, 5)
-    #= yticks = yticks[2:end-1] .- (yticks[2:end-1] .% 10) # round with 10 as multiplier
-    yticks = yticks[yticks .> 0.] # remove zeros
-    yticks = vcat(minMAE, yticks, maxMAE) # concat with min and max =#
     ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
     p = plot(xticks, [tbns[id_ns, 7], tbns[id_bns, 7], tbs[id_s, 7]],
         yticks = (yticks, ytformat), xticks = (xticks, xtformat),
@@ -236,11 +234,12 @@ function plot_MAE_dt()
         labels = ["MAE(ns)" "MAE(bons)" "MAE(bos)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
     savefig(p, "plot/deltaML/MAE_sel_effect.png")
+    writedlm("plot/deltaML/MAE_sel_effect.txt", [tbns[id_ns, 7]; tbns[id_bns, 7]; tbs[id_s, 7]])
 
     # 3) fix the best MAE on each feature (1 plot w/ 3 curves, see the effect of feature)
     ftypes = ["ACSF_51", "SOAP", "FCHL19"]
     jtb = vcat(tbns, tbs)
-    nrow = size(jtb, 1); halfrow = (nrow ÷ 2); sid_start = halfrow + 1; # since no table starting identifier
+    nrow = size(jtb, 1); halfrow = (nrow ÷ 2);
     tbslices = [] # reference to slices of tables
     # find min location (in which location of table):
     minids = []
@@ -256,6 +255,17 @@ function plot_MAE_dt()
             push!(tbslices, tbns[qid, :])
         end
     end
-    display(tbslices)
-
+    xticks = tbs[1:4, 1]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
+    jtb = reduce(vcat, tbslices)
+    MAEs = jtb[:, end]
+    yticks = yticks_generator(MAEs, 5); ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
+    p = plot(xticks, [tbslices[1][:, end], tbslices[2][:, end], tbslices[3][:, end]],
+            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            xaxis = :log, yaxis = :log,
+            markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
+            labels = ["MAE(acsf)" "MAE(soap)" "MAE(fchl19)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+        )
+    display(p)
+    savefig(p, "plot/deltaML/MAE_best_each-feature.png")
+    writedlm("plot/deltaML/MAE_best_each-feature.txt", jtb)
 end

@@ -412,3 +412,4 @@ else, swap bonds by atom's permsort
   - compare the best dx of ns and sx (see effect of data selection), and from the best of both fix the hyperparam and compare from each
   - (skip?) fix sx and compare each feature performance up to dt (see the effect of feature)
   - best of each feature
+! need to also store the plot information
