@@ -208,7 +208,7 @@ function plot_MAE_dt()
 
     # 2) - get the best from ns and s then fix hyperparam then plot for each ns and s,
     #   - get each best of ns and s
-    # (4 curves total) 
+    # (4 curves total, see the efefect of data selection) 
     # fix the hyperparameters in which the best from both ns and s:
     jointb = vcat(tbns, tbs)
     minid = query_min(jointb)
@@ -235,7 +235,27 @@ function plot_MAE_dt()
         markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
         labels = ["MAE(ns)" "MAE(bons)" "MAE(bos)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
+    savefig(p, "plot/deltaML/MAE_sel_effect.png")
 
-    # 3) 
+    # 3) fix the best MAE on each feature (1 plot w/ 3 curves, see the effect of feature)
+    ftypes = ["ACSF_51", "SOAP", "FCHL19"]
+    jtb = vcat(tbns, tbs)
+    nrow = size(jtb, 1); halfrow = (nrow ÷ 2); sid_start = halfrow + 1; # since no table starting identifier
+    tbslices = [] # reference to slices of tables
+    # find min location (in which location of table):
+    minids = []
+    for (i, ftype) ∈ enumerate(ftypes)
+        minid = query_min(jtb; feature_type = ftype)
+        push!(minids, minid)
+        if minid > halfrow # get from s2 table:
+            minid = minid - halfrow
+            qid = query_indices(tbs, [2,3,4,5], tbs[minid, [2,3,4,5]])
+            push!(tbslices, tbs[qid, :]) 
+        else
+            qid = query_indices(tbns, [2,3,4,5], tbns[minid, [2,3,4,5]])
+            push!(tbslices, tbns[qid, :])
+        end
+    end
+    display(tbslices)
 
 end
