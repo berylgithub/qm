@@ -234,7 +234,7 @@ function plot_MAE_dt()
         labels = ["MAE(ns)" "MAE(bons)" "MAE(bos)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)")
     display(p)
     savefig(p, "plot/deltaML/MAE_sel_effect.png")
-    writedlm("plot/deltaML/MAE_sel_effect.txt", [tbns[id_ns, 7]; tbns[id_bns, 7]; tbs[id_s, 7]])
+    writedlm("plot/deltaML/MAE_sel_effect.txt", [tbns[id_ns, :]; tbns[id_bns, :]; tbs[id_s, :]])
 
     # 3) fix the best MAE on each feature (1 plot w/ 3 curves, see the effect of feature)
     ftypes = ["ACSF_51", "SOAP", "FCHL19"]
