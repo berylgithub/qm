@@ -1,4 +1,5 @@
 using Plots, DelimitedFiles, LaTeXStrings, Printf, Statistics
+include("utils.jl")
 
 function plot_mae()
     molnames = readdir("result")[2:end]
@@ -45,51 +46,6 @@ end
 """
 ΔML stuffs:
 """
-
-"""
-very specific function, may be changed at will
-query the information from a table of the row with the minimum MAE
-"""
-function query_min(table; feature_type = "")
-    # get the min MAE:
-    indices = []
-    if !isempty(feature_type)
-        for i ∈ axes(table, 1)
-            if (table[i, 2] == feature_type)
-                push!(indices, i)
-            end
-        end
-        sliced = table[indices,:]
-        minid = argmin(sliced[:, 7])
-        selid = indices[minid] # assume 100 Ntrain is always the lowest MAE
-    else
-        selid = argmin(table[:, 7])
-    end
-    return selid
-end
-
-"""
-query the row index of data by column info
-params:
-    - colids = list of column ids
-    - coldatas = list of data entry corresponding to the colids
-"""
-function query_indices(tb, colids, coldatas)
-    ids = []
-    for i ∈ axes(tb, 1)
-        c = 0;
-        # loop all column ids:
-        for (j,colid) ∈ enumerate(colids)
-            if tb[i, colid] == coldatas[j]
-                c += 1
-            end
-        end
-        if c == length(colids)
-            push!(ids, i)
-        end
-    end
-    return ids
-end
 
 """
 automatic yticks generator given the number of desired points, and data points
@@ -180,10 +136,9 @@ function plot_MAE_dt()
     d_ind = Dict("acsf"=>query_indices(tb, [2,3,4], d_colq["acsf"]),
                 "soap"=>query_indices(tb, [2,3,4], d_colq["soap"]), 
                 "fchl19"=>query_indices(tb, [2,3,4], d_colq["fchl19"]))
-    # observe per feature:
-    # ind = d_ind["acsf"] # example of selecting column by feature type
 
-    # 1) fix the best hyperparameter from ns and sx data then compare up to dt (see the effect of baselines):
+
+    # 1) fix the best hyperparameter from ns and sx data then compare up to dt (see the effect of baselines) (2 plots):
     tables = [tbns, tbs] # noselect and select
     tbnames = ["ns", "s2"]
     for (i,tb) ∈ enumerate(tables)
@@ -209,7 +164,7 @@ function plot_MAE_dt()
 
     # 2) - get the best from ns and s then fix hyperparam then plot for each ns and s,
     #   - get each best of ns and s
-    # (4 curves total, see the efefect of data selection) 
+    # (1 plot, 4 curves total, see the efefect of data selection) 
     # fix the hyperparameters in which the best from both ns and s:
     jointb = vcat(tbns, tbs)
     minid = query_min(jointb)
@@ -268,4 +223,8 @@ function plot_MAE_dt()
     display(p)
     savefig(p, "plot/deltaML/MAE_best_each-feature.png")
     writedlm("plot/deltaML/MAE_best_each-feature.txt", jtb)
+
+    #4) for PCA subsection, 1 plot 4 curves, each curve is the best of each elvl on s2 data (see how far PCA can improve things)
+    elvs = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"]
+    minid = query_min()
 end
