@@ -127,9 +127,9 @@ function plot_MAE_dt()
     tbs = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
     tb = tbs # select which table
     # see effect of dressed on each feature:
-    d_minind = Dict("acsf" => query_min(tb, feature_type = "ACSF_51"), 
-                "soap" => query_min(tb, feature_type = "SOAP"), 
-                "fchl19" => query_min(tb, feature_type = "FCHL19"))
+    d_minind = Dict("acsf" => query_min_f(tb, feature_type = "ACSF_51"), 
+                "soap" => query_min_f(tb, feature_type = "SOAP"), 
+                "fchl19" => query_min_f(tb, feature_type = "FCHL19"))
     d_colq = Dict("acsf" =>tb[d_minind["acsf"],[2,3,4]], 
                 "soap" =>tb[d_minind["soap"],[2,3,4]], 
                 "fchl19"=>tb[d_minind["fchl19"],[2,3,4]])
@@ -142,7 +142,7 @@ function plot_MAE_dt()
     tables = [tbns, tbs] # noselect and select
     tbnames = ["ns", "s2"]
     for (i,tb) ∈ enumerate(tables)
-        minid = query_min(tb)
+        minid = query_min_f(tb)
         qcol = tb[minid, [2,3,4]]
         ind = query_indices(tb, [2,3,4], qcol)
         MAEs = tb[ind, end]
@@ -167,12 +167,12 @@ function plot_MAE_dt()
     # (1 plot, 4 curves total, see the efefect of data selection) 
     # fix the hyperparameters in which the best from both ns and s:
     jointb = vcat(tbns, tbs)
-    minid = query_min(jointb)
+    minid = query_min_f(jointb)
     qcol = jointb[minid, [2,3,4,5]]
     id_ns = query_indices(tbns, [2,3,4,5], qcol)
     id_s = query_indices(tbs, [2,3,4,5], qcol)
     # best of ns mode:
-    minid = query_min(tbns)
+    minid = query_min_f(tbns)
     id_bns = query_indices(tbns, [2,3,4,5], tbns[minid, [2,3,4,5]])
     jointb = vcat(tbns[id_ns, :], tbns[id_bns, :], tbs[id_s, :])
 
@@ -199,7 +199,7 @@ function plot_MAE_dt()
     # find min location (in which location of table):
     minids = []
     for (i, ftype) ∈ enumerate(ftypes)
-        minid = query_min(jtb; feature_type = ftype)
+        minid = query_min_f(jtb; feature_type = ftype)
         push!(minids, minid)
         if minid > halfrow # get from s2 table:
             minid = minid - halfrow
@@ -225,6 +225,16 @@ function plot_MAE_dt()
     writedlm("plot/deltaML/MAE_best_each-feature.txt", jtb)
 
     #4) for PCA subsection, 1 plot 4 curves, each curve is the best of each elvl on s2 data (see how far PCA can improve things)
+    #= tb = readdlm("result/deltaML/MAE_enum_s2_dt_PCAjl-dn5-dt5_280823.txt") # wait for the computation
     elvs = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"]
-    minid = query_min()
+    curveids = []
+    for (i, elv) ∈ enumerate(elvs)
+        minid = query_min(tb, [5],[elv])
+        curveid = query_indices(tb, [2,3,4,5], tb[minid, [2,3,4,5]]) # each curve's points
+        push!(curveids, curveid)
+    end
+    xticks = tb[1:4, 1]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks)) =#
+    # get all selected MAEs ....:
+    # generate the yticks:
+    # plot:
 end
