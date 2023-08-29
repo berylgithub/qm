@@ -1498,7 +1498,7 @@ function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, pc
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"]
-    n_trains = [10, 25, 50, 100, 1_000][end] # ni+1 = 2ni, max(ni) = 100; innest loop
+    n_trains = [10, 25, 50, 100] # ni+1 = 2ni, max(ni) = 100; innest loop
     outs = Matrix{Any}(undef, length(features)*length(models)*length(n_trains)*length(solvers)*length(elvs) + 1, 7) # output table
     outs[1,:] = ["ntrain", "feature", "model", "solver", "Elevel", "MAEtrain", "MAEtest"]
     # enumerate (cartesian product):

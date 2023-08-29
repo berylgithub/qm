@@ -417,3 +417,10 @@ else, swap bonds by atom's permsort
 25.08.23:
 ! include elvl into hyperparameterspace (see baseline fitting)
 ! need to also give indication when PCA is switched off for all features (elvl and high level features)
+
+29.08.23:
+? autoencoders for feature extraction??
+- next results waiting to be crawled: 
+  - s2 with PCA DN5 DT5
+  - ns 1k PCA DN5 DT5
+  - ns 1k noPCA
