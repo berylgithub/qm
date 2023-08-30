@@ -419,8 +419,12 @@ else, swap bonds by atom's permsort
 ! need to also give indication when PCA is switched off for all features (elvl and high level features)
 
 29.08.23:
-? autoencoders for feature extraction??
+? autoencoders for feature extraction: autoencoder on all unlabeled data, and then train on only labeled data.
 - next results waiting to be crawled: 
   - s2 with PCA DN5 DT5
   - ns 1k PCA DN5 DT5
   - ns 1k noPCA
+
+30.08.23:
+PCA plot:
+- (5 curves) current best curve without PCA (DB), best curve found on DN without PCA (DN), best curve found on DT without PCA (DT), (DN, PCA), (DT, PCA)

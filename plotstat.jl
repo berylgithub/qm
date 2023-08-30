@@ -201,6 +201,7 @@ function plot_MAE_dt()
     for (i, ftype) ∈ enumerate(ftypes)
         minid = query_min_f(jtb; feature_type = ftype)
         push!(minids, minid)
+        println([ftype, minid, halfrow])
         if minid > halfrow # get from s2 table:
             minid = minid - halfrow
             qid = query_indices(tbs, [2,3,4,5], tbs[minid, [2,3,4,5]])
