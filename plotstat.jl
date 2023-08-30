@@ -67,7 +67,7 @@ function yticks_generator(data, n)
     # combine:
     yticks = [mind; rl; rr; maxd]
     yticks = yticks[yticks .> 0]
-    return yticks
+    return unique(yticks)
 end
 
 """
@@ -224,18 +224,44 @@ function plot_MAE_dt()
     display(p)
     savefig(p, "plot/deltaML/MAE_best_each-feature.png")
     writedlm("plot/deltaML/MAE_best_each-feature.txt", jtb)
+end
 
+function plot_subsec_33()
     #4) for PCA subsection, 1 plot 4 curves, each curve is the best of each elvl on s2 data (see how far PCA can improve things)
-    #= tb = readdlm("result/deltaML/MAE_enum_s2_dt_PCAjl-dn5-dt5_280823.txt") # wait for the computation
-    elvs = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"]
-    curveids = []
-    for (i, elv) ∈ enumerate(elvs)
-        minid = query_min(tb, [5],[elv])
-        curveid = query_indices(tb, [2,3,4,5], tb[minid, [2,3,4,5]]) # each curve's points
-        push!(curveids, curveid)
-    end
-    xticks = tb[1:4, 1]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks)) =#
+    tb1 = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt") # wait for the computation
+    tb2 = readdlm("result/deltaML/MAE_enum_s2_dt_PCAjl-dn5-dt5-280823.txt")
+    # best without PCA:
+    minid = query_min(tb1, [], [])
+    id_minnopca = query_indices(tb1, [2,3,4,5], tb1[minid, [2,3,4,5]])
+    display(tb1[id_minnopca, :])
+    # best of DN without PCA:
+    minid = query_min(tb1, [5], ["dressed_angle"])
+    id_mindn = query_indices(tb1, [2,3,4,5], tb1[minid, [2,3,4,5]])
+    display(tb1[id_mindn, :])
+    # best of DT without PCA:
+    minid = query_min(tb1, [5], ["dressed_torsion"])
+    id_mindt = query_indices(tb1, [2,3,4,5], tb1[minid, [2,3,4,5]])
+    display(tb1[id_mindt, :])
+    # best of DN with PCA:
+    minid = query_min(tb2, [5], ["dressed_angle"])
+    id_mindn_pca = query_indices(tb2, [2,3,4,5], tb2[minid, [2,3,4,5]])
+    display(tb2[id_mindn_pca, :])
+    # best of DT with PCA:
+    minid = query_min(tb2, [5], ["dressed_torsion"])
+    id_mindt_pca = query_indices(tb2, [2,3,4,5], tb2[minid, [2,3,4,5]])
+    display(tb2[id_mindt_pca, :])
     # get all selected MAEs ....:
-    # generate the yticks:
+    MAEs = vcat(tb1[id_minnopca, end], tb1[id_mindn, end], tb1[id_mindt, end], tb2[id_mindn_pca, end], tb2[id_mindt_pca, end])
+    # generate the ticks:
+    xticks = tb1[1:4, 1]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
+    yticks = yticks_generator(MAEs, 7); ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
+    println(yticks)
     # plot:
+    p = plot(xticks, [tb1[id_minnopca, end], tb1[id_mindn, end], tb1[id_mindt, end], tb2[id_mindn_pca, end], tb2[id_mindt_pca, end]],
+            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            xaxis = :log, yaxis = :log,
+            markershape = [:circle :rect :diamond :utriangle :pentagon], markersize = (ones(5)*6)',
+            labels = ["MAE(bo,db)" "MAE(bo,dn)" "MAE(bo,dt)" "MAE(bo,dn,PCA)" "MAE(bo,dt,PCA)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+        )
+    display(p)
 end
