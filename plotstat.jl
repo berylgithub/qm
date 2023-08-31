@@ -255,13 +255,43 @@ function plot_subsec_33()
     # generate the ticks:
     xticks = tb1[1:4, 1]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
     yticks = yticks_generator(MAEs, 7); ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
-    println(yticks)
     # plot:
     p = plot(xticks, [tb1[id_minnopca, end], tb1[id_mindn, end], tb1[id_mindt, end], tb2[id_mindn_pca, end], tb2[id_mindt_pca, end]],
             yticks = (yticks, ytformat), xticks = (xticks, xtformat),
             xaxis = :log, yaxis = :log,
             markershape = [:circle :rect :diamond :utriangle :pentagon], markersize = (ones(5)*6)',
-            labels = ["MAE(bo,db)" "MAE(bo,dn)" "MAE(bo,dt)" "MAE(bo,dn,PCA)" "MAE(bo,dt,PCA)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+            labels = ["MAE(bo,db)" "MAE(bo,dn)" "MAE(bo,dt)" "MAE(bo,dn,PCA1)" "MAE(bo,dt,PCA1)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
         )
     display(p)
+    savefig(p, "plot/deltaML/MAE_PCA1_comparison.png")
+    writedlm("plot/deltaML/MAE_PCA1_comparison.txt", [tb1[id_minnopca, :]; tb1[id_mindn, :]; tb1[id_mindt, :]; tb2[id_mindn_pca, :]; tb2[id_mindt_pca, :]])
+
+    # 5) (6 curves) BODB (from above), PCA1BODN (from above), PCA1BODT (from above), PCA2BODB, PCA2BODN, PCA2BODT:
+    tb3 = readdlm("result/deltaML/MAE_enum_s2_dt_PCAjl-db5-dn5-dt5-300823.txt")
+    # PCA2 BODB:
+    minid = query_min(tb3, [5], ["dressed_bond"])
+    id_mindb2 = query_indices(tb3, [2,3,4,5], tb3[minid, [2,3,4,5]])
+    display(tb3[id_mindb2, :])
+    # PCA2 BODN:
+    minid = query_min(tb3, [5], ["dressed_angle"])
+    id_mindn2 = query_indices(tb3, [2,3,4,5], tb3[minid, [2,3,4,5]])
+    display(tb3[id_mindn2, :])
+    # PCA2 BODT:
+    minid = query_min(tb3, [5], ["dressed_torsion"])
+    id_mindt2 = query_indices(tb3, [2,3,4,5], tb3[minid, [2,3,4,5]])
+    display(tb3[id_mindt2, :])
+    MAEs = vcat(tb1[id_minnopca, end], tb2[id_mindn_pca, end], tb2[id_mindt_pca, end], tb3[id_mindb2, end], tb3[id_mindn2, end], tb3[id_mindt2, end])
+    yticks = yticks_generator(MAEs, 7); ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
+    # plot:
+    p = plot(xticks, [tb1[id_minnopca, end], tb2[id_mindn_pca, end], tb2[id_mindt_pca, end], tb3[id_mindb2, end], tb3[id_mindn2, end], tb3[id_mindt2, end]],
+            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            xaxis = :log, yaxis = :log,
+            markershape = [:circle :rect :diamond :utriangle :pentagon :star], markersize = (ones(5)*6)',
+            labels = ["MAE(bo,db)" "MAE(bo,dn,PCA1)" "MAE(bo,dt,PCA1)" "MAE(bo,db,PCA2)" "MAE(bo,dn,PCA2)" "MAE(bo,dt,PCA2)"], 
+            linestyles = [:solid :solid :solid :dash :dash :dash],
+            xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+        )
+    display(p)
+    savefig(p, "plot/deltaML/MAE_PCA_1_2_comparison.png")
+    writedlm("plot/deltaML/MAE_PCA_1_2_comparison.txt",[tb1[id_minnopca, :], tb2[id_mindn_pca, :], tb2[id_mindt_pca, :], tb3[id_mindb2, :], tb3[id_mindn2, :], tb3[id_mindt2, :]])
 end

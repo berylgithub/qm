@@ -428,3 +428,4 @@ else, swap bonds by atom's permsort
 30.08.23:
 PCA plot:
 - (5 curves) current best curve without PCA (DB), best curve found on DN without PCA (DN), best curve found on DT without PCA (DT), (DN, PCA), (DT, PCA)
+- (6 curves) BODB, PCA1BODN, PCA1BODT, PCA2BODB, PCA2BODN, PCA2BODT
