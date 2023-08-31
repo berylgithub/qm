@@ -294,4 +294,34 @@ function plot_subsec_33()
     display(p)
     savefig(p, "plot/deltaML/MAE_PCA_1_2_comparison.png")
     writedlm("plot/deltaML/MAE_PCA_1_2_comparison.txt",[tb1[id_minnopca, :], tb2[id_mindn_pca, :], tb2[id_mindt_pca, :], tb3[id_mindb2, :], tb3[id_mindn2, :], tb3[id_mindt2, :]])
+
+    # 4+5) Table of best of non PCA, best of PCA1 for each level, best of PCA2 for each level:
+    # best of DN and DT non PCA:
+    minid = query_min(tb1, [5], ["dressed_angle"])
+    jtb = [reshape(tb1[id_minnopca[end], :], 1, :); reshape(tb1[id_mindn[end], :], 1, :); reshape(tb1[id_mindt[end], :], 1, :);
+            reshape(tb2[id_mindn_pca[end], :], 1, :); reshape(tb2[id_mindt_pca[end], :], 1, :); 
+            reshape(tb3[id_mindb2[end], :], 1, :); reshape(tb3[id_mindn2[end], :], 1, :); reshape(tb3[id_mindt2[end], :], 1, :)] 
+    jtb = hcat(jtb, ["none", "none", "none", "PCA1", "PCA1", "PCA2", "PCA2", "PCA2"])
+    # process (4+5) table:
+    # move last column to first:
+    jtb[:, 1] = jtb[:, end]
+    jtb = jtb[:, 1:end-1]
+    jtb[:, 5] = ["DB", "DN", "DT", "DN", "DT", "DB", "DN", "DT"]
+    for i ∈ axes(jtb, 1)
+        # change featurenames:
+        if jtb[i, 2] == "ACSF_51"
+            jtb[i, 2] = "ACSF"
+        end
+        # change model names:
+        if jtb[i, 3] == "REAPER"
+            jtb[i, 3] = "DPK"
+        elseif jtb[i, 3] == "GAK"
+            jtb[i, 3] = "GK"
+        end
+    end
+    jtb = jtb[:, vcat(1:end-2, end)]
+    display(jtb)
+    jtb[:, end] = clean_float(jtb[:, end])
+    writelatextable(jtb, "plot/deltaML/tb_PCA_comparison.tex")
+    
 end

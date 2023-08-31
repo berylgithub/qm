@@ -429,3 +429,4 @@ else, swap bonds by atom's permsort
 PCA plot:
 - (5 curves) current best curve without PCA (DB), best curve found on DN without PCA (DN), best curve found on DT without PCA (DT), (DN, PCA), (DT, PCA)
 - (6 curves) BODB, PCA1BODN, PCA1BODT, PCA2BODB, PCA2BODN, PCA2BODT
+or just wriet the table of: best of non PCA, best of PCA1 for each level, best of PCA2 for each level
