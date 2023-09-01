@@ -226,7 +226,7 @@ function plot_MAE_dt()
     writedlm("plot/deltaML/MAE_best_each-feature.txt", jtb)
 end
 
-function plot_subsec_33()
+function plot_subsec_PCA()
     #4) for PCA subsection, 1 plot 4 curves, each curve is the best of each elvl on s2 data (see how far PCA can improve things)
     tb1 = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt") # wait for the computation
     tb2 = readdlm("result/deltaML/MAE_enum_s2_dt_PCAjl-dn5-dt5-280823.txt")
@@ -324,4 +324,41 @@ function plot_subsec_33()
     jtb[:, end] = clean_float(jtb[:, end])
     writelatextable(jtb, "plot/deltaML/tb_PCA_comparison.tex")
     
+end
+
+
+function main_write_full_tbs()
+    tb1 = readdlm("result/deltaML/MAE_enum_ns_dt_180823.txt")
+    tb2 = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
+    # query DN and DT from each:
+    id_tb1_dn = query_indices(tb1, [5], ["dressed_angle"])
+    id_tb1_dt = query_indices(tb1, [5], ["dressed_torsion"])
+    id_tb2_dn = query_indices(tb2, [5], ["dressed_angle"])
+    id_tb2_dt = query_indices(tb2, [5], ["dressed_torsion"])
+    jtb1 = [tb1[id_tb1_dn, :]; tb1[id_tb1_dt, :]] 
+    jtb2 = [tb2[id_tb2_dn, :]; tb2[id_tb2_dt, :]]
+    jtbs = [jtb1, jtb2]
+    for jtb ∈ jtbs # should just make a mandatory function for these guys
+        for i ∈ axes(jtb, 1)
+            # change featurenames:
+            if jtb[i, 2] == "ACSF_51"
+                jtb[i, 2] = "ACSF"
+            end
+            # change model names:
+            if jtb[i, 3] == "REAPER"
+                jtb[i, 3] = "DPK"
+            elseif jtb[i, 3] == "GAK"
+                jtb[i, 3] = "GK"
+            end
+            # change elevel names
+            if jtb[i, 5] == "dressed_angle"
+                jtb[i, 5] = "DN"
+            elseif jtb[i, 5] == "dressed_torsion"
+                jtb[i, 5] = "DT"
+            end
+        end
+        jtb[:, [end-1, end]] = clean_float(jtb[:, [end-1, end]])
+    end
+    writelatextable(jtbs[1], "result/deltaML/tb_ns_DNDT.tex")
+    writelatextable(jtbs[2], "result/deltaML/tb_s2_DNDT.tex")
 end
