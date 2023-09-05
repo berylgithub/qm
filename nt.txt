@@ -430,3 +430,8 @@ PCA plot:
 - (5 curves) current best curve without PCA (DB), best curve found on DN without PCA (DN), best curve found on DT without PCA (DT), (DN, PCA), (DT, PCA)
 - (6 curves) BODB, PCA1BODN, PCA1BODT, PCA2BODB, PCA2BODN, PCA2BODT
 or just wriet the table of: best of non PCA, best of PCA1 for each level, best of PCA2 for each level
+
+05.09.23:
+- see photo of Sep 5 (in gdrive) for hyperopt new scheme that can incorporate some switches (on/off),
+  and try to implement w/ new boundaries (includes the E_dressed_features)
+! test whether the memory of VSC can fit all features loaded at once (and actual scenario probably need like 20x of them at once)
