@@ -1576,7 +1576,10 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains;
                     sb = true, sn = true, st = true, 
                     pb = true, pn = true, pt = true, 
                     npb = 5, npa = 5, npt = 5)
-     
+    # fit DA as default:
+    idall = range(1:length(E))
+    idtests = setdiff(idall, idtrains)
+
     return Et
 end
 
@@ -1727,15 +1730,16 @@ function test_loadall()
     files_df = ["featuresmat_bonds_qm9_post.jld", "featuresmat_angles_qm9_post.jld", "featuresmat_torsion_qm9_post.jld",
                 "ACSF_51.jld", "FCHL19.jld", "SOAP.jld", "qm9_dataset.jld"]
     all_data = []
-    for i ∈ range(1, 20)
-        t = @elapsed begin
-            for f ∈ files_df
+    t = @elapsed begin
+        for f ∈ files_df
+            t_in = @elapsed begin
                 df = load(path*f, "data")
-                push!(all_data, df)
+                push!(all_data, df) 
             end
+            println("file loaded in", t_in)
         end
-        println("batch ",i, "finished loading in", t)
     end
+    println("batch ",i, "finished loading in", t)
     sz = Base.summarysize(all_data)*8e-6
     println(sz)
 end
