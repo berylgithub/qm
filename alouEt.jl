@@ -1579,8 +1579,12 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains;
     # fit DA as default:
     idall = range(1:length(E)) # later remove the index operations
     idtests = setdiff(idall, idtrains)
-
-    return Et
+    θ = Fa[idtrains, :]\E[idtrains];
+    Eda = Fa*θ
+    # check MAEs:
+    println(mean(abs.(ET[idtrains] - Eda[idtrains]))*627.503)
+    println(mean(abs.(ET[idtests] - Eda[idtests]))*627.503)
+    return ET
 end
 
 
@@ -1740,7 +1744,7 @@ function test_loadall()
         end
     end
     println("batch finished loading in", t)
-    sz = Base.summarysize(all_data)*8e-6
+    sz = Base.summarysize(all_data)*1e-6
     println(sz)
 end
 
