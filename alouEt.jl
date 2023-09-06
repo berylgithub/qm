@@ -1577,7 +1577,7 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains;
                     pb = true, pn = true, pt = true, 
                     npb = 5, npa = 5, npt = 5)
     # fit DA as default:
-    idall = range(1:length(E))
+    idall = range(1:length(E)) # later remove the index operations
     idtests = setdiff(idall, idtrains)
 
     return Et
@@ -1739,7 +1739,7 @@ function test_loadall()
             println("file loaded in", t_in)
         end
     end
-    println("batch ",i, "finished loading in", t)
+    println("batch finished loading in", t)
     sz = Base.summarysize(all_data)*8e-6
     println(sz)
 end
