@@ -1572,18 +1572,46 @@ end
 """
 baseline fitting, this is used for main hyperopt 
 """
-function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains; 
-                    sb = true, sn = true, st = true, 
-                    pb = true, pn = true, pt = true, 
-                    npb = 5, npa = 5, npt = 5)
+function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains, idtests; 
+                    sb = false, sn = false, st = false, 
+                    pb = false, pn = false, pt = false, 
+                    npb = 5, npn = 5, npt = 5)
     # fit DA as default:
-    idall = range(1:length(E)) # later remove the index operations
-    idtests = setdiff(idall, idtrains)
     θ = Fa[idtrains, :]\E[idtrains];
     Eda = Fa*θ
-    # check MAEs:
-    println(mean(abs.(ET[idtrains] - Eda[idtrains]))*627.503)
-    println(mean(abs.(ET[idtests] - Eda[idtests]))*627.503)
+    #println("atom", [mean(abs.(E[idtrains] - Eda[idtrains])), mean(abs.(E[idtests] - Eda[idtests]))]*627.503)
+    ET = E - Eda
+    # elevel (s)witches with (p)ca switches inside:
+    if sb
+        if pb
+            M = MultivariateStats.fit(MultivariateStats.PCA, Fb'; maxoutdim=npb);
+            Fb = MultivariateStats.predict(M, Fb')'
+        end
+        θ = Fb[idtrains, :]\ET[idtrains];
+        Edb = Fb*θ
+        #println("bond", [mean(abs.(ET[idtrains] - Edb[idtrains])), mean(abs.(ET[idtests] - Edb[idtests]))]*627.503)
+        ET -= Edb
+    end
+    if sn
+        if pn
+            M = MultivariateStats.fit(MultivariateStats.PCA, Fn'; maxoutdim=npn);
+            Fn = MultivariateStats.predict(M, Fn')'
+        end
+        θ = Fn[idtrains, :]\ET[idtrains];
+        Edn = Fn*θ
+        #println("angle", [mean(abs.(ET[idtrains] - Edn[idtrains])), mean(abs.(ET[idtests] - Edn[idtests]))]*627.503)
+        ET -= Edn
+    end
+    if st
+        if pt
+            M = MultivariateStats.fit(MultivariateStats.PCA, Ft'; maxoutdim=npt);
+            Ft = MultivariateStats.predict(M, Ft')'
+        end
+        θ = Ft[idtrains, :]\ET[idtrains];
+        Edt = Ft*θ
+        #println("torsion", [mean(abs.(ET[idtrains] - Edt[idtrains])), mean(abs.(ET[idtests] - Edt[idtests]))]*627.503)
+        ET -= Edt
+    end
     return ET
 end
 
