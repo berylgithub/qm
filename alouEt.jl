@@ -1572,8 +1572,12 @@ end
 """
 baseline fitting, this is used for main hyperopt 
 """
-function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains; sb=true, sn=true, st=true)
-    
+function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains; 
+                    sb = true, sn = true, st = true, 
+                    pb = true, pn = true, pt = true, 
+                    npb = 5, npa = 5, npt = 5)
+     
+    return Et
 end
 
 
@@ -1714,6 +1718,26 @@ function main_get_MAE_table()
     display(E_tb[:, ids])  
     display(MAE_tb[ids, :])
 end
+
+"""
+test loading all features to memory (20 simulators !!), if the node doesnt give any memory error then it's succeed
+"""
+function test_loadall()
+    path = "data/"
+    files_df = ["featuresmat_bonds_qm9_post.jld", "featuresmat_angles_qm9_post.jld", "featuresmat_torsion_qm9_post.jld",
+                "ACSF_51.jld", "FCHL19.jld", "SOAP.jld", "qm9_dataset.jld"]
+    all_data = []
+    for i ∈ range(1, 20)
+        for f ∈ files_df
+            df = load(path*f, "data")
+            push!(all_data, df)
+        end
+        println("batch ",i, "finished loading!")
+    end
+    sz = Base.summarysize(all_data)*8e-6
+    println(sz)
+end
+
 
 """
 test PyCall for QML
