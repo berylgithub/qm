@@ -400,6 +400,41 @@ function main_obj(x; sim_id="")
     return MAE
 end
 
+"""
+main objective augmented with Elevel
+mandatory params:
+    - E, energy vector
+    - FA, FB, FN, FT (all dressed features), vector of all dressed features
+    - f_atom, one set of atomic feautres
+    - centers
+hyperparams (for optimization, under one vector x):
+    1. Edb_switch ∈ cat[0,1], whether to include Edb or not
+    2. Edn ...
+    3. Edt ...
+    4. Edb_PCA_switch ∈ cat[0,1], whethre to do PCA or not for the Edb
+    5. Edn_PCA_switch ∈ cat[0,1] ...
+    6. Edt_PCA_switch ∈ cat[0,1] ...
+    7. num_Edb_f, number of E_db features outputed by PCA ∈ int[1,10]
+    8. num_Edn_f, ...
+    9. num_Edt_f, ...
+    10. fmol_PCA_switch ∈ cat[0,1]
+    11. fatom_PCA_switch, ...
+    12. num_fmol ∈ int[1,50]
+    13. num_fatom ...
+    14. n_basis ∈ int[1,10]
+    15. feature_name ∈ int[1,3]
+    16. normalize_atom ∈ cat[0,1]
+    17. normalize_mol ...
+    18. model ∈ int[1,6]
+    19. const ∈ int[1,20]
+"""
+function main_obj(E, DFs, Fs, idtrains, idtests, x; sim_id = "")
+    # PCA and fit DFs:
+    bools = [false, true]
+    hp_baseline(E, DFs..., )
+    # data setup:
+    # fit fatoms:
+end
 
 """
 ATOM ONLY!
