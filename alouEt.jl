@@ -1728,11 +1728,13 @@ function test_loadall()
                 "ACSF_51.jld", "FCHL19.jld", "SOAP.jld", "qm9_dataset.jld"]
     all_data = []
     for i ∈ range(1, 20)
-        for f ∈ files_df
-            df = load(path*f, "data")
-            push!(all_data, df)
+        t = @elapsed begin
+            for f ∈ files_df
+                df = load(path*f, "data")
+                push!(all_data, df)
+            end
         end
-        println("batch ",i, "finished loading!")
+        println("batch ",i, "finished loading in", t)
     end
     sz = Base.summarysize(all_data)*8e-6
     println(sz)
