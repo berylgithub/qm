@@ -316,6 +316,94 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset_file, 
 end
 
 """
+full data setup, same as above, the difference is this one ACCEPTS the (dataset, feature) rather than loading it inside
+"""
+function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset::Vector, f::Vector, feature_name; 
+                    universe_size=1_000, normalize_atom = true, normalize_mol = true, normalize_mode = "minmax", 
+                    fit_ecdf = false, fit_ecdf_ids = [], ft_sos=false, ft_bin=false, 
+                    molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false, num_center_sets = 1,
+                    save_to_disk = false)
+    println("data setup for atom features = ",n_af, ", mol features = ", n_mf, ", centers = ",num_centers, " starts!")
+    t = @elapsed begin
+        path = mkpath("data/$foldername")
+        # PCA:
+        F = nothing
+        sens_mode = false
+        uid = replace(string(Dates.now()), ":" => ".") # generate uid
+        plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
+        if length(molf_file) == 0 # if molecular feature file is not provided:
+            println("atomic ⟹ mol mode!")
+            println("PCA atom starts!")
+            if isempty(cov_file)
+                f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
+            else
+                sens_mode = true
+                C = load(cov_file)["data"]
+                σ = load(sensitivity_file)["data"]
+                f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
+            end
+            println("PCA atom done!")
+            println("mol feature processing starts!")
+            F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
+            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode)
+            println("mol feature processing finished!")
+        else
+            println("mol only mode!")
+            println("mol feature processing starts!")
+            F = load(molf_file)["data"]
+            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode, cov_test=feature_name=="FCHL" ? true : false)
+            println("mol feature processing finished!")
+        end
+        # compute bspline:
+        ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
+        # get centers:
+        println("computing centers...")
+        centerss = set_cluster(F, num_centers, universe_size=universe_size, num_center_sets=num_center_sets)
+        if fit_ecdf # normalization by fitting the ecdf using the centers
+            println("fitting ecdf...")
+            ids = []
+            if isempty(fit_ecdf_ids) # if empty then use the first index centers
+                ids = centerss[1]
+            else
+                ids = fit_ecdf_ids
+            end
+            f = comp_ecdf(f, ids; type="atom")
+            F = comp_ecdf(F, ids; type="mol")
+        end
+        # copy pre-computed atomref features:
+        #redf = load("data/atomref_features.jld", "data")
+        # save files:
+    end
+    if save_to_disk
+        save("data/$foldername/features_atom.jld", "data", f) # atomic features
+        save("data/$foldername/features.jld", "data", F) # molecular features
+        save("data/$foldername/center_ids.jld", "data", centerss)
+        save("data/$foldername/spline.jld", "data", ϕ)
+        save("data/$foldername/dspline.jld", "data", dϕ)
+    end
+    if save_global_centers # append centers to global directory
+        for i ∈ eachindex(centerss)
+            kid = "K"*string(i)
+            strings = string.(vcat(uid, kid, centerss[i]))
+            writestringline(strings, "data/centers.txt"; mode="a")
+        end
+    end
+    # write data setup info:
+    n_data = length(dataset)
+    machine = splitdir(homedir())[end]; machine = machine=="beryl" ? "SAINT" : "OMP1" # machine name
+    strlist = string.([uid, n_data, num_centers, feature_name, n_af, n_mf, ft_sos, ft_bin, normalize_atom, normalize_mol, sens_mode, n_basis+3, t, machine]) # dates serves as readable uid, n_basis + 3 by definition
+    writestringline(strlist, "data/$foldername/setup_info.txt"; mode="a")
+    println("data setup is finished in ",t,"s")
+    # clear memory if everything is saved to disk, otherwise, return values:
+    if save_to_disk
+        dataset=F=f=ϕ=dϕ=centerss=nothing
+        GC.gc()
+    end
+    return F, f, centerss, ϕ, dϕ, dataset
+end
+
+
+"""
 data setup which only include atomic features ⟹ no data selection
 """
 function data_setup_atom(foldername, n_af, dataset_file, feature_file, feature_name; 
