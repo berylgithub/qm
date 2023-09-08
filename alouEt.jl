@@ -319,7 +319,7 @@ end
 full data setup, same as above, the difference is this one ACCEPTS the (dataset, feature) rather than loading it inside
 """
 function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset::Vector, f::Vector, feature_name; 
-                    universe_size=1_000, normalize_atom = true, normalize_mol = true, normalize_mode = "minmax", 
+                    universe_size=1_000, pca_atom = true, pca_mol = true, normalize_atom = true, normalize_mol = true, normalize_mode = "minmax", 
                     fit_ecdf = false, fit_ecdf_ids = [], ft_sos=false, ft_bin=false, 
                     molf_file = "", cov_file = "", sensitivity_file = "", save_global_centers = false, num_center_sets = 1,
                     save_to_disk = false)
@@ -335,23 +335,31 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset::Vecto
             println("atomic ⟹ mol mode!")
             println("PCA atom starts!")
             if isempty(cov_file)
-                f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
+                if pca_atom
+                    f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
+                end
             else
                 sens_mode = true
                 C = load(cov_file)["data"]
                 σ = load(sensitivity_file)["data"]
-                f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
+                if pca_atom
+                    f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
+                end
             end
             println("PCA atom done!")
             println("mol feature processing starts!")
             F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
-            F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode)
+            if pca_mol
+                F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode)
+            end
             println("mol feature processing finished!")
         else
             println("mol only mode!")
             println("mol feature processing starts!")
             F = load(molf_file)["data"]
-            F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode, cov_test=feature_name=="FCHL" ? true : false)
+            if pca_mol
+                F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode, cov_test=feature_name=="FCHL" ? true : false)
+            end
             println("mol feature processing finished!")
         end
         # compute bspline:
@@ -399,7 +407,7 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset::Vecto
         dataset=F=f=ϕ=dϕ=centerss=nothing
         GC.gc()
     end
-    return F, f, centerss, ϕ, dϕ, dataset
+    return F, f, centerss, ϕ, dϕ
 end
 
 
