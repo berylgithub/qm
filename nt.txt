@@ -435,3 +435,11 @@ or just wriet the table of: best of non PCA, best of PCA1 for each level, best o
 - see photo of Sep 5 (in gdrive) for hyperopt new scheme that can incorporate some switches (on/off),
   and try to implement w/ new boundaries (includes the E_dressed_features)
 ! test whether the memory of VSC can fit all features loaded at once (and actual scenario probably need like 20x of them at once)
+(done)
+
+08.09.23:
+!! need to add new data_setup that accpets the data rather than loading the data,
+loading in setup costs 130s startup
+! From Anatole: try the dressed atom with the electronic configurations of atoms, i.e., split C into: C_sp1, C_sp2, C_sp3, same with the others
+looks like they can be grouped by the bonds 
+
