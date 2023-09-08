@@ -428,10 +428,16 @@ hyperparams (for optimization, under one vector x):
     18. model ∈ int[1,6]
     19. const ∈ int[1,20]
 """
-function main_obj(E, DFs, Fs, idtrains, idtests, x; sim_id = "")
+function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
+    # split centers:
+
     # PCA and fit DFs:
     bools = [false, true]
-    hp_baseline(E, DFs..., )
+    println(x)
+    Et = hp_baseline(E, DFs..., idtrains; 
+                sb=bools[x[1]+1], sn=bools[x[2]+1], st=bools[x[3]+1],
+                pb=bools[x[4]+1], pn=bools[x[5]+1], pt=bools[x[6]+1],
+                npb = x[7], npn = x[8], npt = x[9])
     # data setup:
     # fit fatoms:
 end

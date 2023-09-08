@@ -1572,7 +1572,7 @@ end
 """
 baseline fitting, this is used for main hyperopt 
 """
-function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains, idtests; 
+function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains; 
                     sb = false, sn = false, st = false, 
                     pb = false, pn = false, pt = false, 
                     npb = 5, npn = 5, npt = 5)
@@ -1589,7 +1589,7 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains, idtests;
         end
         θ = Fb[idtrains, :]\ET[idtrains];
         Edb = Fb*θ
-        #println("bond", [mean(abs.(ET[idtrains] - Edb[idtrains])), mean(abs.(ET[idtests] - Edb[idtests]))]*627.503)
+        println("bond ", mean(abs.(ET[idtrains] - Edb[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edb[idtests]))]*627.503)
         ET -= Edb
     end
     if sn
@@ -1599,7 +1599,7 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains, idtests;
         end
         θ = Fn[idtrains, :]\ET[idtrains];
         Edn = Fn*θ
-        #println("angle", [mean(abs.(ET[idtrains] - Edn[idtrains])), mean(abs.(ET[idtests] - Edn[idtests]))]*627.503)
+        println("angle ", mean(abs.(ET[idtrains] - Edn[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edn[idtests]))]*627.503)
         ET -= Edn
     end
     if st
@@ -1609,7 +1609,7 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains, idtests;
         end
         θ = Ft[idtrains, :]\ET[idtrains];
         Edt = Ft*θ
-        #println("torsion", [mean(abs.(ET[idtrains] - Edt[idtrains])), mean(abs.(ET[idtests] - Edt[idtests]))]*627.503)
+        println("torsion ", mean(abs.(ET[idtrains] - Edt[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edt[idtests]))]*627.503)
         ET -= Edt
     end
     return ET
