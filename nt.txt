@@ -441,5 +441,5 @@ or just wriet the table of: best of non PCA, best of PCA1 for each level, best o
 !! need to add new data_setup that accpets the data rather than loading the data,
 loading in setup costs 130s startup
 ! From Anatole: try the dressed atom with the electronic configurations of atoms, i.e., split C into: C_sp1, C_sp2, C_sp3, same with the others
-looks like they can be grouped by the bonds 
+looks like they can be grouped by the bonds (this is called hybridization)
 

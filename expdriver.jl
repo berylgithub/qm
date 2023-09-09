@@ -388,7 +388,6 @@ function main_obj(x; sim_id="")
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
     F, f, centerss, ϕ, dϕ, dataset = data_setup(foldername, n_af, n_mf, n_basis, 300, file_dataset, feature_path, feature_name; 
                                 normalize_atom = normalize_atom, normalize_mol = normalize_mol, save_global_centers = false, num_center_sets = 1, save_to_disk = false)
-    # add baseline fitter here before feeding it to the main fitter
     full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername; 
                 bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
     # get MAE:
@@ -405,7 +404,8 @@ main objective augmented with Elevel
 mandatory params:
     - E, energy vector
     - FA, FB, FN, FT (all dressed features), vector of all dressed features
-    - f_atom, one set of atomic feautres
+    - f_atom, all sets of atomic feautres (possibly) over 20gbs
+    - dataset
     - centers
 hyperparams (for optimization, under one vector x):
     1. Edb_switch ∈ cat[0,1], whether to include Edb or not
@@ -429,7 +429,15 @@ hyperparams (for optimization, under one vector x):
     19. const ∈ int[1,20]
 """
 function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
-    # split centers:
+    # determine n_af and n_mf:
+    n_mf = Int(x[12]); n_af = Int(x[13]);
+    n_basis = Int(x[14]) # determine number of splines
+
+    # determine feature_name and path:
+    dftype = Dict()
+    ftypes = ["ACSF_51", "SOAP", "FCHL19"]
+    feature_name = dftype[Int(x[4])];
+    feature = Fs[x[15]]; feature_name = ftypes
 
     # PCA and fit DFs:
     bools = [false, true]
@@ -439,7 +447,24 @@ function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
                 pb=bools[x[4]+1], pn=bools[x[5]+1], pt=bools[x[6]+1],
                 npb = x[7], npn = x[8], npt = x[9])
     # data setup:
-    # fit fatoms:
+    pca_atom = bools[x[10]+1]; pca_mol = bools[x[11]+1]
+    # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
+    F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 1, dataset, feature, feature_name; 
+                                        pca_atom = pca_atom, pca_mol = pca_mol, normalize_atom = normalize_atom, normalize_mol = normalize_mol, 
+                                        save_global_centers = false, num_center_sets = 1, save_to_disk = false)
+    
+    # fit fatoms: 
+    println([n_mf, n_af, n_basis, feature_name, normalize_atom, normalize_mol, feature_path, model, c])
+    foldername = "exp_hyperparamopt_"*sim_id;
+    full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername; 
+                bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
+    # get MAE:
+    path_result = "result/$foldername/err_$foldername.txt"
+    MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
+
+    F = f = centerss_out = ϕ = dϕ = nothing # clear var
+    GC.gc() # always gc after each run
+    return MAE
 end
 
 """
