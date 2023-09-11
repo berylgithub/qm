@@ -806,7 +806,7 @@ end
 function test_hybrid()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
-    ahtypes = generate_hybrid_types(["C", "N", "O", "F"], [:none, :sp1, :sp2, :sp3])
+    ahtypes = generate_hybrid_types(["C", "N", "O", "F"], [:none, :sp, :sp2, :sp3])
     for f ∈ files[[1, end]]
         smiles = fetch_SMILES(path*f)
         println(smiles)
@@ -821,7 +821,7 @@ function main_get_qm9_hybrids()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
     # exlcude H from the atom types, since it will be concated with the atomref features instead later:
-    ahtypes = generate_hybrid_types(["C", "N", "O", "F"], [:none, :sp1, :sp2, :sp3])
+    ahtypes = generate_hybrid_types(["C", "N", "O", "F"], [:none, :sp, :sp2, :sp3])
     t = @elapsed begin
         list_hybrids = ThreadsX.map(files) do fil
             smiles = fetch_SMILES(path*fil)
@@ -840,3 +840,5 @@ function main_get_qm9_hybrids()
     writedlm("data/atom_types_hybrid.txt", ahtypes)
     save("data/featuresmat_atomhybrid_qm9.jld", "data", F)
 end
+
+function postp
