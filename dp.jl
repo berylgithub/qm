@@ -841,3 +841,24 @@ function main_get_qm9_hybrids()
     save("data/featuresmat_atomhybrid_qm9.jld", "data", F)
 end
 
+function main_post_hybrids()
+    # slice the rows of dressed hybrid atom:
+    hts = vec(readdlm("data/atom_types_hybrid.txt"))
+    exids = vec(readdlm("data/exids.txt"))
+    Fh = load("data/featuresmat_atomhybrid_qm9.jld", "data")
+    Fh = Fh[setdiff(1:size(Fh, 1), exids), :]
+    # check if the sums are correct:
+    println(sum(vec(sum(Fh, dims=1))[[1,6,11,16] .+ 1])) # [1,6,11,16] := the indices of "H", +1 := H+1 = C, and so on...
+    # exclude the H and zeros:
+    Hids = [1,6,11,16] # H
+    colsum = vec(sum(Fh, dims=1))
+    zeroids = findall(colsum .== 0.) # zeros
+    excolids = Hids ∪ zeroids # union
+    Fh = Fh[:, setdiff(1:length(hts), excolids)] # slice columns
+    # concatenate H with dressed atom:
+    Fd = load("data/atomref_features.jld", "data")
+    Fh = hcat(Fd[:, 1], Fh)
+    
+    writedlm("data/atom_types_hybrid_post.txt", hts[setdiff(1:length(hts), excolids)]) # save postprocessed types
+    save("data/featuresmat_atomhybrid_qm9_post.jld", "data", Fh)
+end
