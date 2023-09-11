@@ -765,3 +765,15 @@ function test_dabat()
     T = get_torsions_from_SMILES(torsion_types, str)
     display(T["112CCCO"])
 end
+
+"""
+== Hybridization of dressed stuffs ==
+"""
+function test_hybrid()
+    path = "../../../Dataset/gdb9-14b/geometry/" 
+    files = readdir(path)
+    smiles = fetch_SMILES(path*files[1])
+    mol = smilestomol(smiles)
+    hybrids = hybridization(mol) # hybridization vec 
+    println([atom_symbol(mol) hybrids])
+end
