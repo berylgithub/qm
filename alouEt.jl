@@ -1521,8 +1521,8 @@ now rerun with all the new features (large sparse ones) and filtered dataset, sa
 table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
-function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, pca_dt = 0, postfix="")
-    println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(pca_dt), pca_dt), (@Name(postfix), postfix))
+function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, pca_db = 0, pca_dn = 0, pca_dt = 0, postfix="")
+    println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(use_hybrid_da), use_hybrid_da), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(pca_dt), pca_dt), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
     nrow = length(E)
@@ -1543,7 +1543,12 @@ function main_DeltaML(;use_preselected_train = false, pca_db = 0, pca_dn = 0, pc
     MAEs = Matrix{Any}(undef, 5,3) # output table
     MAEs[1,:] = ["Elevel", "MAEtrain", "MAEtest"]; 
     MAEs[2:5, 1] = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"] # MAEs of base models
-    # dressed atom:
+    # dressed atom, standard or with hybridization:
+    if use_hybrid_da
+        F = load("data/atomref_features.jld", "data")
+    else
+        F = load("data/featuresmat_atomhybrid_qm9_post.jld", "data")
+    end
     F = load("data/atomref_features.jld", "data")
     θ = F[idtrain, :]\E[idtrain];
     Eda = F*θ
