@@ -800,7 +800,6 @@ function count_hybrids(ahtypes, smiles)
         ahstr = join([atoms[i], hybrids[i]])
         dh[ahstr] += 1
     end
-    println([atoms hybrids])
     return dh
 end
 
@@ -813,4 +812,31 @@ function test_hybrid()
         println(smiles)
         println(count_hybrids(ahtypes, smiles))
     end
+end
+
+"""
+get the hybrids of the whole qm9 dataset
+"""
+function main_get_qm9_hybrids()
+    path = "../../../Dataset/gdb9-14b/geometry/" 
+    files = readdir(path)
+    # exlcude H from the atom types, since it will be concated with the atomref features instead later:
+    ahtypes = generate_hybrid_types(["C", "N", "O", "F"], [:none, :sp1, :sp2, :sp3])
+    t = @elapsed begin
+        list_hybrids = ThreadsX.map(files) do fil
+            smiles = fetch_SMILES(path*fil)
+            hybrids = count_hybrids(ahtypes, smiles)
+            hybrids
+        end
+    end
+    println("hybrid FE done in ", t)
+    # transfomr to matrix:
+    F = zeros(length(list_hybrids), length(ahtypes))
+    @simd for j ∈ axes(F, 2)
+        @simd for i ∈ axes(F, 1)
+            @inbounds F[i,j] = list_hybrids[i][ahtypes[j]]
+        end
+    end
+    writedlm("data/atom_types_hybrid.txt", ahtypes)
+    save("data/featuresmat_atomhybrid_qm9.jld", "data", F)
 end
