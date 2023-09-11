@@ -772,8 +772,11 @@ end
 function test_hybrid()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
-    smiles = fetch_SMILES(path*files[1])
-    mol = smilestomol(smiles)
-    hybrids = hybridization(mol) # hybridization vec 
-    println([atom_symbol(mol) hybrids])
+    for f ∈ files[1,10]
+        smiles = fetch_SMILES(path*f)
+        mol = smilestomol(smiles)
+        hybrids = hybridization(mol) # hybridization vec 
+        println(smiles)
+        println([atom_symbol(mol) hybrids])
+    end
 end
