@@ -820,8 +820,8 @@ get the hybrids of the whole qm9 dataset
 function main_get_qm9_hybrids()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
-    # exlcude H from the atom types, since it will be concated with the atomref features instead later:
-    ahtypes = generate_hybrid_types(["C", "N", "O", "F"], [:none, :sp, :sp2, :sp3])
+    # exlcude H from the matrix later, since it will be substituted with the atomref_features[:,"H"] instead later:
+    ahtypes = generate_hybrid_types(["H", "C", "N", "O", "F"], [:none, :sp, :sp2, :sp3])
     t = @elapsed begin
         list_hybrids = ThreadsX.map(files) do fil
             smiles = fetch_SMILES(path*fil)
