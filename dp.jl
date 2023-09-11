@@ -769,14 +769,48 @@ end
 """
 == Hybridization of dressed stuffs ==
 """
+
+"""
+generate all possible hybrid types of each atom type
+"""
+function generate_hybrid_types(atom_types, hybrid_types)
+    hiter = Iterators.product(atom_types, hybrid_types)
+    hybrids = []
+    for h ∈ hiter
+        hstr = join([h[1], h[2]])
+        push!(hybrids, hstr)
+    end
+    return hybrids
+end
+
+"""
+count the hybrids exist in a molecule (SMILES representation) given atom × hybrid types
+"""
+function count_hybrids(ahtypes, smiles)
+    # generate empty dict:
+    dh = Dict()
+    for a ∈ ahtypes
+        dh[a] = 0
+    end
+    # count hybrids:
+    mol = smilestomol(smiles)
+    atoms = atom_symbol(mol)
+    hybrids = hybridization(mol)
+    for i ∈ eachindex(atoms)
+        ahstr = join([atoms[i], hybrids[i]])
+        dh[ahstr] += 1
+    end
+    println([atoms hybrids])
+    return dh
+end
+
 function test_hybrid()
     path = "../../../Dataset/gdb9-14b/geometry/" 
     files = readdir(path)
-    for f ∈ files[[1,10]]
+    ahtypes = generate_hybrid_types(["C", "N", "O", "F"], [:none, :sp1, :sp2, :sp3])
+    for f ∈ files[[1, end]]
         smiles = fetch_SMILES(path*f)
-        mol = smilestomol(smiles)
-        hybrids = hybridization(mol) # hybridization vec 
         println(smiles)
-        println([atom_symbol(mol) hybrids])
+        println(count_hybrids(ahtypes, smiles))
     end
 end
