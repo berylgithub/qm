@@ -1545,11 +1545,10 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, pca
     MAEs[2:5, 1] = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"] # MAEs of base models
     # dressed atom, standard or with hybridization:
     if use_hybrid_da
-        F = load("data/atomref_features.jld", "data")
-    else
         F = load("data/featuresmat_atomhybrid_qm9_post.jld", "data")
+    else
+        F = load("data/atomref_features.jld", "data")
     end
-    F = load("data/atomref_features.jld", "data")
     θ = F[idtrain, :]\E[idtrain];
     Eda = F*θ
     MAEs[2,2] = mean(abs.(E[idtrain] - Eda[idtrain]))*627.503
