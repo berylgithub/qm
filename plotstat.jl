@@ -362,3 +362,33 @@ function main_write_full_tbs()
     writelatextable(jtbs[1], "result/deltaML/tb_ns_DNDT.tex")
     writelatextable(jtbs[2], "result/deltaML/tb_s2_DNDT.tex")
 end
+
+function main_tb_hda()
+    tbbase1 = readdlm("result/deltaML/MAE_base_s2_dt_180823.txt")
+    tb1 = readdlm("result/deltaML/MAE_enum_s2_dt_180823.txt")
+    tbbase2 = readdlm("result/deltaML/MAE_base_s2_hda_dt_120923.txt")
+    tb2 = readdlm("result/deltaML/MAE_enum_s2_hda_dt_120923.txt")
+    
+    # base MAE table
+    tbb1x = replace(tbbase1, "dressed_atom" => "DA", "dressed_bond" => "DB", 
+                    "dressed_angle" => "DN", "dressed_torsion" => "DT")
+    tbb2x = replace(tbbase2, "dressed_atom" => "DA", "dressed_bond" => "DB", 
+                    "dressed_angle" => "DN", "dressed_torsion" => "DT")
+    jtb = hcat(tbb1x, tbb2x[:, end-1:end])
+    jtb[2:end, 2:end] = clean_float(jtb[2:end, 2:end])
+    writelatextable(jtb, "result/deltaML/tb_base_vs_hda.tex", hline=false)
+    # enum table comparison (DA vs HDA best on DA level, global minimum DA vs global minimum HDA):
+    id1da = query_min(tb1, [5], ["dressed_atom"]) # best of DA
+    id2da = query_min(tb2, [5], ["dressed_atom"])
+    id1min = query_min(tb1, [], [])
+    id2min = query_min(tb2, [], [])
+    jtb = vcat(reshape(tb1[id1da, :], 1, :), reshape(tb2[id2da, :], 1, :), reshape(tb1[id1min, :], 1, :), reshape(tb2[id2min, :], 1, :))
+    jtb = hcat(jtb, ["standard", "hybridized", "standard", "hybridized"])
+    writedlm("result/deltaML/tb_enum_da-vs-hda.txt", jtb)
+    jtb_tex = Matrix{Any}(undef, 3, 3)
+    jtb_tex[1, :] = ["query", "SDA MAE test", "HDA MAE test"]
+    jtb_tex[2, :] = vcat("best on DA", jtb[1:2, end-1])
+    jtb_tex[3, :] = vcat("best from all", jtb[3:4, end-1])
+    jtb_tex[2:end, 2:end] = clean_float(jtb_tex[2:end, 2:end])
+    writelatextable(jtb_tex, "result/deltaML/tb_enum_da-vs-hda.tex"; hline=false)
+end
