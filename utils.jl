@@ -21,7 +21,7 @@ function writestringline(strinput, filename; mode="w")
 end
 
 # script to write to latex table, given a Matrix{Any}
-function writelatextable(table, filename)
+function writelatextable(table, filename; hline = true)
     open(filename, "w") do io
         for i ∈ axes(table, 1)
             str = ""
@@ -29,7 +29,11 @@ function writelatextable(table, filename)
                 str *= string(table[i, j])*"\t"*"& "
             end
             str = str[1:end-2]
-            str *= raw"\\ \hline"*"\n"
+            str *= raw" \\ "
+            if hline
+                str *= raw" \hline"
+            end
+            str *= "\n"
             print(io, str)
         end
     end
