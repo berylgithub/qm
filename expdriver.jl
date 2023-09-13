@@ -429,16 +429,6 @@ hyperparams (for optimization, under one vector x):
     19. const ∈ int[1,20]
 """
 function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
-    # determine n_af and n_mf:
-    n_mf = Int(x[12]); n_af = Int(x[13]);
-    n_basis = Int(x[14]) # determine number of splines
-
-    # determine feature_name and path:
-    dftype = Dict()
-    ftypes = ["ACSF_51", "SOAP", "FCHL19"]
-    feature_name = dftype[Int(x[4])];
-    feature = Fs[x[15]]; feature_name = ftypes
-
     # PCA and fit DFs:
     bools = [false, true]
     println(x)
@@ -448,6 +438,19 @@ function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
                 npb = x[7], npn = x[8], npt = x[9])
     # data setup:
     pca_atom = bools[x[10]+1]; pca_mol = bools[x[11]+1]
+    # determine n_af and n_mf:
+    n_mf = Int(x[12]); n_af = Int(x[13]);
+    n_basis = Int(x[14]) # determine number of splines
+    # determine feature:
+    ftypes = ["ACSF_51", "SOAP", "FCHL19"]
+    feature = Fs[x[15]]; feature_name = ftypes[x[15]]
+    # switches:
+    normalize_atom = Int(x[16]) + 1
+    normalize_mol = Int(x[17]) + 1
+    # model params:
+    lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK", "REAPER"]
+    model = lmodel[Int(x[18])]
+    c = 2^x[19]
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
     F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 1, dataset, feature, feature_name; 
                                         pca_atom = pca_atom, pca_mol = pca_mol, normalize_atom = normalize_atom, normalize_mol = normalize_mol, 
