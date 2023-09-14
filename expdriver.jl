@@ -236,10 +236,11 @@ end
 
 """
 simulators spawner for parallel hyperparam
+= states: 0 = idle, 1 = running, 2 = killed (or killed is no file found)
 - sim_id must be positive integers as low as possible due to the nature of the cell
-- states: 0 = idle, 1 = running, 2 = killed (or killed is no file found)
+- fobj_mode: 1 = no baseline fitting (only dressed atoms), 2 = with baseline fitting
 """
-function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true)
+function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mode = 1)
     println("simulator", sim_id, " has been initialized!!")
     # paths to necessary folders:
     path_f = "data/hyperparamopt/sim/f/"
@@ -445,19 +446,21 @@ function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
     ftypes = ["ACSF_51", "SOAP", "FCHL19"]
     feature = Fs[x[15]]; feature_name = ftypes[x[15]]
     # switches:
-    normalize_atom = Int(x[16]) + 1
-    normalize_mol = Int(x[17]) + 1
+    normalize_atom = bools[Int(x[16]) + 1]
+    normalize_mol = bools[Int(x[17]) + 1]
     # model params:
     lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK", "REAPER"]
     model = lmodel[Int(x[18])]
     c = 2^x[19]
+    println([bools[x[1]+1], bools[x[2]+1], bools[x[3]+1], bools[x[4]+1], bools[x[5]+1], bools[x[6]+1], 
+            x[7], x[8], x[9], pca_atom, pca_mol, n_mf, n_af, n_basis, feature, feature_name,
+            normalize_atom, normalize_mol, model, c])
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
-    F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 1, dataset, feature, feature_name; 
+    #= F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 1, dataset, feature, feature_name; 
                                         pca_atom = pca_atom, pca_mol = pca_mol, normalize_atom = normalize_atom, normalize_mol = normalize_mol, 
                                         save_global_centers = false, num_center_sets = 1, save_to_disk = false)
     
     # fit fatoms: 
-    println([n_mf, n_af, n_basis, feature_name, normalize_atom, normalize_mol, feature_path, model, c])
     foldername = "exp_hyperparamopt_"*sim_id;
     full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername; 
                 bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
@@ -467,7 +470,7 @@ function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
 
     F = f = centerss_out = ϕ = dϕ = nothing # clear var
     GC.gc() # always gc after each run
-    return MAE
+    return MAE =#
 end
 
 """

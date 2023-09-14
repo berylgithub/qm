@@ -445,6 +445,9 @@ looks like they can be grouped by the bonds (this is called hybridization)
 ! - can immediately find the hybridization using "mol.hybridization"
 - theory on hybridization: https://www.masterorganicchemistry.com/2018/01/16/a-hybridization-shortcut/
 
-12.09.23
+12.09.23:
 $ hybridization DA improves on the DA level MAE by ~2kcal/mol, and improves on other levels by ~0.09kcal/mol
 ? wwhat if we use explicit H for other levels?
+
+13.09.23:
+- main obj parameters passed looks correct, DA probably should use the standard one rather than the hybridized
