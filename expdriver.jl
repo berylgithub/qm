@@ -717,6 +717,7 @@ function test_mainobj()
     fx = main_obj
     f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
     println(f)
+    writedlm("test_mainobj.txt", f)
 end
 
 
