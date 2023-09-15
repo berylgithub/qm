@@ -318,7 +318,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mod
                         if fobj_mode == 1
                             f = fx(x; sim_id = "_$sim_id")
                         elseif fobj_mode == 2
-                            f = fx(E, dataset, DFs, Fs, centers, idtrains, idtests, x; sim_id = "_$sim_id")
+                            f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
                         end
                         # write to tracker:
                         if trackx 
@@ -457,7 +457,7 @@ hyperparams (for optimization, under one vector x):
     18. model ∈ int[1,6]
     19. const ∈ int[1,20]
 """
-function main_obj(E, dataset, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
+function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     # PCA and fit DFs:
     bools = [false, true]
     println(x)
@@ -490,7 +490,7 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, idtests, x; sim_id = "
     
     # fit fatoms: 
     foldername = "exp_hyperparamopt_"*sim_id;
-    full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername; 
+    full_fit_🌹(Et, dataset, F, f, centers, ϕ, dϕ, foldername; 
                 bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
     # get MAE:
     path_result = "result/$foldername/err_$foldername.txt"
