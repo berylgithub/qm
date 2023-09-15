@@ -716,6 +716,7 @@ function test_mainobj()
     idtests = setdiff(idall, idtrains)
     fx = main_obj
     f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
+    println(f)
 end
 
 
