@@ -120,6 +120,7 @@ dlmwrite(f{3}, [1, 2, 0.23, 2.3], "\t")
 %}
 
 % for resetting file trackers:
+%{
 path_trackx = '../data/hyperparamopt/xlist.txt'; 
 path_trackxraw = '../data/hyperparamopt/xrawlist.txt';
 path_trackf = '../data/hyperparamopt/flist.txt';
@@ -128,4 +129,14 @@ tlist = {path_trackx, path_trackxraw, path_trackf, path_simtracker};
 for t = 1:length(tlist)
     dlmwrite(tlist{t}, []) % write empty files
 end
+%}
+
+
+%p = computep([16, 20], 1, 50)
+%x = computex([0.306122, 0.081633, 0.612245], 1, 50)
+
+% (15.09.23) hyperparam for the current best (7.59 kcal/mol) = [ACSF_51, REAPER, only DB = true, D_PCAs = falses, F_PCAs = falses, normalizes = falses]:
+% see expdriver for the hyperparameter ordering:
+x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11]
+% generate bounds:
 
