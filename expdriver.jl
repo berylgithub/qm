@@ -238,7 +238,8 @@ end
 simulators spawner for parallel hyperparam
 = states: 0 = idle, 1 = running, 2 = killed (or killed is no file found)
 - sim_id must be positive integers as low as possible due to the nature of the cell
-- fobj_mode: 1 = no baseline fitting (only dressed atoms), 2 = with baseline fitting
+- fobj_mode:    1 = no baseline fitting (only dressed atoms), 
+                2 = with baseline fitting and preloads most variables, which should be faster, if this pass the unit test, this will be set as default
 """
 function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mode = 1)
     println("simulator", sim_id, " has been initialized!!")
@@ -248,6 +249,27 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mod
     path_tracker = "data/hyperparamopt/sim/sim_tracker.txt"
     if !isfile(path_tracker)
         writedlm(path_tracker, []) # if tracker doesn't exist, create empty
+    end
+    # preload dataset, E, DFs, Fs, centers; and compute idtrains, idtests if fobj_mode == 2
+    if fobj_mode == 2
+        dataset = load("data/qm9_dataset.jld", "data") # dataset info
+        E = vec(readdlm("data/energies.txt")) # base energy
+        Fa = load("data/atomref_features.jld", "data") # DA feature
+        Fb = load("data/featuresmat_bonds_qm9_post.jld", "data") # DB
+        Fn = load("data/featuresmat_angles_qm9_post.jld", "data") # DN
+        Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
+        DFs = [Fa, Fb, Fn, Ft]
+        feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld"]
+        Fs = map(feat_paths) do fpath # high-level energy features
+            load(fpath, "data")
+        end
+        # centers, idtrains, idtests:
+        rank = 2 #select set w/ 2nd ranked training MAE
+        id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
+        centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id])
+        idall = 1:length(E)
+        idtrains = centers[1:100]
+        idtests = setdiff(idall, idtrains)
     end
 
     # initialize simulator:
@@ -292,8 +314,14 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mod
                         f = tracker[idx, 3]
                     else
                         println("x not found in tracker, computing f(x)...")
-                        f = fx(x; sim_id = "_$sim_id") # compute f=f(x)
-                        if trackx # write to tracker:
+                        # compute f=f(x):
+                        if fobj_mode == 1
+                            f = fx(x; sim_id = "_$sim_id")
+                        elseif fobj_mode == 2
+                            f = fx(E, dataset, DFs, Fs, centers, idtrains, idtests, x; sim_id = "_$sim_id")
+                        end
+                        # write to tracker:
+                        if trackx 
                             writestringline(string.(vcat(sim_id, fuid, f, x)'), path_tracker; mode="a") # [fuid, f, x]
                         end
                     end
@@ -429,7 +457,7 @@ hyperparams (for optimization, under one vector x):
     18. model ∈ int[1,6]
     19. const ∈ int[1,20]
 """
-function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
+function main_obj(E, dataset, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
     # PCA and fit DFs:
     bools = [false, true]
     println(x)
@@ -456,7 +484,7 @@ function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
             x[7], x[8], x[9], pca_atom, pca_mol, n_mf, n_af, n_basis, feature, feature_name,
             normalize_atom, normalize_mol, model, c])
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
-    #= F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 1, dataset, feature, feature_name; 
+    F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 1, dataset, feature, feature_name; 
                                         pca_atom = pca_atom, pca_mol = pca_mol, normalize_atom = normalize_atom, normalize_mol = normalize_mol, 
                                         save_global_centers = false, num_center_sets = 1, save_to_disk = false)
     
@@ -470,7 +498,7 @@ function main_obj(E, DFs, Fs, centers, idtrains, idtests, x; sim_id = "")
 
     F = f = centerss_out = ϕ = dϕ = nothing # clear var
     GC.gc() # always gc after each run
-    return MAE =#
+    return MAE
 end
 
 """
