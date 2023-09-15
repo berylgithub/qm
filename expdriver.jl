@@ -691,6 +691,30 @@ function sanity_check()
     println("SANITY CHECK DONE!")
 end
 
+function test_mainobj()
+    sim_id = 1
+    dataset = load("data/qm9_dataset.jld", "data") # dataset info
+    E = vec(readdlm("data/energies.txt")) # base energy
+    Fa = load("data/atomref_features.jld", "data") # DA feature
+    Fb = load("data/featuresmat_bonds_qm9_post.jld", "data") # DB
+    Fn = load("data/featuresmat_angles_qm9_post.jld", "data") # DN
+    Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
+    DFs = [Fa, Fb, Fn, Ft]
+    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld"]
+    Fs = map(feat_paths) do fpath # high-level energy features
+        load(fpath, "data")
+    end
+    # centers, idtrains, idtests:
+    rank = 2 #select set w/ 2nd ranked training MAE
+    id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
+    centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id])
+    idall = 1:length(E)
+    idtrains = centers[1:100]
+    idtests = setdiff(idall, idtrains)
+    fx = main_obj
+    f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
+end
+
 
 """
 julia GC test, aparently only work within function context, not outside

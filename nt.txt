@@ -458,3 +458,6 @@ for example the systematic dressed fragments can be written as one paper by pres
 , "we need to see the story from different perspectives" -> this gives one output data multiple possible papers.
 ! for more exploration: try optimization with the data points as the space, where we take a subset of the total set, e.g., try just taking 10k for the fobj.
 ! more explorations too: try the morse potential for the bonds level, for each types of bonds, see https://journals.aps.org/pr/pdf/10.1103/PhysRev.34.57
+
+- i guess for now finish the hyperparameter optimization (and run them) first
+- then try the explicit hydrogens, then morse pot, then data points optimization (this one is probably intractable/infeasible, the space is too large).
