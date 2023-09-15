@@ -692,7 +692,10 @@ function sanity_check()
 end
 
 function test_mainobj()
+    # simulate input parameters:
     sim_id = 1
+    x = [1, 1, 1, 0, 0, 0, 5, 5, 5, 1, 0, 16, 20, 3, 3, 1, 1, 6, 11] # current best conf found w.r.t the current hyperparameter space
+    # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
     Fa = load("data/atomref_features.jld", "data") # DA feature
