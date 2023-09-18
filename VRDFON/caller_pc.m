@@ -22,7 +22,7 @@ f = 100.;
 %x = [1/3; 1/3; 1/3; 6; 1/3; 1/3; 1/3; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mid for mixed int
 %x = [1/3; 1/3; 1/3; 6; 1/2; 1/2; 1/2; 1/2; 1/2; 1/2; 1/5; 1/5; 1/5; 1/5; 1/5; 11]% x mid for mixed int without FCHL
 %x = [0.306122; 0.081633; 0.612245; 6; 1; 0; 0; 1; 0; 1; 0; 0; 0; 0; 0; 1; 11]; % x best, MAE = 10.99
-x = [0.306122; 0.081633; 0.612245; 6; 0.6; 0.4; 0.4; 0.6; 0.4; 0.6; 4/25; 4/25; 4/25; 4/25; 4/25; 1/5; 11]; % current best found x with non deterministic round prob
+%x = [0.306122; 0.081633; 0.612245; 6; 0.6; 0.4; 0.4; 0.6; 0.4; 0.6; 4/25; 4/25; 4/25; 4/25; 4/25; 1/5; 11]; % current best found x with non deterministic round prob
 
 %{
 zi = [1/6, 1/3, 1/3, 1/6]'
@@ -135,8 +135,36 @@ end
 %p = computep([16, 20], 1, 50)
 %x = computex([0.306122, 0.081633, 0.612245], 1, 50)
 
+%  =============================================
 % (15.09.23) hyperparam for the current best (7.59 kcal/mol) = [ACSF_51, REAPER, only DB = true, D_PCAs = falses, F_PCAs = falses, normalizes = falses]:
-% see expdriver for the hyperparameter ordering:
-x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11]
+% see expdriver for the hyperparameter ordering
+% xd = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # the decoded x
+% the encoded x (the one that needs to be passed to solver):
+x = [   0;1; 
+        1;0;
+        1;0;
+        1;0;
+        1;0;
+        1;0;
+        10;
+        10;
+        10;
+        1;0;
+        1;0;
+        1;0;0;
+        3;
+        1;0;0;
+        1;0;
+        1;0;
+        0;0;0;0;0;1;
+        11
+    ]
 % generate bounds:
-
+bounds = [  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0; 
+            1, 1, 1, 1, 1, 1, 10, 10, 10, 1, 1, 50, 10, 3, 1, 1, 6, 20;
+            2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 3, 1, 2, 2, 2, 2, 1;
+            2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 3, 1, 3, 2, 2, 6, 1]
+bm = extractbound(bounds) % compute boundary index matrix
+[xout, fpen] = decode(x, bounds, bm) % check if the decoded x is correct
+dlmwrite("../data/hyperparamopt/init_params.txt", x', "\t")
+dlmwrite("../data/hyperparamopt/bounds.txt", bounds, "\t")
