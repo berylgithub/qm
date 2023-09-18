@@ -481,7 +481,7 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     model = lmodel[Int(x[18])]
     c = 2^x[19]
     println([bools[x[1]+1], bools[x[2]+1], bools[x[3]+1], bools[x[4]+1], bools[x[5]+1], bools[x[6]+1], 
-            x[7], x[8], x[9], pca_atom, pca_mol, n_mf, n_af, n_basis, feature, feature_name,
+            x[7], x[8], x[9], pca_atom, pca_mol, n_mf, n_af, n_basis, feature_name,
             normalize_atom, normalize_mol, model, c])
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
     F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 10, dataset, feature, feature_name; 

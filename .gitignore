@@ -1,4 +1,5 @@
 data/
+result/
 plot/
 VRDFON/*
 !VRDFON/driver.m
