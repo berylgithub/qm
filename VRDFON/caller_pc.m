@@ -169,3 +169,5 @@ bm = extractbound(bounds) % compute boundary index matrix
 [xout, fpen] = decode(x, bounds, bm) % check if the decoded x is correct
 dlmwrite("../data/hyperparamopt/init_params.txt", [rand(1); x]', "\t")
 dlmwrite("../data/hyperparamopt/bounds.txt", bounds, "\t")
+
+!isempty([1])
