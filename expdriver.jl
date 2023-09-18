@@ -484,12 +484,12 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
             x[7], x[8], x[9], pca_atom, pca_mol, n_mf, n_af, n_basis, feature_name,
             normalize_atom, normalize_mol, model, c])
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
+    foldername = "exp_hyperparamopt_"*sim_id;
     F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 10, dataset, feature, feature_name; 
                                         pca_atom = pca_atom, pca_mol = pca_mol, normalize_atom = normalize_atom, normalize_mol = normalize_mol, 
                                         save_global_centers = false, num_center_sets = 1, save_to_disk = false)
     
     # fit fatoms: 
-    foldername = "exp_hyperparamopt_"*sim_id;
     full_fit_🌹(Et, dataset, F, f, centers, ϕ, dϕ, foldername; 
                 bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
     # get MAE:
@@ -694,7 +694,7 @@ end
 function test_mainobj()
     # simulate input parameters:
     sim_id = 1
-    x = [1, 1, 1, 0, 0, 0, 5, 5, 5, 1, 0, 16, 20, 3, 3, 1, 1, 6, 11] # current best conf found w.r.t the current hyperparameter space
+    x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # current best conf found w.r.t the current hyperparameter space
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
