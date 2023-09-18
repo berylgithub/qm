@@ -484,7 +484,7 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
             x[7], x[8], x[9], pca_atom, pca_mol, n_mf, n_af, n_basis, feature, feature_name,
             normalize_atom, normalize_mol, model, c])
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
-    F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 1, dataset, feature, feature_name; 
+    F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 10, dataset, feature, feature_name; 
                                         pca_atom = pca_atom, pca_mol = pca_mol, normalize_atom = normalize_atom, normalize_mol = normalize_mol, 
                                         save_global_centers = false, num_center_sets = 1, save_to_disk = false)
     
@@ -716,7 +716,6 @@ function test_mainobj()
     idtests = setdiff(idall, idtrains)
     fx = main_obj
     f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
-    println(f)
     writedlm("test_mainobj.txt", f)
 end
 
