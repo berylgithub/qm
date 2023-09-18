@@ -51,7 +51,7 @@ initbounds = boundtransform(bounds); % transform "actual" bounds to "encoded" bo
 % For details see driverMintry.m
 init.paths = ''; % mandatory absolute path to ???
 init.m = length(xin); init.n = 1; % problem dimension, "could be row or column vector"
-init.nfmax = 100000; % max nfe
+init.nfmax = 9999999; % max nfe
 init.upp = initbounds(2,:); % upperbound
 init.low = initbounds(1,:); % low
 init.type = initbounds(3,:); % type of variables (categorical and oint == real for now)
@@ -93,6 +93,7 @@ unwind_protect
         end
         % compare if new x (components) is equal to prev x:
         % (!) hardcoded condition:
+        %{
         if !isempty(xprev)
           if xout(1:7) == xprev(1:7)
             ct += 1
@@ -100,6 +101,7 @@ unwind_protect
             ct = 0
           end
         end
+        %}
         % set new prev:
         xprev = xout; fprev = f;
         % append (x,f):
