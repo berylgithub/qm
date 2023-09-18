@@ -458,6 +458,7 @@ hyperparams (for optimization, under one vector x):
     19. const ∈ int[1,20]
 """
 function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
+    x = Int.(x) # cast to integers
     # PCA and fit DFs:
     bools = [false, true]
     println(x)
