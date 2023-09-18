@@ -60,16 +60,19 @@ while true
         if numel(f_sim) < iter_tracker
             f_sim{iter_tracker} = [] % initialize next iter's cell if it's not yet there
         end
-        prev_iter = iter_tracker; % reset prev iter since iter tracker is changed
+        prev_iter = iter_tracker % reset prev iter since iter tracker is changed
     end
-    xlist
+    %xlist
     % gives new f to mintry if the number of new iterates > thres (see the function logic), must be BEFORE any simulator data update:
-    iter_tracker = finfo_updater(iter_tracker, f_sim, thres, path_fun)
+    iter_tracker = finfo_updater(iter_tracker, f_sim, thres, path_fun);
     % listens to simulator port, and updates simulator data:
     if !isempty(xraw)
         xd_vars{1} = xraw; xd_vars{2} = xlist; % fill the vars for x_donator fun
-        [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim, fid_sim, iter_tracker, xd_vars)
+        [id_sim, f_sim, fid_sim, xlist] = listener_sim(path_simf, id_sim, f_sim, fid_sim, iter_tracker, xd_vars);
+        id_sim
+        f_sim
+        fid_sim
     end
-    i += 1 % remove later
-    pause(3) % for easier debugging, increase speed later
+    %i += 1 % remove later
+    pause(2) % for easier debugging, increase speed later
 end

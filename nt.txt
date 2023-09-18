@@ -461,3 +461,8 @@ for example the systematic dressed fragments can be written as one paper by pres
 
 - i guess for now finish the hyperparameter optimization (and run them) first
 - then try the explicit hydrogens, then morse pot, then data points optimization (this one is probably intractable/infeasible, the space is too large).
+
+
+18.09.23:
+- add_hydrogens!(mol) returns all hydrogens to the molecular graph, try rerun everything with this
+  all_hydrogens!(mol) returns the indices of all hydrogens in the graph
