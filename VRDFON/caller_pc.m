@@ -159,6 +159,7 @@ x = [   0;1;
         0;0;0;0;0;1;
         11
     ]
+y = [rand(1); x]
 % generate bounds:
 bounds = [  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0; 
             1, 1, 1, 1, 1, 1, 10, 10, 10, 1, 1, 50, 10, 3, 1, 1, 6, 20;
@@ -166,5 +167,5 @@ bounds = [  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0;
             2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 3, 1, 3, 2, 2, 6, 1]
 bm = extractbound(bounds) % compute boundary index matrix
 [xout, fpen] = decode(x, bounds, bm) % check if the decoded x is correct
-dlmwrite("../data/hyperparamopt/init_params.txt", x', "\t")
+dlmwrite("../data/hyperparamopt/init_params.txt", [rand(1); x]', "\t")
 dlmwrite("../data/hyperparamopt/bounds.txt", bounds, "\t")
