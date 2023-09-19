@@ -1521,7 +1521,7 @@ now rerun with all the new features (large sparse ones) and filtered dataset, sa
 table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
 """
-function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, pca_db = 0, pca_dn = 0, pca_dt = 0, postfix="")
+function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, include_hydrogens = false, pca_db = 0, pca_dn = 0, pca_dt = 0, postfix="")
     println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(use_hybrid_da), use_hybrid_da), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(pca_dt), pca_dt), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
@@ -1555,7 +1555,11 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, pca
     MAEs[2,3] = mean(abs.(E[idtest] - Eda[idtest]))*627.503
     println("dressed_atom: ", MAEs[2, 2:3])
     # dressed bonds:
-    F = load("data/featuresmat_bonds_qm9_post.jld", "data")
+    if include_hydrogens
+        F = load("data/featuresmat_bonds-H_qm9_post.jld", "data")
+    else
+        F = load("data/featuresmat_bonds_qm9_post.jld", "data")
+    end
     if pca_db > 0
         M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=pca_db); # built in PCA
         F = MultivariateStats.predict(M, F')'
@@ -1567,7 +1571,11 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, pca
     MAEs[3,3] = mean(abs.(Et[idtest] - Edb[idtest]))*627.503
     println("dressed_bond: ", MAEs[3, 2:3])
     # dressed angles:
-    F = load("data/featuresmat_angles_qm9_post.jld", "data")
+    if include_hydrogens
+        F = load("data/featuresmat_angles-H_qm9_post.jld", "data")
+    else
+        F = load("data/featuresmat_angles_qm9_post.jld", "data")
+    end
     if pca_dn > 0
         #F = PCA_mol(F, 10; normalize=false) # try PCA the angular feature
         M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=pca_dn); # built in PCA
@@ -1580,7 +1588,11 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, pca
     MAEs[4,3] = mean(abs.(Et[idtest] - Edn[idtest]))*627.503
     println("dressed_angle: ", MAEs[4, 2:3])
     # dressed torsions:
-    F = load("data/featuresmat_torsion_qm9_post.jld", "data")
+    if include_hydrogens
+        F = load("data/featuresmat_torsion-H_qm9_post.jld", "data")
+    else
+        F = load("data/featuresmat_torsion_qm9_post.jld", "data")
+    end
     if pca_dt > 0
         M = MultivariateStats.fit(MultivariateStats.PCA, F'; maxoutdim=pca_dt); # built in PCA
         F = MultivariateStats.predict(M, F')'
