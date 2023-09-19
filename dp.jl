@@ -428,6 +428,7 @@ function postprocess_bonds()
         end
     end
     display(F)
+    writedlm("data/bond_types-H.txt", bondtypes)
     save("data/featuresmat_qm9_covalentbonds-H.jld", "data", F)
 end
 
