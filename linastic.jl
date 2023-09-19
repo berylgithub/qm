@@ -529,7 +529,7 @@ function PCA_mol(F, n_select; normalize=true, normalize_mode = "minmax", cov_tes
         end
     end
     C=e=F=nothing; GC.gc() # clear memory
-    return F_new
+    return Matrix(F_new)
 end
 
 
