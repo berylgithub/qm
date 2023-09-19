@@ -516,6 +516,9 @@ function get_angles_from_SMILES(angle_types, str; include_hydrogens=false)
     end
     # count 
     mol = smilestomol(str)
+    if include_hydrogens
+        add_hydrogens!(mol)
+    end
     atoms = vertices(mol) 
     #list_angles = [] # for debugging
     for atom ∈ atoms
@@ -547,7 +550,7 @@ function main_get_qm9_angles()
     t = @elapsed begin
         list_angles = ThreadsX.map(files) do fil
             smiles = fetch_SMILES(path*fil)
-            angles = get_angles_from_SMILES(angle_types, smiles)
+            angles = get_angles_from_SMILES(angle_types, smiles; include_hydrogens = true)
             angles
         end
     end
@@ -564,8 +567,8 @@ function main_get_qm9_angles()
     end
     display(F)
     println("elapsed = ",t, " ",t_t)
-    writedlm("data/angle_types_qm9.txt", angle_types)
-    save("data/featuresmat_angles_qm9.jld", "data", F)    
+    writedlm("data/angle-H_types_qm9.txt", angle_types)
+    save("data/featuresmat_angles-H_qm9.jld", "data", F)    
 end
 
 
@@ -573,8 +576,8 @@ end
 remove unnecessary columns (such as zeros, H, etc), practically manual PCA
 """
 function main_postprocess_angles()
-    angle_types = readdlm("data/angle_types_qm9.txt")
-    F = load("data/featuresmat_angles_qm9.jld", "data")
+    angle_types = readdlm("data/angle-H_types_qm9.txt")
+    F = load("data/featuresmat_angles-H_qm9.jld", "data")
     # get statistics:
     colsum = vec(sum(F, dims=1))
     idnz = findall(colsum .> 0) # find nonzero indices
@@ -601,7 +604,7 @@ function main_postprocess_angles()
     delids = Hid ∪ idz # all of the column ids that need to be removed
     display([angle_types[delids] colsum[delids]])
     F = F[:, setdiff(1:size(F, 2), delids)]
-    save("data/featuresmat_angles_qm9_post.jld", "data", F)
+    save("data/featuresmat_angles-H_qm9_post.jld", "data", F)
 end
 
 """
@@ -671,8 +674,11 @@ function get_torsions(mol, edge)
     return T
 end
 
-function get_torsions_from_SMILES(torsion_types, str)
+function get_torsions_from_SMILES(torsion_types, str; include_hydrogens=false)
     mol = smilestomol(str)
+    if include_hydrogens
+        add_hydrogens!(mol)
+    end
     # init empty dict:
     dtorsion = Dict()
     for key ∈ torsion_types
@@ -705,7 +711,7 @@ function main_get_qm9_torsions()
     t = @elapsed begin
         list_torsions = ThreadsX.map(files) do fil
             smiles = fetch_SMILES(path*fil)
-            torsions = get_torsions_from_SMILES(torsion_types, smiles)
+            torsions = get_torsions_from_SMILES(torsion_types, smiles; include_hydrogens=true)
             torsions
         end
     end
@@ -720,8 +726,8 @@ function main_get_qm9_torsions()
         end
     end
     println("elapsed = ",t, " ",t_t)
-    writedlm("data/torsion_types_qm9.txt", torsion_types)
-    save("data/featuresmat_torsion_qm9.jld", "data", F)
+    writedlm("data/torsion-H_types_qm9.txt", torsion_types)
+    save("data/featuresmat_torsion-H_qm9.jld", "data", F)
 end
 
 """
