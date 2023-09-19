@@ -779,7 +779,7 @@ function fitter_LLS(F, E, Midx, Widx, tlimit)
     A = F[Midx, :] # construct the data matrix
     start = time()
     t_ls = @elapsed begin
-        θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+        θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     end
     # check MAE of training data only:
     errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
@@ -848,7 +848,7 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, tlimit; scaler = 2048.)
     # do LS:
     start = time()
     t_ls = @elapsed begin
-        θ, stat = cgls(K, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+        θ, stat = cgls(K, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     end
     display(stat)
     # check MAE of training data only:
@@ -1084,7 +1084,7 @@ function fitter_GAK(F, f, dataset, E, Midx, Widx, tlimit; c = 2048.)
     A = get_gaussian_kernel(f[Midx], f[Midx], [d["atoms"] for d ∈ dataset[Midx]], [d["atoms"] for d ∈ dataset[Midx]], c)
     start = time()
     t_ls = @elapsed begin
-        θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+        θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     end
     #θ = A\E_train
     # check MAE of training data only:
@@ -1117,7 +1117,7 @@ function fitter_repker(F, f, dataset, E, Midx, Widx, tlimit)
     A = get_repker_atom(f[Midx], f[Midx], [d["atoms"] for d ∈ dataset[Midx]], [d["atoms"] for d ∈ dataset[Midx]])
     start = time()
     t_ls = @elapsed begin
-        θ, stat = cgls(A, E[Midx], itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+        θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
     end
     # check MAE of training data only:
     E_pred = A*θ # return the magnitude
