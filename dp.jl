@@ -345,10 +345,10 @@ returns dict of bondtype => count
 """
 
 
-function get_bonds_from_SMILES(bondtypes, str; remove_hydrogens=true)
+function get_bonds_from_SMILES(bondtypes, str; include_hydrogens=false)
     mol = smilestomol(str)
-    if remove_hydrogens
-        remove_hydrogens!(mol)
+    if include_hydrogens
+        add_hydrogens!(mol)
     end
     md = Dict()
     for key ∈ bondtypes # init dict
@@ -361,12 +361,7 @@ function get_bonds_from_SMILES(bondtypes, str; remove_hydrogens=true)
     return md
 end
 
-function get_qm9_bondtypes(;remove_hydrogens=true)
-    atoms = ["H", "C", "N", "O", "F"]
-    if remove_hydrogens
-        atoms = atoms[2:end]
-    end
-    bond_level = [1,2,3]
+function get_qm9_bondtypes(atoms, bond_level)
     acs = Combinatorics.combinations(atoms, 2)
     acstr = vcat([ac[1]*ac[2] for ac ∈ acs], [at*at for at ∈ atoms])
     acbl = Iterators.product(acstr, bond_level)
@@ -376,32 +371,35 @@ end
 
 
 function get_qm9_bondcounts()
-    function extract_bonds!(bondfs, bondtypes, fpath, file; remove_hydrogens=true)
+    function extract_bonds!(bondfs, bondtypes, fpath, file; include_hydrogens=false)
         content = readdlm(fpath*file)
         natom = content[1,1]
         smiles = content[natom+4, 1]
-        bondf = get_bonds_from_SMILES(bondtypes, smiles; remove_hydrogens=remove_hydrogens)
+        bondf = get_bonds_from_SMILES(bondtypes, smiles; include_hydrogens=include_hydrogens)
         push!(bondfs, bondf)
         #println(file, " is done!")
     end
-    remove_hydrogens = true
-    bondtypes = get_qm9_bondtypes(;remove_hydrogens = remove_hydrogens) # get qm9 bondtypes, the keys of dict
+    atom_types = ["H", "C", "N", "O", "F"]
+    bond_levels = [1,2,3]
+    bondtypes = get_qm9_bondtypes(atom_types, bond_levels) # get qm9 bondtypes, the keys of dict
     fpath = "/users/baribowo/Dataset/gdb9-14b/geometry/" # absolute path to qm9 dataset
     #exfiles = readdlm("data/qm9_error.txt") # excluded geometries
     files = readdir(fpath)
     #files = [file for file ∈ files if file ∉ exfiles] # included geom only
     bondfs = []
     @simd for file ∈ files
-        @inbounds extract_bonds!(bondfs, bondtypes, fpath, file; remove_hydrogens = remove_hydrogens)
+        @inbounds extract_bonds!(bondfs, bondtypes, fpath, file; include_hydrogens = true)
     end
-    open("data/features_qm9_covalentbonds.json", "w") do f
+    open("data/features_qm9_covalentbonds-H.json", "w") do f
         JSON.print(f, bondfs)
     end
 end
 
 function postprocess_bonds()
-    bondtypes = get_qm9_bondtypes(;remove_hydrogens=true) # get qm9 bondtypes, the keys of dict
-    bondfs = JSON.parsefile("data/features_qm9_covalentbonds.json")
+    atom_types = ["H", "C", "N", "O", "F"]
+    bond_levels = [1,2,3]
+    bondtypes = get_qm9_bondtypes(atom_types, bond_levels) # get qm9 bondtypes, the keys of dict
+    bondfs = JSON.parsefile("data/features_qm9_covalentbonds-H.json")
     # get stats ∀keys:
     stat = Dict() 
     for key ∈ bondtypes
@@ -430,8 +428,7 @@ function postprocess_bonds()
         end
     end
     display(F)
-    #writedlm("data/featuresmat_qm9_covalentbonds.txt", F)
-    save("data/featuresmat_qm9_covalentbonds.jld", "data", F)
+    save("data/featuresmat_qm9_covalentbonds-H.jld", "data", F)
 end
 
 """
@@ -510,7 +507,7 @@ end
 """
 angle_types is a dict containing vectors of each angle type
 """
-function get_angles_from_SMILES(angle_types, str)
+function get_angles_from_SMILES(angle_types, str; include_hydrogens=false)
     # Dict output:
     dangle = Dict()
     for type ∈ angle_types

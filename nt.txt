@@ -466,3 +466,6 @@ for example the systematic dressed fragments can be written as one paper by pres
 18.09.23:
 - add_hydrogens!(mol) returns all hydrogens to the molecular graph, try rerun everything with this
   all_hydrogens!(mol) returns the indices of all hydrogens in the graph
+
+19.09.23:
+! check the "set_cluster" error from the main_obj later
