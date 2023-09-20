@@ -469,3 +469,13 @@ for example the systematic dressed fragments can be written as one paper by pres
 
 19.09.23:
 ! check the "set_cluster" error from the main_obj later
+
+20.09.23:
+- for DeltaML dressed fragments plot (side product of QM9 challenge), consider:
+  - MBDF's samples: x_i+1 = 2x_i
+  - FCHL19's samples: x_i+1 = 10x_i
+  but max ~30k training set so that the test set isn't biased (100k test set minimum)
+  Ntrains = [100, 500, 1000, 2000, 4000, 8000, 16000, 30000] looks reasonable.
+  does it need K-fold cross validation (for now just try the [Ntrains, 100k] for [train,test])
+!!! turns out one of the reason why my 100 MAE is always higher is because in other papers, only the subset of 130k is used,
+e.g.: in M. Rupp's paper, only 10k for validation; in FCHL paper only 20k; in MBDF 100k is used.
