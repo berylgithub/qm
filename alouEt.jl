@@ -556,13 +556,13 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         Axtemp = zeros(nU, nK); tempsA = [zeros(nU) for _ in 1:3]
         op = LinearOperator(Float64, row, col, false, false, (y,u) -> comp_Ax!(y, Axtemp, tempsA, u, B, Midx, cidx, klidx, γ, α), 
                                                             (y,v) -> comp_Aᵀv!(y, v, B, Midx, Uidx, γ, α, nL))
-        show(op)
+        # show(op)
         # generate b:
         b = zeros(nU*nK); btemp = zeros(nU, nK); tempsb = [zeros(nU) for _ in 1:2]
         comp_b!(b, btemp, tempsb, E, γ, α, Midx, cidx)
         # do LS:
         start = time()
-        θ, stat = cgls(op, b, itmax=500, verbose=1, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit)) # with callback 🌸
+        θ, stat = cgls(op, b, itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit)) # with callback 🌸
         #θ, stat = cgls(op, b, itmax=500, verbose=0) # without ccallback
     end
 
@@ -843,7 +843,7 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, tlimit; scaler = 2048.)
         comp_gaussian_kernel!(Norms, σ2) # generate the kernel
         K = Norms[K_indexer, K_indexer] # since the norm matrix' entries are changed
     end
-    display(K)
+    #display(K)
     println("pre-computation time is ",t_pre)
     # do LS:
     start = time()
