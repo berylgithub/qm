@@ -468,7 +468,7 @@ for example the systematic dressed fragments can be written as one paper by pres
   all_hydrogens!(mol) returns the indices of all hydrogens in the graph
 
 19.09.23:
-! check the "set_cluster" error from the main_obj later
+! check the "set_cluster" error from the main_obj later || done, due to adjoin data type, shouldve been matrix
 
 20.09.23:
 - for DeltaML dressed fragments plot (side product of QM9 challenge), consider:

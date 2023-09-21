@@ -1520,8 +1520,13 @@ WITHOUT data selection for: Ebase = nothing, Ebase = NullModel, Ebase = SoB
 now rerun with all the new features (large sparse ones) and filtered dataset, save the MAEs in table, therefore:
 table rows = features × models × solver × n_splits
 cols (headers) = header(rows) ∪ {MAEtrain, MAEtest, Elevel×solver}
+
+params:
+    - custom_ids = [n_idtrains, n_idtests], a vector of vectors of [ntrains_1, ntrains_2, ...], [ntests_1, ntests_2, ...]
 """
-function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, include_hydrogens = false, pca_db = 0, pca_dn = 0, pca_dt = 0, postfix="")
+function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, include_hydrogens = false, 
+                    pca_db = 0, pca_dn = 0, pca_dt = 0, 
+                    postfix="")
     println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(use_hybrid_da), use_hybrid_da), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(pca_dt), pca_dt), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
@@ -1864,6 +1869,15 @@ function main_get_MAE_table()
     writedlm("result/deltaML/MAE_base_sorted.txt", MAE_tb[ids, :])
     display(E_tb[:, ids])  
     display(MAE_tb[ids, :])
+end
+
+"""
+====
+more modular ΔML main caller with flexible ntrains and ntests, for use of outside QM9 challenge 
+====
+"""
+function main_DeltaML_v2(; traintest_ids = []; use_hybrid_da = false, include_hydrogens = false, postfix="")
+    
 end
 
 """
