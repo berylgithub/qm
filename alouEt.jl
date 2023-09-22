@@ -1874,10 +1874,57 @@ end
 """
 ====
 more modular ΔML main caller with flexible ntrains and ntests, for use of outside QM9 challenge 
-====
+params:
+    - n_ids is a vector of [ntrain1, ntrain2, ..., ntest], assuming max(ntrain_i) ≤ ntest
 """
-function main_DeltaML_v2(; traintest_ids = []; use_hybrid_da = false, include_hydrogens = false, postfix="")
-    
+function main_DeltaML(n_ids::Vector; use_hybrid_da = false, include_hydrogens = false, postfix="")
+    # define inputs:
+    Random.seed!(603)
+    E = readdlm("data/energies.txt")
+    dataset = load("data/qm9_dataset.jld", "data")
+    nrow = length(E)
+    # split indexes:
+    idall = 1:nrow
+    idtest = sample(idall, n_ids[end], replace=false)
+    idrem = setdiff(idall, idtest) # remainder ids
+    max_n = maximum(n_ids[1:end-1]) # largest ntrain
+    max_idtrains = sample(idrem, max_n, replace=false)
+    # define spaces:
+    features = ["ACSF_51", "SOAP", "FCHL19"] # detach from the main loop to save memory
+    idtrainss = map(n_id -> max_idtrains[1:n_id], n_ids[1:end-1]) # vector of vectors
+    models = ["GK", "DPK"] # each will be ~24GB, x2 = ~48GB
+    #solvers = ["direct", "cgls"] # just use direct for now for Proof of Concept
+    elvs = ["A", "AB", "ABN", "ABNT"]
+    iters = Iterators.product(idtrainss, models, elvs)
+    # output:
+    headers = ["ntrain", "baseline", "model", "feature", "MAEtrain", "MAEtest"]
+    out = Matrix{Any}(undef, 1 + reduce(*,length.([idtrainss, elvs, models, features])), length(headers))
+    out[1,:] = headers
+    # preload dressed features:
+    Fds_paths = ["atomref_features", "featuresmat_bonds_qm9_post", "featuresmat_angles_qm9_post", "featuresmat_torsion_qm9_post"]
+    if use_hybrid_da
+        Fds_paths[1] = "featuresmat_atomhybrid_qm9_post"
+    end
+    if include_hydrogens
+        Fds_paths[2:end] = ["featuresmat_bonds-H_qm9_post", "featuresmat_angles-H_qm9_post", "featuresmat_torsion-H_qm9_post"]
+    end
+    Fds = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_paths)
+    cr = 2
+    for feat ∈ features
+        f = load("data/"*feat*".jld", "data")
+        # compute all kernels here once per feature to save computation time:
+        println("computing kernels...")
+        t = @elapsed begin
+            Kg = get_gaussian_kernel(f, f[max_idtrains], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[max_idtrains]], 2048.)
+            Kr = get_repker_atom(f, f[max_idtrains], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[max_idtrains]]) 
+        end
+        println("kernels computation is finished in ",t)
+        println(mapreduce(x->x*1e-6, +, [Base.summarysize(Kg), Base.summarysize(Kr), Base.summarysize(f)]))
+        for it ∈ iters
+            idtrains = it[1]; model = it[2]; elv = it[3];
+
+        end
+    end
 end
 
 """
