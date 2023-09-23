@@ -1897,7 +1897,7 @@ function main_DeltaML(n_ids::Vector; use_hybrid_da = false, include_hydrogens = 
     elvs = ["A", "AB", "ABN", "ABNT"]
     iters = Iterators.product(idtrainss, models, elvs)
     # output:
-    headers = ["ntrain", "baseline", "model", "feature", "MAEtrain", "MAEtest"]
+    headers = ["ntrain", "elv", "model", "feature", "b_MAEtrain", "b_MAEtest", "MAEtrain", "MAEtest"]
     out = Matrix{Any}(undef, 1 + reduce(*,length.([idtrainss, elvs, models, features])), length(headers))
     out[1,:] = headers
     # preload dressed features:
@@ -1919,10 +1919,67 @@ function main_DeltaML(n_ids::Vector; use_hybrid_da = false, include_hydrogens = 
             Kr = get_repker_atom(f, f[max_idtrains], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[max_idtrains]]) 
         end
         println("kernels computation is finished in ",t)
-        println(mapreduce(x->x*1e-6, +, [Base.summarysize(Kg), Base.summarysize(Kr), Base.summarysize(f)]))
+        #println(mapreduce(x->x*1e-6, +, [Base.summarysize(Kg), Base.summarysize(Kr), Base.summarysize(f)]))
         for it ∈ iters
-            idtrains = it[1]; model = it[2]; elv = it[3];
-
+            ET = E # reset E
+            idtrain = it[1]; model = it[2]; elv = it[3];
+            # compute baseline energies:
+            if occursin("A", elv)
+                θ = Fds[1][idtrain, :]\ET[idtrain];
+                Ea = Fds[1]*θ
+                MAEtrain = mean(abs.(ET[idtrain] - Ea[idtrain]))*627.503
+                MAEtest = mean(abs.(ET[idtest] - Ea[idtest]))*627.503
+                println([MAEtrain, MAEtest])
+                ET -= Ea
+            end
+            if occursin("B", elv)
+                θ = Fds[2][idtrain, :]\ET[idtrain];
+                Eb = Fds[2]*θ
+                MAEtrain = mean(abs.(ET[idtrain] - Eb[idtrain]))*627.503
+                MAEtest = mean(abs.(ET[idtest] - Eb[idtest]))*627.503
+                println([MAEtrain, MAEtest])
+                ET -= Eb
+            end
+            if occursin("N", elv)
+                θ = Fds[3][idtrain, :]\ET[idtrain];
+                En = Fds[3]*θ
+                MAEtrain = mean(abs.(ET[idtrain] - En[idtrain]))*627.503
+                MAEtest = mean(abs.(ET[idtest] - En[idtest]))*627.503
+                println([MAEtrain, MAEtest])
+                ET -= En
+            end
+            if occursin("T", elv)
+                θ = Fds[4][idtrain, :]\ET[idtrain];
+                Et = Fds[4]*θ
+                MAEtrain = mean(abs.(ET[idtrain] - Et[idtrain]))*627.503
+                MAEtest = mean(abs.(ET[idtest] - Et[idtest]))*627.503
+                println([MAEtrain, MAEtest])
+                ET -= Et
+            end
+            out[cr, [5,6]] = [MAEtrain, MAEtest] # store baseline MAE
+            # model train & pred:
+            trids = indexin(idtrain, max_idtrains) # relative column trainid
+            if model == "GK"
+                K = Kg
+            elseif model == "DPK"
+                K = Kr
+            end
+            # train:
+            Ktr = K[idtrain, trids]
+            Ktr[diagind(Ktr)] .+= 1e-8
+            θ = Ktr\ET[idtrain]
+            Epred = Ktr*θ
+            MAEtrain = mean(abs.(ET[idtrain] - Epred))*627.503
+            # pred:
+            Kts = K[idtest, trids]
+            Epred = Kts*θ
+            MAEtest = mean(abs.(ET[idtest] - Epred))*627.503
+            out[cr, [1,2,3,4,7,8]] = [length(idtrain), elv, model, feat, MAEtrain, MAEtest]
+            println(outs[cr, :], "done !")
+            open("result/deltaML/MAE_enum_v2_"*postfix*".txt", "a") do io # writefile by batch
+                writedlm(io, permutedims(out[cr,:]))
+            end
+            cr += 1
         end
     end
 end
