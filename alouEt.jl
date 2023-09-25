@@ -1877,7 +1877,7 @@ more modular ΔML main caller with flexible ntrains and ntests, for use of outsi
 params:
     - n_ids is a vector of [ntrain1, ntrain2, ..., ntest], assuming max(ntrain_i) ≤ ntest
 """
-function main_DeltaML(n_ids::Vector; use_hybrid_da = false, include_hydrogens = false, postfix="")
+function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, include_hydrogens = false, postfix="", warm_up = false)
     # define inputs:
     Random.seed!(603)
     E = readdlm("data/energies.txt")
@@ -1891,6 +1891,9 @@ function main_DeltaML(n_ids::Vector; use_hybrid_da = false, include_hydrogens = 
     max_idtrains = sample(idrem, max_n, replace=false)
     # define spaces:
     features = ["ACSF_51", "SOAP", "FCHL19"] # detach from the main loop to save memory
+    if !isempty(feat_ids) # since the data is way too big, should be separated for each feature
+        features = features[feat_ids]
+    end
     idtrainss = map(n_id -> max_idtrains[1:n_id], n_ids[1:end-1]) # vector of vectors
     models = ["GK", "DPK"] # each will be ~24GB, x2 = ~48GB
     #solvers = ["direct", "cgls"] # just use direct for now for Proof of Concept
@@ -1975,9 +1978,15 @@ function main_DeltaML(n_ids::Vector; use_hybrid_da = false, include_hydrogens = 
             Epred = Kts*θ
             MAEtest = mean(abs.(ET[idtest] - Epred))*627.503
             out[cr, [1,2,3,4,7,8]] = [length(idtrain), elv, model, feat, MAEtrain, MAEtest]
-            println(outs[cr, :], "done !")
-            open("result/deltaML/MAE_enum_v2_"*postfix*".txt", "a") do io # writefile by batch
-                writedlm(io, permutedims(out[cr,:]))
+            println(out[cr, :], "done !")
+            out_file = "result/deltaML/MAE_enum_v2_"*postfix*".txt"
+            if !warm_up # switch if the compiler needs warm up
+                if !isempty(feat_ids)
+                    out_file = "result/deltaML/MAE_enum_v2_"*join(features, "-")*"_"*postfix*".txt"
+                end
+                open(out_file, "a") do io # writefile by batch
+                    writedlm(io, permutedims(out[cr,:]))
+                end
             end
             cr += 1
         end
