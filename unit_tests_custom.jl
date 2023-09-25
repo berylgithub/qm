@@ -84,17 +84,30 @@ function test_kernels()
     f = load("data/ACSF_51.jld", "data")
     idrows = 1:1000
     idcols = 1:100
+    frow = f[idrows]; fcol = f[idcols]; atomsrows = [d["atoms"] for d ∈ dataset[idrows]]; atomscols = [d["atoms"] for d ∈ dataset[idcols]];
+    println("DPK:")
     # warm up:
     println("warm up")
     get_repker_atom_v2(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]])
     get_repker_atom(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]])
     # test direct vs of dpk:
     println("index preslicing")
-    frow = f[idrows]; fcol = f[idcols]; atomsrows = [d["atoms"] for d ∈ dataset[idrows]]; atomscols = [d["atoms"] for d ∈ dataset[idcols]];
-    println("with vartypes:")
+    println("new:")
     @time K1 = get_repker_atom_v2(frow, fcol, atomsrows, atomscols)
-    println("without:")
+    println("old:")
     @time K2 = get_repker_atom(frow, fcol, atomsrows, atomscols)
-    display(K1)
-    display(K2)
+    display(norm(K1-K2))
+
+    println("GK:")
+    c = 2048.
+    get_gaussian_kernel_v2(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]], c)
+    get_gaussian_kernel(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]], c)
+    # test direct vs of dpk:
+    println("index preslicing")
+    println("new:")
+    @time K1 = get_gaussian_kernel_v2(frow, fcol, atomsrows, atomscols, c)
+    println("old:")
+    @time K2 = get_gaussian_kernel(frow, fcol, atomsrows, atomscols, c)
+    display(norm(K1-K2))
+
 end
