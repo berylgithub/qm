@@ -1877,7 +1877,8 @@ more modular ΔML main caller with flexible ntrains and ntests, for use of outsi
 params:
     - n_ids is a vector of [ntrain1, ntrain2, ..., ntest], assuming max(ntrain_i) ≤ ntest
 """
-function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, include_hydrogens = false, postfix="", warm_up = false)
+function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, include_hydrogens = false, warm_up = false, postfix="")
+    println(n_ids,"; ",feat_ids,"; ",use_hybrid_da,"; ",include_hydrogens,"; ",warm_up,"; ",postfix)
     # define inputs:
     Random.seed!(603)
     E = readdlm("data/energies.txt")
