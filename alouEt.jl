@@ -1914,13 +1914,17 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     end
     Fds = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_paths)
     cr = 2
+    # precompute atom strings:
+    atomsrow = [d["atoms"] for d ∈ dataset]
+    atomscol = [d["atoms"] for d ∈ dataset[max_idtrains]]
+    # main loop:
     for feat ∈ features
         f = load("data/"*feat*".jld", "data")
         # compute all kernels here once per feature to save computation time:
         println("computing kernels...")
         t = @elapsed begin
-            Kg = get_gaussian_kernel(f, f[max_idtrains], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[max_idtrains]], 2048.)
-            Kr = get_repker_atom(f, f[max_idtrains], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[max_idtrains]]) 
+            Kg = get_gaussian_kernel(f, f[max_idtrains], atomsrow, atomscol, 2048.)
+            Kr = get_repker_atom(f, f[max_idtrains], atomsrow, atomscol) 
         end
         println("kernels computation is finished in ",t)
         #println(mapreduce(x->x*1e-6, +, [Base.summarysize(Kg), Base.summarysize(Kr), Base.summarysize(f)]))
@@ -1988,6 +1992,8 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
                 open(out_file, "a") do io # writefile by batch
                     writedlm(io, permutedims(out[cr,:]))
                 end
+            else
+                println("warm up done!")
             end
             cr += 1
         end

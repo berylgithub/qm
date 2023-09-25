@@ -486,4 +486,5 @@ need to find out how to make it faster:
   - input typing --> tested, if every function is clearly-type-defined, turns out no need for warm up!
   - warm up compiler --> tested for simple function, this makes computation faster!
   - nested ThreadsX
+  - !! allocation is veyr important!, turns out this causes a lot of slowdown
   - last resort: CuArray
