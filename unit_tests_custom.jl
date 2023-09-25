@@ -76,9 +76,18 @@ function get_repker_atom_v2(F1::Vector{Matrix{Float64}}, F2::Vector{Matrix{Float
     return A
 end
 
+function test_warm_up()
+    dataset = load("data/qm9_dataset.jld", "data")
+    f = load("data/ACSF_51.jld", "data")
+    get_repker_atom_v2(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]])
+    get_repker_atom(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]])
+    c = 2048.
+    get_gaussian_kernel_v2(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]], c)
+    get_gaussian_kernel(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]], c)
+    println("warm up done!")
+end
 
-
-function test_kernels()
+function test_actual()
     Random.seed!(603)
     dataset = load("data/qm9_dataset.jld", "data")
     f = load("data/ACSF_51.jld", "data")
@@ -86,12 +95,6 @@ function test_kernels()
     idcols = 1:100
     frow = f[idrows]; fcol = f[idcols]; atomsrows = [d["atoms"] for d ∈ dataset[idrows]]; atomscols = [d["atoms"] for d ∈ dataset[idcols]];
     println("DPK:")
-    # warm up:
-    println("warm up")
-    get_repker_atom_v2(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]])
-    get_repker_atom(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]])
-    # test direct vs of dpk:
-    println("index preslicing")
     println("new:")
     @time K1 = get_repker_atom_v2(frow, fcol, atomsrows, atomscols)
     println("old:")
@@ -100,14 +103,14 @@ function test_kernels()
 
     println("GK:")
     c = 2048.
-    get_gaussian_kernel_v2(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]], c)
-    get_gaussian_kernel(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]], c)
-    # test direct vs of dpk:
-    println("index preslicing")
     println("new:")
     @time K1 = get_gaussian_kernel_v2(frow, fcol, atomsrows, atomscols, c)
     println("old:")
     @time K2 = get_gaussian_kernel(frow, fcol, atomsrows, atomscols, c)
     display(norm(K1-K2))
+end
 
+function test_kernels()
+    #test_warm_up()
+    test_actual()
 end
