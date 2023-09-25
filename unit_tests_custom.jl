@@ -91,10 +91,12 @@ function test_kernels()
     get_repker_atom_v2(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]])
     get_repker_atom(f[1:2], f[1:2], [d["atoms"] for d ∈ dataset[1:2]], [d["atoms"] for d ∈ dataset[1:2]])
     # test direct vs of dpk:
+    println("with view")
+    frow = @view f[idrows]; fcol = @view f[idcols]; atomsrows = [d["atoms"] for d ∈ dataset[idrows]]; atomscols = [d["atoms"] for d ∈ dataset[idcols]];
     println("with vartypes:")
-    @time K1 = get_repker_atom_v2(f[idrows], f[idcols], [d["atoms"] for d ∈ dataset[idrows]], [d["atoms"] for d ∈ dataset[idcols]])
+    @time K1 = get_repker_atom_v2(frow, fcol, atomsrows, atomscols)
     println("without:")
-    @time K2 = get_repker_atom(f[idrows], f[idcols], [d["atoms"] for d ∈ dataset[idrows]], [d["atoms"] for d ∈ dataset[idcols]])
+    @time K2 = get_repker_atom(frow, fcol, atomsrows, atomscols)
     display(K1)
     display(K2)
 end
