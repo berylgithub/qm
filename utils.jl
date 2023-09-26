@@ -2,7 +2,7 @@
 all kinds of utility functions
 """
 
-using LaTeXStrings, Printf, DelimitedFiles
+using LaTeXStrings, Printf, DelimitedFiles, JLD
 
 # get variable name
 macro Name(arg)
@@ -156,4 +156,13 @@ function query_min(table, colids, colnames)
     selids = query_indices(table, colids, colnames)
     minid = argmin(table[selids, 7])
     return selids[minid] # the nth index of the selected indices
+end
+
+function main_convert_datatype()
+    fpaths = ["ACSF_51", "SOAP", "FCHL19"]
+    for fp ∈ fpaths
+        f = load("data/"*fp*".jld", "data")
+        f = Matrix{Float64}.(f)
+        save("data/"*fp*".jld", "data", f)
+    end
 end
