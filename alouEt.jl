@@ -1880,7 +1880,7 @@ params:
 function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, include_hydrogens = false, warm_up = true, postfix="")
     println(n_ids,"; ",feat_ids,"; ",use_hybrid_da,"; ",include_hydrogens,"; ",warm_up,"; ",postfix)
     # define inputs:
-    Random.seed!(603)
+    Random.seed!(777)
     E = readdlm("data/energies.txt")
     dataset = load("data/qm9_dataset.jld", "data")
     numrow = length(E)
@@ -1890,7 +1890,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     end
     # split indexes:
     idall = 1:numrow
-    idtest = sample(idall, n_ids[end], replace=false)
+    idtest = sample(idall, n_ids[end], replace=false); ntests = [n_ids[end]] # for now only use one test set
     idrem = setdiff(idall, idtest) # remainder ids
     max_n = maximum(n_ids[1:end-1]) # largest ntrain
     max_idtrains = sample(idrem, max_n, replace=false)
@@ -1905,8 +1905,8 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     elvs = ["A", "AB", "ABN", "ABNT"]
     iters = Iterators.product(idtrainss, models, elvs)
     # output:
-    headers = ["ntrain", "elv", "model", "feature", "b_MAEtrain", "b_MAEtest", "MAEtrain", "MAEtest"]
-    out = Matrix{Any}(undef, 1 + reduce(*,length.([idtrainss, elvs, models, features])), length(headers))
+    headers = ["ntrain", "ntest", "elv", "model", "feature", "b_MAEtrain", "b_MAEtest", "MAEtrain", "MAEtest"]
+    out = Matrix{Any}(undef, 1 + reduce(*,length.([idtrainss, ntests, elvs, models, features])), length(headers))
     out[1,:] = headers
     # preload dressed features:
     Fds_paths = ["atomref_features", "featuresmat_bonds_qm9_post", "featuresmat_angles_qm9_post", "featuresmat_torsion_qm9_post"]
@@ -1986,7 +1986,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
             Kts = K[idtest, trids]
             Epred = Kts*θ
             MAEtest = mean(abs.(ET[idtest] - Epred))*627.503
-            out[cr, [1,2,3,4,7,8]] = [length(idtrain), elv, model, feat, MAEtrain, MAEtest]
+            out[cr, [1,2,3,4,7,8]] = [length(idtrain), length(idtest), elv, model, feat, MAEtrain, MAEtest]
             println(out[cr, :], "done !")
             out_file = "result/deltaML/MAE_enum_v2_"*postfix*".txt"
             if !isempty(feat_ids)
