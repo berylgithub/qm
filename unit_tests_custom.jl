@@ -51,6 +51,7 @@ function test_kernels()
 end
 
 function test_corr()
+    n_ids = [100, 150, 500]
     println("correctness test")
     Random.seed!(603)
     E = readdlm("data/energies.txt")
