@@ -1001,6 +1001,15 @@ function get_repker_atom(F1::Vector{Matrix{Float64}}, F2::Vector{Matrix{Float64}
     return A
 end
 
+function main_kernels_warmup()
+    strrow = strcol = [["C", "C", "C"],["C", "C", "C"]]
+    f = [rand(3,3) for i ∈ 1:2]
+    get_repker_atom(f[1:2], f[1:2], strrow, strcol)
+    c = 2048.
+    get_gaussian_kernel(f[1:2], f[1:2], strrow, strcol, c)
+    println("kernels warm up done!")
+end
+
 """
 ==================================
 """

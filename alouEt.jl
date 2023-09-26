@@ -1877,13 +1877,17 @@ more modular ΔML main caller with flexible ntrains and ntests, for use of outsi
 params:
     - n_ids is a vector of [ntrain1, ntrain2, ..., ntest], assuming max(ntrain_i) ≤ ntest
 """
-function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, include_hydrogens = false, warm_up = false, postfix="")
+function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, include_hydrogens = false, warm_up = true, postfix="")
     println(n_ids,"; ",feat_ids,"; ",use_hybrid_da,"; ",include_hydrogens,"; ",warm_up,"; ",postfix)
     # define inputs:
     Random.seed!(603)
     E = readdlm("data/energies.txt")
     dataset = load("data/qm9_dataset.jld", "data")
     nrow = length(E)
+    # warm up kernel functions:
+    if warm_up
+        main_kernels_warmup()
+    end
     # split indexes:
     idall = 1:nrow
     idtest = sample(idall, n_ids[end], replace=false)
@@ -1985,15 +1989,11 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
             out[cr, [1,2,3,4,7,8]] = [length(idtrain), elv, model, feat, MAEtrain, MAEtest]
             println(out[cr, :], "done !")
             out_file = "result/deltaML/MAE_enum_v2_"*postfix*".txt"
-            if !warm_up # switch if the compiler needs warm up
-                if !isempty(feat_ids)
-                    out_file = "result/deltaML/MAE_enum_v2_"*join(features, "-")*"_"*postfix*".txt"
-                end
-                open(out_file, "a") do io # writefile by batch
-                    writedlm(io, permutedims(out[cr,:]))
-                end
-            else
-                println("warm up done!")
+            if !isempty(feat_ids)
+                out_file = "result/deltaML/MAE_enum_v2_"*join(features, "-")*"_"*postfix*".txt"
+            end
+            open(out_file, "a") do io # writefile by batch
+                writedlm(io, permutedims(out[cr,:]))
             end
             cr += 1
         end
