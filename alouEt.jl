@@ -1968,7 +1968,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
                 println([MAEtrain, MAEtest])
                 ET -= Et
             end
-            out[cr, [5,6]] = [MAEtrain, MAEtest] # store baseline MAE
+            out[cr, [6,7]] = [MAEtrain, MAEtest] # store baseline MAE
             # model train & pred:
             trids = indexin(idtrain, max_idtrains) # relative column trainid
             if model == "GK"
@@ -1986,7 +1986,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
             Kts = K[idtest, trids]
             Epred = Kts*θ
             MAEtest = mean(abs.(ET[idtest] - Epred))*627.503
-            out[cr, [1,2,3,4,7,8]] = [length(idtrain), length(idtest), elv, model, feat, MAEtrain, MAEtest]
+            out[cr, [1,2,3,4,5,8,9]] = [length(idtrain), length(idtest), elv, model, feat, MAEtrain, MAEtest]
             println(out[cr, :], "done !")
             out_file = "result/deltaML/MAE_enum_v2_"*postfix*".txt"
             if !isempty(feat_ids)
