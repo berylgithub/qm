@@ -1,10 +1,10 @@
-#include("RoSemi.jl")
+include("RoSemi.jl")
 using Random
 
 function test_warm_up()
     strrow = strcol = [["C", "C", "C"],["C", "C", "C"]]
     Random.seed!(603)
-    f = [for i ∈ 1:2 rand(3,3)]
+    f = [rand(3,3) for i ∈ 1:2]
     get_repker_atom(f[1:2], f[1:2], strrow, strcol)
     c = 2048.
     get_gaussian_kernel(f[1:2], f[1:2], strrow, strcol, c)
@@ -20,7 +20,7 @@ function test_actual()
     frow = f[idrows]; fcol = f[idcols]; atomsrows = [d["atoms"] for d ∈ dataset[idrows]]; atomscols = [d["atoms"] for d ∈ dataset[idcols]];
     println("DPK:")
     @time K1 = get_repker_atom(frow, fcol, atomsrows, atomscols)
-    
+
     println("GK:")
     c = 2048.
     @time K1 = get_gaussian_kernel(frow, fcol, atomsrows, atomscols, c)
