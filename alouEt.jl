@@ -1530,17 +1530,17 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
     println("baseline and enumerated fitting ",(@Name(use_preselected_train), use_preselected_train), (@Name(use_hybrid_da), use_hybrid_da), (@Name(pca_db), pca_db), (@Name(pca_dn), pca_dn), (@Name(pca_dt), pca_dt), (@Name(postfix), postfix))
     # def:
     E = readdlm("data/energies.txt")
-    nrow = length(E)
+    numrow = length(E)
     
     # select split indexes, will be used for baseline and last level fitting:
     Random.seed!(603)
-    idall = 1:nrow
+    idall = 1:numrow
     if use_preselected_train
         rank = 2 #select set w/ 2nd ranked training MAE
         id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
         idtrain = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, id])    
     else
-        idtrain = sample(1:nrow, 100, replace=false)
+        idtrain = sample(1:numrow, 100, replace=false)
     end
     idtest = setdiff(idall, idtrain)
 
@@ -1740,10 +1740,10 @@ function main_base_fitting(; postfix = "")
     # pre-computations:
     Random.seed!(603) # setseed for reproducibilty
     E = readdlm("data/energies.txt")
-    nrow = length(E)
-    idall = 1:nrow
+    numrow = length(E)
+    idall = 1:numrow
     max_ntrain = 100_000
-    idtrain_max = sample(1:nrow, max_ntrain, replace=false)
+    idtrain_max = sample(1:numrow, max_ntrain, replace=false)
     F = load("data/atomref_features.jld", "data")
     Fb = load("data/featuresmat_bonds_qm9_post.jld", "data")
     Fa = load("data/featuresmat_angles_qm9_post.jld", "data")
@@ -1883,13 +1883,13 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     Random.seed!(603)
     E = readdlm("data/energies.txt")
     dataset = load("data/qm9_dataset.jld", "data")
-    nrow = length(E)
+    numrow = length(E)
     # warm up kernel functions:
     if warm_up
         main_kernels_warmup()
     end
     # split indexes:
-    idall = 1:nrow
+    idall = 1:numrow
     idtest = sample(idall, n_ids[end], replace=false)
     idrem = setdiff(idall, idtest) # remainder ids
     max_n = maximum(n_ids[1:end-1]) # largest ntrain
