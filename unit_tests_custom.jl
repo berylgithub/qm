@@ -1,5 +1,5 @@
 include("RoSemi.jl")
-using Random
+using Random, DelimitedFiles
 
 function get_repker_atom_old(F1, F2, L1, L2; threading=true)
     if threading
