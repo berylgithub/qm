@@ -488,3 +488,4 @@ need to find out how to make it faster:
   - nested ThreadsX
   - !! allocation is veyr important!, turns out this causes a lot of slowdown
   - last resort: CuArray
+? gaussian kernel's norm function causes a big allocation, need to think of a way to minimize the alloc (but seems impossible) ==>> manual implementation of normsquared is much faster! Julia is awesome!!

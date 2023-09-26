@@ -3,7 +3,11 @@ using Random
 
 
 function comp_gauss_atom_v2(u::Union{Vector{Float64}, SubArray{Float64, 1}}, v::Union{Vector{Float64}, SubArray{Float64, 1}}, c::Float64)::Float64
-    return exp((-norm(u - v)^2)/c)
+    ssum = 0.
+    @simd for i ∈ eachindex(u)
+        @inbounds ssum += (u[i]-v[i])^2
+    end
+    return exp(-ssum/c)
 end
 
 function comp_atomic_gaussian_entry_v2(f1::Matrix{Float64}, f2::Matrix{Float64}, l1::Vector{String}, l2::Vector{String}, c::Float64)::Float64
@@ -111,6 +115,6 @@ function test_actual()
 end
 
 function test_kernels()
-    #test_warm_up()
+    test_warm_up()
     test_actual()
 end
