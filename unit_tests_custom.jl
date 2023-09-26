@@ -67,10 +67,13 @@ function test_corr()
     f = load("data/FCHL19.jld", "data")
     Fds = [load("data/atomref_features.jld", "data")]
     atomsrow = [d["atoms"] for d ∈ dataset]
-    atomscol = [d["atoms"] for d ∈ dataset[max_idtrains]]
-    Kr = get_repker_atom(f, f[max_idtrains], atomsrow, atomscol)
     ET = E
     idtrain = idtrainss[1]
+    # try using the pre-generated ids:
+    idss = load("data/test_corr_ids.jld", "data")
+    idtrain = idss[1]; idtest = idss[3]; max_idtrains = idss[2]
+    atomscol = [d["atoms"] for d ∈ dataset[max_idtrains]]
+    Kr = get_repker_atom(f, f[max_idtrains], atomsrow, atomscol)
     println(idtrain)
     θ = Fds[1][idtrain, :]\ET[idtrain];
     Ea = Fds[1]*θ
@@ -81,20 +84,6 @@ function test_corr()
     trids = indexin(idtrain, max_idtrains)
     println("new kernel code:")
     K = Kr
-    Ktr = K[idtrain, trids]
-    Ktr[diagind(Ktr)] .+= 1e-8
-    θ = Ktr\ET[idtrain]
-    Epred = Ktr*θ
-    MAEtrain = mean(abs.(ET[idtrain] - Epred))*627.503
-    # pred:
-    Kts = K[idtest, trids]
-    Epred = Kts*θ
-    MAEtest = mean(abs.(ET[idtest] - Epred))*627.503
-    println([MAEtrain, MAEtest])
-    # use the old iterators:
-    println("old kernel code:")
-    Krold = get_repker_atom_old(f, f[max_idtrains], atomsrow, atomscol)
-    K = Krold
     Ktr = K[idtrain, trids]
     Ktr[diagind(Ktr)] .+= 1e-8
     θ = Ktr\ET[idtrain]
