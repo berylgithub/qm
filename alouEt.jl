@@ -2018,7 +2018,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
             t_mtest = @elapsed Epred = Kts*θ
             MAEtest = mean(abs.(ET[idtest] - Epred))*627.503
             out[cr, [1,2,3,4,5,8,9]] = [length(idtrain), length(idtest), elv, model, feat, MAEtrain, MAEtest]
-            out[cr, [10:14]] = [t_mcom, t_etrain, t_epred, t_mtrain, t_mtest] # timers
+            out[cr, 10:14] = [t_mcom, t_etrain, t_epred, t_mtrain, t_mtest] # timers
             println(out[cr, :], "done !")
             out_file = "result/deltaML/MAE_enum_v2_"*postfix*".txt"
             if !isempty(feat_ids)
