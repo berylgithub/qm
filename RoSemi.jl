@@ -1002,6 +1002,7 @@ function get_repker_atom(F1::Vector{Matrix{Float64}}, F2::Vector{Matrix{Float64}
 end
 
 function main_kernels_warmup()
+    y = rand(1000,100)\rand(1000) # solver warmup
     strrow = strcol = [["C", "C", "C"],["C", "C", "C"]]
     f = [rand(3,3) for i ∈ 1:2]
     get_repker_atom(f[1:2], f[1:2], strrow, strcol)
