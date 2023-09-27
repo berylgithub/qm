@@ -1905,7 +1905,9 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     elvs = ["A", "AB", "ABN", "ABNT"]
     iters = Iterators.product(idtrainss, models, elvs)
     # output:
-    headers = ["ntrain", "ntest", "elv", "model", "feature", "b_MAEtrain", "b_MAEtest", "MAEtrain", "MAEtest"]
+    headers = ["ntrain", "ntest", "elv", "model", "feature", 
+                "b_MAEtrain", "b_MAEtest", "MAEtrain", "MAEtest", 
+                "t_mcom", "t_etrain", "t_epred", "t_mtrain", "t_mtest"]
     out = Matrix{Any}(undef, 1 + reduce(*,length.([idtrainss, ntests, elvs, models, features])), length(headers))
     out[1,:] = headers
     # preload dressed features:
@@ -1926,43 +1928,70 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
         f = load("data/"*feat*".jld", "data")
         # compute all kernels here once per feature to save computation time:
         println("computing kernels...")
-        t = @elapsed begin
+        t_kg = @elapsed begin
             Kg = get_gaussian_kernel(f, f[max_idtrains], atomsrow, atomscol, 2048.)
-            Kr = get_repker_atom(f, f[max_idtrains], atomsrow, atomscol) 
         end
-        println("kernels computation is finished in ",t)
+        t_kr = @elapsed begin
+            Kr = get_repker_atom(f, f[max_idtrains], atomsrow, atomscol)  
+        end
+        println("kernels computation is finished in ", [t_kg, t_kr])
         #println(mapreduce(x->x*1e-6, +, [Base.summarysize(Kg), Base.summarysize(Kr), Base.summarysize(f)]))
         for it ∈ iters
+            t_etrain = t_epred = t_mtrain = t_mtest = 0 # reset timer tracker
             ET = E # reset E
             idtrain = it[1]; model = it[2]; elv = it[3];
             # compute baseline energies:
             if occursin("A", elv)
-                θ = Fds[1][idtrain, :]\ET[idtrain];
-                Ea = Fds[1]*θ
+                t = @elapsed begin
+                    θ = Fds[1][idtrain, :]\ET[idtrain];
+                end
+                t_etrain += t
+                t = @elapsed begin
+                    Ea = Fds[1]*θ
+                end
+                t_epred += t
                 MAEtrain = mean(abs.(ET[idtrain] - Ea[idtrain]))*627.503
                 MAEtest = mean(abs.(ET[idtest] - Ea[idtest]))*627.503
                 println([MAEtrain, MAEtest])
                 ET -= Ea
             end
             if occursin("B", elv)
-                θ = Fds[2][idtrain, :]\ET[idtrain];
-                Eb = Fds[2]*θ
+                t = @elapsed begin
+                    θ = Fds[2][idtrain, :]\ET[idtrain];
+                end
+                t_etrain += t
+                t = @elapsed begin
+                    Eb = Fds[2]*θ
+                end
+                t_epred += t
                 MAEtrain = mean(abs.(ET[idtrain] - Eb[idtrain]))*627.503
                 MAEtest = mean(abs.(ET[idtest] - Eb[idtest]))*627.503
                 println([MAEtrain, MAEtest])
                 ET -= Eb
             end
             if occursin("N", elv)
-                θ = Fds[3][idtrain, :]\ET[idtrain];
-                En = Fds[3]*θ
+                t = @elapsed begin
+                    θ = Fds[3][idtrain, :]\ET[idtrain];
+                end
+                t_etrain += t
+                t = @elapsed begin
+                    En = Fds[3]*θ
+                end
+                t_epred += t
                 MAEtrain = mean(abs.(ET[idtrain] - En[idtrain]))*627.503
                 MAEtest = mean(abs.(ET[idtest] - En[idtest]))*627.503
                 println([MAEtrain, MAEtest])
                 ET -= En
             end
             if occursin("T", elv)
-                θ = Fds[4][idtrain, :]\ET[idtrain];
-                Et = Fds[4]*θ
+                t = @elapsed begin
+                    θ = Fds[4][idtrain, :]\ET[idtrain];
+                end
+                t_etrain += t
+                t = @elapsed begin
+                    Et = Fds[4]*θ
+                end
+                t_epred += t
                 MAEtrain = mean(abs.(ET[idtrain] - Et[idtrain]))*627.503
                 MAEtest = mean(abs.(ET[idtest] - Et[idtest]))*627.503
                 println([MAEtrain, MAEtest])
@@ -1973,20 +2002,23 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
             trids = indexin(idtrain, max_idtrains) # relative column trainid
             if model == "GK"
                 K = Kg
+                t_mcom = t_kg
             elseif model == "DPK"
                 K = Kr
+                t_mcom = t_kr
             end
             # train:
             Ktr = K[idtrain, trids]
             Ktr[diagind(Ktr)] .+= 1e-8
-            θ = Ktr\ET[idtrain]
+            t_mtrain = @elapsed θ = Ktr\ET[idtrain] 
             Epred = Ktr*θ
             MAEtrain = mean(abs.(ET[idtrain] - Epred))*627.503
             # pred:
             Kts = K[idtest, trids]
-            Epred = Kts*θ
+            t_mtest = @elapsed Epred = Kts*θ
             MAEtest = mean(abs.(ET[idtest] - Epred))*627.503
             out[cr, [1,2,3,4,5,8,9]] = [length(idtrain), length(idtest), elv, model, feat, MAEtrain, MAEtest]
+            out[cr, [10:14]] = [t_mcom, t_etrain, t_epred, t_mtrain, t_mtest] # timers
             println(out[cr, :], "done !")
             out_file = "result/deltaML/MAE_enum_v2_"*postfix*".txt"
             if !isempty(feat_ids)
