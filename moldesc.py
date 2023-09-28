@@ -455,7 +455,9 @@ def extract_MBDF():
     elements = np.unique(np.concatenate(ncs))
     print(ncs)
     print(coors)
-
+    mbdf = generate_mbdf(ncs, coors)
+    print(mbdf)
+    print(mbdf.shape)
 
 
 # main:
