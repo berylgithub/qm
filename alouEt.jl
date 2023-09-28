@@ -1902,7 +1902,8 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     idtrainss = map(n_id -> max_idtrains[1:n_id], n_ids[1:end-1]) # vector of vectors
     models = ["GK", "DPK"] # each will be ~24GB, x2 = ~48GB
     #solvers = ["direct", "cgls"] # just use direct for now for Proof of Concept
-    elvs = ["A", "AB", "ABN", "ABNT"]
+    #elvs = ["A", "AB", "ABN", "ABNT"] # "stair" mode of elvl
+    elvs = ["A", "B", "N", "T"]; elvs = join.(collect(powerset(elvs, 1))) # power mode of elvl
     iters = Iterators.product(idtrainss, models, elvs)
     # output:
     headers = ["ntrain", "ntest", "elv", "model", "feature", 
