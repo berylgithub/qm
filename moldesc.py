@@ -458,6 +458,9 @@ def extract_MBDF():
     mbdf = generate_mbdf(ncs, coors)
     print(mbdf)
     print(mbdf.shape)
+    # write to file:
+    for i, elem in enumerate(mbdf):
+        np.savetxt("/users/baribowo/Dataset/gdb9-14b/mbdf/"+str(i)+".txt", elem, delimiter="\t")
 
 
 # main:
