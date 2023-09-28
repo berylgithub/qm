@@ -446,13 +446,15 @@ def extract_QML_features():
 
 def extract_MBDF():
     geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
-    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])[0:5]
     print("Ndata = ",len(onlyfiles))
     compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
+    coors = [mol.coordinates for mol in compounds]
     #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
     ncs = [(mol.nuclear_charges) for mol in compounds]
     elements = np.unique(np.concatenate(ncs))
-    print(elements)
+    print(ncs)
+    print(coors)
 
 
 
