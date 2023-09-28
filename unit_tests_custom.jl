@@ -1,6 +1,57 @@
 include("RoSemi.jl")
 using Random, DelimitedFiles
 
+"""
+inner product kernel entry (reproducing kernel)
+"""
+function comp_repker_entry_t(u::AbstractArray, v::AbstractArray)::Float64
+    return u'v
+end
+
+"""
+atomic level repker: K_ll' = ∑_{ij} δ_{il,jl'} K(ϕ_il, ϕ_jl')
+similar to gaussian kernel entry
+"""
+function comp_atomic_repker_entry_t(f1::AbstractArray, f2::AbstractArray, l1::Vector{String}, l2::Vector{String})::Float64
+    entry = 0.
+    @simd for i ∈ eachindex(l1)
+        @simd for j ∈ eachindex(l2)
+            @inbounds begin
+                if l1[i] == l2[j] # manually set Kronecker delta using if 
+                    @views d = comp_repker_entry_t(f1[i, :], f2[j, :]) # (vector, vector, scalar)
+                    entry += d
+                end 
+            end
+        end
+    end
+    return entry
+end
+
+function get_repker_atom_t(F1::AbstractArray, F2::AbstractArray, L1::Vector{Vector{String}}, L2::Vector{Vector{String}}; threading=true)::Matrix{Float64}
+    if threading
+        rowids = eachindex(L1); colids = eachindex(L2)
+        iterids = Iterators.product(rowids, colids)
+        A = ThreadsX.map((tuple_id) -> comp_atomic_repker_entry_t(F1[tuple_id[1]], F2[tuple_id[2]], L1[tuple_id[1]], L2[tuple_id[2]]), iterids)
+    else
+        nm1 = length(L1); nm2 = length(L2)
+        A = zeros(nm1, nm2)
+        @simd for j ∈ eachindex(L2) # col
+            @simd for i ∈ eachindex(L1) # row
+                @inbounds A[i, j] = comp_atomic_repker_entry(F1[i], F2[j], L1[i], L2[j])
+            end
+        end
+    end
+    return A
+end
+
+function test_dt()
+    strrow = strcol = [["C", "C", "C"],["C", "C", "C"]]
+    Random.seed!(603)
+    f = [rand(3,3)' for i ∈ 1:2]
+    K = get_repker_atom(f[1:2], f[1:2], strrow, strcol)
+end
+
+
 function test_warm_up()
     strrow = strcol = [["C", "C", "C"],["C", "C", "C"]]
     Random.seed!(603)

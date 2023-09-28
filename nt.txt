@@ -492,3 +492,4 @@ need to find out how to make it faster:
 
 26.09.23:
 - careful with randomseed, 603 somehow has bad seed for 150 data...
+! error when spawning new sim when spawning the kernel methods, need to check the data type of Vector{Adjoint{Float64, Matrix{Float64}}} --> changed everything to AbstractArray

@@ -894,7 +894,7 @@ FCHL-ish kernels
 compute the gaussian difference
 vector or matrix u,v, scalar cσ := 2*σ^2
 """
-function comp_gauss_atom(u::Union{Vector{Float64}, SubArray{Float64, 1}}, v::Union{Vector{Float64}, SubArray{Float64, 1}}, c::Float64)::Float64
+function comp_gauss_atom(u::AbstractArray, v::AbstractArray, c::Float64)::Float64
     ssum = 0.
     @simd for i ∈ eachindex(u)
         @inbounds ssum += (u[i]-v[i])^2
@@ -907,7 +907,7 @@ atomic feature matrix fn of mol n,
 list of atoms ln of mol n, 
 gaussian scaler scalar σ 
 """
-function comp_atomic_gaussian_entry(f1::Matrix{Float64}, f2::Matrix{Float64}, l1::Vector{String}, l2::Vector{String}, c::Float64)::Float64
+function comp_atomic_gaussian_entry(f1::AbstractArray, f2::AbstractArray, l1::Vector{String}, l2::Vector{String}, c::Float64)::Float64
     entry = 0.
     @simd for i ∈ eachindex(l1)
         @simd for j ∈ eachindex(l2)
@@ -928,7 +928,7 @@ params:
     - Fn: vector of atomic features of several molecules
     - Ln: vector of list of atoms
 """
-function get_gaussian_kernel(F1::Vector{Matrix{Float64}}, F2::Vector{Matrix{Float64}}, L1::Vector{Vector{String}}, L2::Vector{Vector{String}}, c::Float64; threading=true)::Matrix{Float64}
+function get_gaussian_kernel(F1::AbstractArray, F2::AbstractArray, L1::Vector{Vector{String}}, L2::Vector{Vector{String}}, c::Float64; threading=true)::Matrix{Float64}
     if threading
         rowids = eachindex(L1); colids = eachindex(L2)
         iterids = Iterators.product(rowids, colids)
@@ -948,7 +948,7 @@ end
 """
 inner product kernel entry (reproducing kernel)
 """
-function comp_repker_entry(u::Union{Vector{Float64}, SubArray{Float64, 1}}, v::Union{Vector{Float64}, SubArray{Float64, 1}})::Float64
+function comp_repker_entry(u::AbstractArray, v::AbstractArray)::Float64
     return u'v
 end
 
@@ -969,7 +969,7 @@ end
 atomic level repker: K_ll' = ∑_{ij} δ_{il,jl'} K(ϕ_il, ϕ_jl')
 similar to gaussian kernel entry
 """
-function comp_atomic_repker_entry(f1::Matrix{Float64}, f2::Matrix{Float64}, l1::Vector{String}, l2::Vector{String})::Float64
+function comp_atomic_repker_entry(f1::AbstractArray, f2::AbstractArray, l1::Vector{String}, l2::Vector{String})::Float64
     entry = 0.
     @simd for i ∈ eachindex(l1)
         @simd for j ∈ eachindex(l2)
@@ -984,7 +984,7 @@ function comp_atomic_repker_entry(f1::Matrix{Float64}, f2::Matrix{Float64}, l1::
     return entry
 end
 
-function get_repker_atom(F1::Vector{Matrix{Float64}}, F2::Vector{Matrix{Float64}}, L1::Vector{Vector{String}}, L2::Vector{Vector{String}}; threading=true)::Matrix{Float64}
+function get_repker_atom(F1::AbstractArray, F2::AbstractArray, L1::Vector{Vector{String}}, L2::Vector{Vector{String}}; threading=true)::Matrix{Float64}
     if threading
         rowids = eachindex(L1); colids = eachindex(L2)
         iterids = Iterators.product(rowids, colids)
