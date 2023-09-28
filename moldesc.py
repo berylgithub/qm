@@ -13,6 +13,7 @@ import qml
 from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
 from qml.math import cho_solve
 import scipy.sparse
+from MBDF import generate_mbdf
 
 
 
@@ -441,6 +442,17 @@ def extract_QML_features():
     #X = np.array([mol.representation for mol in compounds])
     #print(compounds[0].representation.shape)
     #np.savetxt("/users/baribowo/Dataset/coulomb_zaspel.txt", X, delimiter="\t")
+
+
+def extract_MBDF():
+    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    print("Ndata = ",len(onlyfiles))
+    compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
+    #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
+    ncs = [(mol.nuclear_charges) for mol in compounds]
+    elements = np.unique(np.concatenate(ncs))
+    print(elements)
 
 
 
