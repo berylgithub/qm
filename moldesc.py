@@ -449,9 +449,9 @@ def extract_MBDF():
     onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])[0:5]
     print("Ndata = ",len(onlyfiles))
     compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
-    coors = [mol.coordinates for mol in compounds]
+    coors = np.array([mol.coordinates for mol in compounds])
     #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
-    ncs = [mol.nuclear_charges for mol in compounds]
+    ncs = np.array([mol.nuclear_charges for mol in compounds])
     elements = np.unique(np.concatenate(ncs))
     print(ncs)
     print(coors)
