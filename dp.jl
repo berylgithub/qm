@@ -174,6 +174,31 @@ function getSOAP()
     save("data/SOAP.jld", "data", f)
 end
 
+function getMBDF()
+    folderpath = "/users/baribowo/Dataset/gdb9-14b/mbdf/"
+    dataset = load("data/qm9_dataset.jld", "data")
+    files = readdir(folderpath) # the format is lexicographic here instead of standard numbering, i.e., 10 < 2
+    nmol = length(files)
+    ids = 1:nmol
+    nf = 6
+    f = Vector{Matrix{Float64}}(undef, nmol)
+    for i ∈ ids
+        filepath = folderpath*string(i)*".txt"
+        f[i] = readdlm(filepath)
+        println(filepath, " done!!")
+    end
+    # slice rows by exids:
+    exids = vec(Int.(readdlm("data/exids.txt")))
+    f = f[setdiff(ids, exids)]
+    display(f)
+    # remove zeros using dataset:
+    for i ∈ eachindex(f)
+        natom = dataset[i]["n_atom"]
+        f[i] = f[i][1:natom, :]
+    end
+    save("data/MBDF.jld", "data", f) # save to file
+end
+
 function table_results(foldername)
     sheader = ["n_data", "n_af", "n_mf", "n_basis", "num_centers", "ft_sos", "ft_bin"]
     rheader = ["Nqm9", "nK", "nU", "n_feature", "n_basis", "MAE", "RMSD", "max(MAD)", "t_ab", "t_ls", "t_batch"]
