@@ -152,9 +152,9 @@ params:
     - colids: list of column ids selected for query
     - colnames: list of name of the columns in which we want to look the minimum from
 """
-function query_min(table, colids, colnames)
+function query_min(table, colids, colnames, idselcol)
     selids = query_indices(table, colids, colnames)
-    minid = argmin(table[selids, 7])
+    minid = argmin(table[selids, idselcol])
     return selids[minid] # the nth index of the selected indices
 end
 
