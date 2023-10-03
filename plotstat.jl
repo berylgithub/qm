@@ -394,7 +394,7 @@ function main_tb_hda()
 end
 
 function MAE_enum_v2_plot()
-    tb = readdlm("result/deltaML/MAE_enum_v2_30k_100k_H_280923.txt")
+    tb = readdlm("result/deltaML/MAE_enum_v2_30k_100k_H_280923.txt") # assume the default includes Hydrogens
     display(tb)
     minid = query_min(tb, [], [], 9) # 9 is the index of the test MAE
     # query b_MAEs_* from one table:
@@ -404,10 +404,9 @@ function MAE_enum_v2_plot()
         qid = query_indices(tb, [3, 4, 5], [b, "GK", "ACSF_51"])
         push!(b_MAEs, tb[qid, 7])
     end
-    display(b_MAEs)
-    # sample w/ for (elv, solver) = ([A, AB], GK):
     xticks = tb[1:8, 1]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
-    yticks = [2^i for i ∈ 1:5]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    yticks = yticks_generator(reduce(vcat, b_MAEs), 7) ∪ [12, 16];
+    ytformat = map(x -> @sprintf("%.0f",x), yticks)
     #ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
     p = plot(xticks, b_MAEs,
             yticks = (yticks, ytformat), xticks = (xticks, xtformat),
@@ -416,6 +415,24 @@ function MAE_enum_v2_plot()
             labels = ["A" "AB" "ABN" "ABNT"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
         )
     display(p)
-    qids_A = query_indices(tb, [3, 4], ["A", "GK"])
-    qids_AB = query_indices(tb, [3, 4], ["AB", "GK"])
+    # sample w/ for (elv, solver) = ([A, AB, ABN, ABNT], GK):
+    MAEs = []
+    for (i,b) ∈ enumerate(bs)
+        qid = query_indices(tb, [3, 4, 5], [b, "GK", "FCHL19"])
+        push!(MAEs, tb[qid, 9])
+    end
+    qids_A = query_indices(tb, [3, 4,5], ["A", "GK", "FCHL19"])
+    qids_AB = query_indices(tb, [3, 4,5], ["AB", "GK", "FCHL19"])
+    # e.g., on FCHL19 space:
+    ys = [tb[qids_A, 9], tb[qids_AB, 9]]
+    yticks = [2.0^i for i ∈ 0:4]
+    ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    p = plot(xticks, MAEs,
+            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            xaxis = :log, yaxis = :log,
+            markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
+            labels = ["A" "AB" "ABN" "ABNT"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+        )
+    hline!([1], labels = nothing)
+    display(p)
 end
