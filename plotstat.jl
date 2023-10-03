@@ -392,3 +392,30 @@ function main_tb_hda()
     jtb_tex[2:end, 2:end] = clean_float(jtb_tex[2:end, 2:end])
     writelatextable(jtb_tex, "result/deltaML/tb_enum_da-vs-hda.tex"; hline=false)
 end
+
+function MAE_enum_v2_plot()
+    tb = readdlm("result/deltaML/MAE_enum_v2_30k_100k_H_280923.txt")
+    display(tb)
+    minid = query_min(tb, [], [], 9) # 9 is the index of the test MAE
+    # query b_MAEs_* from one table:
+    b_MAEs = [] # will be a vector of vectors
+    bs = ["A", "AB", "ABN", "ABNT"]
+    for (i,b) ∈ enumerate(bs)
+        qid = query_indices(tb, [3, 4, 5], [b, "GK", "ACSF_51"])
+        push!(b_MAEs, tb[qid, 7])
+    end
+    display(b_MAEs)
+    # sample w/ for (elv, solver) = ([A, AB], GK):
+    xticks = tb[1:8, 1]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
+    yticks = [2^i for i ∈ 1:5]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    #ytformat = vcat(string(round(yticks[1], digits=3)), map(x -> @sprintf("%.0f",x), yticks[2:end-1]), string(round(yticks[end], digits=3)))
+    p = plot(xticks, b_MAEs,
+            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            xaxis = :log, yaxis = :log,
+            markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
+            labels = ["A" "AB" "ABN" "ABNT"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+        )
+    display(p)
+    qids_A = query_indices(tb, [3, 4], ["A", "GK"])
+    qids_AB = query_indices(tb, [3, 4], ["AB", "GK"])
+end
