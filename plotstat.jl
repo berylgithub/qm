@@ -436,3 +436,35 @@ function MAE_enum_v2_plot()
     hline!([1], labels = nothing)
     display(p)
 end
+
+function test_bond_energy_plot()
+    # ZiZkr^-c:
+    function pairpot(Z1, Z2, r, c)
+        return Z1*Z2/r^c
+    end
+    Zs = Float64.([1,6,7,8,9]) # [H, C, N, O, F]
+    rs = range(0., 2., 1000)
+    cs = Float64.([1, 6])
+    
+    x = rs
+    y = pairpot.(Zs[2], Zs[4], rs, cs[2])
+    display(y)
+    plot(x, y, ylims = [0, 100])
+
+    # morse:
+    function morse_pot(r, D, a, r0, mode=2)
+        if mode==1
+            return D*(exp(-2*a*(r-r0)) - 2*exp(-a*(r-r0)))
+        elseif mode == 2
+            return D*(1-exp(-a*(r-r0)))^2
+        end
+    end
+    D = 0.5
+    a = 2.
+    r0 = 1.
+    x = rs
+    y = morse_pot.(rs, D, a, r0)
+    display(y)
+    plot(x, y, ylims = [-D - 0.05, D + 0.05])
+    hline!([-D])
+end
