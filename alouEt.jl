@@ -1533,7 +1533,7 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
     numrow = length(E)
     
     # select split indexes, will be used for baseline and last level fitting:
-    Random.seed!(603)
+    Random.seed!(777) #Random.seed!(603)
     idall = 1:numrow
     if use_preselected_train
         rank = 2 #select set w/ 2nd ranked training MAE
@@ -1611,7 +1611,7 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
     writedlm("result/deltaML/MAE_base_"*postfix*".txt", MAEs)
     writedlm("data/energy_clean_"*postfix*".txt", E-Eda-Edb-Edn-Edt) # save cleaned energy
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF_51", "SOAP", "FCHL19"] # outtest loop
+    features = ["ACSF_51", "SOAP", "FCHL19", "MBDF"] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"]
