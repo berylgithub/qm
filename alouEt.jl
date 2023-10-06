@@ -1533,7 +1533,7 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
     numrow = length(E)
     
     # select split indexes, will be used for baseline and last level fitting:
-    Random.seed!(777) #Random.seed!(603)
+    Random.seed!(777) #Random.seed!(603) # looks like 777 is better for random
     idall = 1:numrow
     if use_preselected_train
         rank = 2 #select set w/ 2nd ranked training MAE
