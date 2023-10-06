@@ -435,6 +435,26 @@ function MAE_enum_v2_plot()
         )
     hline!([1], labels = nothing)
     display(p)
+    # look at MBDF acc to determine whether it's feasible for dataselection:
+    tb2 = readdlm("result/deltaML/MAE_enum_v2_MBDF_30k_100k_H_280923-2.txt")
+    minid2 = query_min(tb2, [], [], 9)
+    display(tb2[minid2,9])
+    qids_A = query_indices(tb, [3,4,5], ["A", "GK", "ACSF_51"])
+    qids_AB = query_indices(tb, [3,4,5], ["AB", "GK", "ACSF_51"])
+    qids1_A = query_indices(tb, [3,4,5], ["A", "GK", "FCHL19"])
+    qids1_AB = query_indices(tb, [3,4,5], ["AB", "GK", "FCHL19"])
+    qids2_A = query_indices(tb2, [3,4,5], ["A", "GK", "MBDF"])
+    qids2_AB = query_indices(tb2, [3,4,5], ["AB", "GK", "MBDF"])
+    ys = [tb[qids_A, 9], tb[qids_AB, 9], tb[qids1_A, 9], tb[qids1_AB, 9], tb2[qids2_A, 9], tb2[qids2_AB, 9]]
+    p = plot(xticks, ys,
+            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            xaxis = :log, yaxis = :log,
+            markershape = [:circle :rect :diamond :utriangle], markersize = (ones(5)*6)',
+            labels = ["(ACSF, A)" "(ACSF, AB)" "(FCHL19, A)" "(FCHL19, AB)" "(MBDF, A)" "(MBDF, AB)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+        )
+    display(p)
+    qid100 = 
+    display(tb2[qids2_A,:])
 end
 
 function test_bond_energy_plot()
@@ -443,7 +463,7 @@ function test_bond_energy_plot()
         return Z1*Z2/r^c
     end
     Zs = Float64.([1,6,7,8,9]) # [H, C, N, O, F]
-    rs = range(0., 2., 1000)
+    rs = range(0., 5., 1000)
     cs = Float64.([1, 6])
     
     x = rs
@@ -452,7 +472,7 @@ function test_bond_energy_plot()
     plot(x, y, ylims = [0, 100])
 
     # morse:
-    function morse_pot(r, D, a, r0, mode=2)
+    function morse_pot(r, D, a, r0, mode=1)
         if mode==1
             return D*(exp(-2*a*(r-r0)) - 2*exp(-a*(r-r0)))
         elseif mode == 2
@@ -465,6 +485,6 @@ function test_bond_energy_plot()
     x = rs
     y = morse_pot.(rs, D, a, r0)
     display(y)
-    plot(x, y, ylims = [-D - 0.05, D + 0.05])
-    hline!([-D])
+    plot(x, y, ylims = [-1., 1.])
+    #hline!([-D])
 end
