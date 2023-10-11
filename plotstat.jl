@@ -453,7 +453,7 @@ function MAE_enum_v2_plot()
             labels = ["(ACSF, A)" "(ACSF, AB)" "(FCHL19, A)" "(FCHL19, AB)" "(MBDF, A)" "(MBDF, AB)"], xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
         )
     display(p)
-    qid100 = 
+    qid100 = [] 
     display(tb2[qids2_A,:])
 end
 
@@ -472,19 +472,20 @@ function test_bond_energy_plot()
     plot(x, y, ylims = [0, 100])
 
     # morse:
-    function morse_pot(r, D, a, r0, mode=1)
+    function morse_pot(r, D, a, r0, s; mode=2)
         if mode==1
-            return D*(exp(-2*a*(r-r0)) - 2*exp(-a*(r-r0)))
+            return D*(exp(-2*a*(r-r0)) - 2*exp(-a*(r-r0))) + s # additional shift constant s for "pure" fitting
         elseif mode == 2
             return D*(1-exp(-a*(r-r0)))^2
         end
     end
-    D = 0.5
+    D = .5
     a = 2.
     r0 = 1.
+    s = 0.
     x = rs
-    y = morse_pot.(rs, D, a, r0)
+    y = morse_pot.(rs, D, a, r0, s,mode=1)
     display(y)
     plot(x, y, ylims = [-1., 1.])
-    #hline!([-D])
+    
 end
