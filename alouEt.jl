@@ -1309,7 +1309,7 @@ end
 diskless version, should be faster than the counterpart
 """
 function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername; 
-                    bsize=1_000, tlimit=900, model="ROSEMI", ca = 2048., cm=2048., uid="", kid="")
+                    bsize=1_000, tlimit=900, model="ROSEMI", solver="cgls", ca = 2048., cm=2048., uid="", kid="")
     # file loaders:
     println("FITTING: $foldername")
     println("model type = ", model)
@@ -1337,15 +1337,15 @@ function full_fit_🌹(E, dataset, F, f, centers, ϕ, dϕ, foldername;
         D = fcenterdist(F', centers)
         MAE, MADmax_idxes, t_ls, t_pred = fitter(F, E, D, ϕ, dϕ, Midx, centers, Uidx, Widx, n_feature, foldername, bsize, tlimit)
     elseif model == "KRR" 
-        MAE, t_ls, t_pred = fitter_KRR(F', E, Midx, centers, Widx, 1:100, tlimit; scaler=cm)
+        MAE, t_ls, t_pred = fitter_KRR(F', E, Midx, centers, Widx, 1:100, tlimit; scaler=cm, solver=solver)
     elseif model == "NN"
         MAE, t_ls, t_pred = fitter_NN(F, E, Midx, Widx) # no tlimit yet, but mostly dont really matter
     elseif model == "LLS"
-        MAE, t_ls, t_pred = fitter_LLS(F', E, Midx, Widx, tlimit)
+        MAE, t_ls, t_pred = fitter_LLS(F', E, Midx, Widx, tlimit, solver=solver)
     elseif model == "GAK" # atomic model
-        MAE, t_ls, t_pred = fitter_GAK(F', f, dataset, E, Midx, Widx, tlimit; c=ca) # takes atomic features instead
+        MAE, t_ls, t_pred = fitter_GAK(F', f, dataset, E, Midx, Widx, tlimit; c=ca, solver=solver) # takes atomic features instead
     elseif model == "REAPER" # atomic model
-        MAE, t_ls, t_pred = fitter_repker(F', f, dataset, E, Midx, Widx, tlimit)
+        MAE, t_ls, t_pred = fitter_repker(F', f, dataset, E, Midx, Widx, tlimit, solver=solver)
     end
     # write stats to file:
     ntrain = length(Midx); ntest = length(Widx)

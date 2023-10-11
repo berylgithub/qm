@@ -446,16 +446,17 @@ hyperparams (for optimization, under one vector x):
     7. num_Edb_f, number of E_db features outputed by PCA ∈ int[1,10]
     8. num_Edn_f, ...
     9. num_Edt_f, ...
-    10. fmol_PCA_switch ∈ cat[0,1]
+    10. fmol_PCA_switch ∈ -> cat[0,1]
     11. fatom_PCA_switch, ...
     12. num_fmol ∈ oint[1,50]
     13. num_fatom ...
     14. n_basis ∈ int[1,10]
-    15. feature_name ∈ int[1,4]
+    15. feature_name ∈ int[1,4] -> cat
     16. normalize_atom ∈ cat[0,1]
     17. normalize_mol ...
-    18. model ∈ int[1,6]
+    18. model ∈ int[1,6] -> cat
     19. const ∈ int[1,20]
+    20. solver ∈ int[1,2] -> cat
 """
 function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     x = Int.(x) # cast to integers
@@ -485,9 +486,12 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     lmodel = ["ROSEMI", "KRR", "NN", "LLS", "GAK", "REAPER"]
     model = lmodel[Int(x[18])]
     c = 2. ^x[19]
+    # solver params:
+    solvers = ["cgls", "direct"]
+    solver = solvers[x[20]]
     println([bools[x[1]+1], bools[x[2]+1], bools[x[3]+1], bools[x[4]+1], bools[x[5]+1], bools[x[6]+1], 
             x[7], x[8], x[9], pca_atom, pca_mol, n_mf, n_af, n_basis, feature_name,
-            normalize_atom, normalize_mol, model, c])
+            normalize_atom, normalize_mol, model, c, solver])
     # compute feature transformaiton and data selection, the centerss output ended up not being used for current version, due to the centers are already predetermined
     foldername = "exp_hyperparamopt_"*sim_id;
     F, f, centerss_out, ϕ, dϕ = data_setup(foldername, n_af, n_mf, n_basis, 10, dataset, feature, feature_name; 
@@ -496,7 +500,7 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     
     # fit fatoms: 
     full_fit_🌹(Et, dataset, F, f, centers, ϕ, dϕ, foldername; 
-                bsize = 1000, tlimit = 900, model = model, ca = c, cm = c)
+                bsize = 1000, tlimit = 900, model = model, solver = solver, ca = c, cm = c)
     # get MAE:
     path_result = "result/$foldername/err_$foldername.txt"
     MAE = readdlm(path_result)[end, 5] # take the latest one on the 5th column
@@ -700,7 +704,7 @@ function test_mainobj()
     # simulate input parameters:
     sim_id = 1
     #x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # current best conf found w.r.t the current hyperparameter space, 7.59 kcal/mol
-    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
+    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
