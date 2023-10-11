@@ -776,12 +776,19 @@ end
 """
 naive linear least squares, take whatever feature extracted
 """
-function fitter_LLS(F, E, Midx, Widx, tlimit)
+function fitter_LLS(F, E, Midx, Widx, tlimit; solver = "cgls")
     nK = length(Midx); Nqm9 = length(Widx); n_f = size(F, 2)
     A = F[Midx, :] # construct the data matrix
     start = time()
-    t_ls = @elapsed begin
-        θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    if solver == "cgls"
+        t_ls = @elapsed begin
+            θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+        end
+    elseif solver == "direct" # solve directly:
+        A[diagind(A)] .+= 1e-8
+        t_ls = @elapsed begin
+            θ = A\E[Midx]
+        end
     end
     # check MAE of training data only:
     errors = abs.(A*θ - E[Midx]) .* 627.503 # in kcal/mol
@@ -835,7 +842,7 @@ end
 """
 gaussian kernel mode
 """
-function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, tlimit; scaler = 2048.)
+function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, tlimit; scaler = 2048., solver = "cgls")
     nK = length(Midx); Nqm9 = length(Widx)
     t_pre = @elapsed begin
         Norms = get_norms(F, Tidx, Midx)
@@ -849,8 +856,15 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, tlimit; scaler = 2048.)
     println("pre-computation time is ",t_pre)
     # do LS:
     start = time()
-    t_ls = @elapsed begin
-        θ, stat = cgls(K, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    if solver == "cgls"
+        t_ls = @elapsed begin
+            θ, stat = cgls(K, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+        end
+    elseif solver == "direct" # solve directly:
+        K[diagind(K)] .+= 1e-8
+        t_ls = @elapsed begin
+            θ = K\E[Midx]
+        end
     end
     display(stat)
     # check MAE of training data only:
@@ -1075,7 +1089,7 @@ end
 """
 atomic gaussian fitting (FCHL-ish)
 """
-function fitter_GAK(F, f, dataset, E, Midx, Widx, tlimit; c = 2048.)
+function fitter_GAK(F, f, dataset, E, Midx, Widx, tlimit; c = 2048., solver="cgls")
     nK = length(Midx); Nqm9 = length(Widx); 
     n_f = 0
     if !isempty(F) # could be empty since GAK only depends on atomic features
@@ -1085,10 +1099,16 @@ function fitter_GAK(F, f, dataset, E, Midx, Widx, tlimit; c = 2048.)
     #cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
     A = get_gaussian_kernel(f[Midx], f[Midx], [d["atoms"] for d ∈ dataset[Midx]], [d["atoms"] for d ∈ dataset[Midx]], c)
     start = time()
-    t_ls = @elapsed begin
-        θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    if solver == "cgls" # solve using cgls:
+        t_ls = @elapsed begin
+            θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+        end
+    elseif solver == "direct" # solve directly:
+        A[diagind(A)] .+= 1e-8
+        t_ls = @elapsed begin
+            θ = A\E[Midx]
+        end
     end
-    #θ = A\E_train
     # check MAE of training data only:
     E_pred = A*θ # return the magnitude
     errors = E_pred - E[Midx]
@@ -1108,7 +1128,7 @@ function fitter_GAK(F, f, dataset, E, Midx, Widx, tlimit; c = 2048.)
     return MAE, t_ls, t
 end
 
-function fitter_repker(F, f, dataset, E, Midx, Widx, tlimit)
+function fitter_repker(F, f, dataset, E, Midx, Widx, tlimit; solver = "cgls")
     nK = length(Midx); Nqm9 = length(Widx); 
     n_f = 0
     if !isempty(F) # could be empty since GAK only depends on atomic features
@@ -1118,8 +1138,15 @@ function fitter_repker(F, f, dataset, E, Midx, Widx, tlimit)
     #cσ = 2*(2^5)^2 # hyperparameter cσ = 2σ^2, σ = 2^k i guess
     A = get_repker_atom(f[Midx], f[Midx], [d["atoms"] for d ∈ dataset[Midx]], [d["atoms"] for d ∈ dataset[Midx]])
     start = time()
-    t_ls = @elapsed begin
-        θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+    if solver == "cgls"
+        t_ls = @elapsed begin
+            θ, stat = cgls(A, E[Midx], itmax=500, verbose=0, callback=CglsSolver -> time_callback(CglsSolver, start, tlimit))
+        end
+    elseif solver == "direct" # solve directly:
+        A[diagind(A)] .+= 1e-8
+        t_ls = @elapsed begin
+            θ = A\E[Midx]
+        end
     end
     # check MAE of training data only:
     E_pred = A*θ # return the magnitude
