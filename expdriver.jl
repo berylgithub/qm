@@ -699,7 +699,8 @@ end
 function test_mainobj()
     # simulate input parameters:
     sim_id = 1
-    x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # current best conf found w.r.t the current hyperparameter space
+    #x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # current best conf found w.r.t the current hyperparameter space, 7.59 kcal/mol
+    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
@@ -708,7 +709,7 @@ function test_mainobj()
     Fn = load("data/featuresmat_angles_qm9_post.jld", "data") # DN
     Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
     DFs = [Fa, Fb, Fn, Ft]
-    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld"]
+    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld"]
     Fs = map(feat_paths) do fpath # high-level energy features
         load(fpath, "data")
     end

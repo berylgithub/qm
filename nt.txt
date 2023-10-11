@@ -499,4 +499,12 @@ $ MBDF gets new record for (100, 100k) test!:
 100  100000  "A"  "GK"  "MBDF"  20.5901  21.1273  0.000119159  6.03998
 
 10.10.23:
-MBDF gets 7kcal/mol (current best record), that means need to be included in the hyperopt
+MBDF gets 5.7kcal/mol (current best record!!), that means need to be included in the hyperopt
+hyperparams:
+  100
+    "MBDF"
+    "GAK"
+    "direct"
+    "dressed_atom"
+   0.00014509030030418615
+   5.780010343475244
