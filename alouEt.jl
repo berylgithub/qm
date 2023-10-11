@@ -333,34 +333,36 @@ function data_setup(foldername, n_af, n_mf, n_basis, num_centers, dataset::Vecto
         plot_fname = "$foldername"*"_$uid"*"_$feature_name"*"_$n_af"*"_$n_mf"*"_$ft_sos"*"_$ft_bin" # plot name infix
         if length(molf_file) == 0 # if molecular feature file is not provided:
             println("atomic ⟹ mol mode!")
-            println("PCA atom starts!")
             if isempty(cov_file)
                 if pca_atom
+                    println("PCA atom starts!")
                     f = PCA_atom(f, n_af; fname_plot_at=plot_fname, normalize=normalize_atom)
+                    println("PCA atom done!")
                 end
             else
                 sens_mode = true
                 C = load(cov_file)["data"]
                 σ = load(sensitivity_file)["data"]
                 if pca_atom
+                    println("PCA atom starts!")
                     f = PCA_atom(f, n_af, C, σ; fname_plot_at=plot_fname, normalize=normalize_atom)
+                    println("PCA atom done!")
                 end
             end
-            println("PCA atom done!")
-            println("mol feature processing starts!")
             F = extract_mol_features(f, dataset; ft_sos = ft_sos, ft_bin = ft_bin)
             if pca_mol
+                println("mol feature processing starts!")
                 F = PCA_mol(F, n_mf; fname_plot_mol=plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode)
+                println("mol feature processing finished!")
             end
-            println("mol feature processing finished!")
         else
             println("mol only mode!")
-            println("mol feature processing starts!")
             F = load(molf_file)["data"]
             if pca_mol
+                println("mol feature processing starts!")
                 F = PCA_mol(F, n_mf, fname_plot_mol = plot_fname, normalize=normalize_mol, normalize_mode=normalize_mode, cov_test=feature_name=="FCHL" ? true : false)
+                println("mol feature processing finished!")
             end
-            println("mol feature processing finished!")
         end
         # compute bspline:
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later

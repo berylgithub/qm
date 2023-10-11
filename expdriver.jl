@@ -710,9 +710,10 @@ function test_mainobj()
     Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
     DFs = [Fa, Fb, Fn, Ft]
     feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld"]
-    Fs = map(feat_paths) do fpath # high-level energy features
+    #= Fs = map(feat_paths) do fpath # high-level energy features
         load(fpath, "data")
-    end
+    end =#
+    Fs = [[],[],[],load(feat_paths[4], "data")]
     # centers, idtrains, idtests:
     rank = 2 #select set w/ 2nd ranked training MAE
     id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
