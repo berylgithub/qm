@@ -140,7 +140,7 @@ end
 % see expdriver for the hyperparameter ordering
 % xd = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # the decoded x
 % the encoded x (the one that needs to be passed to solver):
-x = [   0;1; 
+x = [   1;0; 
         1;0;
         1;0;
         1;0;
@@ -153,21 +153,19 @@ x = [   0;1;
         1;0;
         1;0;0;
         3;
-        1;0;0;
+        0;0;0;1;
         1;0;
         1;0;
-        0;0;0;0;0;1;
+        0;0;0;0;1;0;
         11
     ]
 y = [rand(1); x]
 % generate bounds:
 bounds = [  0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0; 
-            1, 1, 1, 1, 1, 1, 10, 10, 10, 1, 1, 50, 10, 3, 1, 1, 6, 20;
+            1, 1, 1, 1, 1, 1, 10, 10, 10, 1, 1, 50, 10, 4, 1, 1, 6, 20;
             2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 3, 1, 2, 2, 2, 2, 1;
-            2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 3, 1, 3, 2, 2, 6, 1]
+            2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 3, 1, 4, 2, 2, 6, 1]
 bm = extractbound(bounds) % compute boundary index matrix
 [xout, fpen] = decode(x, bounds, bm) % check if the decoded x is correct
 dlmwrite("../data/hyperparamopt/init_params.txt", [rand(1); x]', "\t")
 dlmwrite("../data/hyperparamopt/bounds.txt", bounds, "\t")
-
-!isempty([1])
