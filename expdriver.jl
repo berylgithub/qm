@@ -259,7 +259,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mod
         Fn = load("data/featuresmat_angles_qm9_post.jld", "data") # DN
         Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
         DFs = [Fa, Fb, Fn, Ft]
-        feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld"]
+        feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld"]
         Fs = map(feat_paths) do fpath # high-level energy features
             load(fpath, "data")
         end
@@ -451,7 +451,7 @@ hyperparams (for optimization, under one vector x):
     12. num_fmol ∈ oint[1,50]
     13. num_fatom ...
     14. n_basis ∈ int[1,10]
-    15. feature_name ∈ int[1,3]
+    15. feature_name ∈ int[1,4]
     16. normalize_atom ∈ cat[0,1]
     17. normalize_mol ...
     18. model ∈ int[1,6]
@@ -470,9 +470,13 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     pca_atom = bools[x[10]+1]; pca_mol = bools[x[11]+1]
     # determine n_af and n_mf:
     n_mf = Int(x[12]); n_af = Int(x[13]);
+    # for now, do a heavisidestep if feature = MBDF since |MBDF| = 6:
+    if x[15] == 4
+        n_mf = min(n_mf, 6); n_af = min(n_af, 6)
+    end
     n_basis = Int(x[14]) # determine number of splines
     # determine feature:
-    ftypes = ["ACSF_51", "SOAP", "FCHL19"]
+    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF"]
     feature = Fs[x[15]]; feature_name = ftypes[x[15]]
     # switches:
     normalize_atom = bools[Int(x[16]) + 1]
