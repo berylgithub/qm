@@ -508,3 +508,12 @@ hyperparams:
     "dressed_atom"
    0.00014509030030418615
    5.780010343475244
+
+12.10.23:
+- probably need to write some automatic calleropt spawner (rem: for some reason the batch call the latest script only, so need to differentiate between one script to another).
+- plans to figure out the bond-energy:
+  - try to overfit the morse potential first, if this works then the fitting is correct:
+    - define morse potential
+    - pre-compute the distance matrices, this should comply with the atom order parsed by smiles (probably this is true by construction)
+    - compute each molecule's Morse potential
+  - if AD works for the fitting function, optimize using first order algos 

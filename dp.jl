@@ -891,3 +891,40 @@ function main_post_hybrids()
     writedlm("data/atom_types_hybrid_post.txt", hts[setdiff(1:length(hts), excolids)]) # save postprocessed types
     save("data/featuresmat_atomhybrid_qm9_post.jld", "data", Fh)
 end
+
+"""
+=== Bonds affected by distances ===
+"""
+
+"""
+computes a symmetric distance matrix given a matrix of coordinates (row = atom)
+"""
+function get_distance_matrix(X)
+    natom = size(X, 1)
+    D = zeros(Float64, natom, natom)
+    for j ∈ axes(X, 1)
+        for i ∈ axes(X, 1)
+            D[i,j] = norm(X[i,:] - X[j,:])
+        end
+    end
+    return D
+end
+
+function main_get_distance_matrices()
+    dataset = load("data/qm9_dataset.jld", "data")
+    Ds = Vector{Matrix{Float64}}() # a vector of matrices
+    coords = map(d -> d["coordinates"], dataset) 
+    for d ∈ coords
+        push!(Ds, get_distance_matrix(d))
+    end
+    save("data/distance_matrices_qm9.jld", "data")
+end
+
+"""
+morse potential as feature, r is the only non hyperparameter
+"""
+function morse_pot(r, D, a, r0, s)
+    return D*(exp(-2*a*(r-r0)) - 2*exp(-a*(r-r0))) + s # additional shift constant s for "pure" fitting
+end
+
+

@@ -472,7 +472,7 @@ function test_bond_energy_plot()
     plot(x, y, ylims = [0, 100])
 
     # morse:
-    function morse_pot(r, D, a, r0, s; mode=2)
+    function morse_pot(r, D, a, r0, s; mode=1)
         if mode==1
             return D*(exp(-2*a*(r-r0)) - 2*exp(-a*(r-r0))) + s # additional shift constant s for "pure" fitting
         elseif mode == 2
@@ -482,10 +482,9 @@ function test_bond_energy_plot()
     D = .5
     a = 2.
     r0 = 1.
-    s = 0.
+    s = 0.1
     x = rs
     y = morse_pot.(rs, D, a, r0, s,mode=1)
     display(y)
     plot(x, y, ylims = [-1., 1.])
-    
 end
