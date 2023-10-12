@@ -917,7 +917,7 @@ function main_get_distance_matrices()
     for d ∈ coords
         push!(Ds, get_distance_matrix(d))
     end
-    save("data/distance_matrices_qm9.jld", "data")
+    save("data/distance_matrices_qm9.jld", "data", Ds)
 end
 
 """
