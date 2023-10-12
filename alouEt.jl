@@ -866,7 +866,7 @@ function fitter_KRR(F, E, Midx, Tidx, Widx, K_indexer, tlimit; scaler = 2048., s
             θ = K\E[Midx]
         end
     end
-    display(stat)
+    #display(stat)
     # check MAE of training data only:
     errors = abs.(K*θ - E[Midx]) .* 627.503
     MAEtrain = sum(errors)/length(errors)
