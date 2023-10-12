@@ -927,4 +927,17 @@ function morse_pot(r, D, a, r0, s)
     return D*(exp(-2*a*(r-r0)) - 2*exp(-a*(r-r0))) + s # additional shift constant s for "pure" fitting
 end
 
+function main_morse_pot()
+    # simple example of getting distances given graph info (matching numbers -- as prof.edelman says)
+    dataset = load("data/qm9_dataset.jld", "data")
+    D = load("data/distance_matrices_qm9.jld", "data")
+    mol = smilestomol("C")
+    add_hydrogens!(mol)
+    es = collect(edges(mol))
+    for e ∈ es
+        println(e," ",D[1][src(e), dst(e)])
+    end
+    display(D[1])
+
+end
 
