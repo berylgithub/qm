@@ -1,3 +1,6 @@
+caller.jl
+*.toc
+*.sh
 data/
 result/
 plot/
