@@ -12,8 +12,9 @@ from dscribe.descriptors import SOAP, ACSF
 import qml
 from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
 from qml.math import cho_solve
+import MBDF, cMBDF
 import scipy.sparse
-from MBDF import generate_mbdf
+
 
 
 
@@ -455,12 +456,12 @@ def extract_MBDF():
     elements = np.unique(np.concatenate(ncs))
     #print(ncs)
     #print(coors)
-    mbdf = generate_mbdf(ncs, coors)
+    mbdf = cMBDF.generate_mbdf(ncs, coors)
     #print(mbdf)
     #print(mbdf.shape)
     # write to file:
     for i, elem in enumerate(mbdf):
-        np.savetxt("/users/baribowo/Dataset/gdb9-14b/mbdf/"+str(i+1)+".txt", elem, delimiter="\t")
+        np.savetxt("/users/baribowo/Dataset/gdb9-14b/cmbdf/"+str(i+1)+".txt", elem, delimiter="\t")
 
 
 # main:
