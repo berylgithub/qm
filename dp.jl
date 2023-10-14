@@ -175,12 +175,12 @@ function getSOAP()
 end
 
 function getMBDF()
-    folderpath = "/users/baribowo/Dataset/gdb9-14b/mbdf/"
+    folderpath = "/users/baribowo/Dataset/gdb9-14b/cmbdf/"
     dataset = load("data/qm9_dataset.jld", "data")
     files = readdir(folderpath) # the format is lexicographic here instead of standard numbering, i.e., 10 < 2
     nmol = length(files)
     ids = 1:nmol
-    nf = 6
+    nf = 40 #6
     f = Vector{Matrix{Float64}}(undef, nmol)
     for i ∈ ids
         filepath = folderpath*string(i)*".txt"
@@ -196,7 +196,7 @@ function getMBDF()
         natom = dataset[i]["n_atom"]
         f[i] = f[i][1:natom, :]
     end
-    save("data/MBDF.jld", "data", f) # save to file
+    save("data/CMBDF.jld", "data", f) # save to file
 end
 
 function table_results(foldername)
@@ -929,15 +929,31 @@ end
 
 function main_morse_pot()
     # simple example of getting distances given graph info (matching numbers -- as prof.edelman says)
+    # get the ids foreach pair then compute the whole thing:
     dataset = load("data/qm9_dataset.jld", "data")
+    coords = map(d ->d["coordinates"], dataset)
     D = load("data/distance_matrices_qm9.jld", "data")
+    bondtypes = readdlm("data/bond_types-H_nz.txt") # nonzero bondtypes that exist, determines the order
+    
+    # test one mol:
     mol = smilestomol("C")
     add_hydrogens!(mol)
-    es = collect(edges(mol))
+    es = edges(mol)
     for e ∈ es
-        println(e," ",D[1][src(e), dst(e)])
+        pairid = [src(e), dst(e)]
+        btype = join(sort([string(get_prop(mol, src(e), :symbol)), string(get_prop(mol, dst(e), :symbol)), string(get_prop(mol, e, :order))]))
+        pairids[btype] = pairid
+        println(e," ",D[1][src(e), dst(e)]) # how to query distance
     end
     display(D[1])
 
+    # get the ids, computed once per dataset:
+    pairids_array = Vector{Matrix{Float64}}() # this should be global -> a vector of matrices ∈ Z^{n_pair,2}
+    d_ct = Dict() # generate the index translator
+    for (i,t) ∈ enumerate(bondtypes)
+        d_ct[t] = i
+    end
+
+    # compute the
 end
 
