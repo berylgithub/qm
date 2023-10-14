@@ -1640,7 +1640,7 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
     writedlm("result/deltaML/MAE_base_"*postfix*".txt", MAEs)
     writedlm("data/energy_clean_"*postfix*".txt", E-Eda-Edb-Edn-Edt) # save cleaned energy
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF_51", "SOAP", "FCHL19", "MBDF"] # outtest loop
+    features = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF"][end] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"]
