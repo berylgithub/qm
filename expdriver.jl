@@ -471,9 +471,11 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     pca_atom = bools[x[10]+1]; pca_mol = bools[x[11]+1]
     # determine n_af and n_mf:
     n_mf = Int(x[12]); n_af = Int(x[13]);
-    # for now, do a heavisidestep if feature = MBDF since |MBDF| = 6:
+    # for now, do a heavisidestep if feature = MBDF since |MBDF| = 6; |CMBDF| = 40:
     if x[15] == 4
         n_mf = min(n_mf, 6); n_af = min(n_af, 6)
+    elseif x[15] == 5
+        n_mf = min(n_mf, 40); n_af = min(n_af, 40)
     end
     n_basis = Int(x[14]) # determine number of splines
     # determine feature:
