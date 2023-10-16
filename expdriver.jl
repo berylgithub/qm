@@ -259,7 +259,7 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mod
         Fn = load("data/featuresmat_angles_qm9_post.jld", "data") # DN
         Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
         DFs = [Fa, Fb, Fn, Ft]
-        feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld"]
+        feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld", "data/CMBDF.jld"]
         Fs = map(feat_paths) do fpath # high-level energy features
             load(fpath, "data")
         end
@@ -451,7 +451,7 @@ hyperparams (for optimization, under one vector x):
     12. num_fmol ∈ oint[1,50]
     13. num_fatom ...
     14. n_basis ∈ int[1,10]
-    15. feature_name ∈ int[1,4] -> cat
+    15. feature_name ∈ int[1,5] -> cat
     16. normalize_atom ∈ cat[0,1]
     17. normalize_mol ...
     18. model ∈ int[1,6] -> cat
@@ -477,7 +477,7 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     end
     n_basis = Int(x[14]) # determine number of splines
     # determine feature:
-    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF"]
+    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF"]
     feature = Fs[x[15]]; feature_name = ftypes[x[15]]
     # switches:
     normalize_atom = bools[Int(x[16]) + 1]
@@ -704,7 +704,8 @@ function test_mainobj()
     # simulate input parameters:
     sim_id = 1
     #x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # current best conf found w.r.t the current hyperparameter space, 7.59 kcal/mol
-    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
+    #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
+    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
@@ -713,7 +714,7 @@ function test_mainobj()
     Fn = load("data/featuresmat_angles_qm9_post.jld", "data") # DN
     Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
     DFs = [Fa, Fb, Fn, Ft]
-    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld"]
+    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld", "data/CMBDF.jld"]
     Fs = map(feat_paths) do fpath # high-level energy features
         load(fpath, "data")
     end
