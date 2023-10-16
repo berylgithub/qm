@@ -1924,7 +1924,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     max_n = maximum(n_ids[1:end-1]) # largest ntrain
     max_idtrains = sample(idrem, max_n, replace=false)
     # define spaces:
-    features = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF"][end:end] # detach from the main loop to save memory
+    features = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF"] # detach from the main loop to save memory
     if !isempty(feat_ids) # since the data is way too big, should be separated for each feature
         features = features[feat_ids]
     end
