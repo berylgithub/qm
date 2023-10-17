@@ -921,6 +921,44 @@ function main_get_distance_matrices()
 end
 
 """
+bond type extractor given a geometry file
+"""
+function extract_bondtypes!(bondfs, bondtypes, fpath, file; include_hydrogens=false)
+    content = readdlm(fpath*file)
+    natom = content[1,1]
+    smiles = content[natom+4, 1]
+    bondf = get_bonds_from_SMILES(bondtypes, smiles; include_hydrogens=include_hydrogens)
+    push!(bondfs, bondf)
+    #println(file, " is done!")
+end
+
+function get_bonds_from_SMILES(bondtypes, str; include_hydrogens=false)
+    mol = smilestomol(str)
+    if include_hydrogens
+        add_hydrogens!(mol)
+    end
+    md = Dict()
+    for key ∈ bondtypes # init dict
+        md[key] = 0
+    end
+    for e in edges(mol) # fill dict
+        key = join(sort([string(get_prop(mol, src(e), :symbol)), string(get_prop(mol, dst(e), :symbol)), string(get_prop(mol, e, :order))])) # the sorting procedure is very improtant, s.t. permutation invariance
+        md[key] += 1
+    end
+    return md
+end
+
+"""
+extract smiles string given a geometry file
+"""
+function extract_SMILES(filepath)
+    content = readdlm(filepath)
+    natom = content[1,1]
+    smiles = content[natom+4, 1]
+    return smiles
+end
+
+"""
 morse potential as feature, r is the only non hyperparameter
 """
 function morse_pot(r, D, a, r0, s)
@@ -930,11 +968,19 @@ end
 function main_morse_pot()
     # simple example of getting distances given graph info (matching numbers -- as prof.edelman says)
     # get the ids foreach pair then compute the whole thing:
+    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"; geoms = readdir(geopath)
     dataset = load("data/qm9_dataset.jld", "data")
+    exids = Int.(vec(readdlm("data/exids.txt")))
     coords = map(d ->d["coordinates"], dataset)
     D = load("data/distance_matrices_qm9.jld", "data")
     bondtypes = readdlm("data/bond_types-H_nz.txt") # nonzero bondtypes that exist, determines the order
     
+    # extract smiles:
+    geoms = geoms[setdiff(1:length(geoms), exids)]
+    fpaths = [geopath*geom for geom ∈ geoms]
+    smiless = ThreadsX.map(fpaths) do fpath
+        extract_SMILES(fpath) 
+    end
     # test one mol:
     mol = smilestomol("C")
     add_hydrogens!(mol)
@@ -948,7 +994,20 @@ function main_morse_pot()
     display(D[1])
 
     # get the ids, computed once per dataset:
-    pairids_array = Vector{Matrix{Float64}}() # this should be global -> a vector of matrices ∈ Z^{n_pair,2}
+    Ps = Vector{Matrix{Float64}}() # this should be global -> a vector of matrices ∈ Z^{n_pair,2}
+    # generate dict, test with mol #(1,2):
+    for i ∈ eachindex(dataset)[1:2]
+        # this will be inside a function:
+        P = Dict()
+        for (i,t) ∈ enumerate(bondtypes)
+            P[t] = []
+        end
+        
+        push!(Ps, P)
+    end
+    
+
+
     d_ct = Dict() # generate the index translator
     for (i,t) ∈ enumerate(bondtypes)
         d_ct[t] = i
