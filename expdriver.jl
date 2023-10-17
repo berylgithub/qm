@@ -749,7 +749,7 @@ function main_custom_CMBDF_train()
     end
     Random.seed!(777)
     centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = 100)
-    display(Int.(transpose(reduce(hcat, centerss))))
+    centerss = Int.(transpose(reduce(hcat, centerss)))
     writedlm("data/custom_CMBDF_centers.txt", centerss)
     # run it all through the base "main_obj":
     # spawn all memory dependednt data:
