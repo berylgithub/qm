@@ -706,7 +706,7 @@ end
 
 function test_mainobj()
     # simulate input parameters:
-    sim_id = 1
+    sim_id = "sanitytest"
     #x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # current best conf found w.r.t the current hyperparameter space, 7.59 kcal/mol
     #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
     x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
@@ -724,12 +724,14 @@ function test_mainobj()
     end
     #Fs = [[],[],[],load(feat_paths[4], "data")]
     # centers, idtrains, idtests:
-    rank = 2 #select set w/ 2nd ranked training MAE
+    #= rank = 2 #select set w/ 2nd ranked training MAE
     id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
-    centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id])
-    idall = 1:length(E)
+    centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id]) =#
+    # custom CMBDF training sets:
+    minid = 57 # see "MAE_custom_CMBDF_centers"
+    centerss = readdlm("data/custom_CMBDF_centers.txt", Int)
+    centers = centerss[minid, :]
     idtrains = centers[1:100]
-    idtests = setdiff(idall, idtrains)
     fx = main_obj
     f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
     writedlm("test_mainobj.txt", f)
