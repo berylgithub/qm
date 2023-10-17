@@ -518,3 +518,6 @@ hyperparams:
     - compute few molecules' Morse potential for each bond pair type, as a test:
       - for each mol: for each bond type:
   - if AD works for the fitting function, optimize using first order algos 
+
+  17.10.23:
+  !!! see custom CMBDF trarining result!!, 3.8kcal/mol base achieved!!
