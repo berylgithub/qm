@@ -709,7 +709,8 @@ function test_mainobj()
     sim_id = "sanitytest"
     #x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # current best conf found w.r.t the current hyperparameter space, 7.59 kcal/mol
     #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
-    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
+    #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
+    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 1, 5, 0, 0, 5, 4, 2] # 4.5kcal/mol
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
@@ -729,7 +730,7 @@ function test_mainobj()
     centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id]) =#
     # custom CMBDF training sets:
     minid = 57 # see "MAE_custom_CMBDF_centers"
-    centerss = readdlm("data/custom_CMBDF_centers.txt", Int)
+    centerss = readdlm("data/custom_CMBDF_centers_181023.txt", Int)
     centers = centerss[minid, :]
     idtrains = centers[1:100]
     fx = main_obj
