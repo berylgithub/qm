@@ -754,7 +754,7 @@ function main_custom_CMBDF_train()
     #= centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = 100)
     writedlm("data/custom_CMBDF_centers.txt", centerss) =#
     # random:
-    centerss = [sample(1:numrow, 200, replace=false) for i ∈ 1:100]
+    centerss = [sample(1:nrow, 200, replace=false) for i ∈ 1:100]
     writedlm("data/random-777_CMBDF_centers.txt", centerss)
 
     centerss = Int.(transpose(reduce(hcat, centerss))) # transform to matrix
