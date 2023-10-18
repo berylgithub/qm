@@ -750,19 +750,19 @@ function main_custom_CMBDF_train()
         F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
     end
     Random.seed!(777)
-    # with selection algo:
     nset = 1_000
-    centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset)
-    writedlm("data/custom_CMBDF_centers_181023.txt", centerss)
+    # with selection algo:
+    #= centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset)
+    writedlm("data/custom_CMBDF_centers_181023.txt", centerss) =#
     # random:
-    #= centerss = [sample(1:nrow, 200, replace=false) for i ∈ 1:nset]
-    writedlm("data/random-777_CMBDF_centers.txt", centerss) =#
+    centerss = [sample(1:nrow, 200, replace=false) for i ∈ 1:nset]
+    writedlm("data/random-777_CMBDF_centers_181023.txt", centerss)
 
     centerss = Int.(transpose(reduce(hcat, centerss))) # transform to matrix
 
     # run it all through the base "main_obj":
     # spawn all memory dependednt data:
-    sim_id = "custom_CMBDF_centers_181023"
+    sim_id = "random_CMBDF_centers_181023"
     x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
@@ -780,8 +780,8 @@ function main_custom_CMBDF_train()
         idtrains = centers[1:100]
         fobj = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
         strinput = string.([fobj])
-        writestringline(strinput, "result/deltaML/MAE_custom_CMBDF_centers_181023.txt"; mode="a")
-        #writestringline(strinput, "result/deltaML/MAE_random-777_CMBDF_centers.txt"; mode="a")
+        #writestringline(strinput, "result/deltaML/MAE_custom_CMBDF_centers_181023.txt"; mode="a")
+        writestringline(strinput, "result/deltaML/MAE_random-777_CMBDF_centers_181023.txt"; mode="a")
     end
 end
 
