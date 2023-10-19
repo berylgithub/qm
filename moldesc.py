@@ -9,12 +9,12 @@ from ase.build import molecule
 from ase import Atoms
 from dscribe.descriptors import SOAP, ACSF
 
+import scipy.sparse
 import qml
 from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
 from qml.math import cho_solve
-import MBDF, cMBDF
-import scipy.sparse
-
+#import MBDF, cMBDF
+from cMBDF_joblib import get_cmbdf
 
 
 
@@ -447,7 +447,7 @@ def extract_QML_features():
 
 def extract_MBDF():
     geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
-    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])[0:10]
     print("Ndata = ",len(onlyfiles))
     compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
     coors = np.array([mol.coordinates for mol in compounds])
@@ -456,12 +456,15 @@ def extract_MBDF():
     elements = np.unique(np.concatenate(ncs))
     #print(ncs)
     #print(coors)
-    mbdf = cMBDF.generate_mbdf(ncs, coors)
+    #mbdf = cMBDF.generate_mbdf(ncs, coors)
+    start = time.time() # timer
+    reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False)
+    print(time.time()-start)
     #print(mbdf)
     #print(mbdf.shape)
     # write to file:
-    for i, elem in enumerate(mbdf):
-        np.savetxt("/users/baribowo/Dataset/gdb9-14b/cmbdf/"+str(i+1)+".txt", elem, delimiter="\t")
+    for i, elem in enumerate(reps):
+        np.savetxt("/users/baribowo/Dataset/gdb9-14b/cmbdf-2/"+str(i+1)+".txt", elem, delimiter="\t")
 
 
 # main:
