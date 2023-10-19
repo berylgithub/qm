@@ -264,9 +264,14 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mod
             load(fpath, "data")
         end
         # centers, idtrains, idtests:
-        rank = 2 #select set w/ 2nd ranked training MAE
+        #= rank = 2 #select set w/ 2nd ranked training MAE
         id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
-        centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id])
+        centers = Int.(readdlm("data/all_centers_deltaML.txt")[:, id]) =#
+
+        minid = 57 # see "MAE_custom_CMBDF_centers", this gives 3.7kcal/mol for x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2]
+        centerss = readdlm("data/custom_CMBDF_centers_181023.txt", Int)
+        centers = centerss[minid, :]
+
         idall = 1:length(E)
         idtrains = centers[1:100]
         idtests = setdiff(idall, idtrains)
@@ -709,8 +714,8 @@ function test_mainobj()
     sim_id = "sanitytest"
     #x = [1, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 1, 0, 0, 6, 11] # current best conf found w.r.t the current hyperparameter space, 7.59 kcal/mol
     #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
-    #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
-    x = [0, 1, 0, 0, 0, 1, 10, 10, 10, 0, 0, 50, 50, 1, 5, 0, 0, 5, 4, 2] # 4.5kcal/mol
+    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
+    #x = [0, 1, 0, 0, 0, 1, 10, 10, 10, 0, 0, 50, 50, 1, 5, 0, 0, 5, 4, 2] # 4.5kcal/mol
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
