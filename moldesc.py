@@ -447,7 +447,7 @@ def extract_QML_features():
 
 def extract_MBDF():
     geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
-    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])[0:10]
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
     print("Ndata = ",len(onlyfiles))
     compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
     coors = np.array([mol.coordinates for mol in compounds])
