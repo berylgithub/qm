@@ -14,8 +14,8 @@ import qml
 from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
 from qml.math import cho_solve
 #import MBDF, cMBDF
-from cMBDF_joblib import get_cmbdf
-
+#from cMBDF_joblib import get_cmbdf
+import cMBDF_joblib
 
 
 def sparse_to_file(fpath, spA):
@@ -458,7 +458,7 @@ def extract_MBDF():
     #print(coors)
     #mbdf = cMBDF.generate_mbdf(ncs, coors)
     start = time.time() # timer
-    reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False)
+    reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False, n_atm=2.0)
     print(time.time()-start)
     #print(mbdf)
     #print(mbdf.shape)
