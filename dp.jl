@@ -175,7 +175,7 @@ function getSOAP()
 end
 
 function getMBDF()
-    folderpath = "/users/baribowo/Dataset/gdb9-14b/cmbdf/"
+    folderpath = "/users/baribowo/Dataset/gdb9-14b/cmbdf-2/"
     dataset = load("data/qm9_dataset.jld", "data")
     files = readdir(folderpath) # the format is lexicographic here instead of standard numbering, i.e., 10 < 2
     nmol = length(files)
@@ -196,7 +196,7 @@ function getMBDF()
         natom = dataset[i]["n_atom"]
         f[i] = f[i][1:natom, :]
     end
-    save("data/CMBDF.jld", "data", f) # save to file
+    save("data/CMBDF2.jld", "data", f) # save to file
 end
 
 function table_results(foldername)
