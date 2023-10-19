@@ -1565,9 +1565,14 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
     Random.seed!(777) #Random.seed!(603) # looks like 777 is better for random
     idall = 1:numrow
     if use_preselected_train
-        rank = 2 #select set w/ 2nd ranked training MAE
+        #= rank = 2 #select set w/ 2nd ranked training MAE
         id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
-        idtrain = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, id])    
+        idtrain = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, id]) =# 
+        # CMBDF train data:
+        minid = 57 # see "MAE_custom_CMBDF_centers", this gives 3.7kcal/mol for x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2]
+        centerss = readdlm("data/custom_CMBDF_centers_181023.txt", Int)
+        centers = centerss[minid, :]
+        idtrain = centers[1:100]   
     else
         idtrain = sample(1:numrow, 100, replace=false)
     end
