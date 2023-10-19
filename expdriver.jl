@@ -479,12 +479,12 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     # for now, do a heavisidestep if feature = MBDF since |MBDF| = 6; |CMBDF| = 40:
     if x[15] == 4
         n_mf = min(n_mf, 6); n_af = min(n_af, 6)
-    elseif x[15] == 5
+    elseif x[15] == 5 || x[15] == 6
         n_mf = min(n_mf, 40); n_af = min(n_af, 40)
     end
     n_basis = Int(x[14]) # determine number of splines
     # determine feature:
-    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF"]
+    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF", "CMBDF2"]
     feature = Fs[x[15]]; feature_name = ftypes[x[15]]
     # switches:
     normalize_atom = bools[Int(x[16]) + 1]
@@ -770,7 +770,7 @@ function main_custom_CMBDF_train()
     # spawn all memory dependednt data:
     sim_id = "custom_CMBDF2_centers_191023"
     #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
-    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 6, 11, 2] # try CMBDF2
+    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 6, 0, 0, 5, 11, 2] # try CMBDF2
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
