@@ -521,3 +521,8 @@ hyperparams:
 
   17.10.23:
   !!! see custom CMBDF trarining result!!, 3.8kcal/mol base achieved!!
+
+  24.10.23:
+  Data selection optimization
+  - see Prof. Neumaier's opt recommendation, based on Tabu search, can be independent of tuning or dependent on it
+  - see my nonlinear integer programming with linear equality constraint, try it with NLopt perhaps there is some algorithm compatible
