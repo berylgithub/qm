@@ -526,3 +526,4 @@ hyperparams:
   Data selection optimization
   - see Prof. Neumaier's opt recommendation, based on Tabu search, can be independent of tuning or dependent on it
   - see my nonlinear integer programming with linear equality constraint, try it with NLopt perhaps there is some algorithm compatible
+  ? will linearization work? e.g., converting MAE(x) into flinear(x), see https://en.wikipedia.org/wiki/Linearization, try using CPLEX
