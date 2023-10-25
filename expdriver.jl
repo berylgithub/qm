@@ -1,4 +1,6 @@
-using Hyperopt
+using Hyperopt, JuMP
+
+import Ipopt # nonlinear solver
 
 include("utils.jl")
 include("alouEt.jl")
@@ -821,4 +823,42 @@ function test_race(id)
         iter+=1
         sleep(.5)
     end
+end
+
+"""
+simple test for JuMP NLP with constraints
+"""
+function test_JUMP()
+    # ================
+    # case 1: simple LP but solved by NLP (Ipopt):
+    # dummy fobj:
+    #= function fobj(x,y;h=0.)
+        return 12*x + 20*y + h
+    end
+    model = Model()
+    register(model, :fobj, 2, fobj; autodiff=true) # register custom fobj, number of optimized variables = 2
+    @variable(model, x >= 0)
+    @variable(model, y >= 0)
+    @constraint(model, c1, 6x + 8y >= 100)
+    @constraint(model, c2, 7x + 12y >= 120)
+    @objective(model, Min, fobj(x,y;h=1000))
+    set_optimizer(model, Ipopt.Optimizer)
+    optimize!(model)
+    display(objective_value(model))
+    display([value(x), value(y)]) =#
+
+    # ===============
+    # case 2: quadratic fobj constrained by linear:
+    function fobj(x; h=0.)
+        return x^2 + h
+    end
+    model = Model()
+    register(model, :fobj, 1, fobj; autodiff=true) # register custom fobj, number of optimized variables = 2
+    @variable(model, x)
+    @constraint(model, c1, x <= -1)
+    @objective(model, Min, fobj(x,h=-1))
+    set_optimizer(model, Ipopt.Optimizer)
+    optimize!(model)
+    display(objective_value(model))
+    display([value(x)])
 end

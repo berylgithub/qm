@@ -519,11 +519,14 @@ hyperparams:
       - for each mol: for each bond type:
   - if AD works for the fitting function, optimize using first order algos 
 
-  17.10.23:
-  !!! see custom CMBDF trarining result!!, 3.8kcal/mol base achieved!!
+17.10.23:
+!!! see custom CMBDF trarining result!!, 3.8kcal/mol base achieved!!
 
-  24.10.23:
-  Data selection optimization
-  - see Prof. Neumaier's opt recommendation, based on Tabu search, can be independent of tuning or dependent on it
-  - see my nonlinear integer programming with linear equality constraint, try it with NLopt perhaps there is some algorithm compatible
-  ? will linearization work? e.g., converting MAE(x) into flinear(x), see https://en.wikipedia.org/wiki/Linearization, try using CPLEX
+24.10.23:
+Data selection optimization
+- see Prof. Neumaier's opt recommendation, based on Tabu search, can be independent of tuning or dependent on it
+- see my nonlinear integer programming with linear equality constraint, try it with NLopt perhaps there is some algorithm compatible
+? will linearization work? e.g., converting MAE(x) into flinear(x), see https://en.wikipedia.org/wiki/Linearization, try using CPLEX
+
+25.10.23:
+? dummy case but untransformable to JuMP(?): how to set y=x+1 constraint to optimize f(x) = x^2 - 1 ??
