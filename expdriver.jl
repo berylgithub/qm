@@ -1,4 +1,4 @@
-using Hyperopt, NOMAD, JuMP
+using Hyperopt, NOMAD
 
 include("utils.jl")
 include("alouEt.jl")
@@ -899,8 +899,8 @@ end
 
 function test_NOMAD()
     # blackbox
-    function bb(x)
-        f = (x[1]- 1)^2 * (x[2] - x[3])^2 + (x[4] - x[5])^2
+    function bb(x; c=0.)
+        f = (x[1]- 1)^2 * (x[2] - x[3])^2 + (x[4] - x[5])^2 +c
         bb_outputs = [f]
         success = true
         count_eval = true
@@ -916,7 +916,7 @@ function test_NOMAD()
 
     # Define blackbox
     p = NomadProblem(5, 1, ["OBJ"], # the equality constraints are not counted in the outputs of the blackbox
-                    bb,
+                    x->bb(x;c=10.),
                     #lower_bound = -10.0 * ones(5),
                     #upper_bound = 10.0 * ones(5),
                     A = A, b = b)
