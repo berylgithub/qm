@@ -1,6 +1,4 @@
-using Hyperopt, JuMP
-
-import Ipopt # nonlinear solver
+using Hyperopt, NOMAD, JuMP
 
 include("utils.jl")
 include("alouEt.jl")
@@ -825,6 +823,21 @@ function test_race(id)
     end
 end
 
+
+
+
+
+"""
+dummy obj function given kernel K(H) with fixed hyperparameters H
+"""
+function fobj(x; A=zeros(), b=zeros(), grange=[])
+    #= trainids = grange[x]
+    testids = setdiff(grange, trainids)
+    θ = A[trainids,:]\b[trainids] # train on index x
+    bpred = A[testids,:]*θ
+    return norm(bpred-b) =# # error of the test 
+end
+
 """
 simple test for JuMP NLP with constraints
 """
@@ -853,12 +866,25 @@ function test_JUMP()
     A = rand(100, 20)
     b = rand(100)
     grange = 1:length(b)
-    function fobj(x; A=zeros(), b=zeros(), grange=[])
-        trainids = grange[x]
+    function fobj(x::T...; A=zeros(), b=zeros(), grange=[]) where {T<:Real}
+        #= trainids = grange[x]
         testids = setdiff(grange, trainids)
         θ = A[trainids,:]\b[trainids] # train on index x
         bpred = A[testids,:]*θ
-        return norm(bpred-b) # error of the test 
+        return norm(bpred-b) =# # error of the test 
+
+        Dx = diagm(x)
+        θ = (Dx*A)\(Dx*b)
+        nx = similar(x)
+        for i ∈ eachindex(x)
+            if x[i] == 0
+                nx[i] = 1
+            elseif x[i] == 1
+                nx[i] = 0
+            end
+        end
+        Dnx = diagm(nx)
+        return norm(Dnx*A*θ - Dnx*b)
     end
     model = Model()
     register(model, :fobj, 1, fobj; autodiff=true) # register custom fobj, number of optimized variables = 2
@@ -869,4 +895,45 @@ function test_JUMP()
     optimize!(model)
     display(objective_value(model))
     display([value(x)])
+end
+
+function test_NOMAD()
+    # blackbox
+    function bb(x)
+        f = (x[1]- 1)^2 * (x[2] - x[3])^2 + (x[4] - x[5])^2
+        bb_outputs = [f]
+        success = true
+        count_eval = true
+        return (success, count_eval, bb_outputs)
+    end
+    # linear equality constraints
+    #= A = [1.0 1.0 1.0 1.0 1.0;
+        0.0 0.0 1.0 -2.0 -2.0]
+    b = [5.0; -3.0]
+    =#
+    A = [1.0 1.0 1.0 1.0 1.0]
+    b = [5.0]
+
+    # Define blackbox
+    p = NomadProblem(5, 1, ["OBJ"], # the equality constraints are not counted in the outputs of the blackbox
+                    bb,
+                    #lower_bound = -10.0 * ones(5),
+                    #upper_bound = 10.0 * ones(5),
+                    A = A, b = b)
+
+    # Fix some options
+    p.options.max_bb_eval = 500
+
+    # Define starting points. It must satisfy A x = b.
+    x0 = [0.57186958424864897665429452899843;
+        4.9971472653643420613889247761108;
+        -1.3793445664086618762667058035731;
+        1.0403394252630473459930726676248;
+        -0.2300117084673765077695861691609]
+
+    # Solution
+    result = solve(p, x0)
+    println("Solution: ", result.x_best_feas)
+    println("Satisfy Ax = b: ", A * result.x_best_feas ≈ b)
+    println("And inside bound constraints: ", all(-10.0 .<= result.x_best_feas .<= 10.0))
 end
