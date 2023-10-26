@@ -529,4 +529,4 @@ Data selection optimization
 ? will linearization work? e.g., converting MAE(x) into flinear(x), see https://en.wikipedia.org/wiki/Linearization, try using CPLEX
 
 25.10.23:
-? dummy case but untransformable to JuMP(?): how to set y=x+1 constraint to optimize f(x) = x^2 - 1 ??
+maybe try other solvers too if JuMP is not working for the dummy lsq

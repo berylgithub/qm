@@ -848,15 +848,23 @@ function test_JUMP()
     display([value(x), value(y)]) =#
 
     # ===============
-    # case 2: quadratic fobj constrained by linear:
-    function fobj(x; h=0.)
-        return x^2 + h
+    # case 2: dummy underdetermined lsq, binary selection of array
+    Random.seed!(777)
+    A = rand(100, 20)
+    b = rand(100)
+    grange = 1:length(b)
+    function fobj(x; A=zeros(), b=zeros(), grange=[])
+        trainids = grange[x]
+        testids = setdiff(grange, trainids)
+        θ = A[trainids,:]\b[trainids] # train on index x
+        bpred = A[testids,:]*θ
+        return norm(bpred-b) # error of the test 
     end
     model = Model()
     register(model, :fobj, 1, fobj; autodiff=true) # register custom fobj, number of optimized variables = 2
-    @variable(model, x)
-    @constraint(model, c1, x <= -1)
-    @objective(model, Min, fobj(x,h=-1))
+    @variable(model, x[1:length(b)], Bin)
+    @constraint(model, sum(x) == 10)
+    @objective(model, Min, fobj(x;A=A, b=b, grange=grange))
     set_optimizer(model, Ipopt.Optimizer)
     optimize!(model)
     display(objective_value(model))
