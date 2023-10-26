@@ -529,4 +529,5 @@ Data selection optimization
 ? will linearization work? e.g., converting MAE(x) into flinear(x), see https://en.wikipedia.org/wiki/Linearization, try using CPLEX
 
 25.10.23:
-maybe try other solvers too if JuMP is not working for the dummy lsq
+-maybe try other solvers too if JuMP is not working for the dummy lsq
+-see NOMAD
