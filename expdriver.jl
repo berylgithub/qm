@@ -916,7 +916,8 @@ function test_NOMAD()
 
     # Define blackbox
     p = NomadProblem(5, 1, ["OBJ"], # the equality constraints are not counted in the outputs of the blackbox
-                    x->bb(x;c=10.),
+                    x->bb(x;c=10.);
+                    input_types = repeat(["B"], 5),
                     #lower_bound = -10.0 * ones(5),
                     #upper_bound = 10.0 * ones(5),
                     A = A, b = b)
@@ -930,6 +931,8 @@ function test_NOMAD()
         -1.3793445664086618762667058035731;
         1.0403394252630473459930726676248;
         -0.2300117084673765077695861691609]
+    
+    #x0 = [1;0;0;1;0]
 
     # Solution
     result = solve(p, x0)
