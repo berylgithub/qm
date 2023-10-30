@@ -531,4 +531,11 @@ Data selection optimization
 25.10.23:
 -maybe try other solvers too if JuMP is not working for the dummy lsq
 - try with diagm as row selector, but this means will need sparse since it will be memory inefficient, sparsearrays? -> ForwardDiff doesnt work
--see NOMAD
+- see NOMAD -> doesnt work for my very specific case
+- see TopOpt, seems to be the one for my specific linearization case (?) -> need CUDNN, and looks like for  topology only
+- Alpine -> looks promising but needs GUROBI
+- Juniper -> heuristics, probably the only one that will work -> doesnt work with JuMP syntax too ???
+- maybe try optim
+
+30.10.23:
+- nomad froze given the IP problem, try NLopt next
