@@ -3,6 +3,8 @@ using Random, DelimitedFiles
 
 using JuMP, Juniper, Ipopt
 using NOMAD
+using GLPK
+using NLopt
 
 """
 inner product kernel entry (reproducing kernel)
@@ -224,15 +226,16 @@ function test_JUMP()
     display([value(x)])
 end =#
 
-function test_NOMAD()
+function test_NOMAD() # !! nomad froze for this problem
     # problem:
+    Random.seed!(777)
     n_prob=20
     A_lsq = rand(n_prob, 5)
     b_lsq = rand(n_prob)
     grange = 1:n_prob
     # objective:
     function fx(x; A=[], b=[], grange=[])
-        x = Bool.(x)
+        x = Bool.(round.(x))
         θ = A[x,:]\b[x] # train on index x
         nx = similar(x)
         for i ∈ eachindex(x)
@@ -266,12 +269,13 @@ function test_NOMAD()
     p = NomadProblem(n_prob, 1, ["OBJ"], # the equality constraints are not counted in the outputs of the blackbox
                     x->bb(x;A=A_lsq, b=b_lsq, grange=grange);
                     input_types = repeat(["R"], n_prob),
+                    granularity = Float64.(vcat(0,ones(n_prob-1))),
                     #lower_bound = -10.0 * ones(5),
                     #upper_bound = 10.0 * ones(5),
                     A = A, b = b)
 
     # Fix some options
-    p.options.max_bb_eval = 500
+    p.options.max_bb_eval = 10_000
 
     # Define starting points. It must satisfy A x = b.
     #= x0 = [0.57186958424864897665429452899843;
@@ -365,3 +369,78 @@ function test_Juniper()
     println(objective_value(model))
     println(value.(x))
 end
+
+function test_GLPK() # from chatGPT -> doesnt work
+    m = Model(GLPK.Optimizer)
+
+    @variable(m, x[1:3], Bin)
+    @constraint(m, 2x[1] + x[2] <= 5)
+    @constraint(m, x[2] + 3x[3] <= 6)
+
+    function black_box_objective(x::Vector{Float64})
+        # Calculate the objective using x
+        # Example: Replace this with your actual objective calculation
+        obj_value = sum(x)
+        return obj_value
+    end
+
+    function evaluate_callback(cb_data)
+        x_values = JuMP.value.(x)  # Get the current variable values
+    
+        obj_value = black_box_objective(x_values)  # Evaluate the black-box objective
+    
+        JuMP.set_objective_value(m, obj_value)  # Set the objective value in the model
+    end
+
+    register(m, :evaluate_callback, evaluate_callback)
+    set_optimizer_attribute(m, "MOI.Raw", "callback", evaluate_callback)
+
+    optimize!(m)
+    display(objective_value(m))
+    display([value(x)])
+end
+
+function test_NLOpt()
+    # problem:
+    Random.seed!(777)
+    n_prob=20
+    A = rand(n_prob, 5)
+    b = rand(n_prob)
+    # objective:
+    function fx(x; c=0., A=[], b=[])
+        #= x = Bool.(round.(x))
+        θ = A[x,:]\b[x] # train on index x
+        nx = similar(x)
+        for i ∈ eachindex(x)
+            if x[i] == 0
+                nx[i] = 1
+            elseif x[i] == 1
+                nx[i] = 0
+            end
+        end 
+        return norm(A[nx,:]*θ - b[nx]) =#
+        return sum(x .^ 2) + c
+    end
+
+    function myconstraint(x)
+        return sum(x) - 10
+    end
+
+    opt = Opt(:GN_ISRES, 2)
+    opt.lower_bounds = 0
+    opt.upper_bounds = 1
+    #opt.xtol_rel = 1e-4
+
+    opt.min_objective = x -> fx(x,c=10)
+    #inequality_constraint!(opt, (x,g) -> myconstraint(x,g,2,0), 1e-8)
+    #inequality_constraint!(opt, (x,g) -> myconstraint(x,g,-1,1), 1e-8)
+    inequality_constraint!(opt, (x) -> myconstraint(x), 0.)
+
+    (minf,minx,ret) = optimize(opt, vcat(ones(10), zeros(10)))
+    numevals = opt.numevals # the number of function evaluations
+    println("got $minf at $minx after $numevals iterations (returned $ret)")
+end
+
+"""
+Tabu search penalty search
+"""

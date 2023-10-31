@@ -538,4 +538,19 @@ Data selection optimization
 - maybe try optim
 
 30.10.23:
-- nomad froze given the IP problem, try NLopt next
+- nomad froze given the IP problem || can be run but doesn even move from the initial solution, will need actual IP
+- try:
+  - GLPK
+  - NLopt
+nothing works, the only thing left are the heuristics, e.g., local search: https://discourse.julialang.org/t/using-a-jump-bin-vector-to-index-an-array-checkbounds-fails-with-type-variableref/102674/11
+or:
+- Prof. Neumaier's algo for data selection:
+This is a high-dimensional discrete problem, which is difficult for the expensive black box optimization problem that you need to solve. 
+I'd propose to start with the following, which should be reasonable, but can be modified as you gain experience:
+Give penalties p(x)=(f(x)+opt)/(u(x)+1) to each molecule x, where u is the number of simulations where x participated (among all cases tried with the hyperparameters used including those of old runs), 
+f is the sum of the corresponding simulation scores, and opt is the optimal simulation score obtained so far. Store the collection P of the n best training sets. 
+Whenever a processor finished its simulation, it sends its training set S and its score s to the master, who updates P, opt, and the f(x), u(x), p(x) for all x in S. 
+Then the master picks one of the training sets in P at random as new S, replaces m molecules of S with large penalty by m molecules not in S with small penalty, and sends the modified S to the idle processor for new simulation.
+Restart after progress (measured by the decrease of the sum of the scores of training sets in P) gets too slow, but not too early (as it may take a while to get a good gain). m and n are parameters that can be kept fixed, varied, or randomized. 
+I would start with n = number of processors and m=sqrt{100}=10 for a training set of size 100.
+(also read Tabu search)
