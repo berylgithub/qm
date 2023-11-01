@@ -793,6 +793,36 @@ function main_custom_CMBDF_train()
     end
 end
 
+"""
+test reproduce MAE with fixed hyperparameters H from the best one (minimal simulation),
+kind of similar to main_obj
+hardcode the current best:
+[0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2]
+"""
+function min_main_obj(idtrains, E, dataset, DFs, f)
+    idtests = setdiff(1:length(E), idtrains)
+    Et = hp_baseline(E, DFs..., idtrains) # compute deltaML    
+    c = 2048. # 2. ^11
+    A = get_gaussian_kernel(f[idtrains], f[idtrains], [d["atoms"] for d ∈ dataset[idtrains]], [d["atoms"] for d ∈ dataset[idtrains]], c) # compute training kernel 
+    A[diagind(A)] .+= 1e-8
+    θ = A\Et[idtrains] # train
+    A = get_gaussian_kernel(f[idtests], f[idtrains], [d["atoms"] for d ∈ dataset[idtests]], [d["atoms"] for d ∈ dataset[idtrains]], c) # test kernel
+    E_pred = A*θ # pred 
+    errors = E_pred - Et[idtests] # get errors
+    MAE = mean(abs.(errors)) * 627.503 # in kcal/mol
+    return MAE 
+end
+
+function test_min_main_obj()
+    DFs = [load("data/atomref_features.jld", "data"), [], [], []]
+    dataset = load("data/qm9_dataset.jld", "data")
+    idtrains = Int.(readdlm("data/custom_CMBDF_centers_181023.txt")[57,1:100]) # current best
+    E = vec(readdlm("data/energies.txt"))
+    f = load("data/CMBDF.jld", "data")
+    @time fobj = min_main_obj(idtrains, E, dataset, DFs, f)
+    println(fobj)
+end
+
 
 """
 julia GC test, aparently only work within function context, not outside
