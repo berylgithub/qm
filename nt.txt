@@ -556,3 +556,4 @@ I would start with n = number of processors and m=sqrt{100}=10 for a training se
 (also read Tabu search)
 ?? this bugged my mind: 1400 kcal/mol test on some training selection?? gotta check that out ----> see next line
 ---> turns out the ones that has anomalous large error is becauswe there are missing atomic elements in the training set, e.g., the 100 training data is missing "F".
+what if the best selected training set is the set that has all elements (the most complete, with max number of atoms)?

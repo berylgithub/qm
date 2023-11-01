@@ -825,6 +825,22 @@ function test_min_main_obj()
     println(fobj)
 end
 
+function test_filter_data()
+    E = vec(readdlm("data/energies.txt"))
+    f = load("data/CMBDF.jld", "data")
+    DFs = [load("data/atomref_features.jld", "data"), [], [], []]
+    dataset = load("data/qm9_dataset.jld", "data")
+    cid = []
+    formulas = [d["formula"] for d in dataset]
+    for i ∈ eachindex(formulas)
+        formula = formulas[i]
+        if occursin("H", formula) && occursin("C", formula) && occursin("N", formula) && occursin("O", formula) && occursin("F", formula)
+            push!(cid, i)
+        end
+    end
+    idtrains = cid[1:100] # or cid[end-99:end], or random sample from these, or even usequence from these (try later)
+    @time min_main_obj(idtrains, E, dataset, DFs, f)
+end
 
 """
 julia GC test, aparently only work within function context, not outside
