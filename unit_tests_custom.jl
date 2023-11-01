@@ -442,5 +442,5 @@ function test_NLOpt()
 end
 
 """
-Tabu search penalty search
+Tabu search w/ penalty
 """
