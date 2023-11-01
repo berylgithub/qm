@@ -554,3 +554,4 @@ Then the master picks one of the training sets in P at random as new S, replaces
 Restart after progress (measured by the decrease of the sum of the scores of training sets in P) gets too slow, but not too early (as it may take a while to get a good gain). m and n are parameters that can be kept fixed, varied, or randomized. 
 I would start with n = number of processors and m=sqrt{100}=10 for a training set of size 100.
 (also read Tabu search)
+?? this bugged my mind: 1400 kcal/mol test on some training selection?? gotta check that out
