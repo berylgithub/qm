@@ -806,10 +806,12 @@ function min_main_obj(idtrains, E, dataset, DFs, f)
     A = get_gaussian_kernel(f[idtrains], f[idtrains], [d["atoms"] for d ∈ dataset[idtrains]], [d["atoms"] for d ∈ dataset[idtrains]], c) # compute training kernel 
     A[diagind(A)] .+= 1e-8
     θ = A\Et[idtrains] # train
+    #println(mean(abs.(A*θ - Et[idtrains]))*627.503)
     A = get_gaussian_kernel(f[idtests], f[idtrains], [d["atoms"] for d ∈ dataset[idtests]], [d["atoms"] for d ∈ dataset[idtrains]], c) # test kernel
     E_pred = A*θ # pred 
     errors = E_pred - Et[idtests] # get errors
     MAE = mean(abs.(errors)) * 627.503 # in kcal/mol
+    #writedlm("error_analysis.txt", [A*θ Et[idtests]])
     return MAE 
 end
 
