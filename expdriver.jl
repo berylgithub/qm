@@ -826,6 +826,7 @@ function test_min_main_obj()
 end
 
 function test_filter_data()
+    Random.seed!(777)
     E = vec(readdlm("data/energies.txt"))
     f = load("data/CMBDF.jld", "data")
     DFs = [load("data/atomref_features.jld", "data"), [], [], []]
@@ -871,8 +872,3 @@ function test_race(id)
         sleep(.5)
     end
 end
-
-
-
-
-

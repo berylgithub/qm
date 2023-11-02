@@ -440,7 +440,3 @@ function test_NLOpt()
     numevals = opt.numevals # the number of function evaluations
     println("got $minf at $minx after $numevals iterations (returned $ret)")
 end
-
-"""
-Tabu search w/ penalty
-"""
