@@ -1,4 +1,4 @@
-using DelimitedFiles
+using DelimitedFiles, Random, StatsBase
 
 include("utils.jl")
 
@@ -52,7 +52,7 @@ end
 """
 update the table values (p,f,u) given new score fobj and training set S
     - fobj ∈ R, opt ∈ R
-    - S ∈ vector[0,1]
+    - S ∈ vector[0,1] length = ndata (binary)
     - ps, fs, us, ∈ vectors{R} length = ndata
 """
 function update_penalties_x!(ps, fs, us, fobj, opt, S)
@@ -60,6 +60,20 @@ function update_penalties_x!(ps, fs, us, fobj, opt, S)
     us[S] .+= 1 # increment counter
     ps[S] .= f_penalty.(fs[S], us[S], opt)
 end
+
+"""
+updates the set S: replaces some x∈S (up to m numbers) that has high penalty with some x∉S with low penalty
+    - m ∈ Int > 0
+"""
+function update_set!(S, ps, m)
+    S_int = findall(S .== 1) # binaries to int, the location where S == 1
+    id_remove_S = sortperm(ps[S])[end-(m-1):end] # select last m (m-largest) penalties of S
+    id_add = sortperm(ps)[1:m] # get the id which contains the lowest penalties
+    # replace the ids:
+    S[S_int[id_remove_S]] .= 0
+    S[id_add] .= 1
+end
+
 
 """
 initialize opt,u(x),f(x) -> p(x) (u(x),f(x),p(x) table ∀x) given some simulation data tables
@@ -114,12 +128,36 @@ function test_update()
     tbp = readdlm("data/tsopt/table_penalties.txt"); ps = tbp[:, 1]; fs = tbp[:, 2]; us = tbp[:, 3]
     display(ps)
     opt = readdlm("data/tsopt/opt.txt")[1]
-    # dummy simulator returns (fobj, S):
+    # dummy simulator returns (fobj, S): # turns out simulator doesnt need to return S, since its already recorwded in masterr
     fobj = 10.
     opt = fobj < opt ? fobj : opt # sorting new opt value
     display(opt)
     S = int_to_bin([1,2,10,130800], n_data)
     display([ps[S], fs[S], us[S]])
+    i = [4,5,6] # sample non perturbed
     update_penalties_x!(ps, fs, us, fobj, opt, S)
     display([ps[S], fs[S], us[S]])
+end
+
+function test_update_set()
+    Random.seed!(777)
+    E = readdlm("data/energies.txt")
+    n_data = length(E)
+    ps = fs = zeros(n_data); us = zeros(Bool, n_data)
+    # load penalty infos:
+    tbp = readdlm("data/tsopt/table_penalties.txt"); ps = tbp[:, 1]; fs = tbp[:, 2]; us = tbp[:, 3]
+    display(ps)
+    opt = readdlm("data/tsopt/opt.txt")[1]
+    # dummy S:
+    S_int = sample(1:n_data, 100, replace=false)
+    println(S_int)
+    S = int_to_bin(S_int, n_data)
+    update_set!(S, ps, 10)
+    println(findall(S .== 1))
+    println(setdiff(findall(S .== 1), S_int))
+end
+
+
+function test_main_master()
+    
 end
