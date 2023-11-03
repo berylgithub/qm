@@ -2,8 +2,18 @@ using DelimitedFiles
 
 
 """
+=========================
 Tabu search w/ penalty
+=========================
 """
+
+"""
+compute penalty given new f,u,opt
+"""
+function f_penalty(f, u, opt)
+    (f + opt) / (u + 1)
+end
+
 
 """
 function to initialize fobj contrib and contrib count
@@ -18,7 +28,7 @@ function init_penalty_x!(x, f, u, opt, tb_maes, tb_centers)
             u += 1 # update count
         end
     end
-    return (f + opt) / (u + 1), f, u
+    return f_penalty(f, u, opt), f, u
 end
 
 function test_pen()
@@ -49,10 +59,12 @@ function main_init_opttable()
     id_data = 1:n_data
     p = zeros(n_data); f = zeros(n_data); u = zeros(Int, n_data)
     t = @elapsed begin
-        for i ∈ id_data[1:10000]
+        for i ∈ id_data
             p[i], f[i], u[i] = init_penalty_x!(i, f[i], u[i], opt, tb_maes, tb_centers)
         end
     end
+    writedlm("data/tsopt/table_penalties.txt", [p f u])
+    writedlm("data/tsopt/opt.txt", opt)
     display([p f u])
     display(t)
 end
