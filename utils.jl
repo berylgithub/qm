@@ -9,6 +9,15 @@ macro Name(arg)
     string(arg)
 end
 
+"""
+transforms Integers to Binaries, mainly for faster slicing, given a vector with known length
+"""
+function int_to_bin(xint, len)
+    xbin = zeros(Bool, len)
+    xbin[xint] .= 1
+    return xbin
+end
+
 # script to write string given a vector{string}
 function writestringline(strinput, filename; mode="w")
     open(filename, mode) do io
