@@ -55,7 +55,7 @@ update the table values (p,f,u) given new score fobj and training set S
     - S ∈ vector[0,1]
     - ps, fs, us, ∈ vectors{R} length = ndata
 """
-function update_penalty_x!(ps, fs, us, fobj, opt, S)
+function update_penalties_x!(ps, fs, us, fobj, opt, S)
     fs[S] .+= fobj # increase fobj value
     us[S] .+= 1 # increment counter
     ps[S] .= f_penalty.(fs[S], us[S], opt)
@@ -107,5 +107,19 @@ function test_pen()
 end
 
 function test_update()
-    
+    E = readdlm("data/energies.txt")
+    n_data = length(E)
+    ps = fs = zeros(n_data); us = zeros(Bool, n_data)
+    # load penalty infos:
+    tbp = readdlm("data/tsopt/table_penalties.txt"); ps = tbp[:, 1]; fs = tbp[:, 2]; us = tbp[:, 3]
+    display(ps)
+    opt = readdlm("data/tsopt/opt.txt")[1]
+    # dummy simulator returns (fobj, S):
+    fobj = 10.
+    opt = fobj < opt ? fobj : opt # sorting new opt value
+    display(opt)
+    S = int_to_bin([1,2,10,130800], n_data)
+    display([ps[S], fs[S], us[S]])
+    update_penalties_x!(ps, fs, us, fobj, opt, S)
+    display([ps[S], fs[S], us[S]])
 end
