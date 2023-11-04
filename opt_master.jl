@@ -1,4 +1,5 @@
-using DelimitedFiles, Random, StatsBase
+using DelimitedFiles, Random, StatsBase, LinearAlgebra, Combinatorics
+
 
 include("utils.jl")
 
@@ -64,6 +65,7 @@ end
 """
 updates the set S: replaces some x∈S (up to m numbers) that has high penalty with some x∉S with low penalty
     - m ∈ Int > 0
+!!! BUG POSSIBILITY, it is possible that the one that is added is not disjoint with S, check 3rd line of the function
 """
 function update_set!(S, ps, m)
     S_int = findall(S .== 1) # binaries to int, the location where S == 1
@@ -157,7 +159,47 @@ function test_update_set()
     println(setdiff(findall(S .== 1), S_int))
 end
 
+function fx_dummy(x, A, b)
+    θ = A[x,:]\b[x] # train on index x
+    nx = similar(x)
+    for i ∈ eachindex(x)
+        if x[i] == 0
+            nx[i] = 1
+        elseif x[i] == 1
+            nx[i] = 0
+        end
+    end 
+    return norm(A[nx,:]*θ - b[nx])
+end
 
+"""
+test the optimization with dummy simulations
+"""
 function test_main_master()
-    
+    # generate dummy simulations:
+    Random.seed!(777)
+    n = 10; ns = 2;
+    A = rand(n, 4)
+    b = rand(n)
+    xs = [int_to_bin(sample(1:n, ns, replace=false), n) for i ∈ 1:10] # 10 samples of "training data for opt"
+    xs = int_to_bin.(collect(combinations(1:n, 2)), n)
+    fobjs = [fx_dummy(x,A,b) for x ∈ xs] # all of the possible fobjs
+    id_min = argmin(fobjs) # the global minimum
+    display([fobjs[id_min], findall(xs[id_min] .== 1)])
+    # initialize "training opt set":
+    xs = xs[1:10] 
+    xs = mapreduce(permutedims, vcat, xs)
+    fobjs = fobjs[1:10]
+    opt = minimum(fobjs)
+    display(opt)
+    ps = zeros(n); fs = zeros(n); us = zeros(Int, n)
+    init_penalties_x!(ps, fs, us, 1:n, opt, fobjs, xs)
+    display([ps fs us])
+    # optimization steps:
+    id_sort = sortperm(fobjs)
+    P = [xs[id,:] for id ∈ id_sort[1:3]] # global set containing nset of training set S
+    S = sample(P, 1, replace=false)[1] # pick one from P
+    println(S)
+    update_set!(S, ps, 2)
+    println(S)
 end
