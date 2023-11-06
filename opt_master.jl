@@ -36,7 +36,7 @@ end
 """
 vectorized and binarized version, should be much faster
     - ids_int ∈ vector{Int} length = ndata
-    - tb_centers converted to binaries, to avoid index search
+    - tb_centers ∈ Matrix{Int} rows converted to binaries, to avoid index search. Done each row to avoid memory bloat
 """
 function init_penalties_x!(ps, fs, us, ids_int, opt, tb_maes, tb_centers)
     for x ∈ ids_int 
@@ -66,11 +66,24 @@ end
 updates the set S: replaces some x∈S (up to m numbers) that has high penalty with some x∉S with low penalty
     - m ∈ Int > 0
 !!! BUG POSSIBILITY, it is possible that the one that is added is not disjoint with S, check 3rd line of the function
+
 """
 function update_set!(S, ps, m)
-    S_int = findall(S .== 1) # binaries to int, the location where S == 1
+    S_int = bin_to_int(S) # binaries to int, the location where S == 1
     id_remove_S = sortperm(ps[S])[end-(m-1):end] # select last m (m-largest) penalties of S
-    id_add = sortperm(ps)[1:m] # get the id which contains the lowest penalties
+    # get the id which contains the lowest penalties, make sure that no intersection between S and new_S
+    sorted_ps = sortperm(ps)
+    id_add = []
+    c = 0
+    for i ∈ sorted_ps
+        if c == m
+            break
+        end
+        if !S[i]
+            push!(id_add, i)
+            c += 1
+        end
+    end 
     # replace the ids:
     S[S_int[id_remove_S]] .= 0
     S[id_add] .= 1
@@ -200,6 +213,6 @@ function test_main_master()
     P = [xs[id,:] for id ∈ id_sort[1:3]] # global set containing nset of training set S
     S = sample(P, 1, replace=false)[1] # pick one from P
     println(S)
-    update_set!(S, ps, 2)
+    update_set!(S, ps, 0)
     println(S)
 end
