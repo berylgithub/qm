@@ -194,17 +194,19 @@ function test_main_master()
     n = 10; ns = 2;
     A = rand(n, 4)
     b = rand(n)
-    xs = [int_to_bin(sample(1:n, ns, replace=false), n) for i ∈ 1:10] # 10 samples of "training data for opt"
-    xs = int_to_bin.(collect(combinations(1:n, 2)), n)
+    xs = int_to_bin.(collect(combinations(1:n, ns)), n)
     fobjs = [fx_dummy(x,A,b) for x ∈ xs] # all of the possible fobjs
     id_min = argmin(fobjs) # the global minimum
     global_min = fobjs[id_min]
     println("global minimum to be found : ")
-    display([global_min, findall(xs[id_min] .== 1)])
+    display([global_min, findall(xs[id_min] .== 1), id_min])
     # initialize "training opt set":
-    xs = xs[1:10] 
+    nsim = 10 # number of "previous simulations"
+    id_select = setdiff(sample(1:binomial(n, ns), nsim, replace=false), 15)
+    xs = xs[id_select]
+    println(id_select)
     xs = mapreduce(permutedims, vcat, xs)
-    fobjs = fobjs[1:10]
+    fobjs = fobjs[id_select]
     opt = minimum(fobjs)
     ps = zeros(n); fs = zeros(n); us = zeros(Int, n)
     init_penalties_x!(ps, fs, us, 1:n, opt, fobjs, xs)
@@ -215,10 +217,11 @@ function test_main_master()
     opt = fobjs[id_min] # set the known minimum
     println("current 'known' minimum from data = ", opt, " by ", bin_to_int(xs[id_min, :]))
     id_sort = sortperm(fobjs)
-    nP = 3
-    P = [xs[id,:] for id ∈ id_sort[1:nP]] # global set containing nset of training set S
-    niter = 10
+    nP = min(length(id_select), 10) # length(id_select) = actual "previous data" after excluding the global minimum
+    P = [xs[id,:] for id ∈ id_sort[1:nP]] # global set containing best known nset of training set S
+    niter = 1000
     opt_upd = []
+    #S = P[1]
     for i ∈ 1:niter
         # opt steps, put in a loop:
         println("==== iteration = ",i)
@@ -227,11 +230,11 @@ function test_main_master()
         S = P[id_P] # pick one from P (useful for parallel later)
         println("picked S to be updated = ", id_P)
         update_set!(S, ps, 1) # update the decision variable
-        #P[id_p] =  # update the "memory" set
+        #P[id_P] = S  # update the "memory" set
         new_fobj = fx_dummy(S, A, b)
         println("new fobj = ", new_fobj, " by ",bin_to_int(S))
         if new_fobj < opt
-            println("lower fobj found!", new_fobj, "<", opt)
+            println("lower fobj found!", new_fobj, " < ", opt)
             opt = new_fobj
             push!(opt_upd, i)
         end
@@ -244,6 +247,7 @@ function test_main_master()
         #println("penalties post-update:", [ps fs us])
     end
     println("updated opt at ", opt_upd)
-    println("initial penalties:", [ps0 fs0 us0])
-    println("final penalties:", [ps fs us])
+    #println("initial penalties:", [ps0 us0])
+    #println("final penalties:", [ps us])
+    println("final optimal value = ", opt)
 end
