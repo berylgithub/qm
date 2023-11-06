@@ -38,7 +38,7 @@ vectorized and binarized version, should be much faster
     - ids_int ∈ vector{Int} length = ndata
     - tb_centers ∈ Matrix{Int} rows converted to binaries, to avoid index search. Done each row to avoid memory bloat
 """
-function init_penalties_x!(ps, fs, us, ids_int, opt, tb_maes, tb_centers)
+function init_penalties_x!(ps, fs, us, ids_int, opt, tb_maes, tb_centers::Matrix{Bool})
     for x ∈ ids_int 
         for i ∈ eachindex(tb_maes)
             if tb_centers[i,x] # tb_centers is binaries
@@ -68,7 +68,7 @@ updates the set S: replaces some x∈S (up to m numbers) that has high penalty w
 !!! BUG POSSIBILITY, it is possible that the one that is added is not disjoint with S, check 3rd line of the function
 
 """
-function update_set!(S, ps, m)
+function update_set!(S::Vector{Bool}, ps::Vector{Float64}, m)
     S_int = bin_to_int(S) # binaries to int, the location where S == 1
     id_remove_S = sortperm(ps[S])[end-(m-1):end] # select last m (m-largest) penalties of S
     # get the id which contains the lowest penalties, make sure that no intersection between S and new_S
@@ -198,21 +198,52 @@ function test_main_master()
     xs = int_to_bin.(collect(combinations(1:n, 2)), n)
     fobjs = [fx_dummy(x,A,b) for x ∈ xs] # all of the possible fobjs
     id_min = argmin(fobjs) # the global minimum
-    display([fobjs[id_min], findall(xs[id_min] .== 1)])
+    global_min = fobjs[id_min]
+    println("global minimum to be found : ")
+    display([global_min, findall(xs[id_min] .== 1)])
     # initialize "training opt set":
     xs = xs[1:10] 
     xs = mapreduce(permutedims, vcat, xs)
     fobjs = fobjs[1:10]
     opt = minimum(fobjs)
-    display(opt)
     ps = zeros(n); fs = zeros(n); us = zeros(Int, n)
     init_penalties_x!(ps, fs, us, 1:n, opt, fobjs, xs)
-    display([ps fs us])
-    # optimization steps:
+    # copy init state:
+    ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us)
+    # optimization init:
+    id_min = argmin(fobjs) 
+    opt = fobjs[id_min] # set the known minimum
+    println("current 'known' minimum from data = ", opt, " by ", bin_to_int(xs[id_min, :]))
     id_sort = sortperm(fobjs)
-    P = [xs[id,:] for id ∈ id_sort[1:3]] # global set containing nset of training set S
-    S = sample(P, 1, replace=false)[1] # pick one from P
-    println(S)
-    update_set!(S, ps, 0)
-    println(S)
+    nP = 3
+    P = [xs[id,:] for id ∈ id_sort[1:nP]] # global set containing nset of training set S
+    niter = 1000
+    opt_upd = []
+    for i ∈ 1:niter
+        # opt steps, put in a loop:
+        println("==== iteration = ",i)
+        println("memory set = ", bin_to_int.(P))
+        id_P = sample(1:nP, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
+        S = P[id_P] # pick one from P (useful for parallel later)
+        println("picked S to be updated = ", id_P)
+        update_set!(S, ps, 1) # update the decision variable
+        #P[id_p] =  # update the "memory" set
+        new_fobj = fx_dummy(S, A, b)
+        println("new fobj = ", new_fobj, " by ",bin_to_int(S))
+        opt = new_fobj < opt ? new_fobj : opt # update the new known minimum
+        if new_fobj < opt
+            println("lower fobj found!", new_fobj, "<", opt)
+            opt = new_fobj
+            push!(opt_upd, i)
+        end
+        if opt ≤ global_min
+            println("global minimum found in ", i, " iterations!!")
+            break
+        end
+        println("penalties pre-update:", [ps fs us])
+        update_penalties_x!(ps, fs, us, new_fobj, opt, S) # update penalty
+        println("penalties post-update:", [ps fs us])
+    end
+    println("updated opt at ", opt_upd)
+    println("initial penalties:", [ps0 fs0 us0])
 end
