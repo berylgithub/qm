@@ -18,6 +18,13 @@ function int_to_bin(xint, len)
     return xbin
 end
 
+"""
+inverse of above
+"""
+function bin_to_int(xbin)
+    return findall(xbin .== 1)
+end
+
 # script to write string given a vector{string}
 function writestringline(strinput, filename; mode="w")
     open(filename, mode) do io
