@@ -217,7 +217,7 @@ function test_main_master()
     id_sort = sortperm(fobjs)
     nP = 3
     P = [xs[id,:] for id ∈ id_sort[1:nP]] # global set containing nset of training set S
-    niter = 1000
+    niter = 10
     opt_upd = []
     for i ∈ 1:niter
         # opt steps, put in a loop:
@@ -230,7 +230,6 @@ function test_main_master()
         #P[id_p] =  # update the "memory" set
         new_fobj = fx_dummy(S, A, b)
         println("new fobj = ", new_fobj, " by ",bin_to_int(S))
-        opt = new_fobj < opt ? new_fobj : opt # update the new known minimum
         if new_fobj < opt
             println("lower fobj found!", new_fobj, "<", opt)
             opt = new_fobj
@@ -240,10 +239,11 @@ function test_main_master()
             println("global minimum found in ", i, " iterations!!")
             break
         end
-        println("penalties pre-update:", [ps fs us])
+        #println("penalties pre-update:", [ps fs us])
         update_penalties_x!(ps, fs, us, new_fobj, opt, S) # update penalty
-        println("penalties post-update:", [ps fs us])
+        #println("penalties post-update:", [ps fs us])
     end
     println("updated opt at ", opt_upd)
     println("initial penalties:", [ps0 fs0 us0])
+    println("final penalties:", [ps fs us])
 end
