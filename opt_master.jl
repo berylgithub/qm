@@ -199,7 +199,7 @@ function test_main_master()
     id_min = argmin(fobjs) # the global minimum
     global_min = fobjs[id_min]
     println("global minimum to be found : ")
-    display([global_min, findall(xs[id_min] .== 1), id_min])
+    display([global_min, bin_to_int(xs[id_min]), id_min])
     # initialize "training opt set":
     nsim = 10 # number of "previous simulations"
     id_select = setdiff(sample(1:binomial(n, ns), nsim, replace=false), 15)
@@ -210,44 +210,61 @@ function test_main_master()
     opt = minimum(fobjs)
     ps = zeros(n); fs = zeros(n); us = zeros(Int, n)
     init_penalties_x!(ps, fs, us, 1:n, opt, fobjs, xs)
-    # copy init state:
-    ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us)
     # optimization init:
     id_min = argmin(fobjs) 
-    opt = fobjs[id_min] # set the known minimum
+    opt0 = opt = fobjs[id_min] # set the known minimum
     println("current 'known' minimum from data = ", opt, " by ", bin_to_int(xs[id_min, :]))
     id_sort = sortperm(fobjs)
-    nP = min(length(id_select), 10) # length(id_select) = actual "previous data" after excluding the global minimum
+    nP = min(length(id_select), 3) # length(id_select) = actual "previous data" after excluding the global minimum
     P = [xs[id,:] for id ∈ id_sort[1:nP]] # global set containing best known nset of training set S
-    niter = 1000
+    ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us); P0 = copy(P) # copy init state
+    println(ps0)
+    n_update = 1 # number of variables to be updated each iterations
+    ntol = 3; nrest = 5 # number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
     opt_upd = []
-    #S = P[1]
-    for i ∈ 1:niter
-        # opt steps, put in a loop:
-        println("==== iteration = ",i)
-        println("memory set = ", bin_to_int.(P))
-        id_P = sample(1:nP, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
-        S = P[id_P] # pick one from P (useful for parallel later)
-        println("picked S to be updated = ", id_P)
-        update_set!(S, ps, 1) # update the decision variable
-        #P[id_P] = S  # update the "memory" set
-        new_fobj = fx_dummy(S, A, b)
-        println("new fobj = ", new_fobj, " by ",bin_to_int(S))
-        if new_fobj < opt
-            println("lower fobj found!", new_fobj, " < ", opt)
-            opt = new_fobj
-            push!(opt_upd, i)
+    itol = irest = 0 # for now: reset when a lower fobj is found
+    iter = 1
+    while irest < nrest
+        itol = 0 # tolerance counter
+        while itol < ntol
+            # opt steps, put in a loop:
+            println("==== iteration = ",iter)
+            println("memory set = ", bin_to_int.(P))
+            id_P = sample(1:nP, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
+            S = P[id_P] # pick one from P (useful for parallel later)
+            println("picked S to be updated = ", id_P)
+            update_set!(S, ps, n_update) # update the decision variable
+            P[id_P] = S  # update the "memory" set
+            new_fobj = fx_dummy(S, A, b)
+            println("new fobj = ", new_fobj, " by ",bin_to_int(S))
+            if new_fobj < opt
+                println("lower fobj found!", new_fobj, " < ", opt)
+                opt = new_fobj
+                push!(opt_upd, iter)
+                itol = 0
+            else
+                itol += 1 # increase 
+            end
+            if opt ≤ global_min
+                println("global minimum found in ", iter, " iterations!!")
+                break
+            end
+            #println("penalties pre-update:", [ps fs us])
+            update_penalties_x!(ps, fs, us, new_fobj, opt, S) # update penalty
+            #println("penalties post-update:", [ps fs us])
+            iter += 1
         end
-        if opt ≤ global_min
-            println("global minimum found in ", i, " iterations!!")
-            break
-        end
-        #println("penalties pre-update:", [ps fs us])
-        update_penalties_x!(ps, fs, us, new_fobj, opt, S) # update penalty
-        #println("penalties post-update:", [ps fs us])
+        # reset mechanism:
+        println(P)
+        ps = copy(ps0); fs = copy(fs0); us = copy(us0); P = copy(P0)
+        irest += 1
+        println("restarted!!")
+        println(P)
     end
+    println("number of restarts = ", irest)
     println("updated opt at ", opt_upd)
     #println("initial penalties:", [ps0 us0])
     #println("final penalties:", [ps us])
-    println("final optimal value = ", opt)
+    println("opt0 = ",opt0)
+    println("final optimal value = ", opt, " at iter ",iter, " w/ tolerance =", itol)
 end
