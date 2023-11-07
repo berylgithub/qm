@@ -56,7 +56,7 @@ update the table values (p,f,u) given new score fobj and training set S
     - S ∈ vector[0,1] length = ndata (binary)
     - ps, fs, us, ∈ vectors{R} length = ndata
 """
-function update_penalties_x!(ps, fs, us, fobj, opt, S)
+function update_penalties_x!(ps, fs, us, fobj, opt, S::Vector{Bool})
     fs[S] .+= fobj # increase fobj value
     us[S] .+= 1 # increment counter
     ps[S] .= f_penalty.(fs[S], us[S], opt)
@@ -68,8 +68,8 @@ updates the set S: replaces some x∈S (up to m numbers) that has high penalty w
 !!! BUG POSSIBILITY, it is possible that the one that is added is not disjoint with S, check 3rd line of the function
 
 """
-function update_set!(S::Vector{Bool}, ps::Vector{Float64}, m)
-    S_int = bin_to_int(S) # binaries to int, the location where S == 1
+function update_set(S_int::Vector{Int}, ps::Vector{Float64}, n, m)
+    S = int_to_bin(S_int, n)
     id_remove_S = sortperm(ps[S])[end-(m-1):end] # select last m (m-largest) penalties of S
     # get the id which contains the lowest penalties, make sure that no intersection between S and new_S
     sorted_ps = sortperm(ps)
@@ -87,6 +87,7 @@ function update_set!(S::Vector{Bool}, ps::Vector{Float64}, m)
     # replace the ids:
     S[S_int[id_remove_S]] .= 0
     S[id_add] .= 1
+    return bin_to_int(S)
 end
 
 
@@ -194,33 +195,33 @@ function test_main_master()
     n = 10; ns = 2;
     A = rand(n, 4)
     b = rand(n)
-    xs = int_to_bin.(collect(combinations(1:n, ns)), n)
-    fobjs = [fx_dummy(x,A,b) for x ∈ xs] # all of the possible fobjs
+    xs = collect(combinations(1:n, ns))
+    fobjs = [fx_dummy(int_to_bin(x, n),A,b) for x ∈ xs] # all of the possible fobjs
     id_min = argmin(fobjs) # the global minimum
     global_min = fobjs[id_min]
     println("global minimum to be found : ")
-    display([global_min, bin_to_int(xs[id_min]), id_min])
+    display([global_min, xs[id_min], id_min])
     # initialize "training opt set":
     nsim = 10 # number of "previous simulations"
     id_select = setdiff(sample(1:binomial(n, ns), nsim, replace=false), 15)
     xs = xs[id_select]
     println(id_select)
-    xs = mapreduce(permutedims, vcat, xs)
     fobjs = fobjs[id_select]
     opt = minimum(fobjs)
     ps = zeros(n); fs = zeros(n); us = zeros(Int, n)
-    init_penalties_x!(ps, fs, us, 1:n, opt, fobjs, xs)
+    xsbin = mapreduce(permutedims, vcat, int_to_bin.(xs, n))
+    init_penalties_x!(ps, fs, us, 1:n, opt, fobjs, xsbin)
     # optimization init:
     id_min = argmin(fobjs) 
     opt0 = opt = fobjs[id_min] # set the known minimum
-    println("current 'known' minimum from data = ", opt, " by ", bin_to_int(xs[id_min, :]))
+    println("current 'known' minimum from data = ", opt, " by ", xs[id_min])
     id_sort = sortperm(fobjs)
     nP = min(length(id_select), 3) # length(id_select) = actual "previous data" after excluding the global minimum
-    P = [xs[id,:] for id ∈ id_sort[1:nP]] # global set containing best known nset of training set S
-    ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us); P0 = copy(P) # copy init state
+    P0 = [xs[id] for id ∈ id_sort[1:nP]] # global set containing best known nset of training set S
+    ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us); P = copy(P0) # copy init state
     println(ps0)
     n_update = 1 # number of variables to be updated each iterations
-    ntol = 3; nrest = 5 # number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
+    ntol = 3; nrest = 5 #| number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
     opt_upd = []
     itol = irest = 0 # for now: reset when a lower fobj is found
     iter = 1
@@ -229,14 +230,15 @@ function test_main_master()
         while itol < ntol
             # opt steps, put in a loop:
             println("==== iteration = ",iter)
-            println("memory set = ", bin_to_int.(P))
+            println("memory set = ", P)
             id_P = sample(1:nP, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
             S = P[id_P] # pick one from P (useful for parallel later)
-            println("picked S to be updated = ", id_P)
-            update_set!(S, ps, n_update) # update the decision variable
+            println("picked S to be updated = ", S,", id =",id_P)
+            S = update_set(S, ps, n, n_update) # update the decision variable
             P[id_P] = S  # update the "memory" set
-            new_fobj = fx_dummy(S, A, b)
-            println("new fobj = ", new_fobj, " by ",bin_to_int(S))
+            x = int_to_bin(S,n)
+            new_fobj = fx_dummy(x, A, b)
+            println("new fobj = ", new_fobj, " by ", S)
             if new_fobj < opt
                 println("lower fobj found!", new_fobj, " < ", opt)
                 opt = new_fobj
@@ -250,16 +252,16 @@ function test_main_master()
                 break
             end
             #println("penalties pre-update:", [ps fs us])
-            update_penalties_x!(ps, fs, us, new_fobj, opt, S) # update penalty
+            update_penalties_x!(ps, fs, us, new_fobj, opt, x) # update penalty
             #println("penalties post-update:", [ps fs us])
             iter += 1
         end
         # reset mechanism:
-        println(P)
+        println([P, P0])
         ps = copy(ps0); fs = copy(fs0); us = copy(us0); P = copy(P0)
         irest += 1
         println("restarted!!")
-        println(P)
+        println([P, P0])
     end
     println("number of restarts = ", irest)
     println("updated opt at ", opt_upd)
