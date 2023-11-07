@@ -91,6 +91,15 @@ function update_set(S_int::Vector{Int}, ps::Vector{Float64}, n, m)
 end
 
 """
+the Tabu search algorithm for combinatorial problem
+parameters:
+    - 
+"""
+function alg_tabu_search()
+    
+end
+
+"""
 initialize opt,u(x),f(x) -> p(x) (u(x),f(x),p(x) table ∀x) given some simulation data tables
 should be computed only once per batch
 """
@@ -220,11 +229,12 @@ function test_main_master()
     ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us); P = copy(P0) # copy init state
     println(ps0)
     n_update = 2 # (HYPERPARAMETER) number of variables to be updated each iterations
-    ntol = 100; nreset = 5 # number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
+    ntol = 10; nreset = 5 # number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
     opt_upd = []
-    itol = irest = 0 # for now: reset when a lower fobj is found
+    itol = ireset = 0 # for now: reset when a lower fobj is found
     iter = 1
     exit_signal = false
+    hps = []
     while true # irest < nrest
         itol = 0 # tolerance counter
         while itol < ntol
@@ -264,15 +274,20 @@ function test_main_master()
         # reset mechanism:
         println([P, P0])
         # change hyperparameters after n_reset: (randomly?)
-        n_update = sample(1:ns, 1, replace=false)[1]; nP = sample(1:nsim, 1)[1]
+        if ireset ≥ nreset
+            println("Hyperparameters change!!")
+            n_update = sample(1:ns, 1, replace=false)[1]; nP = sample(1:nsim, 1)[1]
+            push!(hps, [nP, n_update])
+            ireset = 0
+        end
         ps = copy(ps0); fs = copy(fs0); us = copy(us0); P = copy(P0)
-        irest += 1
+        ireset += 1
         println("restarted!!")
         println([P, P0], [nP, n_update])
     end
-    println("number of restarts = ", irest)
+    println("number of restarts = ", ireset)
     println("updated opt at ", opt_upd)
-    println("hyperparameters = ", [n_update, nP])
+    println("hyperparameters = ", hps)
     #println("initial penalties:", [ps0 us0])
     #println("final penalties:", [ps us])
     println("opt0 = ",opt0)
