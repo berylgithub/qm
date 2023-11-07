@@ -105,18 +105,84 @@ optionals:
     - n_update = Int, number of elements swapped in each iteration
     - n_P = Int, number of elements included in the memory set
 """
-function alg_tabu_search(fun_obj, opt, x_data, P0, ps0, fs0, us0; n_update = 1, n_P = 5, )
-    nP = min(length(id_select), 10) # (HYPERPARAMETER), number of included search set, length(id_select) = actual "previous data" after excluding the global minimum
-    P0 = [xs[id] for id ∈ id_sort[1:nP]] # global set containing best known nset of training set S
-    ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us); P = copy(P0) # copy init state
-    println(ps0)
-    n_update = 2 # (HYPERPARAMETER) number of variables to be updated each iterations
-    ntol = 10; nreset = 5 # number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
-    opt_upd = []
+function alg_tabu_search(fun_obj, opt, x_data, P0, ps0, fs0, us0; 
+                        n_update = 1, n_P = 5, n_tol = 100, n_reset = 5, 
+                        fun_x_transform = nothing, fun_params = [], fun_x_trans_params = [])
+    # initialization:
+    ps = copy(ps0); fs = copy(fs0); us = copy(us0); P = copy(P0)
+
+    opt_upd = [] # memory for where the minimum is updated
     itol = ireset = 0 # for now: reset when a lower fobj is found
-    iter = 1
-    exit_signal = false
+    iter = 1 # iteration tracker
+    exit_signal = false # when the algorithm stops
     hps = []
+
+    while true # irest < nrest
+        itol = 0 # tolerance counter
+        while itol < ntol
+            # opt steps, put in a loop:
+            println("==== iteration = ",iter)
+            println("memory set = ", P)
+            id_P = sample(1:n_P, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
+            S = P[id_P] # pick one from P (useful for parallel later)
+            println("picked S to be updated = ", S,", id =",id_P)
+            S = update_set(S, ps, n, n_update) # update the decision variable
+            P[id_P] = S  # update the "memory" set
+            x = int_to_bin(S,n)
+            # file tracking to cut computation time hopefully:
+            new_fobj = 0. 
+            if tracking # check if the iterates is already in file:
+                new_fobj = track_cache(path_tracker, fx_dummy, S, 1, [2, 2+length(S)-1];
+                             fun_params = [A, b], fun_x_transform = int_to_bin, fun_x_transform_params = [n])
+            else
+                new_fobj = fun_obj(x, A, b)
+            end
+            println("new fobj = ", new_fobj, " by ", S)
+            # found better point check:
+            if new_fobj < opt
+                println("lower fobj found!", new_fobj, " < ", opt)
+                opt = new_fobj
+                push!(opt_upd, iter)
+                itol = 0
+            else
+                itol += 1 # increment 
+            end
+            # termination check: 
+            if opt ≤ global_min
+                println("global minimum found in ", iter, " iterations!!")
+                exit_signal = true
+                break
+            end
+            #println("penalties pre-update:", [ps fs us])
+            update_penalties_x!(ps, fs, us, new_fobj, opt, x) # update penalty
+            #println("penalties post-update:", [ps fs us])
+            iter += 1
+        end
+        # check if exit signal is found
+        if exit_signal
+            break
+        end
+        # reset mechanism:
+        println([P, P0])
+        # change hyperparameters after n_reset: (randomly?)
+        if ireset ≥ n_reset
+            println("Hyperparameters change!!")
+            n_update = sample(1:ns, 1, replace=false)[1]; n_P = sample(1:nsim, 1)[1]
+            push!(hps, [nP, n_update])
+            ireset = 0
+        end
+        ps = copy(ps0); fs = copy(fs0); us = copy(us0); P = copy(P0)
+        ireset += 1
+        println("restarted!!")
+        println([P, P0], [nP, n_update])
+    end
+    println("number of restarts = ", ireset)
+    println("updated opt at ", opt_upd)
+    #println("hyperparameters = ", hps)
+    #println("initial penalties:", [ps0 us0])
+    #println("final penalties:", [ps us])
+    println("opt0 = ",opt0)
+    println("final optimal value = ", opt, " at iter ",iter, " w/ tolerance =", itol)
 end
 
 """
