@@ -91,12 +91,32 @@ function update_set(S_int::Vector{Int}, ps::Vector{Float64}, n, m)
 end
 
 """
+!! fill out later
 the Tabu search algorithm for combinatorial problem
 parameters:
+    - fun_obj = objective function
+    - f_data = Vector{Real} of initially known objective functions
+    - P0 = Vector{AbstractArray{Int}} of initial points, e.g. P0 = [[0,1,0],[1,1,0],[1,1,1]]
+    - ps0 = Vector{Real} of initial penalties
+    - fs0 = Vector{Real} of sum of scores
+    - us0 = Vector{Int} of num of simulations in which x ∈ eachindex(us0) participated in
     - 
+optionals:
+    - n_update = Int, number of elements swapped in each iteration
+    - n_P = Int, number of elements included in the memory set
 """
-function alg_tabu_search()
-    
+function alg_tabu_search(fun_obj, opt, x_data, P0, ps0, fs0, us0; n_update = 1, n_P = 5, )
+    nP = min(length(id_select), 10) # (HYPERPARAMETER), number of included search set, length(id_select) = actual "previous data" after excluding the global minimum
+    P0 = [xs[id] for id ∈ id_sort[1:nP]] # global set containing best known nset of training set S
+    ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us); P = copy(P0) # copy init state
+    println(ps0)
+    n_update = 2 # (HYPERPARAMETER) number of variables to be updated each iterations
+    ntol = 10; nreset = 5 # number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
+    opt_upd = []
+    itol = ireset = 0 # for now: reset when a lower fobj is found
+    iter = 1
+    exit_signal = false
+    hps = []
 end
 
 """
@@ -219,7 +239,10 @@ function test_main_master()
     ps = zeros(n); fs = zeros(n); us = zeros(Int, n)
     xsbin = mapreduce(permutedims, vcat, int_to_bin.(xs, n))
     init_penalties_x!(ps, fs, us, 1:n, opt, fobjs, xsbin)
+    
     # optimization init:
+    tracking = true
+    path_tracker = "data/tsopt/tracker.txt" # initialize file cache (see if immediate write to disk is fast)
     id_min = argmin(fobjs) 
     opt0 = opt = fobjs[id_min] # set the known minimum
     println("current 'known' minimum from data = ", opt, " by ", xs[id_min])
@@ -247,17 +270,26 @@ function test_main_master()
             S = update_set(S, ps, n, n_update) # update the decision variable
             P[id_P] = S  # update the "memory" set
             x = int_to_bin(S,n)
-            new_fobj = fx_dummy(x, A, b) # evaluate objective value
+            # file tracking to cut computation time hopefully:
+            new_fobj = 0. 
+            if tracking # check if the iterates is already in file:
+                new_fobj = track_cache(path_tracker, fx_dummy, S, 1, [2, 2+length(S)-1];
+                             fun_params = [A, b], fun_x_transform = int_to_bin, fun_x_transform_params = [n])
+            else
+                new_fobj = fx_dummy(x, A, b)
+            end
             println("new fobj = ", new_fobj, " by ", S)
+            # found better point check:
             if new_fobj < opt
                 println("lower fobj found!", new_fobj, " < ", opt)
                 opt = new_fobj
                 push!(opt_upd, iter)
                 itol = 0
             else
-                itol += 1 # increase 
+                itol += 1 # increment 
             end
-            if opt ≤ global_min # if target is achieved
+            # termination check: 
+            if opt ≤ global_min
                 println("global minimum found in ", iter, " iterations!!")
                 exit_signal = true
                 break
@@ -287,7 +319,7 @@ function test_main_master()
     end
     println("number of restarts = ", ireset)
     println("updated opt at ", opt_upd)
-    println("hyperparameters = ", hps)
+    #println("hyperparameters = ", hps)
     #println("initial penalties:", [ps0 us0])
     #println("final penalties:", [ps us])
     println("opt0 = ",opt0)

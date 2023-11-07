@@ -568,4 +568,4 @@ or by the sum of scores in P (especially for parallel), instead of maximum itera
 n++ and m++ or randomly? (escape from local minima)? 
 ! add cache in file (like the hyperparameter optimization)
 - looks like lesser tolerance gives faster exploration, in some cases like lsq n=30,ns=3:
-ntol=10 reaches global optimum in 5.5k iters while the total iterates are 15k
+ntol=10 reaches global optimum in 5.5k iterations with 582 iterates covered, while the total iterates are 15k,, 1/30 efficiency.

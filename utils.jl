@@ -182,3 +182,32 @@ function main_convert_datatype()
         save("data/"*fp*".jld", "data", f)
     end
 end
+
+"""
+function to cache/track iterates, matches x then return new_fobj for cache hit
+"""
+function track_cache(path_tracker, fun_obj, x, f_id, x_ids::Vector{Int}; 
+                    fun_params = [], fun_x_transform = nothing, fun_x_transform_params = [])
+    idx = nothing
+    if filesize(path_tracker) > 1
+        tracker = readdlm(path_tracker)
+        for i ∈ axes(tracker, 1)
+            if x == tracker[i, x_ids[1]:x_ids[2]] 
+                idx = i
+                break
+            end
+        end
+    end
+    if idx !== nothing # if x is found in the repo, then just return the f given by the index
+        println("x found in tracker!")
+        new_fobj = tracker[idx, f_id]
+    else
+        println("x not found, computing f(x)")
+        if fun_x_transform !== nothing # tranform x
+            xtr = fun_x_transform(x, fun_x_transform_params...)
+        end
+        new_fobj = fun_obj(xtr, fun_params...) # evaluate objective value 
+        writestringline(string.(vcat(new_fobj, x)'), path_tracker; mode="a")
+    end
+    return new_fobj
+end
