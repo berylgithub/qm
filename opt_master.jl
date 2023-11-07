@@ -90,7 +90,6 @@ function update_set(S_int::Vector{Int}, ps::Vector{Float64}, n, m)
     return bin_to_int(S)
 end
 
-
 """
 initialize opt,u(x),f(x) -> p(x) (u(x),f(x),p(x) table ∀x) given some simulation data tables
 should be computed only once per batch
@@ -192,7 +191,7 @@ test the optimization with dummy simulations
 function test_main_master()
     # generate dummy simulations:
     Random.seed!(777)
-    n = 10; ns = 2;
+    n = 30; ns = 3;
     A = rand(n, 4)
     b = rand(n)
     xs = collect(combinations(1:n, ns))
@@ -203,7 +202,7 @@ function test_main_master()
     display([global_min, xs[id_min], id_min])
     # initialize "training opt set":
     nsim = 10 # number of "previous simulations"
-    id_select = setdiff(sample(1:binomial(n, ns), nsim, replace=false), 15)
+    id_select = sample(1:binomial(n, ns), nsim, replace=false)
     xs = xs[id_select]
     println(id_select)
     fobjs = fobjs[id_select]
@@ -216,16 +215,17 @@ function test_main_master()
     opt0 = opt = fobjs[id_min] # set the known minimum
     println("current 'known' minimum from data = ", opt, " by ", xs[id_min])
     id_sort = sortperm(fobjs)
-    nP = min(length(id_select), 3) # length(id_select) = actual "previous data" after excluding the global minimum
+    nP = min(length(id_select), 10) # (HYPERPARAMETER), number of included search set, length(id_select) = actual "previous data" after excluding the global minimum
     P0 = [xs[id] for id ∈ id_sort[1:nP]] # global set containing best known nset of training set S
     ps0 = copy(ps); fs0 = copy(fs); us0 = copy(us); P = copy(P0) # copy init state
     println(ps0)
-    n_update = 1 # number of variables to be updated each iterations
-    ntol = 3; nrest = 5 #| number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
+    n_update = 2 # (HYPERPARAMETER) number of variables to be updated each iterations
+    ntol = 100; nreset = 5 # number of tolerance and num of restart (in real scenario, no number of restart, it will restart indefinitely)
     opt_upd = []
     itol = irest = 0 # for now: reset when a lower fobj is found
     iter = 1
-    while irest < nrest
+    exit_signal = false
+    while true # irest < nrest
         itol = 0 # tolerance counter
         while itol < ntol
             # opt steps, put in a loop:
@@ -237,7 +237,7 @@ function test_main_master()
             S = update_set(S, ps, n, n_update) # update the decision variable
             P[id_P] = S  # update the "memory" set
             x = int_to_bin(S,n)
-            new_fobj = fx_dummy(x, A, b)
+            new_fobj = fx_dummy(x, A, b) # evaluate objective value
             println("new fobj = ", new_fobj, " by ", S)
             if new_fobj < opt
                 println("lower fobj found!", new_fobj, " < ", opt)
@@ -247,8 +247,9 @@ function test_main_master()
             else
                 itol += 1 # increase 
             end
-            if opt ≤ global_min
+            if opt ≤ global_min # if target is achieved
                 println("global minimum found in ", iter, " iterations!!")
+                exit_signal = true
                 break
             end
             #println("penalties pre-update:", [ps fs us])
@@ -256,15 +257,22 @@ function test_main_master()
             #println("penalties post-update:", [ps fs us])
             iter += 1
         end
+        # check if exit signal is found
+        if exit_signal
+            break
+        end
         # reset mechanism:
         println([P, P0])
+        # change hyperparameters after n_reset: (randomly?)
+        n_update = sample(1:ns, 1, replace=false)[1]; nP = sample(1:nsim, 1)[1]
         ps = copy(ps0); fs = copy(fs0); us = copy(us0); P = copy(P0)
         irest += 1
         println("restarted!!")
-        println([P, P0])
+        println([P, P0], [nP, n_update])
     end
     println("number of restarts = ", irest)
     println("updated opt at ", opt_upd)
+    println("hyperparameters = ", [n_update, nP])
     #println("initial penalties:", [ps0 us0])
     #println("final penalties:", [ps us])
     println("opt0 = ",opt0)

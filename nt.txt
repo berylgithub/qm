@@ -562,3 +562,8 @@ what if the best selected training set is the set that has all elements (the mos
 - the convergence of the Tabu search is affected heavily by the number of "known simulation data" and size of P.
 ! need to add restart criteria, if there is no gain (no fobj decrease from the current best so far) after n iterations then restart the scores,
 or by the sum of scores in P (especially for parallel), instead of maximum iteration (since the optimization process is fast anyway, especially if cache is already exist, the simulation is faster)
+
+07.10.23:
+- if after multiple restarts no gain: change the hyperparameters:
+n++ and m++ or randomly? (escape from local minima)? 
+! add cache in file (like the hyperparameter optimization)
