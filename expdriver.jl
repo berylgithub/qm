@@ -861,8 +861,11 @@ function main_10k_obj()
     n_data = length(E)
     for i ∈ axes(centerss, 1)
         idtrains = centerss[i, :]
-        idtests = sample(setdiff(1:n_data, idtrains), 10_000, replace=false) # sample 10k only 
-        fobj = min_main_obj(idtrains, E, dataset, DFs, f; idtests_in = idtests)
+        idtests = sample(setdiff(1:n_data, idtrains), 10_000, replace=false) # sample 10k only
+        t = @elapsed begin
+            fobj = min_main_obj(idtrains, E, dataset, DFs, f; idtests_in = idtests) 
+        end
+        println(t)
         writestringline(string.([fobj]), "result/deltaML/MAE_10k_custom_CMBDF2_centers_081123.txt"; mode="a")
     end
 end
