@@ -352,10 +352,32 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mod
 end
 
 """
-parallel optimization for tabu search, but hopefully generic later
+parallel optimization for tabu search, but hopefully generic later.
+
+this function simply takes x and computes f(x) and then returns it to master.
+for now the communication is still the same as usual: using file even between julia processes.
 """
-function parallel_opt()
-    
+function parallel_opt(sim_id;)
+    println("simulator", sim_id, " has been initialized!!")
+    # paths to necessary folders:
+    path_opt = "data/tsopt/"
+    pathf_sim_f = path_opt*"f_$sim_id.txt"
+    pathf_sim_x = path_opt*"x_$sim_id.txt"
+    pathf_handle_x = path_opt*"hx_$sim_id.txt" # see which x is handled by sim_id
+    # preload all needed data:
+    Random.seed!(777) # put seed for test data selection
+    DFs = [load("data/atomref_features.jld", "data"), [], [], []]
+    dataset = load("data/qm9_dataset.jld", "data")
+    #idtrains = Int.(readdlm("data/custom_CMBDF_centers_181023.txt")[57,1:100]) # current best
+    E = vec(readdlm("data/energies.txt"))
+    n_data = length(E)
+    f = load("data/CMBDF.jld", "data")
+    writedlm(pathf_sim_f, []) # send signal to master (initialize empty f file)
+    # the main loop, listener and sender:
+    while true
+        # read if there is new x sent by master
+    end
+
 end
 
 """

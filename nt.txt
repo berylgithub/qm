@@ -569,3 +569,6 @@ n++ and m++ or randomly? (escape from local minima)?
 ! add cache in file (like the hyperparameter optimization)
 - looks like lesser tolerance gives faster exploration, in some cases like lsq n=30,ns=3:
 ntol=10 reaches global optimum in 5.5k iterations with 582 iterates covered, while the total iterates are 15k,, 1/30 efficiency.
+
+08.10.23:
+- look at Julia's built in parallel processing manager such as https://github.com/JuliaParallel/ClusterManagers.jl

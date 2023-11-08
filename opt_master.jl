@@ -91,7 +91,7 @@ function update_set(S_int::Vector{Int}, ps::Vector{Float64}, n, m)
 end
 
 """
-!! fill out later
+!! fill out and test later
 the Tabu search algorithm for combinatorial problem
 parameters:
     - fun_obj = objective function
