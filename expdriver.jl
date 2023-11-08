@@ -352,6 +352,13 @@ function hyperparamopt_parallel(sim_id; dummyfx = false, trackx = true, fobj_mod
 end
 
 """
+parallel optimization for tabu search, but hopefully generic later
+"""
+function parallel_opt()
+    
+end
+
+"""
 encode parameters to desired form by the solver
 particularly categorical variables are encoded by one-hot-encoding
 """
@@ -799,8 +806,11 @@ kind of similar to main_obj
 hardcode the current best:
 [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2]
 """
-function min_main_obj(idtrains, E, dataset, DFs, f)
+function min_main_obj(idtrains, E, dataset, DFs, f; idtests_in=[])
     idtests = setdiff(1:length(E), idtrains)
+    if !isempty(idtests_in)
+        idtests = idtests_in
+    end
     Et = hp_baseline(E, DFs..., idtrains) # compute deltaML    
     c = 2048. # 2. ^11
     A = get_gaussian_kernel(f[idtrains], f[idtrains], [d["atoms"] for d ∈ dataset[idtrains]], [d["atoms"] for d ∈ dataset[idtrains]], c) # compute training kernel 
@@ -814,6 +824,27 @@ function min_main_obj(idtrains, E, dataset, DFs, f)
     #writedlm("error_analysis.txt", [A*θ Et[idtests]])
     return MAE 
 end
+
+"""
+see the diff between 10k and 130k MAE
+"""
+function main_10k_obj()
+    Random.seed!(777)
+    DFs = [load("data/atomref_features.jld", "data"), [], [], []]
+    dataset = load("data/qm9_dataset.jld", "data")
+    centerss = Int.(readdlm("data/custom_CMBDF_centers_181023.txt")[:,1:100])
+    #idtrains = Int.(readdlm("data/custom_CMBDF_centers_181023.txt")[57,1:100]) # current best
+    E = vec(readdlm("data/energies.txt"))
+    f = load("data/CMBDF.jld", "data")
+    n_data = length(E)
+    for i ∈ axes(centerss, 1)
+        idtrains = centerss[i, :]
+        idtests = sample(setdiff(1:n_data, idtrains), 10_000, replace=false) # sample 10k only 
+        fobj = min_main_obj(idtrains, E, dataset, DFs, f; idtests_in = idtests)
+        writestringline(string.([fobj]), "result/deltaML/MAE_10k_custom_CMBDF2_centers_081123.txt"; mode="a")
+    end
+end
+
 
 function test_min_main_obj()
     DFs = [load("data/atomref_features.jld", "data"), [], [], []]
