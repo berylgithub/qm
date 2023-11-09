@@ -254,7 +254,10 @@ function main_serial_tsopt(; n_P = 5, n_update = 10, n_tol = 10_000, n_reset = 5
     ireset = 0; iter = 1
     exit_signal = false
     opt_upd = []; hps = [] # trackers
+    # trackers:
     path_tracker = "data/tsopt/tracker.txt" # initialize file cache (see if immediate write to disk is fast --> it is very fast, faster than reevaluation)
+    path_ftrack = "data/tsopt/f_tracker.txt"
+    path_opttrack = "data/tsopt/opt_tracker.txt"
     # take the n_P best training sets as the initial point:
     id_sort = sortperm(fobjs)
     P0 = [centerss[i,:] for i ∈ id_sort[1:n_P]]; P = copy(P0);
@@ -274,11 +277,13 @@ function main_serial_tsopt(; n_P = 5, n_update = 10, n_tol = 10_000, n_reset = 5
             new_fobj = track_cache(path_tracker, min_main_obj, S, 1, [2, 1+length(S)];
                             fun_params = params, fun_arg_params = arg_params)
             println("new fobj = ", new_fobj)
+            writestringline(string.([new_fobj]), path_ftrack; mode="a") # write to f_tracker
             # found better point check:
             if new_fobj < opt
                 println("lower fobj found!", new_fobj, " < ", opt)
                 opt = new_fobj
                 push!(opt_upd, iter)
+                writedlm(path_opttrack, vcat(opt, S)') # write the new opt and its iterates to tracker
                 itol = 0
             else
                 itol += 1 # increment iteration tolerance
