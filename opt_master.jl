@@ -228,13 +228,12 @@ function main_serial_tsopt()
     Random.seed!(777)
     DFs = [load("data/atomref_features.jld", "data"), [], [], []]
     dataset = load("data/qm9_dataset.jld", "data")
-    E = vec(readdlm("data/energies.txt"))
+    E = vec(readdlm("data/energies.txt", Float64))
     f = load("data/CMBDF.jld", "data")
-    n_data = length(E)
     # previously recorded simulations:
     centerss = Int.(readdlm("data/custom_CMBDF_centers_181023.txt")[:,1:100]) # all previously computed training sets
     fobjs = vec(readdlm("result/deltaML/MAE_custom_CMBDF_centers_181023.txt"))
-
+    global_min = 1.0 # 1 kcal/mol target
     # scores initialization:
     opt = opt0 = readdlm("data/tsopt/opt.txt")[1] # the optimal value
     tb_pen = readdlm("data/tsopt/table_penalties.txt") # load penalties
@@ -242,6 +241,9 @@ function main_serial_tsopt()
     ps = copy(ps0); fs = copy(fs0); us = copy(us0) # copy the initial scores
     
     # opt params:
+    n_data = length(E); n_var = size(centerss, 2); # number of data and size of variable
+    n_test = 10_000 # number of test data
+    n_sim = size(centerss, 1) # number of training points for the algorithm
     n_P = 5 # size of P
     n_update = 10 # size of swapped elements per iteration
     n_tol = 10_000; n_reset = 5 # number of iteratoin tolerance and num of restart tolerance
@@ -249,19 +251,69 @@ function main_serial_tsopt()
     # opt init:
     ireset = 0; iter = 1
     exit_signal = false
-    tracking = true
     opt_upd = []; hps = [] # trackers
     path_tracker = "data/tsopt/tracker.txt" # initialize file cache (see if immediate write to disk is fast --> it is very fast, faster than reevaluation)
     # take the n_P best training sets as the initial point:
-    sid = sortperm(fobjs)
-    P0 = [centerss[i,:] for i ∈ sid[1:n_P]]; P = copy(P0);
-
+    id_sort = sortperm(fobjs)
+    P0 = [centerss[i,:] for i ∈ id_sort[1:n_P]]; P = copy(P0);
+    # main loop:
     while true # loop indefinitely
         itol = 0
         while itol < n_tol
-
+            println("==== iteration = ",iter)
+            id_P = sample(1:n_P, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
+            S = P[id_P] # pick one from P
+            println("picked id of S to be updated = ",id_P)
+            S = update_set(S, ps, n_data, n_update) # update the decision variable
+            P[id_P] = S  # update the "memory" set
+            idtests = sample(setdiff(1:n_data, S), n_test, replace=false) # compute the test set
+            # compute next objective function value by tracking the cache too:
+            params = [E, dataset, DFs, f]; arg_params = Dict(:idtests_in => idtests);
+            new_fobj = track_cache(path_tracker, min_main_obj, S, 1, [2, 1+length(S)];
+                            fun_params = params, fun_arg_params = arg_params)
+            println("new fobj = ", new_fobj)
+            # found better point check:
+            if new_fobj < opt
+                println("lower fobj found!", new_fobj, " < ", opt)
+                opt = new_fobj
+                push!(opt_upd, iter)
+                itol = 0
+            else
+                itol += 1 # increment iteration tolerance
+            end
+            # termination check: 
+            if opt ≤ global_min
+                println("global minimum found in ", iter, " iterations!!")
+                exit_signal = true
+                break
+            end
+            update_penalties_x!(ps, fs, us, new_fobj, opt, int_to_bin(S,n_data))
+            iter += 1
         end
+        if exit_signal
+            break
+        end
+        # reset mechanism:
+        # change hyperparameters after n_reset: (randomly)
+        if ireset ≥ n_reset
+            println("Hyperparameters change!!")
+            n_update = sample(1:n_var, 1)[1]; n_P = sample(1:n_sim, 1)[1]
+            P0 = [centerss[i,:] for i ∈ id_sort[1:n_P]]; # reset the initial points to include n_P sets
+            push!(hps, [nP, n_update])
+            ireset = 0
+        end
+        ps = copy(ps0); fs = copy(fs0); us = copy(us0); P = copy(P0) # reset to initial point
+        ireset += 1
+        println("restarted!!")
+        println([n_P, n_update])
     end
+    #println("number of restarts = ", ireset)
+    println("updated opt at ", opt_upd)
+    println("hyperparameters = ", hps)
+    #println("initial penalties:", [ps0 us0])
+    #println("final penalties:", [ps us])
+    println("opt0 = ",opt0)
+    println("final optimal value = ", opt, " at iter ",iter)
 end
 
 function test_pen()
@@ -419,7 +471,7 @@ function test_main_master()
         # change hyperparameters after n_reset: (randomly)
         if ireset ≥ nreset
             println("Hyperparameters change!!")
-            n_update = sample(1:ns, 1, replace=false)[1]; nP = sample(1:nsim, 1)[1]
+            n_update = sample(1:ns, 1)[1]; nP = sample(1:nsim, 1)[1]
             P0 = [xs[id] for id ∈ id_sort[1:nP]] # reset the original P0 to include nP sets
             push!(hps, [nP, n_update])
             ireset = 0

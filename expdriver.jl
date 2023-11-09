@@ -828,7 +828,7 @@ kind of similar to main_obj
 hardcode the current best:
 [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2]
 """
-function min_main_obj(idtrains, E, dataset, DFs, f; idtests_in=[])
+function min_main_obj(idtrains::Vector{Int}, E::Vector{Float64}, dataset, DFs, f; idtests_in=[])
     idtests = setdiff(1:length(E), idtrains)
     if !isempty(idtests_in)
         idtests = idtests_in
