@@ -2,6 +2,7 @@ using DelimitedFiles, Random, StatsBase, LinearAlgebra, Combinatorics
 
 
 include("utils.jl")
+include("expdriver.jl")
 
 """
 =========================
@@ -214,9 +215,53 @@ function main_init_opttable()
     writedlm("data/tsopt/opt.txt", opt)
     display([p f u])
     display(t)
+end
 
-    # get the n = num processors top training sets:
+
+"""
+serial training-set-optimization(tsopt), using the algorithm on the test_main_master function, 
+just to make sure something runs while waiting for the parallelization.
+
+"""
+function main_serial_tsopt()
+    # set necessary data:
+    Random.seed!(777)
+    DFs = [load("data/atomref_features.jld", "data"), [], [], []]
+    dataset = load("data/qm9_dataset.jld", "data")
+    E = vec(readdlm("data/energies.txt"))
+    f = load("data/CMBDF.jld", "data")
+    n_data = length(E)
+    # previously recorded simulations:
+    centerss = Int.(readdlm("data/custom_CMBDF_centers_181023.txt")[:,1:100]) # all previously computed training sets
+    fobjs = vec(readdlm("result/deltaML/MAE_custom_CMBDF_centers_181023.txt"))
+
+    # scores initialization:
+    opt = opt0 = readdlm("data/tsopt/opt.txt")[1] # the optimal value
+    tb_pen = readdlm("data/tsopt/table_penalties.txt") # load penalties
+    ps0 = tb_pen[:, 1]; fs0 = tb_pen[:, 2]; us0 = tb_pen[:, 3];
+    ps = copy(ps0); fs = copy(fs0); us = copy(us0) # copy the initial scores
     
+    # opt params:
+    n_P = 5 # size of P
+    n_update = 10 # size of swapped elements per iteration
+    n_tol = 10_000; n_reset = 5 # number of iteratoin tolerance and num of restart tolerance
+
+    # opt init:
+    ireset = 0; iter = 1
+    exit_signal = false
+    tracking = true
+    opt_upd = []; hps = [] # trackers
+    path_tracker = "data/tsopt/tracker.txt" # initialize file cache (see if immediate write to disk is fast --> it is very fast, faster than reevaluation)
+    # take the n_P best training sets as the initial point:
+    sid = sortperm(fobjs)
+    P0 = [centerss[i,:] for i ∈ sid[1:n_P]]; P = copy(P0);
+
+    while true # loop indefinitely
+        itol = 0
+        while itol < n_tol
+
+        end
+    end
 end
 
 function test_pen()
@@ -308,7 +353,7 @@ function test_main_master()
     
     # optimization init:
     tracking = true
-    path_tracker = "data/tsopt/tracker.txt" # initialize file cache (see if immediate write to disk is fast)
+    path_tracker = "data/tsopt/tracker_dummy.txt" # initialize file cache (see if immediate write to disk is fast)
     id_min = argmin(fobjs) 
     opt0 = opt = fobjs[id_min] # set the known minimum
     println("current 'known' minimum from data = ", opt, " by ", xs[id_min])
@@ -371,10 +416,11 @@ function test_main_master()
         end
         # reset mechanism:
         println([P, P0])
-        # change hyperparameters after n_reset: (randomly?)
+        # change hyperparameters after n_reset: (randomly)
         if ireset ≥ nreset
             println("Hyperparameters change!!")
             n_update = sample(1:ns, 1, replace=false)[1]; nP = sample(1:nsim, 1)[1]
+            P0 = [xs[id] for id ∈ id_sort[1:nP]] # reset the original P0 to include nP sets
             push!(hps, [nP, n_update])
             ireset = 0
         end
@@ -385,7 +431,7 @@ function test_main_master()
     end
     println("number of restarts = ", ireset)
     println("updated opt at ", opt_upd)
-    #println("hyperparameters = ", hps)
+    println("hyperparameters = ", hps)
     #println("initial penalties:", [ps0 us0])
     #println("final penalties:", [ps us])
     println("opt0 = ",opt0)
