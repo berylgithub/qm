@@ -197,7 +197,7 @@ function main_init_opttable()
     ids_data = 1:n_data 
     # simulation data tables:
     tb_centers = readdlm("data/custom_CMBDF_centers_181023.txt", Int)[:, 1:100]
-    tb_maes = vec(readdlm("result/deltaML/MAE_custom_CMBDF_centers_181023.txt"))
+    tb_maes = vec(readdlm("result/deltaML/MAE_10k_custom_CMBDF_centers_081123.txt"))
     # transform centers to binaries:
     tb_centers_bin = zeros(Bool, size(tb_centers, 1), n_data)
     for i ∈ axes(tb_centers, 1)
@@ -222,8 +222,12 @@ end
 serial training-set-optimization(tsopt), using the algorithm on the test_main_master function, 
 just to make sure something runs while waiting for the parallelization.
 
+params:
+    n_P # size of P
+    n_update  # size of swapped elements per iteration
+    n_tol; n_reset; # number of iteratoin tolerance (resets to initial points) and num of restart tolerance (changes hyperparameters) 
 """
-function main_serial_tsopt()
+function main_serial_tsopt(; n_P = 5, n_update = 10, n_tol = 10_000, n_reset = 5)
     # set necessary data:
     Random.seed!(777)
     DFs = [load("data/atomref_features.jld", "data"), [], [], []]
@@ -244,9 +248,7 @@ function main_serial_tsopt()
     n_data = length(E); n_var = size(centerss, 2); # number of data and size of variable
     n_test = 10_000 # number of test data
     n_sim = size(centerss, 1) # number of training points for the algorithm
-    n_P = 5 # size of P
-    n_update = 10 # size of swapped elements per iteration
-    n_tol = 10_000; n_reset = 5 # number of iteratoin tolerance and num of restart tolerance
+    
 
     # opt init:
     ireset = 0; iter = 1
@@ -268,7 +270,7 @@ function main_serial_tsopt()
             P[id_P] = S  # update the "memory" set
             idtests = sample(setdiff(1:n_data, S), n_test, replace=false) # compute the test set
             # compute next objective function value by tracking the cache too:
-            params = [E, dataset, DFs, f]; arg_params = Dict(:idtests_in => idtests);
+            params = (E, dataset, DFs, f); arg_params = Dict(:idtests_in => idtests);
             new_fobj = track_cache(path_tracker, min_main_obj, S, 1, [2, 1+length(S)];
                             fun_params = params, fun_arg_params = arg_params)
             println("new fobj = ", new_fobj)
