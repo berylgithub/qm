@@ -187,7 +187,7 @@ end
 function to cache/track iterates, matches x then return new_fobj for cache hit
 """
 function track_cache(path_tracker, fun_obj, x, f_id, x_ids::Vector{Int}; 
-                    fun_params = [], fun_x_transform = nothing, fun_x_transform_params = [])
+                    fun_params = [], fun_arg_params = Dict()..., fun_x_transform = nothing, fun_x_transform_params = [])
     idx = nothing
     if filesize(path_tracker) > 1
         tracker = readdlm(path_tracker)
@@ -206,7 +206,7 @@ function track_cache(path_tracker, fun_obj, x, f_id, x_ids::Vector{Int};
         if fun_x_transform !== nothing # tranform x
             xtr = fun_x_transform(x, fun_x_transform_params...)
         end
-        new_fobj = fun_obj(xtr, fun_params...) # evaluate objective value 
+        new_fobj = fun_obj(xtr, fun_params...; fun_arg_params...) # evaluate objective value 
         writestringline(string.(vcat(new_fobj, x)'), path_tracker; mode="a")
     end
     return new_fobj
