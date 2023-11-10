@@ -1569,10 +1569,12 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
         id = Int(readdlm("result/deltaML/sorted_set_ids.txt")[rank])
         idtrain = Int.(readdlm("data/all_centers_deltaML.txt")[1:100, id]) =# 
         # CMBDF train data:
-        minid = 57 # see "MAE_custom_CMBDF_centers", this gives 3.7kcal/mol for x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2]
+        #= minid = 57 # see "MAE_custom_CMBDF_centers", this gives 3.7kcal/mol for x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2]
         centerss = readdlm("data/custom_CMBDF_centers_181023.txt", Int)
         centers = centerss[minid, :]
-        idtrain = centers[1:100]   
+        idtrain = centers[1:100]    =#
+        # load the current found best by fixing the other hyperparameters (take the indices from /tsopt/opt_tracker.txt):
+        idtrain = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt"))[2:end]) # the *frozen* copy of the one that's still running
     else
         idtrain = sample(1:numrow, 100, replace=false)
     end

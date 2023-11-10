@@ -573,3 +573,6 @@ ntol=10 reaches global optimum in 5.5k iterations with 582 iterates covered, whi
 08.10.23:
 ! look at Julia's built in parallel processing manager such as https://github.com/JuliaParallel/ClusterManagers.jl
 - takes only 0.2s in the cluster to do one eval for 10k
+
+10.10.23:
+- compare the MBDFs with FCHL18 on where the MAE crosses 1kcal/mol
