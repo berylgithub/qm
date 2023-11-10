@@ -306,7 +306,7 @@ function main_serial_tsopt(; n_P = 5, n_update = 10, n_tol = 10_000, n_reset = 5
             println("Hyperparameters change!!")
             n_update = sample(1:n_var, 1)[1]; n_P = sample(1:n_sim, 1)[1]
             P0 = [centerss[i,:] for i ∈ id_sort[1:n_P]]; # reset the initial points to include n_P sets
-            push!(hps, [nP, n_update])
+            push!(hps, [n_P, n_update])
             ireset = 0
         end
         ps = copy(ps0); fs = copy(fs0); us = copy(us0); P = copy(P0) # reset to initial point
