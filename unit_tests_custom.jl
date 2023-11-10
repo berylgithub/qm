@@ -1,10 +1,13 @@
 include("RoSemi.jl")
-using Random, DelimitedFiles
+include("utils.jl")
 
-using JuMP, Juniper, Ipopt
+using Random, DelimitedFiles, Combinatorics
+
+#= using JuMP, Juniper, Ipopt
 using NOMAD
 using GLPK
-using NLopt
+using NLopt =#
+using Metaheuristics
 
 """
 inner product kernel entry (reproducing kernel)
@@ -143,7 +146,7 @@ opt tests
 """
 dummy obj function given kernel K(H) with fixed hyperparameters H
 """
-function fobj_dummy_lsq(x; A=zeros(), b=zeros(), grange=[])
+function fobj_dummy_lsq(x, n; A=zeros(), b=zeros())
     #= train_ids = grange[x]
     test_ids = setdiff(grange, train_ids)
     θ = A[train_ids,:]\b[train_ids] # train on index x
@@ -159,7 +162,7 @@ function fobj_dummy_lsq(x; A=zeros(), b=zeros(), grange=[])
             nx[i] = 0
         end
     end 
-    return norm(A[nx,:]*θ - b[nx])
+    return norm(A[nx,:]*θ - b[nx]), [0.0], [sum(x) - n]
 end
 
 function ssquared(x)
@@ -439,4 +442,35 @@ function test_NLOpt()
     (minf,minx,ret) = optimize(opt, vcat(ones(10), zeros(10)))
     numevals = opt.numevals # the number of function evaluations
     println("got $minf at $minx after $numevals iterations (returned $ret)")
+end
+
+function test_MH()
+    # test with the usual dummy problem:
+    Random.seed!(777)
+    n = 30; ns = 3;
+    A = rand(n, 4)
+    b = rand(n)
+    xs = collect(combinations(1:n, ns))
+    fobjs = [fobj_dummy_lsq(int_to_bin(x, n), ns; A=A, b=b) for x ∈ xs]
+    display(length(fobjs))
+    id_min = argmin(fobjs) # the global minimum
+    global_min = fobjs[id_min]
+    println("global minimum to be found : ")
+    display([global_min, xs[id_min], id_min])
+    # optimization:
+    GA(;
+        N = 100,
+        p_mutation  = 1e-5,
+        p_crossover = 0.5,
+        initializer = RandomInBounds(),
+        selection   = TournamentSelection(),
+        crossover   = UniformCrossover(),
+        mutation    = BitFlipMutation(),
+        environmental_selection = ElitistReplacement()
+    )
+    optimize(x->fobj_dummy_lsq(x,ns; A=A, b=b), BitArraySpace(n), GA())
+    #= x = minimizer(result)
+    display(x)
+    display(minimum(result))
+    display(fobj_dummy_lsq(x,ns; A=A, b=b)) =#
 end

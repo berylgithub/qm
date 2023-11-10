@@ -576,3 +576,6 @@ ntol=10 reaches global optimum in 5.5k iterations with 582 iterates covered, whi
 
 10.10.23:
 - compare the MBDFs with FCHL18 on where the MAE crosses 1kcal/mol
+! add idtrains_in later for main_deltaML to accomodate precomputed trainingset
+! see GA in Metaheuristics.jl, looks promising, supports constraints and binary variable
+==> GA works!! and it found the global minimum quite fast for dummy problem

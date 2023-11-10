@@ -1913,7 +1913,8 @@ more modular ΔML main caller with flexible ntrains and ntests, for use of outsi
 params:
     - n_ids is a vector of [ntrain1, ntrain2, ..., ntest], assuming max(ntrain_i) ≤ ntest
 """
-function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, include_hydrogens = false, warm_up = true, postfix="")
+function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, include_hydrogens = false, warm_up = true, 
+                        idtrainss_in = [], postfix="")
     println(n_ids,"; ",feat_ids,"; ",use_hybrid_da,"; ",include_hydrogens,"; ",warm_up,"; ",postfix)
     # define inputs:
     Random.seed!(777)
@@ -1930,12 +1931,12 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     idrem = setdiff(idall, idtest) # remainder ids
     max_n = maximum(n_ids[1:end-1]) # largest ntrain
     max_idtrains = sample(idrem, max_n, replace=false)
+    idtrainss = map(n_id -> max_idtrains[1:n_id], n_ids[1:end-1]) # vector of vectors
     # define spaces:
     features = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF"] # detach from the main loop to save memory
     if !isempty(feat_ids) # since the data is way too big, should be separated for each feature
         features = features[feat_ids]
     end
-    idtrainss = map(n_id -> max_idtrains[1:n_id], n_ids[1:end-1]) # vector of vectors
     models = ["GK", "DPK"] # each will be ~24GB, x2 = ~48GB
     #solvers = ["direct", "cgls"] # just use direct for now for Proof of Concept
     #elvs = ["A", "AB", "ABN", "ABNT"] # "stair" mode of elvl
