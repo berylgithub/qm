@@ -822,6 +822,31 @@ function main_custom_CMBDF_train()
     end
 end
 
+
+"""
+generates 30k contiguous training set which must be the superset of the previously found best
+"""
+function main_generate_30k()
+    Random.seed!(777)
+    f = load("data/CMBDF.jld", "data")
+    nrow = length(f)
+    # try using flatten instead of the usual sum, feels like summing causes some information lost:
+    ncol = 29*40
+    F = zeros(Float64, nrow, ncol)
+    for i ∈ 1:nrow
+        F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
+    end
+    # once hit the 57th index, cluster 30k:
+    nset = 57
+    # with selection algo:
+    _ = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset-1)
+    centers = set_cluster(F, 30_000; universe_size = 1000, num_center_sets = 1)[1]
+    # see if the generated stuffs are the same
+    id57 = readdlm("data/custom_CMBDF_centers_181023.txt", Int)[57,1:100]
+    display(centers[1:100] == id57)
+    writedlm("data/centers_30k_id57.txt", centers)
+end
+
 """
 test reproduce MAE with fixed hyperparameters H from the best one (minimal simulation),
 kind of similar to main_obj
