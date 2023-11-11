@@ -459,7 +459,7 @@ function test_MH()
     display([global_min, xs[id_min], id_min])
     # optimization:
     GA(;
-        N = 100,
+        N = 400,
         p_mutation  = 1e-5,
         p_crossover = 0.5,
         initializer = RandomInBounds(),
@@ -470,7 +470,7 @@ function test_MH()
     )
     optimize(x->fobj_dummy_lsq(x,ns; A=A, b=b), BitArraySpace(n), GA())
     #= x = minimizer(result)
-    display(x)
+    display(sum(x))
     display(minimum(result))
     display(fobj_dummy_lsq(x,ns; A=A, b=b)) =#
 end

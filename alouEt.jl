@@ -1576,7 +1576,7 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
         # load the current found best by fixing the other hyperparameters (take the indices from /tsopt/opt_tracker.txt):
         idtrain = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt"))[2:end]) # the *frozen* copy of the one that's still running
     else
-        idtrain = sample(1:numrow, 100, replace=false)
+        idtrain = StatsBase.sample(1:numrow, 100, replace=false)
     end
     idtest = setdiff(idall, idtrain)
 
@@ -1779,7 +1779,7 @@ function main_base_fitting(; postfix = "")
     numrow = length(E)
     idall = 1:numrow
     max_ntrain = 100_000
-    idtrain_max = sample(1:numrow, max_ntrain, replace=false)
+    idtrain_max = StatsBase.sample(1:numrow, max_ntrain, replace=false)
     F = load("data/atomref_features.jld", "data")
     Fb = load("data/featuresmat_bonds_qm9_post.jld", "data")
     Fa = load("data/featuresmat_angles_qm9_post.jld", "data")
@@ -1919,7 +1919,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     # define inputs:
     Random.seed!(777)
     E = readdlm("data/energies.txt")
-    dataset = load("data/qm9_dataset.jld", "data")
+    #dataset = load("data/qm9_dataset.jld", "data")
     numrow = length(E)
     # warm up kernel functions:
     if warm_up
@@ -1927,11 +1927,16 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     end
     # split indexes:
     idall = 1:numrow
-    idtest = sample(idall, n_ids[end], replace=false); ntests = [n_ids[end]] # for now only use one test set
+    idtest = StatsBase.sample(idall, n_ids[end], replace=false); ntests = [n_ids[end]] # for now only use one test set
     idrem = setdiff(idall, idtest) # remainder ids
     max_n = maximum(n_ids[1:end-1]) # largest ntrain
-    max_idtrains = sample(idrem, max_n, replace=false)
+    max_idtrains = StatsBase.sample(idrem, max_n, replace=false)
     idtrainss = map(n_id -> max_idtrains[1:n_id], n_ids[1:end-1]) # vector of vectors
+    if !isempty(idtrainss_in) # same structure as max_idtrains
+        idtrainss = map(n_id -> idtrainss_in[1:n_id], n_ids[1:end-1])
+        idrem = setdiff(idall, idtrainss[end])
+        idtest = StatsBase.sample(idrem, n_ids[end], replace=false); ntests = [n_ids[end]]
+    end
     # define spaces:
     features = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF"] # detach from the main loop to save memory
     if !isempty(feat_ids) # since the data is way too big, should be separated for each feature
