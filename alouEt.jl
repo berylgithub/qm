@@ -1919,7 +1919,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     # define inputs:
     Random.seed!(777)
     E = readdlm("data/energies.txt")
-    #dataset = load("data/qm9_dataset.jld", "data")
+    dataset = load("data/qm9_dataset.jld", "data")
     numrow = length(E)
     # warm up kernel functions:
     if warm_up
