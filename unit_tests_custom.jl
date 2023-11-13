@@ -447,14 +447,14 @@ end
 
 """
 wanted features:
-    - supply init points
-    - callback
-    - stopping criteria
+    - supply init points --> done
+    - callback --> use logger in optimize function?
+    - stopping criteria (restart when stuck, etc) 
 """
 function test_MH()
     # test with the usual dummy problem:
     Random.seed!(777)
-    n = 30; ns = 3;
+    n = 40; ns = 4;
     A = rand(n, 4)
     b = rand(n)
     xs = collect(combinations(1:n, ns))
@@ -464,12 +464,12 @@ function test_MH()
     global_min = fobjs[id_min]
     println("global minimum to be found : ")
     display([global_min, xs[id_min], id_min])
-    # take 100 initial points:
-    init_xs = [int_to_bin(x,n) for x ∈ xs[1:100]]
-    display(init_xs)
     # optimization:
-    N = 300; p_cross = 0.5; p_mutate = 1e-5 # GA params
-    options = Options(;iterations = 100)
+    N = 1000; p_cross = 0.5; p_mutate = 1e-5 # GA params
+    init_xs = mapreduce(permutedims, vcat, [int_to_bin(x,n) for x ∈ xs[1:N]]) # take N initial points:
+    display(init_xs)
+    options = Options(f_calls_limit = Inf;iterations = 10_000, verbose=true)
+    information = Information(f_optimum = global_min[1])
     algo = GA(;
         N = N,
         p_mutation  = p_mutate,
@@ -479,11 +479,21 @@ function test_MH()
         crossover   = UniformCrossover(;p=p_cross),
         mutation    = BitFlipMutation(;p=p_mutate),
         environmental_selection = ElitistReplacement(),
+        information = information,
         options = options
     )
-    result = Metaheuristics.optimize(x->fobj_dummy_lsq(x,ns; A=A, b=b), BitArraySpace(n), algo)
+    set_user_solutions!(algo, init_xs, x->fobj_dummy_lsq(x,ns; A=A, b=b)); # set initial solutions
+    result = Metaheuristics.optimize(x->fobj_dummy_lsq(x,ns; A=A, b=b), BitArraySpace(n), 
+                                    algo, logger = status -> MH_log_result(status, "test.txt"))
     x = minimizer(result)
-    display(bin_to_int(x))
-    display(minimum(result))
+    display([bin_to_int(x), minimum(result)])
+    display([result.f_calls, result.h_calls])
+    display(termination_status_message(result))
     display(fobj_dummy_lsq(x,ns; A=A, b=b))
+end
+
+function MH_log_result(status, filepath)
+    #println([minimizer(status), minimum(status)])    
+    #println(status.best_sol)
+    writestringline(string.(vcat(minimum(status), minimizer(status))), filepath; mode= "a")
 end
