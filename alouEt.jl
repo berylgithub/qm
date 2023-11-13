@@ -1933,6 +1933,7 @@ function main_DeltaML(n_ids::Vector; feat_ids = [], use_hybrid_da = false, inclu
     max_idtrains = StatsBase.sample(idrem, max_n, replace=false)
     idtrainss = map(n_id -> max_idtrains[1:n_id], n_ids[1:end-1]) # vector of vectors
     if !isempty(idtrainss_in) # same structure as max_idtrains
+        max_idtrains = idtrainss_in
         idtrainss = map(n_id -> idtrainss_in[1:n_id], n_ids[1:end-1])
         idrem = setdiff(idall, idtrainss[end])
         idtest = StatsBase.sample(idrem, n_ids[end], replace=false); ntests = [n_ids[end]]
