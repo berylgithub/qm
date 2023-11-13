@@ -99,10 +99,10 @@ function test_corr()
     numrow = length(E)
     main_kernels_warmup()
     idall = 1:numrow
-    idtest = sample(idall, n_ids[end], replace=false)
+    idtest = StatsBase.sample(idall, n_ids[end], replace=false)
     idrem = setdiff(idall, idtest) # remainder ids
     max_n = maximum(n_ids[1:end-1]) # largest ntrain
-    max_idtrains = sample(idrem, max_n, replace=false)
+    max_idtrains = StatsBase.sample(idrem, max_n, replace=false)
     idtrainss = map(n_id -> max_idtrains[1:n_id], n_ids[1:end-1]) # vector of vectors
     f = load("data/FCHL19.jld", "data")
     Fds = [load("data/atomref_features.jld", "data")]
@@ -444,6 +444,13 @@ function test_NLOpt()
     println("got $minf at $minx after $numevals iterations (returned $ret)")
 end
 
+
+"""
+wanted features:
+    - supply init points
+    - callback
+    - stopping criteria
+"""
 function test_MH()
     # test with the usual dummy problem:
     Random.seed!(777)
@@ -457,20 +464,26 @@ function test_MH()
     global_min = fobjs[id_min]
     println("global minimum to be found : ")
     display([global_min, xs[id_min], id_min])
+    # take 100 initial points:
+    init_xs = [int_to_bin(x,n) for x ∈ xs[1:100]]
+    display(init_xs)
     # optimization:
-    GA(;
-        N = 400,
-        p_mutation  = 1e-5,
-        p_crossover = 0.5,
-        initializer = RandomInBounds(),
-        selection   = TournamentSelection(),
-        crossover   = UniformCrossover(),
-        mutation    = BitFlipMutation(),
-        environmental_selection = ElitistReplacement()
+    N = 300; p_cross = 0.5; p_mutate = 1e-5 # GA params
+    options = Options(;iterations = 100)
+    algo = GA(;
+        N = N,
+        p_mutation  = p_mutate,
+        p_crossover = p_cross,
+        initializer = RandomInBounds(;N=N),
+        selection   = TournamentSelection(;N=N),
+        crossover   = UniformCrossover(;p=p_cross),
+        mutation    = BitFlipMutation(;p=p_mutate),
+        environmental_selection = ElitistReplacement(),
+        options = options
     )
-    optimize(x->fobj_dummy_lsq(x,ns; A=A, b=b), BitArraySpace(n), GA())
-    #= x = minimizer(result)
-    display(sum(x))
+    result = Metaheuristics.optimize(x->fobj_dummy_lsq(x,ns; A=A, b=b), BitArraySpace(n), algo)
+    x = minimizer(result)
+    display(bin_to_int(x))
     display(minimum(result))
-    display(fobj_dummy_lsq(x,ns; A=A, b=b)) =#
+    display(fobj_dummy_lsq(x,ns; A=A, b=b))
 end
