@@ -124,7 +124,7 @@ function alg_tabu_search(fun_obj, opt, x_data, P0, ps0, fs0, us0;
             # opt steps, put in a loop:
             println("==== iteration = ",iter)
             println("memory set = ", P)
-            id_P = sample(1:n_P, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
+            id_P = StatsBase.sample(1:n_P, 1, replace=false)[1] # StatsBase.sample the integer to slice the set rather than sampling the set itself
             S = P[id_P] # pick one from P (useful for parallel later)
             println("picked S to be updated = ", S,", id =",id_P)
             S = update_set(S, ps, n, n_update) # update the decision variable
@@ -168,7 +168,7 @@ function alg_tabu_search(fun_obj, opt, x_data, P0, ps0, fs0, us0;
         # change hyperparameters after n_reset: (randomly?)
         if ireset ≥ n_reset
             println("Hyperparameters change!!")
-            n_update = sample(1:ns, 1, replace=false)[1]; n_P = sample(1:nsim, 1)[1]
+            n_update = StatsBase.sample(1:ns, 1, replace=false)[1]; n_P = StatsBase.sample(1:nsim, 1)[1]
             push!(hps, [nP, n_update])
             ireset = 0
         end
@@ -266,12 +266,12 @@ function main_serial_tsopt(; n_P = 5, n_update = 10, n_tol = 10_000, n_reset = 5
         itol = 0
         while itol < n_tol
             println("==== iteration = ",iter)
-            id_P = sample(1:n_P, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
+            id_P = StatsBase.sample(1:n_P, 1, replace=false)[1] # StatsBase.sample the integer to slice the set rather than sampling the set itself
             S = P[id_P] # pick one from P
             println("picked id of S to be updated = ",id_P)
             S = update_set(S, ps, n_data, n_update) # update the decision variable
             P[id_P] = S  # update the "memory" set
-            idtests = sample(setdiff(1:n_data, S), n_test, replace=false) # compute the test set
+            idtests = StatsBase.sample(setdiff(1:n_data, S), n_test, replace=false) # compute the test set
             # compute next objective function value by tracking the cache too:
             params = (E, dataset, DFs, f); arg_params = Dict(:idtests_in => idtests);
             new_fobj = track_cache(path_tracker, min_main_obj, S, 1, [2, 1+length(S)];
@@ -304,7 +304,7 @@ function main_serial_tsopt(; n_P = 5, n_update = 10, n_tol = 10_000, n_reset = 5
         # change hyperparameters after n_reset: (randomly)
         if ireset ≥ n_reset
             println("Hyperparameters change!!")
-            n_update = sample(1:n_var, 1)[1]; n_P = sample(1:n_sim, 1)[1]
+            n_update = StatsBase.sample(1:n_var, 1)[1]; n_P = StatsBase.sample(1:n_sim, 1)[1]
             P0 = [centerss[i,:] for i ∈ id_sort[1:n_P]]; # reset the initial points to include n_P sets
             push!(hps, [n_P, n_update])
             ireset = 0
@@ -348,7 +348,7 @@ function test_update()
     display(opt)
     S = int_to_bin([1,2,10,130800], n_data)
     display([ps[S], fs[S], us[S]])
-    i = [4,5,6] # sample non perturbed
+    i = [4,5,6] # StatsBase.sample non perturbed
     update_penalties_x!(ps, fs, us, fobj, opt, S)
     display([ps[S], fs[S], us[S]])
 end
@@ -363,7 +363,7 @@ function test_update_set()
     display(ps)
     opt = readdlm("data/tsopt/opt.txt")[1]
     # dummy S:
-    S_int = sample(1:n_data, 100, replace=false)
+    S_int = StatsBase.sample(1:n_data, 100, replace=false)
     println(S_int)
     S = int_to_bin(S_int, n_data)
     update_set!(S, ps, 10)
@@ -401,7 +401,7 @@ function test_main_master()
     display([global_min, xs[id_min], id_min])
     # initialize "training opt set":
     nsim = 10 # number of "previous simulations"
-    id_select = sample(1:binomial(n, ns), nsim, replace=false)
+    id_select = StatsBase.sample(1:binomial(n, ns), nsim, replace=false)
     xs = xs[id_select]
     println(id_select)
     fobjs = fobjs[id_select]
@@ -434,7 +434,7 @@ function test_main_master()
             # opt steps, put in a loop:
             println("==== iteration = ",iter)
             println("memory set = ", P)
-            id_P = sample(1:nP, 1, replace=false)[1] # sample the integer to slice the set rather than sampling the set itself
+            id_P = StatsBase.sample(1:nP, 1, replace=false)[1] # StatsBase.sample the integer to slice the set rather than sampling the set itself
             S = P[id_P] # pick one from P (useful for parallel later)
             println("picked S to be updated = ", S,", id =",id_P)
             S = update_set(S, ps, n, n_update) # update the decision variable
@@ -478,7 +478,7 @@ function test_main_master()
         # change hyperparameters after n_reset: (randomly)
         if ireset ≥ nreset
             println("Hyperparameters change!!")
-            n_update = sample(1:ns, 1)[1]; nP = sample(1:nsim, 1)[1]
+            n_update = StatsBase.sample(1:ns, 1)[1]; nP = StatsBase.sample(1:nsim, 1)[1]
             P0 = [xs[id] for id ∈ id_sort[1:nP]] # reset the original P0 to include nP sets
             push!(hps, [nP, n_update])
             ireset = 0
