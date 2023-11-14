@@ -886,7 +886,7 @@ function main_10k_obj()
     n_data = length(E)
     for i ∈ axes(centerss, 1)
         idtrains = centerss[i, :]
-        idtests = sample(setdiff(1:n_data, idtrains), 10_000, replace=false) # sample 10k only
+        idtests = StatsBase.sample(setdiff(1:n_data, idtrains), 10_000, replace=false) # StatsBase.sample 10k only
         t = @elapsed begin
             fobj = min_main_obj(idtrains, E, dataset, DFs, f; idtests_in = idtests) 
         end
