@@ -488,3 +488,33 @@ function test_bond_energy_plot()
     display(y)
     plot(x, y, ylims = [-1., 1.])
 end
+
+
+"""
+combine rand useq table by adding new column (H and HDA too)
+
+several plotting scenarios:
+- plot of the minimum of each ntrain separated by each feature
+- plot of rand vs usequence, sample ACSF, FCHL19, and CMBDF (6 curves)
+- 
+"""
+function main_plot_v2()
+    headers = ["ntrain", "ntest", "elv", "model", "feature", 
+                "b_MAEtrain", "b_MAEtest", "MAEtrain", "MAEtest", 
+                "t_mcom", "t_etrain", "t_epred", "t_mtrain", "t_mtest"]
+    headers_add = ["select", "hydrogen","hybrid"] # additional columns to be combined
+    headers = vcat(headers_add, headers)
+    display(headers)
+    # combine tables:
+    tb1 = readdlm("result/deltaML/MAE_enum_v2_30k_100k_srand_H_101123.txt")
+    tb2 = readdlm("result/deltaML/MAE_enum_v2_30k_100k_sid57_H_101123.txt")
+    #tb3 = readdlm("result/deltaML/MAE_enum_v2_30k_100k_sid57_H_HDA_101123.txt") # later when the computation is finished
+    tbj = Matrix{Any}(undef, sum(size.([tb1, tb2, tb3], 1))+1, size(tb1, 2)+length(headers_add))
+    tbj[1,:] = headers
+    id_tbs = [(2,1+size(tb1,1)), (2+size(tb1,1), size(tb1,1)+size(tb2,1)+1), (size(tb1,1)+size(tb2,1)+2, size(tb1,1)+size(tb2,1)+size(tb3,1)+1)]
+    display(id_tbs)
+    tbj[2:1+size(tb1,1),1:3] .= ["rand" "true" "false"]; tbj[2:1+size(tb1,1),4:end] = tb1
+
+    display(tbj)
+    println(tbj[1+size(tb1,1),:])
+end

@@ -558,24 +558,33 @@ I would start with n = number of processors and m=sqrt{100}=10 for a training se
 ---> turns out the ones that has anomalous large error is becauswe there are missing atomic elements in the training set, e.g., the 100 training data is missing "F".
 what if the best selected training set is the set that has all elements (the most complete, with max number of atoms)?
 
-06.10.23:
+06.11.23:
 - the convergence of the Tabu search is affected heavily by the number of "known simulation data" and size of P.
 ! need to add restart criteria, if there is no gain (no fobj decrease from the current best so far) after n iterations then restart the scores,
 or by the sum of scores in P (especially for parallel), instead of maximum iteration (since the optimization process is fast anyway, especially if cache is already exist, the simulation is faster)
 
-07.10.23:
+07.11.23:
 - if after multiple restarts no gain: change the hyperparameters:
 n++ and m++ or randomly? (escape from local minima)? 
 ! add cache in file (like the hyperparameter optimization)
 - looks like lesser tolerance gives faster exploration, in some cases like lsq n=30,ns=3:
 ntol=10 reaches global optimum in 5.5k iterations with 582 iterates covered, while the total iterates are 15k,, 1/30 efficiency.
 
-08.10.23:
+08.11.23:
 ! look at Julia's built in parallel processing manager such as https://github.com/JuliaParallel/ClusterManagers.jl
 - takes only 0.2s in the cluster to do one eval for 10k
 
-10.10.23:
+10.11.23:
 - compare the MBDFs with FCHL18 on where the MAE crosses 1kcal/mol
 ! add idtrains_in later for main_deltaML to accomodate precomputed trainingset
 ! see GA in Metaheuristics.jl, looks promising, supports constraints and binary variable
 ==> GA works!! and it found the global minimum quite fast for dummy problem
+
+13.11.23:
+! need to add manual restart for GA perhaps, supplying the best found point as initial point
+
+14.11.23:
+- see overleaf for slide for presentation
+- see plotstat.jl for plannings of plottings
+! finish anime in voronoi.jl
+! finish plotting in plotstat.jl once the computations are finished

@@ -448,8 +448,8 @@ end
 """
 wanted features:
     - supply init points --> done
-    - callback --> use logger in optimize function?
-    - stopping criteria (restart when stuck, etc) 
+    - callback --> done by passing logger
+    - stopping criteria (restart when stuck, etc) --> add reset by setting the best found points as initial points
 """
 function test_MH()
     # test with the usual dummy problem:
@@ -465,11 +465,12 @@ function test_MH()
     println("global minimum to be found : ")
     display([global_min, xs[id_min], id_min])
     # optimization:
-    N = 1000; p_cross = 0.5; p_mutate = 1e-5 # GA params
+    N = 500; p_cross = 0.5; p_mutate = 1e-5 # GA params
     init_xs = mapreduce(permutedims, vcat, [int_to_bin(x,n) for x ∈ xs[1:N]]) # take N initial points:
     display(init_xs)
-    options = Options(f_calls_limit = Inf;iterations = 10_000, verbose=true)
+    options = Options(f_calls_limit = Inf, time_limit = Inf, iterations = 10_000, verbose=true)
     information = Information(f_optimum = global_min[1])
+    
     algo = GA(;
         N = N,
         p_mutation  = p_mutate,
@@ -490,10 +491,13 @@ function test_MH()
     display([result.f_calls, result.h_calls])
     display(termination_status_message(result))
     display(fobj_dummy_lsq(x,ns; A=A, b=b))
+    
+    
 end
 
+"""
+a way to track the best iterates in each iteration
+"""
 function MH_log_result(status, filepath)
-    #println([minimizer(status), minimum(status)])    
-    #println(status.best_sol)
     writestringline(string.(vcat(minimum(status), minimizer(status))), filepath; mode= "a")
 end

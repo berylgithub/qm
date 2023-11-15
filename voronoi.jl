@@ -627,3 +627,41 @@ function test_distances()
     D = compute_distance_all(coords, B)
     display(D[:, center_ids])
 end
+
+
+"""
+generate sequence of images for gifs of FPS and usequence 
+"""
+function main_anime()
+    Random.seed!(777)
+    # generate perturbed grid (100 x 100):
+    len = 20 # n_data = len^2
+    ns = 30
+    z = LinRange(.01, 1, len)
+    grid = Iterators.product(z,z)
+    grid = collect.(grid)
+    x = zeros(len^2); y = zeros(len^2)
+    for i ∈ eachindex(grid)
+        x[i] = grid[i][1]; y[i] = grid[i][2]
+    end
+    F = Matrix(transpose(hcat(x,y)))
+    p = 7e-3
+    F .+= rand(Uniform(-p, p), size(F))
+    s1 = scatter(F[1,:], F[2,:], markersize=1., legends=nothing)
+    ids_fps, mean_point = eldar_cluster(F, ns, distance="default", mode="fmd")
+    display(ids_fps)
+    display(mean_point)
+    # FPS plot:
+    scatter!([mean_point[1]], [mean_point[2]], markersize = 7., markerstrokewidth = 3., markershape = :x, markercolor = :red) 
+    scatter!(F[1,ids_fps], F[2,ids_fps], markersize = 4., markerstrokewidth = 2., markershape = :x, markercolor = :red)
+    display(s1)
+    idss_useq = []
+    for i ∈ 1:2
+        _, ids_useq = usequence(F, ns; reservoir_size = 100) # need to capture the reservoir for each iteration to see the animation
+        push!(idss_useq, ids_useq)
+        display(ids_useq)
+        s2 = scatter(F[1,:], F[2,:], markersize=1., legends=nothing)
+        scatter!(F[1,ids_useq], F[2,ids_useq], markersize = 4., markerstrokewidth = 2., markershape = :x, markercolor = :red)
+        display(s2)
+    end
+end
