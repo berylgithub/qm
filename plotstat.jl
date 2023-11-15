@@ -491,14 +491,9 @@ end
 
 
 """
-combine rand useq table by adding new column (H and HDA too)
-
-several plotting scenarios:
-- plot of the minimum of each ntrain separated by each feature
-- plot of rand vs usequence, sample ACSF, FCHL19, and CMBDF (6 curves)
-- 
+combine rand useq table by adding new column (H and HDA too) 
 """
-function main_plot_v2()
+function main_combine_tbs()
     headers = ["ntrain", "ntest", "elv", "model", "feature", 
                 "b_MAEtrain", "b_MAEtest", "MAEtrain", "MAEtest", 
                 "t_mcom", "t_etrain", "t_epred", "t_mtrain", "t_mtest"]
@@ -508,13 +503,50 @@ function main_plot_v2()
     # combine tables:
     tb1 = readdlm("result/deltaML/MAE_enum_v2_30k_100k_srand_H_101123.txt")
     tb2 = readdlm("result/deltaML/MAE_enum_v2_30k_100k_sid57_H_101123.txt")
-    #tb3 = readdlm("result/deltaML/MAE_enum_v2_30k_100k_sid57_H_HDA_101123.txt") # later when the computation is finished
+    tb3 = readdlm("result/deltaML/MAE_enum_v2_30k_100k_sid57_H_HDA_101123.txt") # later when the computation is finished
     tbj = Matrix{Any}(undef, sum(size.([tb1, tb2, tb3], 1))+1, size(tb1, 2)+length(headers_add))
     tbj[1,:] = headers
     id_tbs = [(2,1+size(tb1,1)), (2+size(tb1,1), size(tb1,1)+size(tb2,1)+1), (size(tb1,1)+size(tb2,1)+2, size(tb1,1)+size(tb2,1)+size(tb3,1)+1)]
     display(id_tbs)
-    tbj[2:1+size(tb1,1),1:3] .= ["rand" "true" "false"]; tbj[2:1+size(tb1,1),4:end] = tb1
+    tbj[id_tbs[1][1]:id_tbs[1][2],1:3] .= ["rand" "true" "false"]; tbj[id_tbs[1][1]:id_tbs[1][2],4:end] = tb1
+    tbj[id_tbs[2][1]:id_tbs[2][2],1:3] .= ["sid57" "true" "false"]; tbj[id_tbs[2][1]:id_tbs[2][2],4:end] = tb2
+    tbj[id_tbs[3][1]:id_tbs[3][2],1:3] .= ["sid57" "true" "true"]; tbj[id_tbs[3][1]:id_tbs[3][2],4:end] = tb3
+    writedlm("result/deltaML/MAE_enum_v2_combined_101123.txt", tbj)
+end
 
-    display(tbj)
-    println(tbj[1+size(tb1,1),:])
+
+"""
+several plotting scenarios:
+- plot of rand vs usequence, sample ACSF, FCHL19, and CMBDF (6 curves, 2 each representation)
+- plot ΔML, sample ACSF, FCHL19, and CMBDF -> (12 curves, reduce if too crowded)
+- plot of the minimum of each ntrain separated by each feature -> 3 curves
+"""
+function main_plot_v2()
+    tb = readdlm("result/deltaML/MAE_enum_v2_combined_101123.txt")
+    headers = tb[1,:] # headers
+    println(collect(enumerate(headers)))
+    tb = tb[2:end, :] # extract values
+    id_gmin = query_min(tb, [], [], 12) # global minima 
+    # plot of minimum on each ntrain on each feature:
+    ntrains = tb[1:9,4]
+    fts = unique(tb[:,8])
+    ids_mins = []
+    for ft ∈ fts
+        temp = []
+        for ntrain ∈ ntrains
+            id_min = query_min(tb, [8, 4], [ft, ntrain], 12)
+            push!(temp, id_min)
+        end
+        push!(ids_mins, temp)
+    end
+    ys = [tb[ids_mins[i],12] for i ∈ eachindex(fts)]
+    xticks = ntrains; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
+    yticks = [2.0^i for i ∈ 0:5]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    p = plot(xticks, ys,
+            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            xaxis = :log, yaxis = :log,
+            markershape = :auto, markersize = (ones(length(fts))*6)',
+            labels = "min_" .* permutedims(fts), xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+        )
+    display(p)
 end
