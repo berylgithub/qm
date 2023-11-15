@@ -517,9 +517,9 @@ end
 
 """
 several plotting scenarios:
+- plot of the minimum of each ntrain separated by each feature -> 6 curves
 - plot of rand vs usequence, sample ACSF, FCHL19, and CMBDF (6 curves, 2 each representation)
 - plot ΔML, sample ACSF, FCHL19, and CMBDF -> (12 curves, reduce if too crowded)
-- plot of the minimum of each ntrain separated by each feature -> 3 curves
 """
 function main_plot_v2()
     tb = readdlm("result/deltaML/MAE_enum_v2_combined_101123.txt")
@@ -527,6 +527,7 @@ function main_plot_v2()
     println(collect(enumerate(headers)))
     tb = tb[2:end, :] # extract values
     id_gmin = query_min(tb, [], [], 12) # global minima 
+    
     # plot of minimum on each ntrain on each feature:
     ntrains = tb[1:9,4]
     fts = unique(tb[:,8])
@@ -539,14 +540,52 @@ function main_plot_v2()
         end
         push!(ids_mins, temp)
     end
-    ys = [tb[ids_mins[i],12] for i ∈ eachindex(fts)]
     xticks = ntrains; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
-    yticks = [2.0^i for i ∈ 0:5]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    ys = [tb[ids_mins[i],12] for i ∈ eachindex(fts)]
+    yticks = [2.0^i for i ∈ 0:3]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
     p = plot(xticks, ys,
-            yticks = (yticks, ytformat), xticks = (xticks, xtformat),
+            yticks = (yticks, ytformat),
+            xticks = (xticks, xtformat), 
             xaxis = :log, yaxis = :log,
             markershape = :auto, markersize = (ones(length(fts))*6)',
-            labels = "min_" .* permutedims(fts), xlabel = "Ntrain", ylabel = "MAE (kcal/mol)"
+            labels = "min(" .* permutedims(fts) .*")", xlabel = "Ntrain", ylabel = "MAE (kcal/mol)",
+            title = "minimum MAE for each representation",
         )
+    hline!([1], labels = nothing, lc = :red)
     display(p)
+    savefig(p, "plot/deltaML/fig_min_MAE_representation.png")
+    tbplot = vcat(permutedims(headers),tb[reduce(vcat, ids_mins),:])
+    display(tbplot)
+    writedlm("plot/deltaML/tb_min_MAE_representation.txt", tbplot)
+
+    # plot min(rand) vs min(usequence), sample (ACSF, FCHL19, CMBDF)
+    fts = ["ACSF_51", "FCHL19", "CMBDF"]
+    selections = unique(tb[:,1])
+    iters = collect(Iterators.product(ntrains, fts, selections)) # iterators, so that the loop is single
+    id_mins = []
+    for it ∈ iters
+        push!(id_mins, query_min(tb, [4, 8, 1], it, 12))
+    end
+    niters = reduce(*, length.([fts,selections]))
+    nslice = Int(length(id_mins)/niters)
+    ncurves = Int(length(id_mins)/nslice) # number of curves
+    id_slices = [((i-1)*nslice + 1, i*nslice) for i ∈ 1:ncurves] # which slices to pick from the id_mins
+    ys = [tb[id_mins[id[1]:id[2]], 12] for id ∈ id_slices] # slice the MAEs (y axis)
+    yticks = [2.0^i for i ∈ 0:5]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    labels = permutedims([tb[id_mins[id[1]],1] .* "_" .* tb[id_mins[id[1]],8] for id ∈ id_slices])
+    p = plot(xticks, ys,
+            yticks = (yticks, ytformat),
+            xticks = (xticks, xtformat), 
+            xaxis = :log, yaxis = :log,
+            markershape = [:+ :+ :+ :utriangle :utriangle :utriangle], 
+            markercolor = [:black :green :blue :black :green :blue],
+            linecolor = [:black :green :blue :black :green :blue],
+            markersize = (ones(ncurves)*6)',
+            labels = labels, xlabel = "Ntrain", ylabel = "MAE (kcal/mol)",
+            title = "Random vs FPS",
+        )
+    hline!([1], labels = nothing, lc = :red)
+    savefig(p, "plot/deltaML/fig_RandVFPS.png")
+    tbplot = vcat(permutedims(headers),tb[reduce(vcat, id_mins),:])
+    writedlm("plot/deltaML/tb_RandVFPS.txt", tbplot)
 end
