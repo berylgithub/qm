@@ -585,7 +585,10 @@ function main_plot_v2()
             title = "Random vs FPS",
         )
     hline!([1], labels = nothing, lc = :red)
+    display(p)
     savefig(p, "plot/deltaML/fig_RandVFPS.png")
     tbplot = vcat(permutedims(headers),tb[reduce(vcat, id_mins),:])
     writedlm("plot/deltaML/tb_RandVFPS.txt", tbplot)
+
+    # plot 
 end
