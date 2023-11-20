@@ -839,12 +839,16 @@ function main_generate_30k()
     # once hit the 57th index, cluster 30k:
     nset = 57
     # with selection algo:
-    _ = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset-1)
-    centers = set_cluster(F, 30_000; universe_size = 1000, num_center_sets = 1)[1]
+    reservoir_size = 90_000
+    _ = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset-1, reservoir_size=reservoir_size)
+    centers = set_cluster(F, 30_000; universe_size = 1000, num_center_sets = 1, reservoir_size=reservoir_size)[1]
+
+    usequence(F::Matrix{Float64}, 200; rep=true, reservoir_size=60_000)
+
     # see if the generated stuffs are the same
     id57 = readdlm("data/custom_CMBDF_centers_181023.txt", Int)[57,1:100]
     display(centers[1:100] == id57)
-    writedlm("data/centers_30k_id57.txt", centers)
+    writedlm("data/centers_30k_id57_201123.txt", centers)
 end
 
 """
@@ -920,8 +924,8 @@ function test_filter_data()
             push!(cid, i)
         end
     end
-    idtrains = cid[1:100] # or cid[end-99:end], or random sample from these, or even usequence from these (try later)
-    @time min_main_obj(idtrains, E, dataset, DFs, f)
+    idtrains = Int.(cid[1:100]) # or cid[end-99:end], or random sample from these, or even usequence from these (try later)
+    display(min_main_obj(idtrains, E, dataset, DFs, f))
 end
 
 """

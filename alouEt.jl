@@ -83,7 +83,7 @@ end
 """
 overloader, using matrix as input
 """
-function set_cluster(F::Matrix{Float64}, M::Int; universe_size=1_000, num_center_sets::Int = 1)
+function set_cluster(F::Matrix{Float64}, M::Int; universe_size=1_000, num_center_sets::Int = 1, reservoir_size=500)
     N, L = size(F)
     Ftran = Matrix(transpose(F))
     #F = F'
@@ -95,7 +95,7 @@ function set_cluster(F::Matrix{Float64}, M::Int; universe_size=1_000, num_center
     #center_ids, mean_point, D = eldar_cluster(F, M, wbar=wbar, B=B, distance="mahalanobis", mode="fmd", get_distances=true) # generate cluster centers
     centers = []
     for i ∈ 1:num_center_sets
-        _, center_ids = usequence(Ftran, M)
+        _, center_ids = usequence(Ftran, M; reservoir_size = reservoir_size)
         push!(centers, center_ids)
     end
     return centers
