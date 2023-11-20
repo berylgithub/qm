@@ -842,9 +842,6 @@ function main_generate_30k()
     reservoir_size = 90_000
     _ = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset-1, reservoir_size=reservoir_size)
     centers = set_cluster(F, 30_000; universe_size = 1000, num_center_sets = 1, reservoir_size=reservoir_size)[1]
-
-    usequence(F::Matrix{Float64}, 200; rep=true, reservoir_size=60_000)
-
     # see if the generated stuffs are the same
     id57 = readdlm("data/custom_CMBDF_centers_181023.txt", Int)[57,1:100]
     display(centers[1:100] == id57)
