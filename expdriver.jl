@@ -900,7 +900,8 @@ end
 function test_min_main_obj()
     DFs = [load("data/atomref_features.jld", "data"), [], [], []]
     dataset = load("data/qm9_dataset.jld", "data")
-    idtrains = Int.(readdlm("data/custom_CMBDF_centers_181023.txt")[57,1:100]) # current best
+    #idtrains = Int.(readdlm("data/custom_CMBDF_centers_181023.txt")[57,1:100]) # current best
+    idtrains = vec(readdlm("data/centers_30k_id57_201123.txt", Int)[1:100]) # try new centers that accounts 0ver 30k reservoir_size
     E = vec(readdlm("data/energies.txt"))
     f = load("data/CMBDF.jld", "data")
     @time fobj = min_main_obj(idtrains, E, dataset, DFs, f)
