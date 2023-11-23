@@ -492,4 +492,5 @@ def extract_MBDF():
 
 # main:
 #extract_ACSF()
-extract_MBDF()
+#extract_MBDF()
+test_MBDF()
