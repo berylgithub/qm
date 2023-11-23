@@ -519,7 +519,7 @@ end
 several plotting scenarios:
 - plot of the minimum of each ntrain separated by each feature -> 6 curves
 - plot of rand vs usequence, sample ACSF, FCHL19, and CMBDF (6 curves, 2 each representation)
-- plot ΔML, sample ACSF, FCHL19, and CMBDF -> (12 curves, reduce if too crowded)
+- plot ΔML, sample ACSF, FCHL19, and CMBDF -> (3 plots * 4 curves, reduce if too crowded)
 """
 function main_plot_v2()
     tb = readdlm("result/deltaML/MAE_enum_v2_combined_101123.txt")
@@ -547,9 +547,10 @@ function main_plot_v2()
             yticks = (yticks, ytformat),
             xticks = (xticks, xtformat), 
             xaxis = :log, yaxis = :log,
-            markershape = :auto, markersize = (ones(length(fts))*6)',
+            markershape = [:circle :rect :utriangle :diamond :hexagon], markersize = (ones(length(fts))*6)',
             labels = "min(" .* permutedims(fts) .*")", xlabel = "Ntrain", ylabel = "MAE (kcal/mol)",
             title = "minimum MAE for each representation",
+            dpi = 1000
         )
     hline!([1], labels = nothing, lc = :red)
     display(p)
@@ -559,7 +560,7 @@ function main_plot_v2()
     writedlm("plot/deltaML/tb_min_MAE_representation.txt", tbplot)
 
     # plot min(rand) vs min(usequence), sample (ACSF, FCHL19, CMBDF)
-    fts = ["ACSF_51", "FCHL19", "CMBDF"]
+    fts = ["ACSF_51", "FCHL19", "SOAP", "CMBDF"]
     selections = unique(tb[:,1])
     iters = collect(Iterators.product(ntrains, fts, selections)) # iterators, so that the loop is single
     id_mins = []
@@ -572,17 +573,19 @@ function main_plot_v2()
     id_slices = [((i-1)*nslice + 1, i*nslice) for i ∈ 1:ncurves] # which slices to pick from the id_mins
     ys = [tb[id_mins[id[1]:id[2]], 12] for id ∈ id_slices] # slice the MAEs (y axis)
     yticks = [2.0^i for i ∈ 0:5]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
-    labels = permutedims([tb[id_mins[id[1]],1] .* "_" .* tb[id_mins[id[1]],8] for id ∈ id_slices])
+    labels = permutedims([tb[id_mins[id[1]],1] .* ", " .* tb[id_mins[id[1]],8] for id ∈ id_slices])
     p = plot(xticks, ys,
             yticks = (yticks, ytformat),
             xticks = (xticks, xtformat), 
             xaxis = :log, yaxis = :log,
-            markershape = [:+ :+ :+ :utriangle :utriangle :utriangle], 
-            markercolor = [:black :green :blue :black :green :blue],
-            linecolor = [:black :green :blue :black :green :blue],
+            linestyle = [:dash :dash :dash :dash :solid :solid :solid :solid],
+            markershape = [:circle :rect :utriangle :diamond :circle :rect :utriangle :diamond], 
+            markercolor = [:black :green :blue :purple :black :green :blue :purple],
+            linecolor = [:black :green :blue :purple :black :green :blue :purple],
             markersize = (ones(ncurves)*6)',
             labels = labels, xlabel = "Ntrain", ylabel = "MAE (kcal/mol)",
-            title = "Random vs FPS",
+            title = "Random vs Usequence",
+            dpi = 1000
         )
     hline!([1], labels = nothing, lc = :red)
     display(p)
@@ -590,5 +593,54 @@ function main_plot_v2()
     tbplot = vcat(permutedims(headers),tb[reduce(vcat, id_mins),:])
     writedlm("plot/deltaML/tb_RandVFPS.txt", tbplot)
 
-    # plot 
+    # plot of the baseline MAE only (4 elvs * 2 selections + 4 sid_57 hybrid = 12 curves)
+    # ! looks like this pattern of plotting is repeating, should probably try to write this in 
+    elvs = ["A", "AB", "ABN", "ABNT"]
+    selections = unique(tb[2:end, 1])
+    hybrids = [false, true]
+    iters = collect(Iterators.product(ntrains, elvs, selections, hybrids))
+    ids_plot = []
+    for iter ∈ iters
+        ids = query_indices(tb, [4,6,1,3], iter) # only need one data point
+        if !isempty(ids) # some of the combination may not exist
+            push!(ids_plot, ids[1])
+        end
+    end
+    display(tb[ids_plot,[4,6,1,3]])
+    nslice = length(ntrains) # number of x data points each curve
+    ncurves = Int(length(ids_plot)/length(ntrains))
+    id_slices = [((i-1)*nslice + 1, i*nslice) for i ∈ 1:ncurves]
+    ys = [tb[ids_plot[id[1]:id[2]], 10] for id ∈ id_slices] # slice the MAEs (y axis)
+    yticks = vcat([2.0^i for i ∈ 0:5], [10., 12., 20.]); ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    labels = permutedims([tb[ids_plot[id[1]],6] .* ", " .* tb[ids_plot[id[1]],1] .* ", " .* string(tb[ids_plot[id[1]],3]) for id ∈ id_slices])
+    p = plot(xticks, ys,
+            yticks = (yticks, ytformat),
+            xticks = (xticks, xtformat), 
+            xaxis = :log, yaxis = :log,
+            linestyle = permutedims(vcat(repeat([:dash],4), repeat([:solid],8))),
+            markershape = hcat(permutedims(hcat(repeat([:circle, :rect, :utriangle, :diamond], 2))), [:+ :x :hexagon :heptagon] ), 
+            markercolor = permutedims(hcat(repeat([:black, :green, :blue, :purple],3))),
+            linecolor = permutedims(hcat(repeat([:black, :green, :blue, :purple],3))),
+            markersize = (ones(ncurves)*4)',
+            labels = labels, xlabel = "Ntrain", ylabel = "MAE (kcal/mol)",
+            title = "Baseline MAEs",
+            legendfontsize = 7, legend = :outertopright,
+            dpi=1000
+        )
+    display(p)
+    savefig(p, "plot/deltaML/fig_base.png")
+    tbplot = vcat(permutedims(headers),tb[ids_plot,:])
+    writedlm("plot/deltaML/tb_base.txt", tbplot)
+    
+end
+
+function main_get_stats_deltaML()
+    # get the hit counts of: [elvs, sid57, hybrid]
+    tb = readdlm("result/deltaML/MAE_enum_v2_combined_101123.txt")
+    headers = tb[1,:]
+    tb = tb[2:end,:]
+    println([(k,v) for (k,v) ∈ enumerate(headers)])
+    hit_counts = Dict()
+    hit_counts 
+    #...
 end

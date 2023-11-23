@@ -712,6 +712,7 @@ function main_anime()
     display(ids_fps)
     display(mean_point)
     
+    # !! change to high res in the final! (dpi ≥ 300)
     #= # FPS plot:
     scatter!([mean_point[1]], [mean_point[2]], markersize = 7., markerstrokewidth = 3., markershape = :x, markercolor = :blue)
     savefig(s1, "plot/anime/fps_center.png")

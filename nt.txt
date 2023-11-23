@@ -588,3 +588,31 @@ ntol=10 reaches global optimum in 5.5k iterations with 582 iterates covered, whi
 - see plotstat.jl for plannings of plottings
 ! finish anime in voronoi.jl
 ! finish plotting in plotstat.jl once the computations are finished
+
+Presentation content:
+done \item Title + name + logos[VGSCO, UofT, Julia] (can these be footer?) + etc
+done \item QM9 challenge screenshot (twitter)
+done \item building block but more pictorial rather thabn process diagram
+done \item the effect of adding/removing data, e.g, when the data lacks F atom type, when the data consists of only large molecules, show the MAE differences.
+not needed \item usequence from prev presentation (the 4 figures) + sum formula (abstraction of flatten)
+done \item FPS and usequence gif anim (in one slide?)
+done \item minimum plot of rand vs useq
+done \item "Ladder" illustration and Delta ML formula
+0.5 done? \item technical description of smiles, graph, dressed fragments (2 slide max if possible)
+\item MAEs of deltaML plots and plots (e.g., the minimum plot with counter of hyperparameters, the baseline only MAE (4 curves), 4 MAE plots of deltaML for each (pick 3) feature with curves = A,AB,ABN,ABNT) (2 slides max?)
+\item ...
+(? not needed?) \item block diagram of optimizations
+done \item standard form of combinatorial opt, tabu search ansatz (+ the binomial(BigInt...) query screenshot?) (+ the MINLP chart from youtube in one slide?)
+(not needed) \item "ladder" for time opt
+done \item conclusion? the steps with result, e.g., useq+modelopt+tsopt = 3.2 kcal/mol (or lower)
+done \item outlook/possible extensiosn of deltaML (e.g., the morse pot) for dressed Bonds (also extenndable to n-body)
+done \item references
+done \item thank you from prev presentation slide
+
+=============
+17.11.2023:
+! hyperparameteropt of the feature for each molecule of the 100 training molecules
+=============
+
+21.11.2023:
+- the sequence that starts with reservoir>30k gives high 8.6kcal/mol for 100 data, this means it isnt good for QM9 challenge.

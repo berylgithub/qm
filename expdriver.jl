@@ -839,7 +839,7 @@ function main_generate_30k()
     # once hit the 57th index, cluster 30k:
     nset = 57
     # with selection algo:
-    reservoir_size = 90_000
+    reservoir_size = 500; # reservoir_size = 90_000
     _ = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset-1, reservoir_size=reservoir_size)
     centers = set_cluster(F, 30_000; universe_size = 1000, num_center_sets = 1, reservoir_size=reservoir_size)[1]
     # see if the generated stuffs are the same
