@@ -611,8 +611,11 @@ done \item thank you from prev presentation slide
 
 =============
 17.11.2023:
-! hyperparameteropt of the feature for each molecule of the 100 training molecules
+! hyperparameteropt of the feature for each molecule of the 100 training molecules (not sure how this works), for now just do the hyperparameteropt for feature extraction.
 =============
 
 21.11.2023:
 - the sequence that starts with reservoir>30k gives high 8.6kcal/mol for 100 data, this means it isnt good for QM9 challenge.
+
+29.11.2023:
+- to connect py and jl, needs env to point to anaconda path (figurethis out)

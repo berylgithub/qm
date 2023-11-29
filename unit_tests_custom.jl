@@ -8,6 +8,7 @@ using NOMAD
 using GLPK
 using NLopt =#
 using Metaheuristics
+using PyCall # test run CMBDF
 
 """
 inner product kernel entry (reproducing kernel)
@@ -500,4 +501,8 @@ a way to track the best iterates in each iteration
 """
 function MH_log_result(status, filepath)
     writestringline(string.(vcat(minimum(status), minimizer(status))), filepath; mode= "a")
+end
+
+function test_call_QML()
+    
 end
