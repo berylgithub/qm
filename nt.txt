@@ -618,4 +618,15 @@ done \item thank you from prev presentation slide
 - the sequence that starts with reservoir>30k gives high 8.6kcal/mol for 100 data, this means it isnt good for QM9 challenge.
 
 29.11.2023:
-- to connect py and jl, needs env to point to anaconda path (figurethis out)
+- to connect py and jl, needs env to point to anaconda path (figurethis out) || unlikely to be done
+
+12.01.2024:
+- extract CM and BoB and rerun the whole deltaML for 100 data points:
+  - BoB: has max size for each atom, it means need to give max feature size. Statistics of the atom size for each atomtype (maybe useful):
+    maxes = [maximum([counts[i][t] for i ∈ 1:length(counts)]) for t ∈ ["H","C","N","O","F"]]
+      5-element Vector{Int64}:
+        20
+        9
+        7
+        5
+        6
