@@ -630,3 +630,7 @@ done \item thank you from prev presentation slide
         7
         5
         6
+
+15.01.2023:
+- need to: 1. install ubuntu VM in laptop or 2. copy gdb- dataset to PC for extract CM and BoB in 12.01.2024
+! probably need to reimplement BoB (and CM?) since the one from QML gives "Segmentation fault" error -- > for CM and BoB see Danish' MBDF script!
