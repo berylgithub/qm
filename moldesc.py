@@ -10,10 +10,10 @@ from ase import Atoms
 from dscribe.descriptors import SOAP, ACSF
 
 import scipy.sparse
-import qml
-from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
-from qml.math import cho_solve
-#import MBDF, cMBDF
+#import qml
+#from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
+#from qml.math import cho_solve
+import MBDF
 #from cMBDF_joblib import get_cmbdf
 import cMBDF_joblib
 
@@ -489,8 +489,31 @@ def extract_MBDF():
     for i, elem in enumerate(reps):
         np.savetxt("/users/baribowo/Dataset/gdb9-14b/cmbdf-2/"+str(i+1)+".txt", elem, delimiter="\t")
 
+# extracts CM and/or BOB using MBDF.py script
+def extract_CM_BOB():
+    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    print("Ndata = ",len(onlyfiles))
+    compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
+    coors = np.array([mol.coordinates for mol in compounds])
+    #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
+    ncs = np.array([mol.nuclear_charges for mol in compounds])
+    elements = np.unique(np.concatenate(ncs))
+    #print(ncs)
+    #print(coors)
+    #mbdf = cMBDF.generate_mbdf(ncs, coors)
+    start = time.time() # timer
+    reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False, n_atm=2.0)
+    print(time.time()-start)
+
+def test_CM_BOB():
+    ncs = np.array([6.,1.])
+    coors = np.array([[0.,1.,0.],[0.,0.,1.]])
+    reps = MBDF.generate_CM(coors,ncs,5)
+    print(reps)
 
 # main:
 #extract_ACSF()
 #extract_MBDF()
-test_MBDF()
+#test_MBDF()
+test_CM_BOB()
