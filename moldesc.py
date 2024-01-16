@@ -525,6 +525,7 @@ def extract_BOB():
     #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
     ncs = [mol.nuclear_charges for mol in compounds]
     elements = np.unique(np.concatenate(ncs))
+    atoms = nc_to_atype(ncs) 
     #print(ncs)
     #print(coors)
     print(elements)
@@ -533,30 +534,43 @@ def extract_BOB():
     #reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False, n_atm=2.0)
     #reps = MBDF.generate_CM(coors,ncs,10)
     #_ = [mol.generate_coulomb_matrix(size=29, sorting="row-norm") for mol in compounds]
-    #reps = MBDF.generate_bob(atypes, coors, asize={"C":5, "H":5, "O":3})
+    _ = [mol.generate_bob(asize={"C":9, "H":20, "N":7, "O":5, "F":6}) for mol in compounds]
+    #reps = MBDF.generate_bob(atoms, coors, asize={"C":9, "H":20, "N":7, "O":5, "F":6})
     #print([mol.representation for mol in compounds])
     print(time.time()-start)
+    for mol in compounds:
+        print(mol.representation.shape)
 
 def test_CM_BOB():
-    ncs = [[6,1],[6,1,7]]
-    ncd = {1:"H", 6:"C", 7:"N", 8:"O", 9:"F"}
+    ncs = [[6,1,8],[6,1,7]]
+    atoms = nc_to_atype(ncs)
+    print(atoms)
+    #atoms = [["C", "H"],["C", "H"]]
+    coors = [
+                [[1.,1.,0.2],[0.1,0.1,0.1],[0.2,0.3,0.5]],
+                [[1.,1.,0.2],[0.1,0.1,0.1], [2.,3.,5.]]
+            ]
+    #reps = MBDF.generate_CM(coors,ncs,5)
+    #reps = MBDF.generate_bob(atoms, coors, asize={"C":9, "H":20, "N":7, "O":5, "F":6})
+    reps = qml.representations.generate_bob([[6,1,8]], [[1.,1.,0.2],[0.1,0.1,0.1],[0.2,0.3,0.5]], ["C","H","O"], asize={"C":1, "H":1, "N":1, "O":1})
+    for rep in reps:
+        print(rep.shape)
+        print(rep)
+
+def nc_to_atype(ncs):
     atoms = []
+    ncd = {1:"H", 6:"C", 7:"N", 8:"O", 9:"F"}
     for i in range(len(ncs)):
         temp = []
         for j in range(len(ncs[i])):
             temp.append(ncd[ncs[i][j]])
         atoms.append(temp)            
         temp = []
-    print(atoms)
-    #atoms = [["C", "H"],["C", "H"]]
-    coors = [[[1.,1.,0.2],[0.1,0.1,0.1]],[[1.,1.,0.2],[0.1,0.1,0.1], [2.,3.,5.]]]
-    #reps = MBDF.generate_CM(coors,ncs,5)
-    reps = MBDF.generate_bob(atoms, coors, asize={"C":3, "H":3})
-    print(reps)
+    return atoms
 
 # main:
 #extract_ACSF()
 #extract_MBDF()
 #test_MBDF()
-test_CM_BOB()
+#test_CM_BOB()
 extract_BOB()

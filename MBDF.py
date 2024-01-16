@@ -548,7 +548,9 @@ def generate_bob(elements,coords,n_jobs=-1,asize={'C': 7, 'H': 16, 'N': 3, 'O': 
 
     bob_arr = Parallel(n_jobs=n_jobs)(delayed(bob)(atoms,coods,asize) for atoms,coods in tqdm(list(zip(elements,coords))))
 
-    return np.array(bob_arr)
+    #return np.array(bob_arr)
+    return bob_arr
+
 
 def bob(atoms,coods, asize={'C': 7, 'H': 16, 'N': 3, 'O': 3, 'S': 1}):
     keys=list(asize.keys()) 
