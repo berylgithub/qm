@@ -492,7 +492,7 @@ def extract_MBDF():
 # extracts CM and/or BOB using MBDF.py script
 def extract_CM_BOB():
     geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
-    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])[:10]
     print("Ndata = ",len(onlyfiles))
     compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
     coors = np.array([mol.coordinates for mol in compounds])
@@ -501,15 +501,18 @@ def extract_CM_BOB():
     elements = np.unique(np.concatenate(ncs))
     #print(ncs)
     #print(coors)
+    print(elements)
     #mbdf = cMBDF.generate_mbdf(ncs, coors)
     start = time.time() # timer
-    reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False, n_atm=2.0)
+    #reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False, n_atm=2.0)
     print(time.time()-start)
 
 def test_CM_BOB():
     ncs = np.array([6.,1.])
-    coors = np.array([[0.,1.,0.],[0.,0.,1.]])
-    reps = MBDF.generate_CM(coors,ncs,5)
+    atoms = np.array(["C", "H"])
+    coors = np.array([[1.,1.,0.2],[0.1,0.1,0.1]])
+    #reps = MBDF.generate_CM(coors,ncs,5)
+    reps = MBDF.generate_bob(atoms, coors, asize={"C":1, "H":1})
     print(reps)
 
 # main:
