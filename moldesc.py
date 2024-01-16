@@ -10,7 +10,7 @@ from ase import Atoms
 from dscribe.descriptors import SOAP, ACSF
 
 import scipy.sparse
-#import qml
+import qml
 #from qml.fchl import generate_representation, get_local_kernels, get_atomic_kernels, get_atomic_symmetric_kernels
 #from qml.math import cho_solve
 import MBDF
