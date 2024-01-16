@@ -319,7 +319,7 @@ function load_vector_feature()
     fpath = homepath*"Dataset/gdb9-14b/cm/" # can also be "bob"
     files = readdir(fpath)
     A = zeros(length(files), 435)
-    for i,fil in enumerate(files)
+    for (i,fil) in enumerate(files)
         A[i,:] = vec(readdlm(fpath*fil))
     end
     display(A)
