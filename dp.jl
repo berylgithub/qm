@@ -309,15 +309,32 @@ function load_sparse()
     save("data/ACSF.jld", "data", A)
 end
 
+"""
+load features that are in vector form for each molecule -> transform into a big matrix
+sizes:
+    - CM = 435
+"""
+function load_vector_feature()
+    homepath = "/home/berylubuntu/"
+    fpath = homepath*"Dataset/gdb9-14b/cm/" # can also be "bob"
+    files = readdir(fpath)
+    A = zeros(length(files), 435)
+    for i,fil in enumerate(files)
+        A[i,:] = vec(readdlm(fpath*fil))
+    end
+    display(A)
+    save("data/CM.jld", "data", A)
+end
+
 
 """
 remove the molids of uncharacterized ∪ non converged geos
 """
 function feature_slicer()
     slicer = vec(Int.(readdlm("data/exids.txt")))
-    #feature_paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", "data/SOAP.jld"] 
+    #paths = ["data/qm9_dataset.jld", "data/FCHL19.jld", "data/SOAP.jld", "data/SOAP.jld"] 
     #feature_paths = ["data/atomref_features.jld", "data/featuresmat_qm9_covalentbonds.jld"] # all dataset then features
-    feature_paths = ["data/ACSF.jld"]
+    feature_paths = ["data/CM.jld"]
     for i ∈ eachindex(feature_paths)
         println("proc ",feature_paths[i], " ...")
         t = @elapsed begin
