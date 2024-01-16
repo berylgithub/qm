@@ -519,4 +519,5 @@ def test_CM_BOB():
 #extract_ACSF()
 #extract_MBDF()
 #test_MBDF()
-test_CM_BOB()
+#test_CM_BOB()
+extract_CM_BOB()
