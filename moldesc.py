@@ -4,10 +4,10 @@ from os.path import isfile, join, exists
 import time
 from warnings import catch_warnings
 
-from ase.io import read
-from ase.build import molecule
-from ase import Atoms
-from dscribe.descriptors import SOAP, ACSF
+#from ase.io import read
+#from ase.build import molecule
+#from ase import Atoms
+#from dscribe.descriptors import SOAP, ACSF
 
 import scipy.sparse
 import qml
@@ -490,14 +490,40 @@ def extract_MBDF():
         np.savetxt("/users/baribowo/Dataset/gdb9-14b/cmbdf-2/"+str(i+1)+".txt", elem, delimiter="\t")
 
 # extracts CM and/or BOB using MBDF.py script
-def extract_CM_BOB():
-    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
-    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])[:10]
+def extract_CM():
+    geopath = "/home/berylubuntu/Dataset/gdb9-14b/geometry/"
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    print(onlyfiles)
     print("Ndata = ",len(onlyfiles))
     compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
-    coors = np.array([mol.coordinates for mol in compounds])
+    coors = [mol.coordinates for mol in compounds]
     #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
-    ncs = np.array([mol.nuclear_charges for mol in compounds])
+    ncs = [mol.nuclear_charges for mol in compounds]
+    elements = np.unique(np.concatenate(ncs))
+    #print(ncs)
+    #print(coors)
+    #print(elements)
+    #mbdf = cMBDF.generate_mbdf(ncs, coors)
+    start = time.time() # timer
+    #reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False, n_atm=2.0)
+    #reps = MBDF.generate_CM(coors,ncs,10)
+    _ = [mol.generate_coulomb_matrix(size=29, sorting="row-norm") for mol in compounds]
+    #_ = [mol.generate_bob(asize={"C":5, "H":5, "O":3}) for mol in compounds]
+    #print([mol.representation for mol in compounds])
+    print(time.time()-start)
+    for i, mol in enumerate(compounds):
+        np.savetxt("/home/berylubuntu/Dataset/gdb9-14b/cm/"+str(i+1)+".txt", mol.representation, delimiter="\t")
+        print(i, "done!")
+
+def extract_BOB():
+    geopath = "/home/berylubuntu/Dataset/gdb9-14b/geometry/"
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])[:5]
+    print(onlyfiles)
+    print("Ndata = ",len(onlyfiles))
+    compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
+    coors = [mol.coordinates for mol in compounds]
+    #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
+    ncs = [mol.nuclear_charges for mol in compounds]
     elements = np.unique(np.concatenate(ncs))
     #print(ncs)
     #print(coors)
@@ -505,19 +531,32 @@ def extract_CM_BOB():
     #mbdf = cMBDF.generate_mbdf(ncs, coors)
     start = time.time() # timer
     #reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False, n_atm=2.0)
+    #reps = MBDF.generate_CM(coors,ncs,10)
+    #_ = [mol.generate_coulomb_matrix(size=29, sorting="row-norm") for mol in compounds]
+    #reps = MBDF.generate_bob(atypes, coors, asize={"C":5, "H":5, "O":3})
+    #print([mol.representation for mol in compounds])
     print(time.time()-start)
 
 def test_CM_BOB():
-    ncs = np.array([6.,1.])
-    atoms = np.array(["C", "H"])
-    coors = np.array([[1.,1.,0.2],[0.1,0.1,0.1]])
+    ncs = [[6,1],[6,1,7]]
+    ncd = {1:"H", 6:"C", 7:"N", 8:"O", 9:"F"}
+    atoms = []
+    for i in range(len(ncs)):
+        temp = []
+        for j in range(len(ncs[i])):
+            temp.append(ncd[ncs[i][j]])
+        atoms.append(temp)            
+        temp = []
+    print(atoms)
+    #atoms = [["C", "H"],["C", "H"]]
+    coors = [[[1.,1.,0.2],[0.1,0.1,0.1]],[[1.,1.,0.2],[0.1,0.1,0.1], [2.,3.,5.]]]
     #reps = MBDF.generate_CM(coors,ncs,5)
-    reps = MBDF.generate_bob(atoms, coors, asize={"C":1, "H":1})
+    reps = MBDF.generate_bob(atoms, coors, asize={"C":3, "H":3})
     print(reps)
 
 # main:
 #extract_ACSF()
 #extract_MBDF()
 #test_MBDF()
-#test_CM_BOB()
-extract_CM_BOB()
+test_CM_BOB()
+extract_BOB()
