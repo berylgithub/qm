@@ -678,5 +678,7 @@ julia> sizes = map(y -> y[1]*y[2], collect(Iterators.product(x,x)))
 julia> sum(sizes)
 2209
 
++47 for self interaction (diagonal entries)
+
 julia> 133885*2210*8e-6
 2367.0868
