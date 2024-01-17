@@ -678,7 +678,9 @@ julia> sizes = map(y -> y[1]*y[2], collect(Iterators.product(x,x)))
 julia> sum(sizes)
 2209
 
-+47 for self interaction (diagonal entries)
++47 for self interaction (diagonal entries) = 2256
 
 julia> 133885*2210*8e-6
 2367.0868
+
+compress? -> s = sum(x), s*(s+1)/2 = 1128 entries max for qm9 challenge
