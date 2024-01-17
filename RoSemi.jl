@@ -1001,6 +1001,17 @@ function get_repker_atom(F1::AbstractArray, F2::AbstractArray, L1::Vector{Vector
     return A
 end
 
+"""
+computes global linear kernel
+"""
+function get_repker_global(F1::AbstractArray, F2::AbstractArray)
+    rowids = axes(F1,1); colids = axes(F2,1) # vector-type feature assume matrix data structure ∀data
+    iterids = Iterators.product(rowids, colids)
+    
+    A = ThreadsX.map(tuple_id, iterids)
+end
+
+
 function main_kernels_warmup()
     y = rand(1000,100)\rand(1000) # solver warmup
     strrow = strcol = [["C", "C", "C"],["C", "C", "C"]]
