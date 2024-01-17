@@ -635,3 +635,48 @@ done \item thank you from prev presentation slide
 - need to: 1. install ubuntu VM in laptop or 2. copy gdb- dataset to PC for extract CM and BoB in 12.01.2024
 ! probably need to reimplement BoB (and CM?) since the one from QML gives "Segmentation fault" error -- > for CM and BoB see Danish' MBDF script!
 - CM succesfully extracted, BoB fails for QML -- weird results for Danish' script
+
+17.01.2023:
+determining the size of BoB (but still probably be able to be compressed more)
+julia> x
+5-element Vector{Int64}:
+ 20
+  9
+  7
+  5
+  6
+
+julia> Iterators.prod
+prod_iteratorsize product
+julia> Iterators.product(x,x)
+Base.Iterators.ProductIterator{Tuple{Vector{Int64}, Vector{Int64}}}(([20, 9, 7, 5, 6], [20, 9, 7, 5, 6]))
+
+julia> collect(Iterators.product(x,x))
+5×5 Matrix{Tuple{Int64, Int64}}:
+ (20, 20)  (20, 9)  (20, 7)  (20, 5)  (20, 6)
+ (9, 20)   (9, 9)   (9, 7)   (9, 5)   (9, 6)
+ (7, 20)   (7, 9)   (7, 7)   (7, 5)   (7, 6)
+ (5, 20)   (5, 9)   (5, 7)   (5, 5)   (5, 6)
+ (6, 20)   (6, 9)   (6, 7)   (6, 5)   (6, 6)
+
+julia> map(y -> y[1]*y[2], collect(Iterators.product(x,x)))
+5×5 Matrix{Int64}:
+ 400  180  140  100  120
+ 180   81   63   45   54
+ 140   63   49   35   42
+ 100   45   35   25   30
+ 120   54   42   30   36
+
+julia> sizes = map(y -> y[1]*y[2], collect(Iterators.product(x,x)))
+5×5 Matrix{Int64}:
+ 400  180  140  100  120
+ 180   81   63   45   54
+ 140   63   49   35   42
+ 100   45   35   25   30
+ 120   54   42   30   36
+
+julia> sum(sizes)
+2209
+
+julia> 133885*2210*8e-6
+2367.0868
