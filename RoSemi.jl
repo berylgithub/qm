@@ -946,6 +946,20 @@ function get_gaussian_kernel(F1::AbstractArray, F2::AbstractArray, L1::Vector{Ve
 end
 
 """
+computes global gaussian kernel
+    - F1 = row wise data, matrix ∈ ndata × nfeature
+    - F2 = column wise data, matrix ∈ ndata × nfeature
+"""
+function get_gaussian_global(F1::AbstractArray, F2::AbstractArray; c = 2048.)
+    # with threading:
+    rowids = axes(F1, 1); colids = axes(F2, 1)
+    iterids = Iterators.product(rowids, colids)
+    A = ThreadsX.map(id-> comp_gauss_atom(@view(F1[id[1],:]), @view(F2[id[2],:]), c), iterids)
+    return A
+end
+
+
+"""
 inner product kernel entry (reproducing kernel)
 """
 function comp_repker_entry(u::AbstractArray, v::AbstractArray)::Float64
@@ -1003,12 +1017,16 @@ end
 
 """
 computes global linear kernel
+    - F1 = row wise data, matrix ∈ ndata × nfeature
+    - F2 = column wise data, matrix ∈ ndata × nfeature
+    - func = function
 """
 function get_repker_global(F1::AbstractArray, F2::AbstractArray)
-    rowids = axes(F1,1); colids = axes(F2,1) # vector-type feature assume matrix data structure ∀data
+    # with threading:
+    rowids = axes(F1, 1); colids = axes(F2, 1)
     iterids = Iterators.product(rowids, colids)
-    
-    A = ThreadsX.map(tuple_id, iterids)
+    A = ThreadsX.map(id-> comp_repker_entry(@view(F1[id[1],:]), @view(F2[id[2],:])), iterids)
+    return A
 end
 
 
