@@ -1647,7 +1647,7 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
     writedlm("result/deltaML/MAE_base_"*postfix*".txt", MAEs)
     writedlm("data/energy_clean_"*postfix*".txt", E-Eda-Edb-Edn-Edt) # save cleaned energy
     # test diverse models: check TRAIN first for correctness
-    features = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF"] # outtest loop
+    features = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF", "CM"] # outtest loop
     models = ["LLS", "GAK", "REAPER"][2:3]
     solvers = ["direct", "cgls"]
     elvs = ["dressed_atom", "dressed_bond", "dressed_angle", "dressed_torsion"]
@@ -1664,8 +1664,13 @@ function main_DeltaML(;use_preselected_train = false, use_hybrid_da = false, inc
         # compute all kernels here once per feature to save computation time:
         println("computing kernels...")
         t = @elapsed begin
-            Kg = get_gaussian_kernel(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]], σ)
-            Kr = get_repker_atom(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]]) 
+            if feat ∈ ["CM", "BOB"] # global kernel
+                Kg = get_gaussian_global(f, f[idtrain, :]; c=σ)
+                Kr = get_repker_global(f, f[idtrain, :])
+            else
+                Kg = get_gaussian_kernel(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]], σ)
+                Kr = get_repker_atom(f, f[idtrain], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrain]]) 
+            end
         end
         println("kernel computation is finished in ",t)
         for it ∈ iters
