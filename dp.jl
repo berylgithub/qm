@@ -976,6 +976,30 @@ function extract_SMILES(filepath)
 end
 
 """
+================
+================
+Higher resolution feature extractors:
+================
+================
+"""
+
+"""
+generates global indexer of the bag positions (per each dataset)
+"""
+function generate_bob_indexer(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6))
+    
+end
+
+function generate_bob() # for each data (molecule)
+    
+end
+
+function generate_bobs() # for whole dataset
+    
+end
+
+
+"""
 morse potential as feature, r is the only non hyperparameter
 """
 function morse_pot(r, D, a, r0, s)

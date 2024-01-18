@@ -683,4 +683,6 @@ julia> sum(sizes)
 julia> 133885*2210*8e-6
 2367.0868
 
-compress? -> s = sum(x), s*(s+1)/2 = 1128 entries max for qm9 challenge
+compress? -> s = sum(x), s*(s+1)/2 = 1128 entries max for qm9 challenge (not yet figured how to distribute the sizes for each pair)
+use Combinatorics.combinations package to enumerate the atom elements:
+e.g.: collect(Combinatorics.combinations(["C","H1","H2","H3"], 2))
