@@ -983,6 +983,14 @@ Higher resolution feature extractors:
 ================
 """
 
+function get_self_interaction(Z)
+    return .5*Z^2.4
+end
+
+function get_pair_interaction(Z1,Z2,R1,R2)
+    return Z1*Z2/norm(R1-R2)
+end
+
 """
 generates global indexer of the bag positions (per each dataset)
 """
