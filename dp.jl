@@ -994,6 +994,8 @@ end
 """
 generates global indexer of the bag positions (per dataset)
 order: H, C, N, O, F, HH, HC, ...,CC,...FF (sorted lexicographically actually)
+!! need to find out a way s.t the dict not replace each other keys
+!! need to also enumerate the same-type interactions (NOT self interaction), e.g., C₁-C₂, O₁-O₃, ....
 """
 function generate_bob_indexer(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6))
     # generate sizes:
