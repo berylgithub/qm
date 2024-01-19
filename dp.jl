@@ -994,8 +994,8 @@ end
 """
 generates global indexer of the bag positions (per dataset)
 order: H, C, N, O, F, HH, HC, ...,CC,...FF (sorted lexicographically actually)
-!! need to find out a way s.t the dict not replace each other keys
-!! need to also enumerate the same-type interactions (NOT self interaction), e.g., C₁-C₂, O₁-O₃, ....
+!! need to find out a way s.t the dict not replace each other keys --> using merge
+!! need to also enumerate the same-type interactions (NOT self interaction), e.g., C₁-C₂, O₁-O₃, .... --> enumerate the identical pairs first
 """
 function generate_bob_indexer(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6))
     # generate sizes:
@@ -1005,21 +1005,29 @@ function generate_bob_indexer(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F
     idx = 1
     for k ∈ keys(bsizes)
         first = idx; last = idx+bsizes[k]-1 
-        dbags[k] = (first, last)
+        dbags[k*"_self"] = (first, last)
         idx = last+1 
     end
-    display(sort(dbags))
-    # generate pair interaction indices:
+    display(dbags)
+    # generate pair (identical) interaction indices:
     ks = string.(keys(bsizes))
-    kcombs = sort(collect(Combinatorics.combinations(ks, 2)))
+    for k ∈ sort(ks)
+        first = idx; last = idx + bsizes[k]^2 - 1 
+        display([k, dbags[k*"_self"], first, last])
+        dbags[k] = Dict(k=>(first, last))
+        idx = last+1
+    end
+    display(dbags)
+    # non-identical:
+    kcombs = sort(collect(Combinatorics.combinations(sort(ks), 2))) # double sort for symmetry
     display(kcombs)
     for kc ∈ kcombs
         display(kc)
         first = idx; last = idx + bsizes[kc[1]]*bsizes[kc[2]] - 1 # index continues from the self interactions
-        dbags[kc[1]] = Dict(kc[2] => (first, last)) # !!! incorrect, this replaces the keys!
+        merge!(dbags[kc[1]], Dict(kc[2] => (first, last))) # !!! incorrect, this replaces the keys!
         idx = last+1
     end
-    display(dbags)
+    return dbags
 end
 
 function generate_bob(mol, indexer) # for each data (molecule)
