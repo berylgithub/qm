@@ -992,17 +992,39 @@ function get_pair_interaction(Z1,Z2,R1,R2)
 end
 
 """
-generates global indexer of the bag positions (per each dataset)
+generates global indexer of the bag positions (per dataset)
+order: H, C, N, O, F, HH, HC, ...,CC,...FF (sorted lexicographically actually)
 """
 function generate_bob_indexer(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6))
+    # generate sizes:
+    s = values(bsizes)
+    # generate self interactinos indices:
+    dbags = Dict()
+    idx = 1
+    for k ∈ keys(bsizes)
+        first = idx; last = idx+bsizes[k]-1 
+        dbags[k] = (first, last)
+        idx = last+1 
+    end
+    display(sort(dbags))
+    # generate pair interaction indices:
+    ks = string.(keys(bsizes))
+    kcombs = sort(collect(Combinatorics.combinations(ks, 2)))
+    display(kcombs)
+    for kc ∈ kcombs
+        display(kc)
+        first = idx; last = idx + bsizes[kc[1]]*bsizes[kc[2]] - 1 # index continues from the self interactions
+        dbags[kc[1]] = Dict(kc[2] => (first, last)) # !!! incorrect, this replaces the keys!
+        idx = last+1
+    end
+    display(dbags)
+end
+
+function generate_bob(mol, indexer) # for each data (molecule)
     
 end
 
-function generate_bob() # for each data (molecule)
-    
-end
-
-function generate_bobs() # for whole dataset
+function generate_bobs(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6)) # for whole dataset
     
 end
 
