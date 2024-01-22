@@ -1030,6 +1030,14 @@ function generate_bob_indexer(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F
     return dbags, idx-1 # returns the dict and the size of the vector
 end
 
+"""
+main extractor of BoB
+"""
+function main_extract_BOB()
+    dataset = load("data/dataset.jld", "data")
+    X = generate_bobs(dataset) # no change to the atom sizes
+    save("data/BOB.jld","data",X)
+end
 
 """
 params:
