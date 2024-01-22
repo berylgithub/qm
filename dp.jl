@@ -1063,10 +1063,22 @@ function generate_bob(dmol, dcharges, dindexer, maxsize) # for each data (molecu
     return X
 end
 
+"""
+computes the BoB for whole dataset
+params:
+    - mols, [dict("atoms", "coordinates")] (atleast)
+    - bsizes, Dict containing the max sizes of each atom type
+"""
 function generate_bobs(mols; bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6)) # for whole dataset
     dcharges = Dict("H"=>1, "C"=>6, "N"=>7, "O"=>8, "F"=>9) # atom -> charge translator
     dindexer, maxsize = generate_bob_indexer(;bsizes) # generate indexer
-    generate_bob(mols[1], dcharges, dindexer, maxsize) # use copy of the indexer, since it'll be changed inside
+    # init zeros matrix:
+    nrow = length(mols); ncol = maxsize 
+    X = zeros(nrow, ncol)
+    for i ∈ 1:nrow # can be threadized by ThreadsX but unnecessary :p
+        X[i, :] = generate_bob(mols[i], dcharges, dindexer, maxsize)
+    end
+    return X
 end
 
 
