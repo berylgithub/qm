@@ -1047,7 +1047,18 @@ function generate_bob(dmol, dcharges, dindexer, maxsize) # for each data (molecu
         Z = dcharges[atom]
         X[dindcp[atom*"_self"][1]] = get_self_interaction(Z)
         dindcp[atom*"_self"][1] += 1 # increment the "first" cell for the next atom
-        display([atom, dindcp[atom*"_self"][1]-1, Z])
+    end
+    # compute pair interactions:
+    atoms = dmol["atoms"]
+    aidx = eachindex(atoms)
+    cidx = Combinatorics.combinations(aidx, 2)
+    for cid ∈ cidx
+        Z1 = dcharges[atoms[cid[1]]]; Z2 = dcharges[atoms[cid[2]]] # get pair charges
+        R1 = dmol["coordinates"][cid[1],:]; R2 = dmol["coordinates"][cid[2],:] # get pair coords
+        sortkey = sort([atoms[cid[1]], atoms[cid[2]]]) # since dindcp dictionary is sorted
+        X[dindcp[sortkey[1]][sortkey[2]][1]] = get_pair_interaction(Z1,Z2,R1,R2) # compute pair interaction
+        dindcp[sortkey[1]][sortkey[2]][1] += 1 # increment pair index
+        #display([dindcp[sortkey[1]][sortkey[2]][1], sortkey, cid, atoms[cid[1]], atoms[cid[2]], Z1, Z2, R1, R2])
     end
     return X
 end
@@ -1055,7 +1066,7 @@ end
 function generate_bobs(mols; bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6)) # for whole dataset
     dcharges = Dict("H"=>1, "C"=>6, "N"=>7, "O"=>8, "F"=>9) # atom -> charge translator
     dindexer, maxsize = generate_bob_indexer(;bsizes) # generate indexer
-    generate_bob(mols[1], dcharges, copy(dindexer), maxsize) # use copy of the indexer, since it'll be changed inside
+    generate_bob(mols[1], dcharges, dindexer, maxsize) # use copy of the indexer, since it'll be changed inside
 end
 
 
