@@ -1005,37 +1005,57 @@ function generate_bob_indexer(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F
     idx = 1
     for k ∈ keys(bsizes)
         first = idx; last = idx+bsizes[k]-1 
-        dbags[k*"_self"] = (first, last)
+        dbags[k*"_self"] = [first, last]
         idx = last+1 
     end
-    display(dbags)
+    #display(dbags)
     # generate pair (identical) interaction indices:
     ks = string.(keys(bsizes))
     for k ∈ sort(ks)
         first = idx; last = idx + bsizes[k]^2 - 1 
-        display([k, dbags[k*"_self"], first, last])
-        dbags[k] = Dict(k=>(first, last))
+        #display([k, dbags[k*"_self"], first, last])
+        dbags[k] = Dict(k=>[first, last])
         idx = last+1
     end
-    display(dbags)
+    #display(dbags)
     # non-identical:
     kcombs = sort(collect(Combinatorics.combinations(sort(ks), 2))) # double sort for symmetry
-    display(kcombs)
+    #display(kcombs)
     for kc ∈ kcombs
-        display(kc)
+        #display(kc)
         first = idx; last = idx + bsizes[kc[1]]*bsizes[kc[2]] - 1 # index continues from the self interactions
-        merge!(dbags[kc[1]], Dict(kc[2] => (first, last))) # !!! incorrect, this replaces the keys!
+        merge!(dbags[kc[1]], Dict(kc[2] => [first, last]))
         idx = last+1
     end
-    return dbags
+    return dbags, idx-1 # returns the dict and the size of the vector
 end
 
-function generate_bob(mol, indexer) # for each data (molecule)
-    
+
+"""
+params:
+    - dmol, a dictionary containing atleast {"coordinates" ∈ R^3, "atoms" := list of atom types}
+    - dcharges, dict that translates atom_type -> nuclear_charges
+    - dindexer, dict with at least {"atom_self" ∀atom, product(atoms)}
+    - maxsize = the size of the whole bag vector
+returns a vector R^maxsize
+"""
+function generate_bob(dmol, dcharges, dindexer, maxsize) # for each data (molecule)
+    dindcp = deepcopy(dindexer) # copy indexer dict, inefficient but for now this works
+    X = zeros(maxsize) # initialize whole bag vector 
+    # compute self interactions:
+    for atom ∈ dmol["atoms"]
+        Z = dcharges[atom]
+        X[dindcp[atom*"_self"][1]] = get_self_interaction(Z)
+        dindcp[atom*"_self"][1] += 1 # increment the "first" cell for the next atom
+        display([atom, dindcp[atom*"_self"][1]-1, Z])
+    end
+    return X
 end
 
-function generate_bobs(;bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6)) # for whole dataset
-    
+function generate_bobs(mols; bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6)) # for whole dataset
+    dcharges = Dict("H"=>1, "C"=>6, "N"=>7, "O"=>8, "F"=>9) # atom -> charge translator
+    dindexer, maxsize = generate_bob_indexer(;bsizes) # generate indexer
+    generate_bob(mols[1], dcharges, copy(dindexer), maxsize) # use copy of the indexer, since it'll be changed inside
 end
 
 
