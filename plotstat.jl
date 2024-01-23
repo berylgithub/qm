@@ -665,7 +665,37 @@ function main_display_selected_mol()
     ## write the training set into 10x10 matrix 
     A = Matrix{Any}(undef, 25, 4)
     for i ∈ eachindex(A)
+        #A[i] = "\$\\#"*string(trainset[i])*"\$   "*tf[i]
         A[i] = tf[i]
     end
     writelatextable(A, "result/table_selmol.tex"; hline=false)
+end
+
+"""
+display the deltaML relevancy table
+"""
+function main_disp_delta_best()
+    tb = readdlm("result/deltaML/MAE_enum_sbest_dt_H_220124.txt")
+    display(tb)
+    # query minimum values foreach feature and dressed fragment:
+    features = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF", "CM", "BOB"]
+    dresses = unique(tb[:,5])
+    iters = Iterators.product(dresses, features)
+    
+    # generate string matrix:
+    A = Matrix{Any}(undef, length(dresses)+1, length(features)+1)
+    A[1,1] = ""
+    A[2:end, 1] = ["DA", "DB", "DN", "DH"]
+    A[1, 2:end] = features; A[1,2] = "ACSF"
+    display(A) 
+
+    # fill table value:
+    B = zeros(4,7)
+    for (i,it) ∈ enumerate(iters)
+        minid = query_min(tb, [2,5], [it[2], it[1]], 7)
+        B[i] = tb[minid, 7]
+    end
+    A[2:end, 2:end] = clean_float.(B)
+    display(A)
+    writelatextable(A, "result/table_dressed_feature.tex")
 end
