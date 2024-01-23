@@ -644,3 +644,28 @@ function main_get_stats_deltaML()
     hit_counts 
     #...
 end
+
+function main_display_selected_mol()
+    trainset = vec(Int.(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end]))
+    tf = map(d->d["formula"],dataset[trainset])
+    # generate the string matrix:
+    ## subscript all numbers in the formula:
+    for (i,data) in enumerate(tf)
+        temp = ""
+        for chr in data
+            if isdigit(chr)
+                temp*="\$_"*chr*"\$"
+            else
+                temp*=chr
+            end
+        end 
+        tf[i] = temp
+    end
+    display(tf)
+    ## write the training set into 10x10 matrix 
+    A = Matrix{Any}(undef, 25, 4)
+    for i ∈ eachindex(A)
+        A[i] = tf[i]
+    end
+    writelatextable(A, "result/table_selmol.tex"; hline=false)
+end
