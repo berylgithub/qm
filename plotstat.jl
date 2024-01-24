@@ -692,7 +692,7 @@ function main_disp_delta_best()
     # fill table value:
     B = zeros(4,7)
     for (i,it) ∈ enumerate(iters)
-        minid = query_min(tb, [2,5], [it[2], it[1]], 7)
+        minid = query_min(tb, [1, 2,5], [100, it[2], it[1]], 7)
         B[i] = tb[minid, 7]
     end
     A[2:end, 2:end] = clean_float.(B)
