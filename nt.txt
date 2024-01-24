@@ -686,3 +686,11 @@ julia> 133885*2210*8e-6
 compress? -> s = sum(x), s*(s+1)/2 = 1128 entries max for qm9 challenge (not yet figured how to distribute the sizes for each pair)
 use Combinatorics.combinations package to enumerate the atom elements:
 e.g.: collect(Combinatorics.combinations(["C","H1","H2","H3"], 2))
+
+24.01.2023:
+- somehow when using multivariate;s PCA, the 1st component has a really large eigenvalue 1e^5 (implies the other components are killed).
+therefore the "written by hand" PCA (correlation matrix) is used instead for plotting.
+- the PCA is done, visualization left
+
+!! should also start writing the thesis, since it's almost time up already.
+Deadline of Thesis: August 2024!!
