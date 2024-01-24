@@ -897,6 +897,46 @@ function main_10k_obj()
 end
 
 
+"""
+generate the 2D coordinates of the computed Kernel
+
+"""
+function main_PCA_kernel(idtrains, E, dataset, DFs, f)
+    # compute kernel as usual:
+    idtests = setdiff(1:length(E), idtrains)
+    Et = hp_baseline(E, DFs..., idtrains) # compute deltaML    
+    c = 2048. # 2. ^11
+    
+    #= θ = A\Et[idtrains] # train
+    A = get_gaussian_kernel(f[idtests], f[idtrains], [d["atoms"] for d ∈ dataset[idtests]], [d["atoms"] for d ∈ dataset[idtrains]], c) # test kernel
+    E_pred = A*θ # pred 
+    errors = E_pred - Et[idtests] # get errors
+    MAE = mean(abs.(errors)) * 627.503 # in kcal/mol =#
+    # do PCA (and also predict, see the MAE):
+    ## generate PCA coordinate:
+    K = get_gaussian_kernel(f, f[idtrains], [d["atoms"] for d ∈ dataset], [d["atoms"] for d ∈ dataset[idtrains]], c) # compute training kernel 
+    #K[diagind(K)] .+= 1e-8
+    display(K)
+    #= M = MultivariateStats.fit(PCA, K'; maxoutdim = 3); # PCA
+    display(M)
+    Ktr = MultivariateStats.predict(M, K')'
+    display(Ktr) =#
+    # for all dims = 1,2,3:
+    for i in 1:3
+        Kpca, ev = PCA_mol(K, i; normalize=true, return_ev=true)
+        display(Kpca)
+        display(ev)
+        writedlm("result/deltaML/PCA_kernel_"*string(i)*".txt", Kpca) 
+        writedlm("result/deltaML/PCA_eigenvalue_"*string(i)*".txt", ev)
+        ## train and predict:
+        θ = Kpca[idtrains, :]\Et[idtrains] # train
+        Epred = Kpca*θ # pred
+        MAE = mean(abs.(Epred[idtests] - Et[idtests])) * 627.503
+        display(MAE)
+    end
+    
+end
+
 function test_min_main_obj()
     DFs = [load("data/atomref_features.jld", "data"), [], [], []]
     dataset = load("data/qm9_dataset.jld", "data")
