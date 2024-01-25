@@ -709,7 +709,7 @@ function main_PCA_plot()
     tests = setdiff(1:length(E), trains)
     display(ev)
     # training set display:
-    p = scatter(K[tests,1], K[tests,2], markercolor=:blue, markersize = 3.5, labels = "test", legend = :outertopleft)
+    p = scatter(K[tests,1], K[tests,2], markercolor=:blue, markersize = 3.5, labels = "test", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
     scatter!(K[trains,1], K[trains,2], markershape=:utriangle, markercolor=:red, markersize = 6, labels = "train")
-    display(p)
+    savefig(p, "plot/deltaML/PCA_kernel_plot.png")
 end
