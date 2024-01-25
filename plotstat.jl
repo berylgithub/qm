@@ -699,3 +699,17 @@ function main_disp_delta_best()
     display(A)
     writelatextable(A, "result/table_dressed_feature.tex")
 end
+
+function main_PCA_plot()
+    # load data:
+    E = vec(readdlm("data/energies.txt"))
+    K = readdlm("result/deltaML/PCA_kernel_2.txt")
+    ev = readdlm("result/deltaML/PCA_eigenvalue_2.txt")
+    trains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end]))
+    tests = setdiff(1:length(E), trains)
+    display(ev)
+    # training set display:
+    p = scatter(K[tests,1], K[tests,2], markercolor=:blue, markersize = 3.5, labels = "test", legend = :outertopleft)
+    scatter!(K[trains,1], K[trains,2], markershape=:utriangle, markercolor=:red, markersize = 6, labels = "train")
+    display(p)
+end
