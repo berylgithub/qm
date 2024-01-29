@@ -1,6 +1,6 @@
 # minimum caller for feature extraction (only calls CMBDF (and np), nothing else)
 import numpy as np
-import cMBDF
+import cMBDF_joblib
 
 def extract_MBDF():
     print(np.load("data/test_ncs.npy", allow_pickle=True))
