@@ -693,4 +693,8 @@ therefore the "written by hand" PCA (correlation matrix) is used instead for plo
 - the PCA is done, visualization left
 
 !! should also start writing the thesis, since it's almost time up already.
-Deadline of Thesis: August 2024!!
+Deadline of Thesis: August 2024!! (50% numeric 50% thesis book each week)
+
+29.01.2023:
+- for hyperparameter loop, extract everything from the dataset, slice later AFTER extraction (since the extraction may include some normalization)
+! check cMBDF's new code, see the numerical differences

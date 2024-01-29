@@ -471,7 +471,19 @@ def test_MBDF():
     #for i, elem in enumerate(reps):
     #    np.savetxt("/users/baribowo/Dataset/gdb9-14b/cmbdf-2/"+str(i+1)+".txt", elem, delimiter="\t")
 
-
+# extracts nuclear charges and coords
+def extract_coords():
+    geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
+    onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])
+    print("Ndata = ",len(onlyfiles))
+    compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
+    coors = np.array([mol.coordinates for mol in compounds])
+    #mbtypes = get_slatm_mbtypes([mol.nuclear_charges for mol in compounds])
+    ncs = np.array([mol.nuclear_charges for mol in compounds])
+    np.save("/users/baribowo/Code/Julia/qm/data/qm9_ncs.npy", ncs)
+    np.save("/users/baribowo/Code/Julia/qm/data/qm9_coors.npy", coors)
+    print(np.load("/users/baribowo/Code/Julia/qm/data/qm9_ncs.npy", allow_pickle=True))
+    print(np.load("/users/baribowo/Code/Julia/qm/data/qm9_coors.npy", allow_pickle=True))
 
 def extract_MBDF():
     geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
@@ -576,6 +588,7 @@ def nc_to_atype(ncs):
 # main:
 #extract_ACSF()
 #extract_MBDF()
-test_MBDF()
+#test_MBDF()
 #test_CM_BOB()
 #extract_BOB()
+extract_coords()
