@@ -446,7 +446,7 @@ def extract_QML_features():
 
 def test_MBDF():
     geopath = "/users/baribowo/Dataset/gdb9-14b/geometry/"
-    ntest = 5
+    ntest = 2
     onlyfiles = sorted([f for f in listdir(geopath) if isfile(join(geopath, f))])[:ntest]
     print("Ndata = ",len(onlyfiles))
     compounds = [qml.Compound(xyz=geopath+f) for f in onlyfiles]
@@ -456,6 +456,11 @@ def test_MBDF():
     elements = np.unique(np.concatenate(ncs))
     #print(ncs)
     #print(coors)
+    # write ncs and coors to file (just for testing):
+    np.save("/users/baribowo/Code/Julia/qm/data/test_ncs.npy", ncs)
+    np.save("/users/baribowo/Code/Julia/qm/data/test_coors.npy", coors)
+    print(np.load("/users/baribowo/Code/Julia/qm/data/test_ncs.npy", allow_pickle=True))
+    print(np.load("/users/baribowo/Code/Julia/qm/data/test_coors.npy", allow_pickle=True))
     #mbdf = cMBDF.generate_mbdf(ncs, coors)
     start = time.time() # timer
     reps = cMBDF_joblib.generate_mbdf(ncs, coors, gradients=False, progress_bar = False, n_atm=2.0)
@@ -571,6 +576,6 @@ def nc_to_atype(ncs):
 # main:
 #extract_ACSF()
 #extract_MBDF()
-#test_MBDF()
+test_MBDF()
 #test_CM_BOB()
-extract_BOB()
+#extract_BOB()
