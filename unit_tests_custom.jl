@@ -1,4 +1,5 @@
 include("RoSemi.jl")
+include("expdriver.jl")
 include("utils.jl")
 
 using Random, DelimitedFiles, Combinatorics
@@ -535,11 +536,21 @@ function test_call_py()
 end
 
 
-function init_moldesc()
+function call_moldesc()
+    idtrains = vec(Int.(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end]))
+    E = vec(readdlm("data/energies.txt"))
+    DFs = [load("data/atomref_features.jld", "data"), [], [], []]
+    dataset = load("data/qm9_dataset.jld", "data")
+
+    # === extraction w/ python stuffs:
     pushfirst!(pyimport("sys")."path", "") # load all py files in current directory
     moldesc_min = pyimport("moldesc_min") # import moldesc_min
-    reps = moldesc_min.extract_MBDF([1,2,3])
-    display(reps)
-    display(reps[1,1,:])
+    reps = moldesc_min.extract_MBDF([1,2,3]) # extract (with added hyperparameters later)
+    # end of pythons tuffs ===
+    f = [reps[i,:,:] for i in axes(reps, 1)] # transform to vector of matrices
+    idsel = setdiff(eachindex(f), vec(Int.(readdlm("data/exids.txt")))) # exclude some ids here since normalization might affect the numerics if done pre-extraction
+    f = f[idsel]
+    MAE = min_main_obj(idtrains, E, dataset, DFs, f)
+    display(MAE)
 end
 

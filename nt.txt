@@ -700,6 +700,13 @@ Deadline of Thesis: August 2024!! (50% numeric 50% thesis book each week)
 
 
 30.01.2023:
-! connect Py Julia (PyCall?) 
+done>> ! connect Py Julia (PyCall?) 
   -> this works by changing ENV["PYTHON"] to the miniconda's BIN, build package, then restart Julia
 ! check cMBDF's new code, see the numerical differences (after connecting Py and Julia, to make it faster)
+  tests with current best trainingset:
+  -> CMBDF_300124: (MAE, extraction time) = (5.1 kcalmol-1, 74s)
+  -> CMBDF_joblib: = (5.7, 87)
+  -> see https://github.com/berylgithub/qm/commit/fc4b940cb6e3034f9c2180ca759485f4bff3c42c , this is probably the previous one used!
+    CMBDF_older: = 
+
+- CMBDF params to be optimized: (alpha_list=[1.5,5.0],n_list=[3.0,5.0],gradients=False,local=True,n_jobs=-1,a1=2.0,pad=None,rstep=0.0008,rcut=10.0,astep=0.0002,nAs=4,order=4,progress_bar=False,a2=2.0,n_atm = 2.0)
