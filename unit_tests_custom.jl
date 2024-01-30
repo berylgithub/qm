@@ -10,7 +10,7 @@ using NLopt =#
 using Metaheuristics
 using PyCall # test run CMBDF
 
-"""
+#= """
 inner product kernel entry (reproducing kernel)
 """
 function comp_repker_entry_t(u::AbstractArray, v::AbstractArray)::Float64
@@ -443,7 +443,7 @@ function test_NLOpt()
     (minf,minx,ret) = optimize(opt, vcat(ones(10), zeros(10)))
     numevals = opt.numevals # the number of function evaluations
     println("got $minf at $minx after $numevals iterations (returned $ret)")
-end
+end =#
 
 
 """
@@ -503,6 +503,18 @@ function MH_log_result(status, filepath)
     writestringline(string.(vcat(minimum(status), minimizer(status))), filepath; mode= "a")
 end
 
-function test_call_QML()
-    
+function test_call_py()
+    py"""
+    def sumMyArgs (i, j):
+        return i+j
+    def getNElement (n):
+        a = [0,1,2,3,4,5,6,7,8,9]
+        return a[n]
+    """
+    a = py"sumMyArgs"(3,4)          # 7
+    b = py"sumMyArgs"([3,4],[5,6])  # [8,10]
+    typeof(b)                       # Array{Int64,1}
+    c = py"sumMyArgs"([3,4],5)      # [8,9]
+    d = py"getNElement"(1)          # 1
+    print(a, b, c, d)
 end

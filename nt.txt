@@ -697,4 +697,9 @@ Deadline of Thesis: August 2024!! (50% numeric 50% thesis book each week)
 
 29.01.2023:
 - for hyperparameter loop, extract everything from the dataset, slice later AFTER extraction (since the extraction may include some normalization)
-! check cMBDF's new code, see the numerical differences
+
+
+30.01.2023:
+! connect Py Julia (PyCall?) 
+  -> this works by changing ENV["PYTHON"] to the miniconda's BIN, build package, then restart Julia
+! check cMBDF's new code, see the numerical differences (after connecting Py and Julia, to make it faster)
