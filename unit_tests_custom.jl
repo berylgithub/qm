@@ -503,18 +503,43 @@ function MH_log_result(status, filepath)
     writestringline(string.(vcat(minimum(status), minimizer(status))), filepath; mode= "a")
 end
 
-function test_call_py()
+
+# this needs to be called first:
+function init_py()
     py"""
+    import numpy as np
+
     def sumMyArgs (i, j):
         return i+j
     def getNElement (n):
         a = [0,1,2,3,4,5,6,7,8,9]
         return a[n]
+    def sumArray(x):
+        print(x)
+        return np.sum(x)    
     """
+end
+
+# called second:
+function test_call_py()
     a = py"sumMyArgs"(3,4)          # 7
     b = py"sumMyArgs"([3,4],[5,6])  # [8,10]
     typeof(b)                       # Array{Int64,1}
     c = py"sumMyArgs"([3,4],5)      # [8,9]
     d = py"getNElement"(1)          # 1
-    print(a, b, c, d)
+    e = py"sumArray"([0, 1, 2])
+    println([a, b, c, d, e])
+
+    reps = moldesc_min.extract_MBDF()
+    display(reps)
 end
+
+
+function init_moldesc()
+    pushfirst!(pyimport("sys")."path", "") # load all py files in current directory
+    moldesc_min = pyimport("moldesc_min") # import moldesc_min
+    reps = moldesc_min.extract_MBDF([1,2,3])
+    display(reps)
+    display(reps[1,1,:])
+end
+

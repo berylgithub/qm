@@ -3,7 +3,8 @@ import numpy as np
 import cMBDF_joblib
 import time
 
-def extract_MBDF():
+def extract_MBDF(x):
+    print(x)
     ncs = np.load("data/test_ncs.npy", allow_pickle=True)
     coors = np.load("data/test_coors.npy", allow_pickle=True)
     # timed extraction:
@@ -12,6 +13,7 @@ def extract_MBDF():
     print(time.time()-start) # end of timer
     print(reps)
     print(reps.shape)
+    return reps
 
 
-extract_MBDF()
+#extract_MBDF()
