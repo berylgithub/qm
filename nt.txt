@@ -707,6 +707,6 @@ done>> ! connect Py Julia (PyCall?)
   -> CMBDF_300124: (MAE, extraction time) = (5.1 kcalmol-1, 74s)
   -> CMBDF_joblib: = (5.7, 87)
   -> see https://github.com/berylgithub/qm/commit/fc4b940cb6e3034f9c2180ca759485f4bff3c42c , this is probably the previous one used!
-    CMBDF_older: = 
+    CMBDF_130823: = (3.25, 4k) --> this version was the one used for the whole benchmark
 
 - CMBDF params to be optimized: (alpha_list=[1.5,5.0],n_list=[3.0,5.0],gradients=False,local=True,n_jobs=-1,a1=2.0,pad=None,rstep=0.0008,rcut=10.0,astep=0.0002,nAs=4,order=4,progress_bar=False,a2=2.0,n_atm = 2.0)
