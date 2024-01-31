@@ -781,18 +781,18 @@ function main_custom_CMBDF_train()
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     nrow = length(f)
     # try using flatten instead of the usual sum, feels like summing causes some information lost:
-    #= ncol = 29*40
+    ncol = 29*40
     F = zeros(Float64, nrow, ncol)
     for i ∈ 1:nrow
         F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
-    end =#
+    end
     # using mol feature extractor:
-    F = extract_mol_features(f, dataset)[:,1:end-6] # exclude natoms heuristics
+    #F = extract_mol_features(f, dataset)[:,1:end-6] # exclude natoms heuristics
     Random.seed!(777)
     nset = 1_000
     # with selection algo:
     centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset)
-    sim_id = "custom_CMBDF_centers_300124"
+    sim_id = "custom_CMBDF_centers_300124_flatten"
     writedlm("data/"*sim_id*".txt", centerss)
     # random:
     #= centerss = [sample(1:nrow, 200, replace=false) for i ∈ 1:nset]
