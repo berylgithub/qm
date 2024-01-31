@@ -9,6 +9,7 @@ using DelimitedFiles, DataStructures, JSON, JLD, BenchmarkTools, Printf
 using Graphs, MolecularGraph, Combinatorics, SparseArrays # stuffs for ΔML
 using LinearAlgebra
 using ThreadsX
+using PyCall
 
 include("utils.jl") # bunch of utility functions
 
@@ -1089,9 +1090,37 @@ function generate_bobs(mols; bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=
     return X
 end
 
+"""
+==============
+feature extractors mainly calling from py
+==============
+"""
 
 """
+extracts cMBDF (change of cMBDF version can be done in moldesc_min.py)
+"""
+function extract_CMBDF()
+    dataset = load("data/qm9_dataset.jld", "data")
+    pushfirst!(pyimport("sys")."path", "") # load all py files in current directory
+    moldesc_min = pyimport("moldesc_min") # import moldesc_min
+    reps = moldesc_min.extract_MBDF([1,2,3]) # extract (with added hyperparameters later)
+    f = [reps[i,:,:] for i in axes(reps, 1)] # transform to vector of matrices
+    # exclude some ids here since normalization might affect the numerics if done pre-extraction:
+    idsel = setdiff(eachindex(f), vec(Int.(readdlm("data/exids.txt")))) 
+    f = f[idsel]
+    # remove zeros:
+    for i ∈ eachindex(dataset)
+        n_atom = dataset[i]["n_atom"]
+        f[i] = f[i][1:n_atom, :]
+    end
+    save("data/CMBDF_300124.jld", "data", f)
+end
+
+
+"""
+==============
 morse potential as feature, r is the only non hyperparameter
+==============
 """
 function morse_pot(r, D, a, r0, s)
     return D*(exp(-2*a*(r-r0)) - 2*exp(-a*(r-r0))) + s # additional shift constant s for "pure" fitting
