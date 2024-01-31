@@ -514,7 +514,7 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     end
     n_basis = Int(x[14]) # determine number of splines
     # determine feature:
-    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF", "CMBDF2"]
+    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF", "CMBDF_300124"]
     feature = Fs[x[15]]; feature_name = ftypes[x[15]]
     # switches:
     normalize_atom = bools[Int(x[16]) + 1]
@@ -777,19 +777,23 @@ end
 since we figured out that CMBDF gives the best MAE ~4.5 kcal/mol with selection where CMBDF WAS NOT INCLUDED, so now we want to see if the data seleciton uses MBDF what would happen
 """
 function main_custom_CMBDF_train()
-    f = load("data/CMBDF2.jld", "data")
+    f = load("data/CMBDF_300124.jld", "data")
+    dataset = load("data/qm9_dataset.jld", "data") # dataset info
     nrow = length(f)
     # try using flatten instead of the usual sum, feels like summing causes some information lost:
-    ncol = 29*40
+    #= ncol = 29*40
     F = zeros(Float64, nrow, ncol)
     for i ∈ 1:nrow
         F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
-    end
+    end =#
+    # using mol feature extractor:
+    F = extract_mol_features(f, dataset)[:,1:end-6] # exclude natoms heuristics
     Random.seed!(777)
     nset = 1_000
     # with selection algo:
     centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset)
-    writedlm("data/custom_CMBDF2_centers_191023.txt", centerss)
+    sim_id = "custom_CMBDF_centers_300124"
+    writedlm("data/"*sim_id*".txt", centerss)
     # random:
     #= centerss = [sample(1:nrow, 200, replace=false) for i ∈ 1:nset]
     writedlm("data/random-777_CMBDF2_centers_191023.txt", centerss) =#
@@ -798,26 +802,24 @@ function main_custom_CMBDF_train()
 
     # run it all through the base "main_obj":
     # spawn all memory dependednt data:
-    sim_id = "custom_CMBDF2_centers_191023"
     #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
-    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 6, 0, 0, 5, 11, 2] # try CMBDF2
+    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 6, 0, 0, 5, 11, 2] # try latest CMBDF
     # inside functions:
-    dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
     Fa = load("data/atomref_features.jld", "data") # DA feature
     Fb = load("data/featuresmat_bonds_qm9_post.jld", "data") # DB
     Fn = load("data/featuresmat_angles_qm9_post.jld", "data") # DN
     Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
     DFs = [Fa, Fb, Fn, Ft]
-    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld", "data/CMBDF.jld", "data/CMBDF2.jld"]
-    Fs = [[],[],[],[],[],load(feat_paths[5], "data")]
+    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld", "data/CMBDF.jld", "data/CMBDF_300124.jld"]
+    Fs = [[],[],[],[],[],load(feat_paths[6], "data")]
     fx = main_obj
     for i ∈ axes(centerss, 1) # centers, idtrains, idtests:
         centers = centerss[i,:]
         idtrains = centers[1:100]
         fobj = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
         strinput = string.([fobj])
-        writestringline(strinput, "result/deltaML/MAE_custom_CMBDF2_centers_191023.txt"; mode="a")
+        writestringline(strinput, "result/deltaML/MAE_"*sim_id*".txt"; mode="a")
         #writestringline(strinput, "result/deltaML/MAE_random-777_CMBDF_centers_181023.txt"; mode="a")
     end
 end
