@@ -776,23 +776,25 @@ end
 """
 since we figured out that CMBDF gives the best MAE ~4.5 kcal/mol with selection where CMBDF WAS NOT INCLUDED, so now we want to see if the data seleciton uses MBDF what would happen
 """
-function main_custom_CMBDF_train()
+function main_custom_CMBDF_train(;mode="flatten")
     f = load("data/CMBDF_300124.jld", "data")
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     nrow = length(f)
     # try using flatten instead of the usual sum, feels like summing causes some information lost:
-    ncol = 29*40
-    F = zeros(Float64, nrow, ncol)
-    for i ∈ 1:nrow
-        F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
+    if mode == "flatten"
+        ncol = 29*40
+        F = zeros(Float64, nrow, ncol)
+        for i ∈ 1:nrow
+            F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
+        end
+    else
+        F = extract_mol_features(f, dataset)[:,1:end-6] # exclude natoms heuristics
     end
-    # using mol feature extractor:
-    #F = extract_mol_features(f, dataset)[:,1:end-6] # exclude natoms heuristics
     Random.seed!(777)
     nset = 1_000
     # with selection algo:
     centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset)
-    sim_id = "custom_CMBDF_centers_300124_flatten"
+    sim_id = "custom_CMBDF_centers_300124_"*mode
     writedlm("data/"*sim_id*".txt", centerss)
     # random:
     #= centerss = [sample(1:nrow, 200, replace=false) for i ∈ 1:nset]
