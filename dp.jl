@@ -1113,7 +1113,7 @@ function extract_CMBDF()
         n_atom = dataset[i]["n_atom"]
         f[i] = f[i][1:n_atom, :]
     end
-    save("data/CMBDF_300124.jld", "data", f)
+    save("data/CMBDF_joblib.jld", "data", f)
 end
 
 

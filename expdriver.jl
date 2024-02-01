@@ -514,7 +514,7 @@ function main_obj(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "")
     end
     n_basis = Int(x[14]) # determine number of splines
     # determine feature:
-    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF", "CMBDF_300124"]
+    ftypes = ["ACSF_51", "SOAP", "FCHL19", "MBDF", "CMBDF", "CMBDF_joblib"]
     feature = Fs[x[15]]; feature_name = ftypes[x[15]]
     # switches:
     normalize_atom = bools[Int(x[16]) + 1]
@@ -777,7 +777,7 @@ end
 since we figured out that CMBDF gives the best MAE ~4.5 kcal/mol with selection where CMBDF WAS NOT INCLUDED, so now we want to see if the data seleciton uses MBDF what would happen
 """
 function main_custom_CMBDF_train(;mode="flatten")
-    f = load("data/CMBDF_300124.jld", "data")
+    f = load("data/CMBDF_joblib.jld", "data")
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     nrow = length(f)
     # try using flatten instead of the usual sum, feels like summing causes some information lost:
@@ -794,7 +794,7 @@ function main_custom_CMBDF_train(;mode="flatten")
     nset = 1_000
     # with selection algo:
     centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset)
-    sim_id = "custom_CMBDF_centers_300124_"*mode
+    sim_id = "custom_CMBDF_joblib_centers_010224_"*mode
     writedlm("data/"*sim_id*".txt", centerss)
     # random:
     #= centerss = [sample(1:nrow, 200, replace=false) for i ∈ 1:nset]
@@ -813,7 +813,7 @@ function main_custom_CMBDF_train(;mode="flatten")
     Fn = load("data/featuresmat_angles_qm9_post.jld", "data") # DN
     Ft = load("data/featuresmat_torsion_qm9_post.jld", "data") # DT
     DFs = [Fa, Fb, Fn, Ft]
-    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld", "data/CMBDF.jld", "data/CMBDF_300124.jld"]
+    feat_paths = ["data/ACSF_51.jld", "data/SOAP.jld", "data/FCHL19.jld", "data/MBDF.jld", "data/CMBDF.jld", "data/CMBDF_joblib.jld"]
     Fs = [[],[],[],[],[],load(feat_paths[6], "data")]
     fx = main_obj
     for i ∈ axes(centerss, 1) # centers, idtrains, idtests:
