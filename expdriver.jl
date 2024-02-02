@@ -776,8 +776,8 @@ end
 """
 since we figured out that CMBDF gives the best MAE ~4.5 kcal/mol with selection where CMBDF WAS NOT INCLUDED, so now we want to see if the data seleciton uses MBDF what would happen
 """
-function main_custom_CMBDF_train(;mode="flatten")
-    f = load("data/CMBDF_joblib.jld", "data")
+function main_custom_CMBDF_train(feature_path, sim_id; mode="flatten")
+    f = load(feature_path, "data")
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     nrow = length(f)
     # try using flatten instead of the usual sum, feels like summing causes some information lost:
@@ -794,7 +794,7 @@ function main_custom_CMBDF_train(;mode="flatten")
     nset = 1_000
     # with selection algo:
     centerss = set_cluster(F, 200; universe_size = 1000, num_center_sets = nset)
-    sim_id = "custom_CMBDF_joblib_centers_010224_"*mode
+    #sim_id = "custom_CMBDF_joblib_centers_010224_"*mode
     writedlm("data/"*sim_id*".txt", centerss)
     # random:
     #= centerss = [sample(1:nrow, 200, replace=false) for i ∈ 1:nset]
