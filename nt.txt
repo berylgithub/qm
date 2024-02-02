@@ -715,3 +715,10 @@ done>> ! connect Py Julia (PyCall?)
 
 02.02.2024:
 - careful: CMBDF2 and CMBDF_joblib gives different numerical result, likely due to different Py version used! (maybe if extracted in VSC result will be diferent?)
+! the 1k penalty evaluation needs to be the 10k eval (rather than the full dataset)
+! need to remove the 
+- loop:
+  - 1k penalty init
+  - reset tsopt
+  - tsopt 100k iter (dont look at the tracker, just compute, more mem+time efficient)
+  - hyperopt feature extraction (extract all 130k data)
