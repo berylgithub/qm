@@ -3,8 +3,8 @@ import numpy as np
 import cMBDF_joblib, cMBDF_300124, cMBDF_130823
 import time
 
-def extract_MBDF(x, version = "joblib"):
-    print(x)
+def extract_MBDF(x, version):
+    print(x, version)
     ncs = np.load("data/qm9_ncs.npy", allow_pickle=True)  #np.load("data/test_ncs.npy", allow_pickle=True)
     coors = np.load("data/qm9_coors.npy", allow_pickle=True)  #np.load("data/test_coors.npy", allow_pickle=True)
     # timed extraction:

@@ -712,3 +712,6 @@ done>> ! connect Py Julia (PyCall?)
 
 31.01.2024:
 !!! 4.2kcal/mol from data selection of the latest CMBDF, probably the previous version before this one is better than this (and almost as fast, try again later next week)
+
+02.02.2024:
+- careful: CMBDF2 and CMBDF_joblib gives different numerical result, likely due to different Py version used! (maybe if extracted in VSC result will be diferent?)

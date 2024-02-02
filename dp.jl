@@ -1099,11 +1099,11 @@ feature extractors mainly calling from py
 """
 extracts cMBDF (change of cMBDF version can be done in moldesc_min.py)
 """
-function extract_CMBDF()
+function extract_CMBDF(version = "joblib"; postfix="joblib_020224")
     dataset = load("data/qm9_dataset.jld", "data")
     pushfirst!(pyimport("sys")."path", "") # load all py files in current directory
     moldesc_min = pyimport("moldesc_min") # import moldesc_min
-    reps = moldesc_min.extract_MBDF([1,2,3]) # extract (with added hyperparameters later)
+    reps = moldesc_min.extract_MBDF([1,2,3], version) # extract (with added hyperparameters later)
     f = [reps[i,:,:] for i in axes(reps, 1)] # transform to vector of matrices
     # exclude some ids here since normalization might affect the numerics if done pre-extraction:
     idsel = setdiff(eachindex(f), vec(Int.(readdlm("data/exids.txt")))) 
@@ -1113,7 +1113,7 @@ function extract_CMBDF()
         n_atom = dataset[i]["n_atom"]
         f[i] = f[i][1:n_atom, :]
     end
-    save("data/CMBDF_joblib.jld", "data", f)
+    save("data/CMBDF_"*postfix*".jld", "data", f)
 end
 
 
