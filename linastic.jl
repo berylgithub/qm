@@ -458,7 +458,7 @@ function bag_atom_feature(moldata, f; bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"
     # bag the feature:
     F = zeros(n, idx)
     for i ∈ eachindex(moldata)
-        atoms = dataset[i]["atoms"]
+        atoms = moldata[i]["atoms"]
         cdbags = deepcopy(dbags) # copy the dictionary index for each mol 
         for (k,j) ∈ enumerate(atoms)
             head = cdbags[j][1]; tail = cdbags[j][2]
