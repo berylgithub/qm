@@ -439,6 +439,35 @@ function extract_mol_features(f, dataset; ft_sos=false, ft_bin=false, sum_mode=0
     return F
 end
 
+"""
+atomic feature bagger (very similar to bag of bonds)
+"""
+function bag_atom_feature(moldata, f; bsizes = Dict("H"=>20, "C"=>9, "N"=>7, "O"=>5, "F"=>6))
+    n, nf = (length(f), size(f[1],2))
+    # compute indexing ordering = H,C,N,O,F bags:
+    for (k,v) ∈ bsizes # mult bagsizes with feature size
+        bsizes[k] = v*nf
+    end
+    dbags = Dict()
+    idx = 1
+    for k ∈ keys(bsizes)
+        head = idx; tail =  idx + bsizes[k] - 1
+        dbags[k] = [head, tail]
+        idx = tail + 1
+    end
+    # bag the feature:
+    F = zeros(n, idx)
+    for i ∈ eachindex(moldata)
+        atoms = dataset[i]["atoms"]
+        cdbags = deepcopy(dbags) # copy the dictionary index for each mol 
+        for (k,j) ∈ enumerate(atoms)
+            head = cdbags[j][1]; tail = cdbags[j][2]
+            F[i,head:head+nf-1] = f[i][k,:]
+            cdbags[j][1] += nf # increment head of corr atom bag
+        end
+    end
+    return F
+end
 
 """
 molecular feature ONLY from atomic counts
