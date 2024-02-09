@@ -782,7 +782,6 @@ function main_custom_CMBDF_train(feature_path, sim_id; mode="flatten", nset=1_00
     # try using flatten instead of the usual sum, feels like summing causes some information lost:
     if mode == "flatten"
         F = bag_atom_feature(dataset, f)
-        display(findall(F[11234,:] .> 0))
     else
         F = extract_mol_features(f, dataset)[:,1:end-6] # exclude natoms heuristics
     end
@@ -806,7 +805,6 @@ function main_custom_CMBDF_train(feature_path, sim_id; mode="flatten", nset=1_00
         idtrains = centers[1:100]
         idrem = setdiff(idall, idtrains)
         idtests = sample(idrem, 10_000, replace=false)
-        display(idtests)
         fobj = min_main_obj(idtrains, E, dataset, DFs, f; idtests_in = idtests)
         strinput = string.([fobj])
         writestringline(strinput, "result/deltaML/MAE_"*sim_id*".txt"; mode="a")
