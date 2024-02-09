@@ -75,6 +75,7 @@ function fbest = driver(reset_ctr)
       if dir(path_fun).bytes > 0
         newdata = textread(path_fun, "%s"); % load new f file
         if !isempty(newdata) && ~strcmp(newdata{1,1}, fdata{1,1}) % check if the uid is new, {1,1} is the uid; or if newdata is empty
+          disp(citer)
           disp("new incoming data")
           fdata = newdata % fetch new function info
           f = str2double(fdata{2,1}); % get obj value
@@ -85,9 +86,9 @@ function fbest = driver(reset_ctr)
             mintry(init)
           end
           f += cpen*fpen; % add penalty term
-          disp("[f, penalty] = ")
-          disp([f, fpen])
-          disp("mintry ops")
+          %disp("[f, penalty] = ")
+          %disp([f, fpen])
+          %disp("mintry ops")
           % check reset counter:
           if ct >= 5
             disp("restart !!")
@@ -154,8 +155,8 @@ function fbest = driver(reset_ctr)
         fclose(file_id);
     end
     % write list (xlist, flist) to file:
-    disp(xlist)
-    disp(flist)
+    %disp(xlist)
+    %disp(flist)
     dlmwrite(path_trackx, xlist, "\t");
     dlmwrite(path_trackxraw, xrawlist, "\t"); 
     dlmwrite(path_trackf, flist, "\n");
