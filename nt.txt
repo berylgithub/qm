@@ -722,3 +722,6 @@ done>> ! connect Py Julia (PyCall?)
   - reset tsopt
   - tsopt 100k iter (dont look at the tracker, just compute, more mem+time efficient)
   - hyperopt feature extraction (extract all 130k data)
+
+09.02.2024:
+- somehow windows version octave keeps giving (no nf structure) ???
