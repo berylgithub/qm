@@ -725,3 +725,11 @@ done>> ! connect Py Julia (PyCall?)
 
 09.02.2024:
 - somehow windows version octave keeps giving (no nf structure) ???
+
+12.02.2024:
+ROSEMI trials (see booknote for more detgails), summary:
+ - rerun it using the current best found parameters (from Toronto)
+ - then try different basisfunction ansatz, such as:
+    - the phi_kb without derivative (no force = 0 assumption, might be better since the geometry might not be equilibrium)
+    - phi := no bspline (need to think on how the ansatz work)
+ 
