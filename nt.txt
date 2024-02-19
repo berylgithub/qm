@@ -733,3 +733,5 @@ ROSEMI trials (see booknote for more detgails), summary:
     - the phi_kb without derivative (no force = 0 assumption, might be better since the geometry might not be equilibrium)
     - phi := no bspline (need to think on how the ansatz work)
  
+19.02.2024:
+? PyCall doesnt work on windows PC somehow??, check laptop later (but not so important since compute is on OMP1 and VSC anyway (felt like it worked in laptop))  
