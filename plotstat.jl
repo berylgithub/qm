@@ -713,3 +713,21 @@ function main_PCA_plot()
     scatter!(K[trains,1], K[trains,2], markershape=:utriangle, markercolor=:red, markersize = 6, labels = "train")
     savefig(p, "plot/deltaML/PCA_kernel_plot.png")
 end
+
+function main_get_timing_table()
+    tb = readdlm("result/deltaML/MAE_enum_v2_combined_101123.txt")
+    # query kernel timing for each feature:
+    fs = unique(tb[2:end,8])
+    display(fs)
+    ts_g = [] # mean timing of each kernel
+    ts_d = []
+    for f in fs
+        push!(ts_g,mean(tb[query_indices(tb, [8,4,7],[f, 30_000,"GK"]),13]))
+        push!(ts_d,mean(tb[query_indices(tb, [8,4,7],[f, 30_000,"DPK"]),13]))
+    end
+    display([fs ts_g ts_d])
+    out = [fs ts_g ts_d]
+    out[:,[2,3]] .= clean_float.(out[:,[2,3]])
+    display(out)
+    writelatextable(out, "result/deltaML/tb_timing_30k100k.tex", hline = false)
+end
