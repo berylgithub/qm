@@ -731,3 +731,17 @@ function main_get_timing_table()
     display(out)
     writelatextable(out, "result/deltaML/tb_timing_30k100k.tex", hline = false)
 end
+
+
+"""
+plot the fobj of hpopt, 3 plots (with ACSF, MBDF, CMBDF), see the hpopt_* folders
+"""
+function main_plot_fs()
+    tb1 = readdlm("data/hpopt_111023/sim/sim_tracker.txt") # ACSF table
+    # MBDF table
+    # CMBDF table
+    initpoint = tb1[1,:]
+    initf = initpoint[2]; initx = initpoint[4:end]
+    display(initf)
+    display(initx)
+end
