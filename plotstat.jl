@@ -738,10 +738,22 @@ plot the fobj of hpopt, 3 plots (with ACSF, MBDF, CMBDF), see the hpopt_* folder
 """
 function main_plot_fs()
     tb1 = readdlm("data/hpopt_111023/sim/sim_tracker.txt") # ACSF table
-    # MBDF table
-    # CMBDF table
-    initpoint = tb1[1,:]
-    initf = initpoint[2]; initx = initpoint[4:end]
-    display(initf)
-    display(initx)
+    tbs = ["data/hpopt_111023/sim/sim_tracker.txt", "data/hpopt_161023_5kcalmol/sim/sim_tracker.txt", "data/hpopt_081123_3.67kcalmol/sim/sim_tracker.txt"]
+    fts = ["ACSF", "MBDF", "CMBDF"]
+    for (i,tb) ∈ enumerate(tbs)
+        # write (init,best) table:
+        tb = readdlm(tb)
+        initpoint = tb[1,:]
+        initf = initpoint[2]; initx = initpoint[4:end]
+        yminid = argmin(tb[:,3])
+        ymin = tb[yminid, 3]
+        # plot f(x)
+        y = tb[:,3]
+        p = plot(eachindex(y), y, 
+            ylimits=(0,20), xlimits=(yminid-100,yminid+100), 
+            xlabel = "iter", ylabel = "f(x)", label = false, dpi=1000)
+        scatter!([yminid], [ymin], markercolor = :red, markersize = 5, labels = clean_float(ymin)*" kcal/mol", legend=:bottomright)
+        display(p)
+        display(fts[i])
+    end
 end
