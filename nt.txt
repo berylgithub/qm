@@ -738,3 +738,10 @@ ROSEMI trials (see booknote for more detgails), summary:
 
 24.02.2024:
 - plot 3 plots, see the hpopt_* folders
+
+06.03.2024:
+- RoSeMI revisited:
+  1. rerun RoSemi with the current best hyperparameters (retest and make sure everything works)
+  if (1) is smoothly progressing, then:
+  2a. try removing the force assumption for the basis function (no derivative of the spline needed)
+  2b. rerun the Hx potential data, although this would probably mean (2a) needs to be fulfilled sicne the data is not actually on equilibrium (force assumption)
