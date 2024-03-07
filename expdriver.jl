@@ -771,12 +771,12 @@ function test_mainobj()
     xs = Iterators.product(x1, x2, x16, x17, x20)
     datas = []
     for (i,xit) ∈ enumerate(xs) # approx 16k sec total runtime:
-        println(xs)
+        println(xit)
         x[1] = xit[1]; x[2] = xit[2]; x[16] = xit[3]; x[17] = xit[4]; x[20] = xit[5]
         f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
-        push!(datas, vcat([y for y in xs], f))
+        push!(datas, vcat([y for y in xit], f))
     end
-    writedlm("result/testmainobj_"*replace(string(now()), "-" => "")*".txt", datas)
+    writedlm("result/testmainobj_"*replace(string(now()), "-" => "")*".txt", mapreduce(permutedims, vcat, datas))
 end
 
 """
