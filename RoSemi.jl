@@ -192,13 +192,19 @@ params:
     - W, feature matrix, ∈ Float64(n_feature, n_data)
     - m, index of selected unsup data
     - k, ... sup data 
+optional:
+    - force ∈ bool, whether to include the force condition or not, this is useful for equilibrium geometries
 """
-function qϕ(ϕ, dϕ, W, m, k, l, n_feature)
+function qϕ(ϕ, dϕ, W, m, k, l, n_feature; force=false)
     t = l % n_feature # find index t given index l and length of feature vector chosen (or n_f = L/n_b)
     if t == 0
         t = n_feature
     end
-    return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k]) # ϕ_{kl}(w_m) := ϕ_l(w_m) - ϕ_l(w_k) - ϕ_l'(w_k)(w_m - w_k), for k ∈ K, l = 1,...,L 
+    if force
+        return ϕ[l,m] - ϕ[l, k] - dϕ[l, k]*(W[t,m]-W[t,k]) # ϕ_{kl}(w_m) := ϕ_l(w_m) - ϕ_l(w_k) - ϕ_l'(w_k)(w_m - w_k), for k ∈ K, l = 1,...,L 
+    else
+        return ϕ[l,m] - ϕ[l, k]
+    end
 end
 
 
