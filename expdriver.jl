@@ -746,7 +746,6 @@ function test_mainobj()
     #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 4, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.78 kcal/mol
     #x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2] # current best conf found w.r.t the current hyperparameter space, 5.03 kcal/mol
     #x = [0, 1, 0, 0, 0, 1, 10, 10, 10, 0, 0, 50, 50, 1, 5, 0, 0, 5, 4, 2] # 4.5kcal/mol
-    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 1, 4, 2] # try ROSEMI
     # inside functions:
     dataset = load("data/qm9_dataset.jld", "data") # dataset info
     E = vec(readdlm("data/energies.txt")) # base energy
@@ -759,14 +758,25 @@ function test_mainobj()
     Fs = map(feat_paths) do fpath # high-level energy features
         load(fpath, "data")
     end
+    # selected data points:
     # custom CMBDF training sets:
     minid = 57 # see "MAE_custom_CMBDF_centers"
     centerss = readdlm("data/custom_CMBDF_centers_181023.txt", Int)
     centers = centerss[minid, :]
     idtrains = centers #[1:100], temporarily remove slicing to accomodate rosemi
     fx = main_obj
-    f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
-    writedlm("test_mainobj.txt", f)
+    # the params:
+    x = [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 1, 4, 2] # try ROSEMI
+    x1 = [0,1]; x2 = [0,1]; x20 = [1,2]; x16  = [0,1]; x17 = [0,1]; # diversify db,dn,normalize_atom,normalize_mol,solver
+    xs = Iterators.product(x1, x2, x16, x17, x20)
+    datas = []
+    for (i,xit) ∈ enumerate(xs) # approx 16k sec total runtime:
+        println(xs)
+        x[1] = xit[1]; x[2] = xit[2]; x[16] = xit[3]; x[17] = xit[4]; x[20] = xit[5]
+        f = fx(E, dataset, DFs, Fs, centers, idtrains, x; sim_id = "_$sim_id")
+        push!(datas, vcat([y for y in xs], f))
+    end
+    writedlm("result/testmainobj_"*replace(string(now()), "-" => "")*".txt", datas)
 end
 
 """
