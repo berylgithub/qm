@@ -744,4 +744,8 @@ ROSEMI trials (see booknote for more detgails), summary:
   1. rerun RoSemi with the current best hyperparameters (retest and make sure everything works)
   if (1) is smoothly progressing, then:
   2a. try removing the force assumption for the basis function (no derivative of the spline needed)
+  2a1(?) remove basis functions and use natural atomic features?
   2b. rerun the Hx potential data, although this would probably mean (2a) needs to be fulfilled sicne the data is not actually on equilibrium (force assumption)
+! immediate attention: speed up training computation (especially), by ThreadsX:
+  - B computation (most important one): iterators for the loop: rc = eachindex(Widx), klc = follows a pattern that depenmds on k,l, and threadsx map needed probably
+  - ATv, Au
