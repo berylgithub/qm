@@ -8,7 +8,7 @@ using Random, DelimitedFiles, Combinatorics
 using NOMAD
 using GLPK
 using NLopt =#
-using Metaheuristics
+#using Metaheuristics
 using PyCall # test run CMBDF
 
 #= """
@@ -554,3 +554,63 @@ function call_moldesc()
     display(MAE)
 end
 
+"""
+test rosemi model comp parallelization
+"""
+function comp_B(ϕ, dϕ, W, Midx, Widx, L, n_feature)
+    # init vars:
+    nrow = length(Widx); ncol = mapreduce(x->size(x,1),*,[Midx, ϕ])
+    B = zeros(nrow, ncol)
+    # algo:
+    klc = 1                                                     # kl counter
+    for k ∈ Midx
+        for l ∈ 1:L
+            rc = 1                                              # the row entry is not contiguous
+            for m ∈ Widx
+                B[rc, klc] = qϕ(ϕ, dϕ, W, m, k, l, n_feature) 
+                rc += 1
+            end
+            klc += 1
+        end
+    end
+    return B
+end
+
+function comp_Bpar(ϕ, dϕ, W, Midx, Widx, L, n_feature)
+    nrow = length(Widx); ncol = mapreduce(x->size(x,1),*,[Midx, ϕ])
+    B = zeros(nrow, ncol)
+    
+    # column indices:
+    it = Iterators.product(1:L, Midx)
+    ts = map(x-> (x[1],x[2][1],x[2][2]), enumerate(it))
+    display(ts)
+end
+
+function setup() # RUN the content of the function in the terminal
+    F, f, centerss, ϕ, dϕ = data_setup("test_revisit_rsm", 50, 50, 3, 300, dataset, f, "CMBDF"; 
+        pca_atom=false, pca_mol=false, normalize_atom=false, normalize_mol=false, save_global_centers=false, num_center_sets = 2, save_to_disk=false) # copy this line to cmd
+end
+
+function test_rosemi(E, dataset, F, f, centerss, ϕ, dϕ)
+    Midx = centerss[1][1:10] # training data
+    Uidx = setdiff(centerss[1], Midx)[1:20] # unsup data
+    Widx = setdiff(eachindex(E), Midx)[1:100] # test data
+
+    # test B:
+    Ft = F' #column major
+    nK = length(Midx); nU = length(Uidx); nL = size(ϕ, 1); n_feature = size(Ft, 1);
+    B = zeros(nU, nK*nL); 
+    t1 = @elapsed begin
+        comp_B!(B, ϕ, dϕ, Ft, Midx, Uidx, nL, n_feature);
+    end
+    t2 = @elapsed begin
+        B2 = comp_B(ϕ, dϕ, Ft, Midx, Uidx, nL, n_feature);
+    end
+    t3 = @elapsed begin
+        B3 = comp_Bpar(ϕ, dϕ, Ft, Midx, Uidx, nL, n_feature);
+    end
+    display(B[findall(B .> 0)]) # nz entries
+    display(B2[findall(B2 .> 0)]) # nz entries
+    display(norm(B-B2))
+    display([t1, t2])
+end

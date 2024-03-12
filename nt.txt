@@ -749,3 +749,6 @@ ROSEMI trials (see booknote for more detgails), summary:
 ! immediate attention: speed up training computation (especially), by ThreadsX:
   - B computation (most important one): iterators for the loop: rc = eachindex(Widx), klc = follows a pattern that depenmds on k,l, and threadsx map needed probably
   - ATv, Au
+
+12.03.2024:
+- reran rosemi, see results in "result/testmainobj_<timestamp>": currently there are 2: the first one is standard model, 2nd is without force assumption
