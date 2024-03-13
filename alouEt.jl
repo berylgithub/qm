@@ -549,7 +549,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         γ = comp_γ(D, SKs_train, Midx, Uidx)
         SKs = map(m -> comp_SK(D, Midx, m), Widx) # for prediction
         α = γ .- 1
-        B = zeros(nU, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Uidx, nL, n_feature);
+        B = comp_Bpar(ϕ, dϕ, F, Midx, Uidx, nL, n_feature) #B = zeros(nU, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Uidx, nL, n_feature);
     end
     println("precomputation time = ",t_ab)
     row = nU*nK; col = nK*nL #define LinearOperator's size
@@ -588,19 +588,20 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     # compute predictions:
     t_batch = @elapsed begin
         VK_fin = zeros(Nqm9)
-        B = zeros(Float64, bsize, nK*nL)
+        #B = zeros(Float64, bsize, nK*nL)
         VK = zeros(bsize); outs = [zeros(bsize) for _ = 1:3]
         @simd for batch in batches[1:end-1]
-            comp_B!(B, ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature)
+            B = comp_Bpar(ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature) #comp_B!(B, ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature)
             comp_VK!(VK, outs, E, D, θ, B, SKs[batch], Midx, Widx[batch], cidx, klidx)
             VK_fin[batch] .= VK
             # reset:
-            fill!(B, 0.); fill!(VK, 0.); fill!.(outs, 0.); 
+            #fill!(B, 0.); 
+            fill!(VK, 0.); fill!.(outs, 0.); 
         end
         # remainder part:
-        B = zeros(Float64, bendsize, nK*nL)
+        #B = zeros(Float64, bendsize, nK*nL)
         VK = zeros(bendsize); outs = [zeros(bendsize) for _ = 1:3]
-        comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
+        B = comp_Bpar(ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature) #comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
         comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
         VK_fin[batches[end]] .= VK
         VK = VK_fin # swap
