@@ -585,6 +585,12 @@ function comp_Bpar(ϕ, dϕ, W, Midx, Widx, L, n_feature)
 end
 
 function setup() # RUN the content of the function in the terminal
+    # index data structure arrangement using Iterators.product -> complicated nested loop parallelization possible!:
+    # eg want double looped column entry with single looped row entry:
+    itcol = Iterators.product(1:3, [2,4])
+    itt = collect(Iterators.product([5,7,9], collect(itcol)[:]))
+    outmat = map(t->dumfuncc(t[1],t[2][1],t[2][2]), itt) # easily extendable to ThreadsX!
+    # setup data:
     F, f, centerss, ϕ, dϕ = data_setup("test_revisit_rsm", 50, 50, 3, 300, dataset, f, "CMBDF"; 
         pca_atom=false, pca_mol=false, normalize_atom=false, normalize_mol=false, save_global_centers=false, num_center_sets = 2, save_to_disk=false) # copy this line to cmd
 end
@@ -595,12 +601,6 @@ function test_rosemi(E, dataset, F, f, centerss, ϕ, dϕ)
     Midx = centerss[1][1:100] # training data
     Uidx = setdiff(centerss[1], Midx)[1:200] # unsup data
     Widx = setdiff(eachindex(E), Midx)[1:1000] # test data
-
-    # index data structure arrangement using Iterators.product -> complicated nested loop parallelization possible!:
-    # eg want double looped column entry with single looped row entry:
-    itcol = Iterators.product(1:3, [2,4])
-    itt = collect(Iterators.product([5,7,9], collect(it)[:]))
-    outmat = map(t->dumfuncc(t[1],t[2][1],t[2][2]), itt) # easily extendable to ThreadsX!
 
     # test B:
     Ft = F' #column major
