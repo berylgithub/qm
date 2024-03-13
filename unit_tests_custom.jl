@@ -577,13 +577,9 @@ function comp_B(ϕ, dϕ, W, Midx, Widx, L, n_feature)
 end
 
 function comp_Bpar(ϕ, dϕ, W, Midx, Widx, L, n_feature)
-    nrow = length(Widx); ncol = mapreduce(x->size(x,1),*,[Midx, ϕ])
-    B = zeros(nrow, ncol)
-    
-    # column indices:
-    it = Iterators.product(1:L, Midx)
-    ts = map(x-> (x[1],x[2][1],x[2][2]), enumerate(it))
-    display(ts)
+    itcol = Iterators.product(1:L, Midx) # concat block column indices
+    its = Iterators.product(Widx, collect(itcol)[:]) # concat indices: row vector with vector form of itcol
+    return ThreadsX.map(t-> qϕ(ϕ, dϕ, W, t[1], t[2][2], t[2][1], n_feature), its)
 end
 
 function setup() # RUN the content of the function in the terminal
@@ -594,15 +590,16 @@ end
 dumfuncc(a,b,c) = sum(a)+sum(b)+sum(c) # dummy symmetric function
 
 function test_rosemi(E, dataset, F, f, centerss, ϕ, dϕ)
-    Midx = centerss[1][1:10] # training data
-    Uidx = setdiff(centerss[1], Midx)[1:20] # unsup data
-    Widx = setdiff(eachindex(E), Midx)[1:100] # test data
+    Midx = centerss[1][1:100] # training data
+    Uidx = setdiff(centerss[1], Midx)[1:200] # unsup data
+    Widx = setdiff(eachindex(E), Midx)[1:1000] # test data
 
     # index data structure arrangement using Iterators.product -> complicated nested loop parallelization possible!:
     # eg want double looped column entry with single looped row entry:
     itcol = Iterators.product(1:3, [2,4])
     itt = collect(Iterators.product([5,7,9], collect(it)[:]))
     outmat = map(t->dumfuncc(t[1],t[2][1],t[2][2]), itt) # easily extendable to ThreadsX!
+
     # test B:
     Ft = F' #column major
     nK = length(Midx); nU = length(Uidx); nL = size(ϕ, 1); n_feature = size(Ft, 1);
@@ -617,7 +614,8 @@ function test_rosemi(E, dataset, F, f, centerss, ϕ, dϕ)
         B3 = comp_Bpar(ϕ, dϕ, Ft, Midx, Uidx, nL, n_feature);
     end
     display(B[findall(B .> 0)]) # nz entries
-    display(B2[findall(B2 .> 0)]) # nz entries
-    display(norm(B-B2))
-    display([t1, t2])
+    display(B3[findall(B3 .> 0)]) # nz entries
+    
+    display(norm(B-B3))
+    display([t1, t2, t3])
 end
