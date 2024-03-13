@@ -752,3 +752,6 @@ ROSEMI trials (see booknote for more detgails), summary:
 
 12.03.2024:
 - reran rosemi, see results in "result/testmainobj_<timestamp>": currently there are 2: the first one is standard model, 2nd is without force assumption
+
+13.03.2024:
+- (see unit_test_custom.jl under the rosemi test submdodule for more detail) figured out how to arrange Iterators.product data structure even on complicated nested loop implies parallelization on nested loop possible! 
