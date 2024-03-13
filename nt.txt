@@ -755,3 +755,9 @@ ROSEMI trials (see booknote for more detgails), summary:
 
 13.03.2024:
 - (see unit_test_custom.jl under the rosemi test submdodule for more detail) figured out how to arrange Iterators.product data structure even on complicated nested loop implies parallelization on nested loop possible! 
+- rosemi noforce:  900s traintime, 800s batch time (slurm outputs);
+  withforce: 900s traintime, 1ks batch time (see slurm outputs).
+! next: just rerun rosemi using the old data (see also 06.03.2024 note for additional info):
+  - try H2 data first, then go to OH, O2 (see old presentation slide to follow the schemes)
+  - try distance as feature directly
+  - try atomic features as feature -> if no coordinates then need to compute coordinates from the distances.
