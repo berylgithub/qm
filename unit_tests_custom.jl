@@ -9,7 +9,7 @@ using NOMAD
 using GLPK
 using NLopt =#
 #using Metaheuristics
-using PyCall # test run CMBDF
+#using PyCall # test run CMBDF
 
 #= """
 inner product kernel entry (reproducing kernel)
@@ -504,8 +504,10 @@ function MH_log_result(status, filepath)
     writestringline(string.(vcat(minimum(status), minimizer(status))), filepath; mode= "a")
 end
 
-
-# this needs to be called first:
+"""
+pycall shenanigans
+"""
+#= # this needs to be called first:
 function init_py()
     py"""
     import numpy as np
@@ -552,7 +554,7 @@ function call_moldesc()
     f = f[idsel]
     MAE = min_main_obj(idtrains, E, dataset, DFs, f)
     display(MAE)
-end
+end =#
 
 """
 test rosemi model comp parallelization
