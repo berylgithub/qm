@@ -700,6 +700,10 @@ function main_disp_delta_best()
     writelatextable(A, "result/table_dressed_feature.tex")
 end
 
+
+"""
+for visualization of the Kernel feature
+"""
 function main_PCA_plot()
     # load data:
     E = vec(readdlm("data/energies.txt"))
@@ -711,7 +715,13 @@ function main_PCA_plot()
     # training set display:
     p = scatter(K[tests,1], K[tests,2], markercolor=:blue, markersize = 3.5, labels = "test", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
     scatter!(K[trains,1], K[trains,2], markershape=:utriangle, markercolor=:red, markersize = 6, labels = "train")
-    savefig(p, "plot/deltaML/PCA_kernel_plot.png")
+    display(p)
+    #savefig(p, "plot/deltaML/PCA_kernel_plot.png")
+    # display in label instead of marker:
+    p1 = scatter(K[trains,1], K[trains,2], markercolor=:blue, markersize = .1, labels = "train", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
+    annotate!(0.2, 0.1, text("A", 0.1, :red, :top))
+    annotate!(0.1, 0.2, text("B", 0.1, :red, :top))
+    display(p1)
 end
 
 function main_get_timing_table()
