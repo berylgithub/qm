@@ -762,3 +762,9 @@ ROSEMI trials (see booknote for more detgails), summary:
     the H2-5 are readily available, test those first, it means need a generic caller function for Rosemi
   - try distance as feature directly
   - try atomic features as feature -> if no coordinates then need to compute coordinates from the distances.
+
+15.03.2024:
+- DeltaML:
+  - 6.2.2 and 6.2.3 are for thesis book only, move to the earlier chapter of the thesis book.
+  - Introduction: include summary of 6.2.2 and 6.2.3 (see the first point).
+  - at the PCA part (last part), explain the pattern of the [PC1, PC2] plot that looks like line (in chemical term).

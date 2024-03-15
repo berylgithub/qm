@@ -557,7 +557,13 @@ function call_moldesc()
 end =#
 
 """
+=======
 test rosemi model comp parallelization
+=======
+"""
+
+"""
+computes B memalloc inside, for unit test only
 """
 function comp_B(ϕ, dϕ, W, Midx, Widx, L, n_feature)
     # init vars:
@@ -576,12 +582,6 @@ function comp_B(ϕ, dϕ, W, Midx, Widx, L, n_feature)
         end
     end
     return B
-end
-
-function comp_Bpar(ϕ, dϕ, W, Midx, Widx, L, n_feature)
-    itcol = Iterators.product(1:L, Midx) # concat block column indices
-    its = Iterators.product(Widx, collect(itcol)[:]) # concat indices: row vector with vector form of itcol
-    return ThreadsX.map(t-> qϕ(ϕ, dϕ, W, t[1], t[2][2], t[2][1], n_feature), its)
 end
 
 function setup() # RUN the content of the function in the terminal
@@ -620,4 +620,18 @@ function test_rosemi(E, dataset, F, f, centerss, ϕ, dϕ)
     
     display(norm(B-B3))
     display([t1, t2, t3])
+end
+
+"""
+rosemi fitter example when  (for now just arrange the steps, organize later)
+as usual, spawn the insides in terminal
+"""
+function rosemi_ex()
+    # load data:
+    # since H2 only contains 2 atoms, the distance is already a good feature:
+    data = readdlm("data/smallmol/h2/h2_ground_k.txt")
+    F = data[:,2]
+    # precompute stuffs:
+    n_basis = 3
+    ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
 end
