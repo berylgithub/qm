@@ -1,4 +1,8 @@
 using Plots, DelimitedFiles, LaTeXStrings, Printf, Statistics
+using PlotlyJS
+const jplot = PlotlyJS.plot
+const jscatter = PlotlyJS.scatter
+
 include("utils.jl")
 
 function plot_mae()
@@ -717,11 +721,22 @@ function main_PCA_plot()
     scatter!(K[trains,1], K[trains,2], markershape=:utriangle, markercolor=:red, markersize = 6, labels = "train")
     display(p)
     #savefig(p, "plot/deltaML/PCA_kernel_plot.png")
+
+    ## finding pattern shenanigans:
     # display in label instead of marker:
-    p1 = scatter(K[trains,1], K[trains,2], markercolor=:blue, markersize = .1, labels = "train", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
+    p1 = scatter(K[trains,1], K[trains,2], xlimits = (0., 1.), ylimits = (0., 1.), markercolor=:blue, markersize = 5, labels = "train", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
     annotate!(0.2, 0.1, text("A", 0.1, :red, :top))
-    annotate!(0.1, 0.2, text("B", 0.1, :red, :top))
+    annotate!(0.1, 0.2, text(1.5, 6, :red, :vcenter))
     display(p1)
+
+    Ktrain = K[trains,:]
+    Ksel = Ktrain[findall( 0.3 .< Ktrain[:,1] .< 0.7 ),:] # selected K (from visual judgement)
+    display(Ksel)
+    jp = jplot(jscatter(x=Ksel[:,1], y=Ksel[:,2], mode="markers"))
+    display(jp)
+    miny = argmin(Ksel[:,2]) # find min y 
+    cp = Ksel[miny, :] # central point
+
 end
 
 function main_get_timing_table()
