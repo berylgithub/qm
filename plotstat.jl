@@ -1,7 +1,10 @@
-using Plots, DelimitedFiles, LaTeXStrings, Printf, Statistics
+using DelimitedFiles, LaTeXStrings, Printf, Statistics
+using Plots
 using PlotlyJS, Polynomials
 const jplot = PlotlyJS.plot
 const jscatter = PlotlyJS.scatter
+
+
 
 include("utils.jl")
 
@@ -726,22 +729,36 @@ function main_PCA_plot()
     # display in label instead of marker:
     p1 = scatter(K[trains,1], K[trains,2], xlimits = (0., 1.), ylimits = (0., 1.), markercolor=:blue, markersize = 5, labels = "train", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
     annotate!(0.2, 0.1, text("A", 0.1, :red, :top))
-    annotate!(0.1, 0.2, text(1.5, 6, :red, :vcenter))
     display(p1)
     Ktrain = K[trains,:]
     Ksel = Ktrain[findall( 0.3 .< Ktrain[:,1] .< 0.7 ),:] # selected K (from visual judgement)
     jp = jplot(jscatter(x=Ksel[:,1], y=Ksel[:,2], mode="markers")) # display using PlotlyJS
     display(jp)
-    # linear polynomial fit, sample 2 lines:
+    # linear polynomial fit, sample 2 lines (points obtained manually from checking):
     l1p = [[0.31, 0.48],[0.26, 0.55]] # first line [xs, ys]
     f1 = fit(l1p[1], l1p[2])
     l2p = [[0.41, 0.698],[0.225, 0.73]]
     f2 = fit(l2p[1], l2p[2])
     display([f1(0.395), f2(0.617)])
     x = 0:0.01:1
-    Plots.plot!(x, f1.(x)) # connects to p1 var
-    Plots.plot!(x, f2.(x))
+    plot!(x, f1.(x)) # connects to p1 var
+    plot!(x, f2.(x))
     display(p1)
+    # clustering of points to one of the lines:
+    δy = 0.07
+    l1 = []; l2 = []
+    for (i,train) ∈ enumerate(trains)
+        x = K[train, 1]; y = K[train, 2] 
+        if abs(f1(x)-y) ≤ δy
+            push!(l1, train)
+        elseif abs(f2(x)-y) ≤ δy
+            push!(l2, train)
+        end
+    end
+    display(l1); display(l2)
+    scatter!(K[l1,1], K[l1,2], markershape=:utriangle, markercolor=:red, markersize = 5)
+    scatter!(K[l2,1], K[l2,2], markershape=:utriangle, markercolor=:green, markersize = 5)
+    return l1, l2 # return the ids
 end
 
 function main_get_timing_table()
