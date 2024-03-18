@@ -1,5 +1,5 @@
 using Plots, DelimitedFiles, LaTeXStrings, Printf, Statistics
-using PlotlyJS
+using PlotlyJS, Polynomials
 const jplot = PlotlyJS.plot
 const jscatter = PlotlyJS.scatter
 
@@ -728,15 +728,20 @@ function main_PCA_plot()
     annotate!(0.2, 0.1, text("A", 0.1, :red, :top))
     annotate!(0.1, 0.2, text(1.5, 6, :red, :vcenter))
     display(p1)
-
     Ktrain = K[trains,:]
     Ksel = Ktrain[findall( 0.3 .< Ktrain[:,1] .< 0.7 ),:] # selected K (from visual judgement)
-    display(Ksel)
-    jp = jplot(jscatter(x=Ksel[:,1], y=Ksel[:,2], mode="markers"))
+    jp = jplot(jscatter(x=Ksel[:,1], y=Ksel[:,2], mode="markers")) # display using PlotlyJS
     display(jp)
-    miny = argmin(Ksel[:,2]) # find min y 
-    cp = Ksel[miny, :] # central point
-
+    # linear polynomial fit, sample 2 lines:
+    l1p = [[0.31, 0.48],[0.26, 0.55]] # first line [xs, ys]
+    f1 = fit(l1p[1], l1p[2])
+    l2p = [[0.41, 0.698],[0.225, 0.73]]
+    f2 = fit(l2p[1], l2p[2])
+    display([f1(0.395), f2(0.617)])
+    x = 0:0.01:1
+    Plots.plot!(x, f1.(x)) # connects to p1 var
+    Plots.plot!(x, f2.(x))
+    display(p1)
 end
 
 function main_get_timing_table()
