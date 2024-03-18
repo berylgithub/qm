@@ -770,3 +770,6 @@ ROSEMI trials (see booknote for more detgails), summary:
   - at the PCA part (last part), explain the pattern of the [PC1, PC2] plot that looks like lines (in chemical term).
   - change the color of Figure 16 (like white background) (0.5 level of importance).
   - finish the citations (last)
+
+18.03.2024:
+- for the separation, maybe sort the lists w.r.t y axis value?
