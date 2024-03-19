@@ -740,38 +740,42 @@ function main_PCA_plot()
     f1 = Polynomials.fit(l1p[1], l1p[2])
     l2p = [[0.41, 0.698],[0.225, 0.73]]
     f2 = Polynomials.fit(l2p[1], l2p[2])
+    l3p = [[0.471, 0.865],[0.136, 0.82]]
+    f3 = Polynomials.fit(l3p[1], l3p[2])
     display([f1(0.395), f2(0.617)])
     x = 0:0.01:1
     plot!(x, f1.(x), labels = "f1") # connects to p1 var
-    annotate!(l1p[1][1], l1p[2][1], text("f1", 0.1, 10, :red, :bottom, :right))
+    annotate!(l1p[1][1], l1p[2][1], text("f1", 0.1, 10, :bottom, :right))
     plot!(x, f2.(x), labels = "f2")
-    annotate!(l2p[1][1], l2p[2][1], text("f2", 0.1, 10, :red, :bottom, :right))
+    annotate!(l2p[1][1], l2p[2][1], text("f2", 0.1, 10, :bottom, :right))
+    plot!(x, f3.(x), labels = "f3")
+    annotate!(l3p[1][1], l3p[2][1], text("f3", 0.1, 10, :bottom, :right))
     # clustering of points to one of the lines:
     δy = 0.07
     abs_indices = trains ∪ tests 
-    display(abs_indices)
-    l1 = []; l2 = []
+    l1 = []; l2 = []; l3 = []
     for (i,id) ∈ enumerate(abs_indices)
         x = K[id, 1]; y = K[id, 2] 
         if abs(f1(x)-y) ≤ δy
             push!(l1, id)
         elseif abs(f2(x)-y) ≤ δy
             push!(l2, id)
+        elseif abs(f3(x)-y) ≤ δy
+            push!(l3, id)
         end
     end
-    ls = [l1, l2]
-    display(ls[1]); display(ls[2])
+    ls = [l1, l2, l3]
     # sort by pc2 (y axis):
     for (i,li) in enumerate(ls)
         sids = sortperm(K[li, 2])
         ls[i] = li[sids]
     end
-    display(ls[1]); display(ls[2])
-    scatter!(K[ls[1],1], K[ls[1],2], markershape=:dtriangle, markercolor=:red, markersize = 5, labels = "f1(PC1)")
-    scatter!(K[ls[2],1], K[ls[2],2], markershape=:utriangle, markercolor=:green, markersize = 5, labels = "f2(PC1)")
+    scatter!(K[ls[1],1], K[ls[1],2], markershape=:dtriangle, markercolor=:red, markersize = 5, labels = "class f1")
+    scatter!(K[ls[2],1], K[ls[2],2], markershape=:utriangle, markercolor=:green, markersize = 5, labels = "class f2")
+    scatter!(K[ls[3],1], K[ls[3],2], markershape=:ltriangle, markercolor=:yellow, markersize = 5, labels = "class f3")
     Plots.savefig(p1, "plot/deltaML/PCA_kernel_f1f2.png")
     display(p1)
-    return ls[1], ls[2] # return the ids
+    return ls # return the ids
 end
 
 """
