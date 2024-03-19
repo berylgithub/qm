@@ -727,38 +727,64 @@ function main_PCA_plot()
 
     ## finding pattern shenanigans:
     # display in label instead of marker:
-    p1 = scatter(K[trains,1], K[trains,2], xlimits = (0., 1.), ylimits = (0., 1.), markercolor=:blue, markersize = 5, labels = "train", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
-    annotate!(0.2, 0.1, text("A", 0.1, :red, :top))
+    p1 = scatter(K[:,1], K[:,2], xlimits = (-0.1, 1.2), ylimits = (-0.1, 1.2), markercolor=:blue, markersize = 3, labels = "data", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
+    #annotate!(0.2, 0.1, text("A", 0.1, :red, :top))
     display(p1)
     Ktrain = K[trains,:]
     Ksel = Ktrain[findall( 0.3 .< Ktrain[:,1] .< 0.7 ),:] # selected K (from visual judgement)
-    jp = jplot(jscatter(x=Ksel[:,1], y=Ksel[:,2], mode="markers")) # display using PlotlyJS
+    jp = jplot(jscatter(x=K[:,1], y=K[:,2], mode="markers")) # display using PlotlyJS
     display(jp)
     # linear polynomial fit, sample 2 lines (points obtained manually from checking):
     l1p = [[0.31, 0.48],[0.26, 0.55]] # first line [xs, ys]
-    f1 = fit(l1p[1], l1p[2])
+    f1 = Polynomials.fit(l1p[1], l1p[2])
     l2p = [[0.41, 0.698],[0.225, 0.73]]
-    f2 = fit(l2p[1], l2p[2])
+    f2 = Polynomials.fit(l2p[1], l2p[2])
     display([f1(0.395), f2(0.617)])
     x = 0:0.01:1
-    plot!(x, f1.(x)) # connects to p1 var
-    plot!(x, f2.(x))
-    display(p1)
+    plot!(x, f1.(x), labels = "f1") # connects to p1 var
+    annotate!(l1p[1][1], l1p[2][1], text("f1", 0.1, :red, :bottom, :right))
+    plot!(x, f2.(x), labels = "f2")
+    annotate!(l2p[1][1], l2p[2][1], text("f2", 0.1, :red, :bottom, :right))
     # clustering of points to one of the lines:
     δy = 0.07
+    abs_indices = trains ∪ tests 
+    display(abs_indices)
     l1 = []; l2 = []
-    for (i,train) ∈ enumerate(trains)
-        x = K[train, 1]; y = K[train, 2] 
+    for (i,id) ∈ enumerate(abs_indices)
+        x = K[id, 1]; y = K[id, 2] 
         if abs(f1(x)-y) ≤ δy
-            push!(l1, train)
+            push!(l1, id)
         elseif abs(f2(x)-y) ≤ δy
-            push!(l2, train)
+            push!(l2, id)
         end
     end
-    display(l1); display(l2)
-    scatter!(K[l1,1], K[l1,2], markershape=:utriangle, markercolor=:red, markersize = 5)
-    scatter!(K[l2,1], K[l2,2], markershape=:utriangle, markercolor=:green, markersize = 5)
-    return l1, l2 # return the ids
+    ls = [l1, l2]
+    display(ls[1]); display(ls[2])
+    # sort by pc2 (y axis):
+    for (i,li) in enumerate(ls)
+        sids = sortperm(K[li, 2])
+        ls[i] = li[sids]
+    end
+    display(ls[1]); display(ls[2])
+    scatter!(K[ls[1],1], K[ls[1],2], markershape=:utriangle, markercolor=:red, markersize = 5)
+    scatter!(K[ls[2],1], K[ls[2],2], markershape=:utriangle, markercolor=:green, markersize = 5)
+    display(p1)
+    return ls[1], ls[2] # return the ids
+end
+
+"""
+copy paste the content of this function to the terminal to run
+"""
+function terminal_get_pattern()
+    dataset = load("data/qm9_dataset.jld", "data")
+    l1,l2 = main_PCA_plot()
+    l1forms = map(d->d["formula"], dataset[l1])
+    l2forms = map(d->d["formula"], dataset[l2])
+    tb = Matrix{String}(undef, length(l2), 2)
+    tb[:,2] .= l2forms
+    tb[1:length(l1),1] = l1forms
+    tb[length(l1)+1:end,1] .= ""
+    writedlm("result/deltaML/PCA_exp.txt", tb)
 end
 
 function main_get_timing_table()
