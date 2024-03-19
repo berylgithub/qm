@@ -3,6 +3,7 @@ using Plots
 using PlotlyJS, Polynomials
 const jplot = PlotlyJS.plot
 const jscatter = PlotlyJS.scatter
+const jsavefig = PlotlyJS.savefig
 
 
 
@@ -727,7 +728,7 @@ function main_PCA_plot()
 
     ## finding pattern shenanigans:
     # display in label instead of marker:
-    p1 = scatter(K[:,1], K[:,2], xlimits = (-0.1, 1.2), ylimits = (-0.1, 1.2), markercolor=:blue, markersize = 3, labels = "data", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
+    p1 = scatter(K[:,1], K[:,2], xlimits = (-0.1, 1.2), ylimits = (-0.1, 1.2), markercolor=:blue, markersize = 3, labels = "molecule", legend = :outertopleft, xlabel = "PC1", ylabel="PC2", dpi=1000)
     #annotate!(0.2, 0.1, text("A", 0.1, :red, :top))
     display(p1)
     Ktrain = K[trains,:]
@@ -742,9 +743,9 @@ function main_PCA_plot()
     display([f1(0.395), f2(0.617)])
     x = 0:0.01:1
     plot!(x, f1.(x), labels = "f1") # connects to p1 var
-    annotate!(l1p[1][1], l1p[2][1], text("f1", 0.1, :red, :bottom, :right))
+    annotate!(l1p[1][1], l1p[2][1], text("f1", 0.1, 10, :red, :bottom, :right))
     plot!(x, f2.(x), labels = "f2")
-    annotate!(l2p[1][1], l2p[2][1], text("f2", 0.1, :red, :bottom, :right))
+    annotate!(l2p[1][1], l2p[2][1], text("f2", 0.1, 10, :red, :bottom, :right))
     # clustering of points to one of the lines:
     δy = 0.07
     abs_indices = trains ∪ tests 
@@ -766,8 +767,9 @@ function main_PCA_plot()
         ls[i] = li[sids]
     end
     display(ls[1]); display(ls[2])
-    scatter!(K[ls[1],1], K[ls[1],2], markershape=:utriangle, markercolor=:red, markersize = 5)
-    scatter!(K[ls[2],1], K[ls[2],2], markershape=:utriangle, markercolor=:green, markersize = 5)
+    scatter!(K[ls[1],1], K[ls[1],2], markershape=:dtriangle, markercolor=:red, markersize = 5, labels = "f1(PC1)")
+    scatter!(K[ls[2],1], K[ls[2],2], markershape=:utriangle, markercolor=:green, markersize = 5, labels = "f2(PC1)")
+    Plots.savefig(p1, "plot/deltaML/PCA_kernel_f1f2.png")
     display(p1)
     return ls[1], ls[2] # return the ids
 end
