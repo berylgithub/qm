@@ -773,3 +773,6 @@ ROSEMI trials (see booknote for more detgails), summary:
 
 18.03.2024:
 - for the separation, maybe sort the lists w.r.t y axis value?
+
+21.03.2024:
+- see rosemi_ex(), fitting H2 works well, under 0.1kcal/mol mostly, next plot the curve
