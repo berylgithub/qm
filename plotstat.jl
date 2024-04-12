@@ -783,14 +783,35 @@ copy paste the content of this function to the terminal to run
 """
 function terminal_get_pattern()
     dataset = load("data/qm9_dataset.jld", "data")
+
+    # get pattern of each diagonal:
     l1,l2 = main_PCA_plot()
     l1forms = map(d->d["formula"], dataset[l1])
     l2forms = map(d->d["formula"], dataset[l2])
+    # l3 here
     tb = Matrix{String}(undef, length(l2), 2)
     tb[:,2] .= l2forms
     tb[1:length(l1),1] = l1forms
     tb[length(l1)+1:end,1] .= ""
     writedlm("result/deltaML/PCA_exp.txt", tb)
+
+    # get pattern between diagonals:
+    ls = [l1,l2,l3]
+    ns = []
+    for l in ls
+        push!(ns, map(d->d["n_atom"], dataset[l]))
+    end
+    cs = counter.(ns)
+    unioncs = sort(collect(reduce(∪ , keys.(cs) )))
+    cmat = zeros(Int, length(unioncs), length(cs)+1)
+    cmat[:,1] = unioncs
+    for (i,el) in enumerate(unioncs)
+        for (j,c) in enumerate(cs)
+            cmat[i,j+1] = c[el]
+        end
+    end
+    display(cmat)
+    writelatextable(cmat, "result/deltaML/PCA_mol_freq.tex"; hline=false)
 end
 
 function main_get_timing_table()
