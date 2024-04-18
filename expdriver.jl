@@ -810,8 +810,10 @@ function main_custom_CMBDF_train(feature_path, sim_id; mode="flatten", nset=1_00
         idtrains = centers[1:100]
         idrem = setdiff(idall, idtrains)
         idtests = sample(idrem, 10_000, replace=false)
-        fobj = min_main_obj(idtrains, E, dataset, DFs, f; idtests_in = idtests)
-        strinput = string.([fobj])
+        t = @elapsed begin
+            fobj = min_main_obj(idtrains, E, dataset, DFs, f; idtests_in = idtests)
+        end
+        strinput = string.([fobj, t])
         writestringline(strinput, "result/deltaML/MAE_"*sim_id*".txt"; mode="a")
         #writestringline(strinput, "result/deltaML/MAE_random-777_CMBDF_centers_181023.txt"; mode="a")
     end
