@@ -630,23 +630,31 @@ function rosemi_ex()
     Random.seed!(603)
     # load data:
     # since H2 only contains 2 atoms, the distance is already a good feature:
-    data = readdlm("data/smallmol/h2/h2_ground_k.txt")
+    data = readdlm("data/smallmol/h2/h2_ground_w.txt")
     display(data)
-    F = data[:,1]; E = data[:,2]
+    F = data[:,1]; E = data[:,2:end]
     # precompute stuffs:
-    n_basis = 3
+    n_basis = 4
     ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true) # move this to data setup later
-    ncs = Int(round(0.2*size(data,1)))
+    ncs = Int(round(0.8*size(data,1)))
     _, centers = usequence(Matrix(transpose(F)), ncs; reservoir_size = size(data,1)) # centers
     trainids = centers[1:Int(round(0.5*length(centers)))]
     unsupids = centers[Int(round(0.5*length(centers)))+1:end]
     testids = setdiff(1:length(E), centers)
-    
+
     D = fcenterdist(F, centers) # distance
-    display(centers)
 
     display(ϕ)
     display(D)
     MAE, _, t_ls, t_pred = fitter(F', E, D, ϕ, dϕ, trainids, centers, unsupids, testids, 1, "test", 5, 900)
     display([MAE/627.503, t_ls, t_pred])
+end
+
+"""
+rerun of HxOy using ROSEMi
+"""
+function rosemi_hxoy()
+    
+    data = load("data/smallmol/hxoy_data.jld", "data") # load hxoy
+    
 end

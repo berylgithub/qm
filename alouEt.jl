@@ -614,14 +614,14 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     println("MAE of all mol w/ unknown E is ", MAE)
 
     # get the n-highest MAD:
-    n = 1 # 🌸
+    #= n = 1 # 🌸
     sidxes = sortperm(MADs)[end-(n-1):end]
-    MADmax_idxes = Widx[sidxes] # the indexes relative to Widx (global data index)
+    MADmax_idxes = Widx[sidxes] # the indexes relative to Widx (global data index) =#
     
     # get min |K| RMSD (the obj func):
     RMSD = obj #Optim.minimum(res)
     
-    println("largest MAD is = ", MADs[sidxes[end]], ", with index = ",MADmax_idxes)
+    #println("largest MAD is = ", MADs[sidxes[end]], ", with index = ",MADmax_idxes)
     println("|K|*∑RMSD(w) = ", RMSD)
 
     # save also the nK indices and θ's to file!!:
@@ -629,7 +629,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     #save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
     # clear variables:
     SKs_train = SKs = γ = α = B = klidx = cidx = Axtemp = tempsA = op = b = tempsb = θ = stat = VK = outs = v = vmat = MADs = batches = VK_fin = nothing; GC.gc()
-    return MAE, MADmax_idxes, t_ls, t_batch
+    return MAE, 0, t_ls, t_batch #return MAE, MADmax_idxes, t_ls, t_batch
 end
 
 """

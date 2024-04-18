@@ -774,5 +774,10 @@ ROSEMI trials (see booknote for more detgails), summary:
 18.03.2024:
 - for the separation, maybe sort the lists w.r.t y axis value?
 
-21.03.2024:
-- see rosemi_ex(), fitting H2 works well, under 0.1kcal/mol mostly, next plot the curve
+
+18.04.2024:
+- the units in HxOy data seems to be (R,V) = (Hartree, Bohr)
+- Rosemi for H2 gives 8kcal/mol as the lowest error (meanwhile the others are around 1kcal/mol or lower, see pes/PES_visu.ipynb):
+  settings for 8kcal/mol: H2_k, centers = 0.8*ndata, train = 0.5*cetners, unsup = 0.5*centers, test = rest, nbasis = 5
+  - with H2_w has a lil bit of promise: 0.13kcal/mol, still within range though kind of high
+- the data for the kfold result in PES_visu is called in PES_main.py
