@@ -3,6 +3,7 @@ all kinds of utility functions
 """
 
 using LaTeXStrings, Printf, DelimitedFiles, JLD
+using DataStructures
 
 # get variable name
 macro Name(arg)
