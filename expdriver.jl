@@ -808,8 +808,8 @@ function main_custom_CMBDF_train(feature_path, sim_id; mode="flatten", nset=1_00
     for i ∈ axes(centerss, 1) # centers, idtrains, idtests:
         centers = centerss[i,:]
         idtrains = centers[1:100]
-        idrem = setdiff(idall, idtrains)
-        idtests = sample(idrem, 10_000, replace=false)
+        #idrem = setdiff(idall, idtrains)
+        idtests = setdiff(idall, idtrains) #idtests = sample(idrem, 10_000, replace=false)
         t = @elapsed begin
             fobj = min_main_obj(idtrains, E, dataset, DFs, f; idtests_in = idtests)
         end
