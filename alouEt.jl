@@ -629,7 +629,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     #save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
     # clear variables:
     SKs_train = SKs = γ = α = B = klidx = cidx = Axtemp = tempsA = op = b = tempsb = θ = stat = VK = outs = v = vmat = MADs = batches = VK_fin = nothing; GC.gc()
-    return MAE, 0, t_ls, t_batch #return MAE, MADmax_idxes, t_ls, t_batch
+    return MAE, RMSD, t_ls, t_batch #return MAE, MADmax_idxes, t_ls, t_batch
 end
 
 """
