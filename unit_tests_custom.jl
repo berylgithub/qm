@@ -663,21 +663,23 @@ rosemi wrapper fitter, can choose either with kfold or usequence (if kfold = tru
 """
 function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=4)
     ndata = length(E)
-    display(ndata)
     folds = collect(Kfold(ndata, k)) # for rosemi, these guys are centers, not "training set"
-    for (i,fold) in enumerate(folds[1:1])
+    MAEs = []; RMSDs = []; t_lss = []; t_preds = []
+    for (i,fold) in enumerate(folds)
         # fitter:
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true)
-        println(fold)
-        fold = shuffle(fold); lenfold = length(fold)
-        trids = fold[1:Int(round(ptr*lenfold))] # train ids (K)
+        fold = shuffle(fold); centers = fold; lenctr = length(centers) # the center ids
+        trids = fold[1:Int(round(ptr*lenctr))] # train ids (K)
         uids = setdiff(fold, trids) # unsupervised ids (U)
         tsids = setdiff(1:ndata, fold)
-        println(trids, length(trids))
-        println(uids, length(uids))
-        println(tsids, length(tsids))
+        D = fcenterdist(F, centers)
+        bsize = max(1, Int(round(0.25*length(tsids)))) # to avoid bsize=0
+        MAE, RMSD, t_ls, t_pred = fitter(F', E, D, ϕ, dϕ, trids, centers, uids, tsids, size(F, 2), "test", bsize, 900)    
+        MAE = MAE/627.503 ## MAE in energy input's unit
+        # store results:
+        push!(MAEs, MAE); push!(RMSDs, RMSD); push!(t_lss, t_ls); push!(t_preds, t_pred); 
     end
-    return 0
+    return MAEs, RMSDs, t_lss, t_preds 
 end
 
 """
@@ -690,12 +692,25 @@ function main_rosemi_hxoy()
     # do fitting for each dataset:
     # for each dataset split kfold
     # possibly rerun with other models?
-    for i ∈ eachindex(data)[1:1]
+    ld_res = []
+    for i ∈ eachindex(data)
         d = data[i]; F = d["R"]; E = d["V"]
-        MAE = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
+        println([d["mol"], d["author"], d["state"]])
+        MAEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
+        display([MAEs, RMSDs, t_lss, t_preds])
+        # result storage:
+        d_res = Dict()
+        d_res["MAE"] = MAEs; d_res["RMSD"] = RMSDs; d_res["t_train"] = t_lss; d_res["t_test"] = t_preds;
+        d_res["mol"] = d["mol"]; d_res["author"] = d["author"]; d_res["state"] = d["state"]; 
+        push!(ld_res, d_res)
     end
-    
-
+    save("result/hxoy_diatomic_rosemi_rerun.jld", "data", ld_res)
 end
 
 
+"""
+rerun of Hn molecules using ROSEMI
+"""
+function main_rosemi_hn()
+    
+end
