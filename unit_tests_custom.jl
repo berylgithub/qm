@@ -3,6 +3,7 @@ include("expdriver.jl")
 include("utils.jl")
 
 using Random, DelimitedFiles, Combinatorics
+using MLBase
 
 #= using JuMP, Juniper, Ipopt
 using NOMAD
@@ -650,11 +651,51 @@ function rosemi_ex()
     display([MAE/627.503, t_ls, t_pred])
 end
 
+
+"""
+rosemi wrapper fitter, can choose either with kfold or usequence (if kfold = true then pcs isnt used)   
+    - F = feature vector (or matrix)
+    - E = target energy vector
+    - kfold = use kfold or usequence
+    - k = number of folds
+    - pcs = percentage of centers
+    - ptr = percentage of trainings
+"""
+function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=4)
+    ndata = length(E)
+    display(ndata)
+    folds = collect(Kfold(ndata, k)) # for rosemi, these guys are centers, not "training set"
+    for (i,fold) in enumerate(folds[1:1])
+        # fitter:
+        ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true)
+        println(fold)
+        fold = shuffle(fold); lenfold = length(fold)
+        trids = fold[1:Int(round(ptr*lenfold))] # train ids (K)
+        uids = setdiff(fold, trids) # unsupervised ids (U)
+        tsids = setdiff(1:ndata, fold)
+        println(trids, length(trids))
+        println(uids, length(uids))
+        println(tsids, length(tsids))
+    end
+    return 0
+end
+
 """
 rerun of HxOy using ROSEMi
 """
-function rosemi_hxoy()
-    
+function main_rosemi_hxoy()
+    Random.seed!(603)
+    # pair HxOy fitting:
     data = load("data/smallmol/hxoy_data.jld", "data") # load hxoy
+    # do fitting for each dataset:
+    # for each dataset split kfold
+    # possibly rerun with other models?
+    for i ∈ eachindex(data)[1:1]
+        d = data[i]; F = d["R"]; E = d["V"]
+        MAE = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
+    end
     
+
 end
+
+
