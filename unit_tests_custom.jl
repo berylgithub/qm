@@ -711,8 +711,17 @@ end
 
 
 """
-rerun of Hn molecules using ROSEMI
+rerun of Hn, 3 ≤ n ≤ 5 molecules using ROSEMI
 """
 function main_rosemi_hn()
-    
+    Random.seed!(603)
+    data = load("data/smallmol/hn_data.jld", "data")
+    ld_res = []
+    for i ∈ eachindex(data)
+        d = data[i]; F = d["R"]; E = d["V"]
+        println(d["mol"])
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
+        display([MAEs, RMSEs, RMSDs, t_lss, t_preds ])
+    end
+    save("result/hn_rosemi_rerun.jld", "data", ld_res)
 end
