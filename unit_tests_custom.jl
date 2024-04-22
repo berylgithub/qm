@@ -664,7 +664,7 @@ rosemi wrapper fitter, can choose either with kfold or usequence (if kfold = tru
 function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=4)
     ndata = length(E)
     folds = collect(Kfold(ndata, k)) # for rosemi, these guys are centers, not "training set"
-    MAEs = []; RMSDs = []; t_lss = []; t_preds = []
+    MAEs = []; RMSEs = []; RMSDs = []; t_lss = []; t_preds = []
     for (i,fold) in enumerate(folds)
         # fitter:
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true)
@@ -674,12 +674,12 @@ function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=
         tsids = setdiff(1:ndata, fold)
         D = fcenterdist(F, centers)
         bsize = max(1, Int(round(0.25*length(tsids)))) # to avoid bsize=0
-        MAE, RMSD, t_ls, t_pred = fitter(F', E, D, ϕ, dϕ, trids, centers, uids, tsids, size(F, 2), "test", bsize, 900)    
+        MAE, RMSE, RMSD, t_ls, t_pred = fitter(F', E, D, ϕ, dϕ, trids, centers, uids, tsids, size(F, 2), "test", bsize, 900, get_rmse=true)    
         MAE = MAE/627.503 ## MAE in energy input's unit
         # store results:
-        push!(MAEs, MAE); push!(RMSDs, RMSD); push!(t_lss, t_ls); push!(t_preds, t_pred); 
+        push!(MAEs, MAE); push!(RMSEs, RMSE); push!(RMSDs, RMSD); push!(t_lss, t_ls); push!(t_preds, t_pred); 
     end
-    return MAEs, RMSDs, t_lss, t_preds 
+    return MAEs, RMSEs, RMSDs, t_lss, t_preds 
 end
 
 """
@@ -696,12 +696,14 @@ function main_rosemi_hxoy()
     for i ∈ eachindex(data)
         d = data[i]; F = d["R"]; E = d["V"]
         println([d["mol"], d["author"], d["state"]])
-        MAEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
-        display([MAEs, RMSDs, t_lss, t_preds])
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
+        display([MAEs, RMSEs, RMSDs, t_lss, t_preds ])
+        println("RMSE = ", RMSEs)
         # result storage:
         d_res = Dict()
-        d_res["MAE"] = MAEs; d_res["RMSD"] = RMSDs; d_res["t_train"] = t_lss; d_res["t_test"] = t_preds;
+        d_res["MAE"] = MAEs; d_res["RMSE"] = RMSEs; d_res["RMSD"] = RMSDs; d_res["t_train"] = t_lss; d_res["t_test"] = t_preds;
         d_res["mol"] = d["mol"]; d_res["author"] = d["author"]; d_res["state"] = d["state"]; 
+        display(d_res)
         push!(ld_res, d_res)
     end
     save("result/hxoy_diatomic_rosemi_rerun.jld", "data", ld_res)

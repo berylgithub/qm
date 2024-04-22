@@ -533,7 +533,7 @@ to avoid clutter in main function, called within fitting iters
 outputs:
     - indexes of n-maximum MAD
 """
-function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false)
+function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false, get_rmse=false)
     N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
     nL = size(ϕ, 1); n_basis = nL/n_feature
     println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])   
@@ -613,6 +613,8 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     MAE *= 627.503 # convert from Hartree to kcal/mol
     println("MAE of all mol w/ unknown E is ", MAE)
 
+    RMSE = sqrt(sum((VK .- E[Widx]).^2)/Nqm9) # in original unit, NOT in kcal/mol
+
     # get the n-highest MAD:
     #= n = 1 # 🌸
     sidxes = sortperm(MADs)[end-(n-1):end]
@@ -622,14 +624,19 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
     RMSD = obj #Optim.minimum(res)
     
     #println("largest MAD is = ", MADs[sidxes[end]], ", with index = ",MADmax_idxes)
-    println("|K|*∑RMSD(w) = ", RMSD)
+    #println("|K|*∑RMSD(w) = ", RMSD)
 
     # save also the nK indices and θ's to file!!:
     #data = Dict("centers"=>Midx, "theta"=>θ)
     #save("result/$mol_name/theta_center_$mol_name"*"_$matsize.jld", "data", data)
     # clear variables:
     SKs_train = SKs = γ = α = B = klidx = cidx = Axtemp = tempsA = op = b = tempsb = θ = stat = VK = outs = v = vmat = MADs = batches = VK_fin = nothing; GC.gc()
-    return MAE, RMSD, t_ls, t_batch #return MAE, MADmax_idxes, t_ls, t_batch
+    # collect the RMS(D,E), D for train, E for test:
+    if get_rmse
+        return MAE, RMSE, RMSD, t_ls, t_batch
+    else
+        return MAE, RMSD, t_ls, t_batch #return MAE, MADmax_idxes, t_ls, t_batch
+    end
 end
 
 """
