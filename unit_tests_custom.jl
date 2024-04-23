@@ -720,7 +720,7 @@ function main_rosemi_hn()
     for i ∈ eachindex(data)[end:end]
         d = data[i]; F = d["R"]; E = d["V"]
         println(d["mol"])
-        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5, λ = 1e-8)
         display([MAEs, RMSEs, RMSDs, t_lss, t_preds])
     end
     save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) #save("result/hn_rosemi_rerun.jld", "data", ld_res)
