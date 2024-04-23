@@ -717,11 +717,20 @@ function main_rosemi_hn()
     Random.seed!(603)
     data = load("data/smallmol/hn_data.jld", "data")
     ld_res = []
-    for i ∈ eachindex(data)[end:end]
+    for i ∈ eachindex(data)
+        λ = 0.
         d = data[i]; F = d["R"]; E = d["V"]
+        if d["mol"] == "H5" # for H5, add "regularizer"
+            λ = 1e-8
+        end
         println(d["mol"])
-        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5, λ = 1e-8)
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5, λ = λ) # λ = 1e-8
         display([MAEs, RMSEs, RMSDs, t_lss, t_preds])
+        # result storage:
+        d_res = Dict()
+        d_res["MAE"] = MAEs; d_res["RMSE"] = RMSEs; d_res["RMSD"] = RMSDs; d_res["t_train"] = t_lss; d_res["t_test"] = t_preds;
+        d_res["mol"] = d["mol"];
+        push!(ld_res, d_res)
     end
-    save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) #save("result/hn_rosemi_rerun.jld", "data", ld_res)
+    save("result/hn_rosemi_rerun.jld", "data", ld_res) #save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) 
 end
