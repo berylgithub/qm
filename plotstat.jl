@@ -858,3 +858,42 @@ function main_plot_fs()
         savefig(p, "plot/deltaML/hpopt_"*fts[i]*".png")
     end
 end
+
+"""
+compare rosemi against ratpots and chipr
+"""
+function main_tb_hxoy_rerun()
+    rold = load("result/hxoy_5fold_result.jld", "data") # dict of list
+    rnew = load("result/hxoy_diatomic_rosemi_rerun.jld", "data") # list of dict
+    rnew = [x for x in rnew if x["mol"] != "OH-"]     #  SKIP "OH-" molecule data
+
+    # output tb (no header, add in the end):
+    tb = Matrix{Any}(undef, length(rnew), 4*3) # row entries = [[ min, median, max] of RMSE of [ROSEMI, RATPOT1, RATPOT2, CHIPR] ]
+    
+    # statistics of rosemi:
+    mins = []; medians = []; maxs = []
+    for r ∈ rnew
+        push!(mins, minimum(r["RMSE"])); push!(medians, median(r["RMSE"])); push!(maxs, maximum(r["RMSE"]))
+    end
+    tb[:,1] = mins; tb[:,2] = medians; tb[:,3] = maxs
+    display(tb)
+    # stats of ratpots and chipr:
+    qkeys = ["ansatz_1_acc", "ansatz_2_acc", "chipr_acc"]
+    # bin each 5 indices to one set:
+    starts = collect(1:5:length(rold["fold"]))
+    slices = [s:s+4 for s in starts]
+    itb = 4 # carry on from previous counter
+    for k ∈ qkeys
+        mins = []; medians = []; maxs = []
+        for s ∈ slices
+            data = r[k][s]
+            display(data)
+            push!(mins, minimum(data)); push!(medians, median(data)); push!(maxs, maximum(data))
+        end
+        tb[:,itb] = mins; tb[:, itb+1] = medians; tb[:, itb+2] = maxs;
+        itb += 3
+        display(tb)
+    end
+    display(tb)
+    # write to latextable:
+end
