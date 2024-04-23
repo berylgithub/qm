@@ -661,7 +661,7 @@ rosemi wrapper fitter, can choose either with kfold or usequence (if kfold = tru
     - pcs = percentage of centers
     - ptr = percentage of trainings
 """
-function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=4)
+function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=4, λ = 0.)
     ndata = length(E)
     folds = collect(Kfold(ndata, k)) # for rosemi, these guys are centers, not "training set"
     MAEs = []; RMSEs = []; RMSDs = []; t_lss = []; t_preds = []
@@ -672,7 +672,7 @@ function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=
         trids = fold[1:Int(round(ptr*lenctr))] # train ids (K)
         uids = setdiff(fold, trids) # unsupervised ids (U)
         tsids = setdiff(1:ndata, fold)
-        D = fcenterdist(F, centers)
+        D = fcenterdist(F, centers) .+ λ # temp fix for numericals stability
         bsize = max(1, Int(round(0.25*length(tsids)))) # to avoid bsize=0
         MAE, RMSE, RMSD, t_ls, t_pred = fitter(F', E, D, ϕ, dϕ, trids, centers, uids, tsids, size(F, 2), "test", bsize, 900, get_rmse=true)    
         MAE = MAE/627.503 ## MAE in energy input's unit
@@ -717,11 +717,11 @@ function main_rosemi_hn()
     Random.seed!(603)
     data = load("data/smallmol/hn_data.jld", "data")
     ld_res = []
-    for i ∈ eachindex(data)
+    for i ∈ eachindex(data)[end:end]
         d = data[i]; F = d["R"]; E = d["V"]
         println(d["mol"])
         MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
-        display([MAEs, RMSEs, RMSDs, t_lss, t_preds ])
+        display([MAEs, RMSEs, RMSDs, t_lss, t_preds])
     end
-    save("result/hn_rosemi_rerun.jld", "data", ld_res)
+    save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) #save("result/hn_rosemi_rerun.jld", "data", ld_res)
 end
