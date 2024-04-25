@@ -231,10 +231,10 @@ end
 """
 parallel version of B matrix computation, this allocates to memory inside the function, however it will benefit by the speedup if the CPU count is large 
 """
-function comp_Bpar(ϕ, dϕ, W, Midx, Widx, L, n_feature)
+function comp_Bpar(ϕ, dϕ, W, Midx, Widx, L, n_feature; force=true)
     itcol = Iterators.product(1:L, Midx) # concat block column indices
     its = Iterators.product(Widx, collect(itcol)[:]) # concat indices: row vector with vector form of itcol
-    return ThreadsX.map(t-> qϕ(ϕ, dϕ, W, t[1], t[2][2], t[2][1], n_feature), its)
+    return ThreadsX.map(t-> qϕ(ϕ, dϕ, W, t[1], t[2][2], t[2][1], n_feature; force=force), its)
 end
 
 """

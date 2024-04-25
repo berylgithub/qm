@@ -661,7 +661,7 @@ rosemi wrapper fitter, can choose either with kfold or usequence (if kfold = tru
     - pcs = percentage of centers
     - ptr = percentage of trainings
 """
-function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=4, λ = 0.)
+function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=4, λ = 0., force=true)
     ndata = length(E)
     folds = collect(Kfold(ndata, k)) # for rosemi, these guys are centers, not "training set"
     MAEs = []; RMSEs = []; RMSDs = []; t_lss = []; t_preds = []
@@ -674,7 +674,7 @@ function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=
         tsids = setdiff(1:ndata, fold)
         D = fcenterdist(F, centers) .+ λ # temp fix for numericals stability
         bsize = max(1, Int(round(0.25*length(tsids)))) # to avoid bsize=0
-        MAE, RMSE, RMSD, t_ls, t_pred = fitter(F', E, D, ϕ, dϕ, trids, centers, uids, tsids, size(F, 2), "test", bsize, 900, get_rmse=true)    
+        MAE, RMSE, RMSD, t_ls, t_pred = fitter(F', E, D, ϕ, dϕ, trids, centers, uids, tsids, size(F, 2), "test", bsize, 900, get_rmse=true, force=force)    
         MAE = MAE/627.503 ## MAE in energy input's unit
         # store results:
         push!(MAEs, MAE); push!(RMSEs, RMSE); push!(RMSDs, RMSD); push!(t_lss, t_ls); push!(t_preds, t_pred); 
@@ -685,7 +685,7 @@ end
 """
 rerun of HxOy using ROSEMi
 """
-function main_rosemi_hxoy()
+function main_rosemi_hxoy(;force=true)
     Random.seed!(603)
     # pair HxOy fitting:
     data = load("data/smallmol/hxoy_data.jld", "data") # load hxoy
@@ -696,7 +696,7 @@ function main_rosemi_hxoy()
     for i ∈ eachindex(data)
         d = data[i]; F = d["R"]; E = d["V"]
         println([d["mol"], d["author"], d["state"]])
-        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5)
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5, force=force)
         display([MAEs, RMSEs, RMSDs, t_lss, t_preds ])
         println("RMSE = ", RMSEs)
         # result storage:
@@ -706,14 +706,14 @@ function main_rosemi_hxoy()
         display(d_res)
         push!(ld_res, d_res)
     end
-    save("result/hxoy_diatomic_rosemi_rerun.jld", "data", ld_res)
+    save("result/hxoy_diatomic_rosemi_rerun_[$force].jld", "data", ld_res)
 end
 
 
 """
 rerun of Hn, 3 ≤ n ≤ 5 molecules using ROSEMI
 """
-function main_rosemi_hn()
+function main_rosemi_hn(;force=true)
     Random.seed!(603)
     data = load("data/smallmol/hn_data.jld", "data")
     ld_res = []
@@ -724,7 +724,7 @@ function main_rosemi_hn()
             λ = 1e-8
         end
         println(d["mol"])
-        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5, λ = λ) # λ = 1e-8
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5, λ = λ, force=force) # λ = 1e-8
         display([MAEs, RMSEs, RMSDs, t_lss, t_preds])
         # result storage:
         d_res = Dict()
@@ -732,5 +732,5 @@ function main_rosemi_hn()
         d_res["mol"] = d["mol"];
         push!(ld_res, d_res)
     end
-    save("result/hn_rosemi_rerun.jld", "data", ld_res) #save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) 
+    save("result/hn_rosemi_rerun_[$force].jld", "data", ld_res) #save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) 
 end

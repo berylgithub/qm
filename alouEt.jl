@@ -533,7 +533,7 @@ to avoid clutter in main function, called within fitting iters
 outputs:
     - indexes of n-maximum MAD
 """
-function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false, get_rmse=false)
+function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false, get_rmse=false, force=true)
     N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
     nL = size(ϕ, 1); n_basis = nL/n_feature
     println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])   
@@ -549,7 +549,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         γ = comp_γ(D, SKs_train, Midx, Uidx)
         SKs = map(m -> comp_SK(D, Midx, m), Widx) # for prediction
         α = γ .- 1
-        B = comp_Bpar(ϕ, dϕ, F, Midx, Uidx, nL, n_feature) #B = zeros(nU, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Uidx, nL, n_feature);
+        B = comp_Bpar(ϕ, dϕ, F, Midx, Uidx, nL, n_feature; force=force) #B = zeros(nU, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Uidx, nL, n_feature);
     end
     println("precomputation time = ",t_ab)
     row = nU*nK; col = nK*nL #define LinearOperator's size
@@ -591,7 +591,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         #B = zeros(Float64, bsize, nK*nL)
         VK = zeros(bsize); outs = [zeros(bsize) for _ = 1:3]
         @simd for batch in batches[1:end-1]
-            B = comp_Bpar(ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature) #comp_B!(B, ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature)
+            B = comp_Bpar(ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature; force=force) #comp_B!(B, ϕ, dϕ, F, Midx, Widx[batch], nL, n_feature)
             comp_VK!(VK, outs, E, D, θ, B, SKs[batch], Midx, Widx[batch], cidx, klidx)
             VK_fin[batch] .= VK
             # reset:
@@ -601,7 +601,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         # remainder part:
         #B = zeros(Float64, bendsize, nK*nL)
         VK = zeros(bendsize); outs = [zeros(bendsize) for _ = 1:3]
-        B = comp_Bpar(ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature) #comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
+        B = comp_Bpar(ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature; force=force) #comp_B!(B, ϕ, dϕ, F, Midx, Widx[batches[end]], nL, n_feature)
         comp_VK!(VK, outs, E, D, θ, B, SKs[batches[end]], Midx, Widx[batches[end]], cidx, klidx)
         VK_fin[batches[end]] .= VK
         VK = VK_fin # swap
