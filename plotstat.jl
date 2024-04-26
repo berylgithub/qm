@@ -886,7 +886,7 @@ function main_tb_hxoy_rerun()
     for k ∈ qkeys
         mins = []; medians = []; maxs = []
         for s ∈ slices
-            data = r[k][s]
+            data = rold[k][s]
             display(data)
             push!(mins, minimum(data)); push!(medians, median(data)); push!(maxs, maximum(data))
         end
@@ -896,4 +896,55 @@ function main_tb_hxoy_rerun()
     end
     display(tb)
     # write to latextable:
+    tb = convert_to_scientific(tb)
+    display(tb)
+    # vcat with molecule name:
+    mols = rold["mol"]
+    c = 1
+    m0 = mols[1]
+    for (i,m) in enumerate(mols[2:end])
+        if m == m0
+            c += 1
+            mols[i+1] = m*"\$^{$c}\$"
+        else
+            c = 1
+        end
+        m0 = m
+    end
+    tb = hcat(mols, tb)
+    display(tb)
+    # split table into two (ROSEMI+CHIPR, RATOPTS):
+    tb1 = Matrix{Any}(undef, size(tb,1), 7)
+    tb1[:,1] = tb[:,1]
+    tb1[:, 2:end] = tb[:, [2,3,4,11,12,13]]
+    display(tb1)
+    tb2 = Matrix{Any}(undef, size(tb,1), 7)
+    tb2[:,1] = tb[:,1]
+    tb2[:, 2:end] = tb[:, 5:10]
+    display(tb2)
+    writelatextable(tb1, "result/tb1_hxoy_rerun.tex"; hline=false)
+    writelatextable(tb2, "result/tb2_hxoy_rerun.tex"; hline=false)
+end
+
+function main_rosemi_hn()
+    rold = load("result/hn_results_old.jld", "data")
+    rnew = load("result/hn_rosemi_rerun.jld", "data")
+
+    # output tb (no header, add in the end):
+    tb = Matrix{Any}(undef, length(rnew), 6) # row entries = [[ min, median, max] of RMSE of [ROSEMI, RATPOT1, RATPOT2, CHIPR] ]
+    
+    # statistics of rosemi:
+    mins = []; medians = []; maxs = []
+    for r ∈ rnew
+        push!(mins, minimum(r["RMSE"])); push!(medians, median(r["RMSE"])); push!(maxs, maximum(r["RMSE"]))
+    end
+    tb[:,2] = mins; tb[:,3] = medians; tb[:,4] = maxs
+    display(tb)
+    mols = map(r->r["mol"], rnew)
+    mols = latex_(mols)
+    tb[:,1] = mols
+    tb[:, [end-1,end]] .= "N/A" # insert the rest manually
+    tb[:, [2,3,4]] .= convert_to_scientific(tb[:, [2,3,4]])
+    display(tb)
+    writelatextable(tb, "result/tb_hn_rerun.tex")
 end

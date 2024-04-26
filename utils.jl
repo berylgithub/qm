@@ -100,6 +100,16 @@ function clean_float(data)
     end
 end
 
+"""
+converts floats of x integers and y decimals to scientific notation "x.ye-n"
+"""
+function convert_to_scientific(data; n_decimals = 3)
+    return map(data) do el
+        s = @sprintf "%.2e" el
+        s
+    end
+end
+
 # add \ for latex underscore escape, only handles findfirst for now
 function latex_(data)
     return map(data) do el
