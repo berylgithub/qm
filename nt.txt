@@ -785,3 +785,13 @@ ROSEMI trials (see booknote for more detgails), summary:
 19.04.2024:
 !! the old results were in RMSE not MAE!, need to recompute the error in RMSE
 - maybe check & compare the results with the previous hxoy potentials first (get [min, median, max] of the )
+
+26.04.2024:
+- possible data exclusion:
+  - OH[4] - OH[10] data dont look like PES curve
+  - OH- ions
+  - H2+[2]
+- possible data cleaning:
+  - O2 datasets, outliers at the R->infinity
+- for Hn>3: r_{HH} = 1.4172946 Bohr
+- try wrap the fitter to be possible to be fed into hyperparameter optimization
