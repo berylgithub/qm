@@ -91,19 +91,20 @@ end
 """
 rerun of Hn, 3 ≤ n ≤ 5 molecules using ROSEMI
 """
-function main_rosemi_hn(;force=true)
+function main_rosemi_hn(;force=true, c=1, n_basis=5, ptr=0.6) # the hyperparams are from the optimized H2 Kolos
     Random.seed!(603)
     data = load("data/smallmol/hn_data.jld", "data")
     ld_res = []
-    for i ∈ eachindex(data)
+    for i ∈ setdiff(eachindex(data), [2,3]) # skip partial H4
         λ = 0.
-        d = data[i]; F = d["R"]; E = d["V"]
+        d = data[i]; F = rdist.(d["R"], 1.401, c=c); # req of H2  
+        E = d["V"]
         if d["mol"] == "H5" # for H5, add "regularizer"
             λ = 1e-8
         end
         println(d["mol"])
         folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
-        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E, folds; n_basis=4, ptr=0.5, λ = λ, force=force) # λ = 1e-8
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E, folds; n_basis=n_basis, ptr=ptr, λ = λ, force=force) 
         display([MAEs, RMSEs, RMSDs, t_lss, t_preds])
         # result storage:
         d_res = Dict()
@@ -111,7 +112,8 @@ function main_rosemi_hn(;force=true)
         d_res["mol"] = d["mol"];
         push!(ld_res, d_res)
     end
-    save("result/hn_rosemi_rerun_[$force].jld", "data", ld_res) #save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) 
+    timestamp = replace(replace(string(now()), "-"=>""), ":"=>"")[1:end-4] # exclude ms string
+    save("result/hn_rosemi_rerun_$timestamp.jld", "data", ld_res) #save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) 
 end
 
 """
