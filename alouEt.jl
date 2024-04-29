@@ -536,7 +536,7 @@ outputs:
 function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, bsize, tlimit; get_mad=false, get_rmse=false, force=true)
     N = length(Tidx); nU = length(Uidx); nK = length(Midx); Nqm9 = length(Widx)
     nL = size(ϕ, 1); n_basis = nL/n_feature
-    println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])   
+    #println("[Nqm9, N, nK, nf, ns, nL] = ", [Nqm9, N, nK, n_feature, n_basis, nL])   
 
     # !!!! using LinearOperators !!!:
     # precompute stuffs:
@@ -551,7 +551,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         α = γ .- 1
         B = comp_Bpar(ϕ, dϕ, F, Midx, Uidx, nL, n_feature; force=force) #B = zeros(nU, nK*nL); comp_B!(B, ϕ, dϕ, F, Midx, Uidx, nL, n_feature);
     end
-    println("precomputation time = ",t_ab)
+    #println("precomputation time = ",t_ab)
     row = nU*nK; col = nK*nL #define LinearOperator's size
     t_ls = @elapsed begin
         # generate LinOp in place of A!:
@@ -570,7 +570,7 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
 
     # get residual:
     obj = norm(op*θ - b)^2
-    println("solver obj = ",obj, ", solver time = ",t_ls)
+    #println("solver obj = ",obj, ", solver time = ",t_ls)
 
     # get residuals of training set:
     VK = zeros(nU); outs = [zeros(nU) for _ = 1:3]
@@ -606,12 +606,12 @@ function fitter(F, E, D, ϕ, dϕ, Midx, Tidx, Uidx, Widx, n_feature, mol_name, b
         VK_fin[batches[end]] .= VK
         VK = VK_fin # swap
     end
-    println("batchpred time = ",t_batch)
+    #println("batchpred time = ",t_batch)
 
     # get errors: 
     MAE = sum(abs.(VK .- E[Widx])) / Nqm9
     MAE *= 627.503 # convert from Hartree to kcal/mol
-    println("MAE of all mol w/ unknown E is ", MAE)
+    #println("MAE of all mol w/ unknown E is ", MAE)
 
     RMSE = sqrt(sum((VK .- E[Widx]).^2)/Nqm9) # in original unit, NOT in kcal/mol
 

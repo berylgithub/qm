@@ -4,7 +4,7 @@ include("utils.jl")
 
 using DelimitedFiles
 using Random, Combinatorics
-using MLBase
+using MLBase, Hyperopt
 
 using Plots
 using PlotlyJS, Polynomials
@@ -111,16 +111,6 @@ end
 
 
 """
-objective function for hyperparam opt 
-"""
-function rosemi_fobj(R, E, req; kfold=true, force=true, c=1, n_basis=4, ptr=0.5)
-    F = rdist.(R, req; c=c)
-    MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=kfold, k = 5, n_basis=n_basis, ptr=ptr, force=force)
-    return mean(RMSEs) # would mean() be a better metric here? or min() is preferrable?
-end
-
-
-"""
 rerun of HxOy using ROSEMi
 """
 function main_rosemi_hxoy(;force=true, c=1, n_basis=4, ptr=0.5)
@@ -131,7 +121,7 @@ function main_rosemi_hxoy(;force=true, c=1, n_basis=4, ptr=0.5)
     # for each dataset split kfold
     # possibly rerun with other models?
     ld_res = []
-    for i ∈ eachindex(data)[1:1]
+    for i ∈ eachindex(data)[3:3]
         # extract data:
         d = data[i]
         req = d["req"]
@@ -175,4 +165,53 @@ function main_rosemi_hn(;force=true)
         push!(ld_res, d_res)
     end
     save("result/hn_rosemi_rerun_[$force].jld", "data", ld_res) #save("result/h5_rosemi_rerun_unstable.jld", "data", ld_res) 
+end
+
+"""
+-----------
+hyperparamopt routines
+-----------
+"""
+
+"""
+objective function for hyperparam opt 
+"""
+function rosemi_fobj(R, E, req; kfold=true, force=true, c=1, n_basis=4, ptr=0.5)
+    F = rdist.(R, req; c=c)
+    MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=kfold, k = 5, n_basis=n_basis, ptr=ptr, force=force)
+    #display(RMSEs)
+    return mean(RMSEs) # would mean() be a better metric here? or min() is preferrable?
+end
+
+
+function main_hpopt_rsm()
+    Random.seed!(603)
+    # pair HxOy fitting:
+    data = load("data/smallmol/hxoy_data_req.jld", "data") # load hxoy
+    # do fitting for each dataset:
+    # for each dataset split kfold
+    # possibly rerun with other models?
+    ld_res = []
+    for i ∈ eachindex(data)
+        d = data[i]
+        req = d["req"]
+        t = @elapsed begin
+            ho = @thyperopt for i=500, # hpspace = 2*3*10*9 = 540
+                    sampler = RandomSampler(),
+                    force=[false,true],
+                    c=[1,2,3],
+                    n_basis = collect(1:10),
+                    ptr = LinRange(0.1, 0.9, 9)
+                fobj = rosemi_fobj(d["R"], d["V"], req; kfold=true, force=force, c=c, n_basis=n_basis, ptr=ptr)
+            end
+        end    
+        best_params, min_f = ho.minimizer, ho.minimum
+        display(best_params)
+        display(min_f)
+        # save using txt to avoid parallelization crash:
+        di = vcat(d["mol"], min_f, t, collect(best_params))
+        push!(ld_res, di)
+        out = reduce(vcat,permutedims.(ld_res))
+        writedlm("data/smallmol/hpopt_hxoy_rsm.text", out)
+    end
 end
