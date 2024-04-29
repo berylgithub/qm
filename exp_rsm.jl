@@ -6,13 +6,6 @@ using DelimitedFiles
 using Random, Combinatorics
 using MLBase, Hyperopt
 
-using Plots
-using PlotlyJS, Polynomials
-const jplot = PlotlyJS.plot
-const jscatter = PlotlyJS.scatter
-const jsavefig = PlotlyJS.savefig
-
-
 """
 converts distance to r^k/(r^k+r0^k), k=1,2,3, r0 ≈ req
 """
@@ -27,57 +20,7 @@ function edist(r,r0)
     return exp(-r/r0)
 end
 
-"""
-figure out the equilibrium distances for each dataset
-"""
-function main_eq_dist()
-    data = load("data/smallmol/hxoy_data.jld", "data")
-    # check using the lowest energy query:
-    mols = map(d-> d["mol"], data)
-    umols = unique(mols)
-    for smol in umols
-        reqs = []
-        for (i,d) in enumerate(data)
-            if d["mol"] == smol
-                veqid = argmin(d["V"])
-                req = d["R"][veqid]
-                push!(reqs, req)
-                println([req, d["mol"],i])
-            end
-        end
-    end
-    # include some indices:
-    iids = [1,2,3,11,12,13,14,15,16,17,20,21,23,24,25]
-    data = data[iids]
-    mols = map(d-> d["mol"], data)
-    umols = unique(mols)
-    for smol in umols
-        reqs = []
-        for (i,d) in enumerate(data)
-            if d["mol"] == smol
-                veqid = argmin(d["V"])
-                req = d["R"][veqid]
-                d["req"] = req
-                push!(reqs, req)
-                println([req, d["mol"],i])
-            end
-        end
-    end
-    display(map(d->d["req"], data))
-    # double check using visual:
-    for d in data
-        if d["mol"] == "O2"
-            d["R"] = d["R"][1:end-1]; d["V"] = d["V"][1:end-1] # remove end outliers
-            d["note"] = "removed (R,V)[end], outlier at faraway distance"
-            p = jplot(jscatter(x=d["R"][1:end-1], y=d["V"][1:end-1], mode="lines"))
-            display(d["mol"])
-            display(p)
-            display(d)
-        end
-    end
-    # save reselected data:
-    save("data/smallmol/hxoy_data_req.jld", "data", data) 
-end
+
 
 """
 rosemi wrapper fitter, can choose either with kfold or usequence (if kfold = true then pcs isnt used)   
