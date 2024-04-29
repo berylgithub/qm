@@ -31,14 +31,16 @@ rosemi wrapper fitter, can choose either with kfold or usequence (if kfold = tru
     - pcs = percentage of centers
     - ptr = percentage of trainings
 """
-function rosemi_fitter(F, E; kfold = true, k = 5, pcs = 0.8, ptr = 0.5, n_basis=4, λ = 0., force=true)
+function rosemi_fitter(F, E, folds; pcs = 0.8, ptr = 0.5, n_basis=4, λ = 0., force=true)
     ndata = length(E)
-    folds = collect(Kfold(ndata, k)) # for rosemi, these guys are centers, not "training set"
+    #folds = collect(Kfold(ndata, k)) # for rosemi, these guys are centers, not "training set"
+    #println(folds)
     MAEs = []; RMSEs = []; RMSDs = []; t_lss = []; t_preds = []
     for (i,fold) in enumerate(folds)
         # fitter:
         ϕ, dϕ = extract_bspline_df(F', n_basis; flatten=true, sparsemat=true)
-        fold = shuffle(fold); centers = fold; lenctr = length(centers) # the center ids
+        #fold = shuffle(fold); 
+        centers = fold; lenctr = length(centers) # the center ids
         trids = fold[1:Int(round(ptr*lenctr))] # train ids (K)
         uids = setdiff(fold, trids) # unsupervised ids (U)
         tsids = setdiff(1:ndata, fold)
@@ -71,7 +73,8 @@ function main_rosemi_hxoy(;force=true, c=1, n_basis=4, ptr=0.5)
         F = rdist.(d["R"], req, c=c) #edist.(d["R"], req) # convert distance features
         E = d["V"]
         println([d["mol"], d["author"], d["state"]])
-        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=n_basis, ptr=ptr, force=force)
+        folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E, folds; n_basis=n_basis, ptr=ptr, force=force)
         display([MAEs, RMSEs, RMSDs, t_lss, t_preds ])
         println("RMSE = ", RMSEs)
         # result storage:
@@ -99,7 +102,8 @@ function main_rosemi_hn(;force=true)
             λ = 1e-8
         end
         println(d["mol"])
-        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=true, k = 5, n_basis=4, ptr=0.5, λ = λ, force=force) # λ = 1e-8
+        folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
+        MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E, folds; n_basis=4, ptr=0.5, λ = λ, force=force) # λ = 1e-8
         display([MAEs, RMSEs, RMSDs, t_lss, t_preds])
         # result storage:
         d_res = Dict()
@@ -119,9 +123,9 @@ hyperparamopt routines
 """
 objective function for hyperparam opt 
 """
-function rosemi_fobj(R, E, req; kfold=true, force=true, c=1, n_basis=4, ptr=0.5)
+function rosemi_fobj(R, E, req, folds; force=true, c=1, n_basis=4, ptr=0.5)
     F = rdist.(R, req; c=c)
-    MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E; kfold=kfold, k = 5, n_basis=n_basis, ptr=ptr, force=force)
+    MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E, folds; n_basis=n_basis, ptr=ptr, force=force)
     #display(RMSEs)
     return mean(RMSEs) # would mean() be a better metric here? or min() is preferrable?
 end
@@ -139,6 +143,8 @@ function main_hpopt_rsm()
     for i ∈ is
         d = data[i]
         req = d["req"]
+        println(d["mol"])
+        folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
         t = @elapsed begin
             ho = @thyperopt for i=500, # hpspace = 2*3*10*9 = 540
                     sampler = RandomSampler(),
@@ -146,7 +152,7 @@ function main_hpopt_rsm()
                     c=[1,2,3],
                     n_basis = collect(1:10),
                     ptr = LinRange(0.1, 0.9, 9)
-                fobj = rosemi_fobj(d["R"], d["V"], req; kfold=true, force=force, c=c, n_basis=n_basis, ptr=ptr)
+                fobj = rosemi_fobj(d["R"], d["V"], req, folds; force=force, c=c, n_basis=n_basis, ptr=ptr)
             end
         end    
         best_params, min_f = ho.minimizer, ho.minimum
