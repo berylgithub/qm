@@ -192,7 +192,8 @@ function main_hpopt_rsm()
     # for each dataset split kfold
     # possibly rerun with other models?
     ld_res = []
-    for i ∈ eachindex(data)
+    is = setdiff(eachindex(data), 10) # exclude the large H2 data, since it might be slow
+    for i ∈ is
         d = data[i]
         req = d["req"]
         t = @elapsed begin
@@ -209,7 +210,7 @@ function main_hpopt_rsm()
         display(best_params)
         display(min_f)
         # save using txt to avoid parallelization crash:
-        di = vcat(d["mol"], min_f, t, collect(best_params))
+        di = vcat(d["mol"], d["author"], min_f, t, collect(best_params))
         push!(ld_res, di)
         out = reduce(vcat,permutedims.(ld_res))
         writedlm("data/smallmol/hpopt_hxoy_rsm.text", out)
