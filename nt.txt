@@ -795,3 +795,9 @@ ROSEMI trials (see booknote for more detgails), summary:
   - O2 datasets, outliers at the R->infinity
 - for Hn>3: r_{HH} = 1.4172946 Bohr
 - try wrap the fitter to be possible to be fed into hyperparameter optimization
+
+30.04.2024:
+! hpopt:
+  - need to add temporary array for the non objective value returns.
+  - need to save the folds for reproducebilioty
+  - also, running result is different between VSC and PC, suspect: different random value

@@ -171,3 +171,38 @@ function main_hpopt_rsm(data; i=100, simid="")
         writedlm("data/smallmol/hpopt_rsm_$simid.text", out)
     end
 end
+
+
+"""
+batch run using params obtained from hpopt
+e.g.:
+ params = readdlm("data/smallmol/hpopt_hxoy_rsm.text", '\t')
+ data = load("data/smallmol/hxoy_data_req.jld", "data")
+ sim_id = replace(replace(string(now()), "-"=>""), ":"=>"")[1:end-4]
+ main_eval_rsm(data, params; sim_id = sim_id)
+"""
+function main_eval_rsm(data, hpopt_params; sim_id="")
+    Random.seed!(603) # still set seed for folds
+    # match each result with the corresponding dataset
+    λ = 0.
+    ld_res = []
+    for d ∈ data
+        # determine which result id:
+        id = findall(d["mol"] .== hpopt_params[:,1])[1]
+        hp = hpopt_params[id,:]
+        println([d["mol"], hp[5:end]])
+        # load data:
+        E = d["V"]
+        F = rdist.(d["R"], d["req"], c=hp[6]); # req of H2  
+        folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
+        display(folds)
+        MAEs, RMSEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E, folds; n_basis=hp[7], ptr=hp[8], force=hp[5], λ = λ)
+        println(mean(RMSEs))
+        # result storage:
+        d_res = Dict()
+        d_res["MAE"] = MAEs; d_res["RMSE"] = RMSEs; d_res["RMSD"] = RMSDs; d_res["t_train"] = t_lss; d_res["t_test"] = t_preds;
+        d_res["mol"] = d["mol"];
+        push!(ld_res, d_res)
+    end
+    save("result/hdrsm_$sim_id.jld", "data", ld_res)
+end
