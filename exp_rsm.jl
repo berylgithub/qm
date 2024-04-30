@@ -125,45 +125,49 @@ hyperparamopt routines
 """
 objective function for hyperparam opt 
 """
-function rosemi_fobj(R, E, req, folds; force=true, c=1, n_basis=4, ptr=0.5)
+function rosemi_fobj(R, E, req, folds; force=true, c=1, n_basis=4, ptr=0.5, λ = 0.)
     F = rdist.(R, req; c=c)
-    MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E, folds; n_basis=n_basis, ptr=ptr, force=force)
+    MAEs, RMSEs, RMSDs, t_lss, t_preds  = rosemi_fitter(F, E, folds; n_basis=n_basis, ptr=ptr, force=force, λ = λ)
     #display(RMSEs)
     return mean(RMSEs) # would mean() be a better metric here? or min() is preferrable?
 end
 
 
-function main_hpopt_rsm()
+function main_hpopt_rsm(data; i=100, simid="")
     Random.seed!(603)
-    # pair HxOy fitting:
-    data = load("data/smallmol/hxoy_data_req.jld", "data") # load hxoy
+    #data = load("data/smallmol/hxoy_data_req.jld", "data") # load hxoy
     # do fitting for each dataset:
     # for each dataset split kfold
     # possibly rerun with other models?
     ld_res = []
-    is = setdiff(eachindex(data), 10) # exclude the large H2 data, since it might be slow
-    for i ∈ is
-        d = data[i]
+    #is = setdiff(eachindex(data), 10) # exclude the large H2 data, since it might be slow
+    for j ∈ eachindex(data)
+        λ = 0.
+        d = data[j]
         req = d["req"]
         println(d["mol"])
+        if d["mol"] ∈ ["H4", "H5"] # λ > 0 if H4 or H5 for numerical stability
+            println("λ is activated")
+            λ = 1e-8
+        end
         folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
         t = @elapsed begin
-            ho = @thyperopt for i=500, # hpspace = 2*3*10*9 = 540
+            ho = @thyperopt for i=i, # hpspace = 2*3*10*9 = 540
                     sampler = RandomSampler(),
                     force=[false,true],
                     c=[1,2,3],
                     n_basis = collect(1:10),
                     ptr = LinRange(0.1, 0.9, 9)
-                fobj = rosemi_fobj(d["R"], d["V"], req, folds; force=force, c=c, n_basis=n_basis, ptr=ptr)
+                fobj = rosemi_fobj(d["R"], d["V"], req, folds; force=force, c=c, n_basis=n_basis, ptr=ptr, λ = λ)
             end
         end    
         best_params, min_f = ho.minimizer, ho.minimum
         display(best_params)
         display(min_f)
         # save using txt to avoid parallelization crash:
-        di = vcat(d["mol"], d["author"], min_f, t, collect(best_params))
-        push!(ld_res, di)
+        dj = vcat(d["mol"], d["author"], min_f, t, collect(best_params))
+        push!(ld_res, dj)
         out = reduce(vcat,permutedims.(ld_res))
-        writedlm("data/smallmol/hpopt_hxoy_rsm.text", out)
+        writedlm("data/smallmol/hpopt_rsm_$simid.text", out)
     end
 end
