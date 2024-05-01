@@ -133,14 +133,14 @@ function rosemi_fobj(R, E, req, folds; force=true, c=1, n_basis=4, ptr=0.5, λ =
 end
 
 
-function main_hpopt_rsm(data; i=100, simid="")
+function main_hpopt_rsm(data; i=100, simid="", save_folds=false)
     Random.seed!(603)
     #data = load("data/smallmol/hxoy_data_req.jld", "data") # load hxoy
     # do fitting for each dataset:
     # for each dataset split kfold
     # possibly rerun with other models?
     ld_res = []
-    #is = setdiff(eachindex(data), 10) # exclude the large H2 data, since it might be slow
+    foldss = [] # k-fold storage, in case random gives different numbers (in different machine could happen)
     for j ∈ eachindex(data)
         λ = 0.
         d = data[j]
@@ -151,6 +151,10 @@ function main_hpopt_rsm(data; i=100, simid="")
             λ = 1e-8
         end
         folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
+        if save_folds
+            fd = Dict("mol" => d["mol"], "folds"=>folds)
+            push!(foldss, fd)
+        end
         t = @elapsed begin
             ho = @thyperopt for i=i, # hpspace = 2*3*10*9 = 540
                     sampler = RandomSampler(),
@@ -169,6 +173,9 @@ function main_hpopt_rsm(data; i=100, simid="")
         push!(ld_res, dj)
         out = reduce(vcat,permutedims.(ld_res))
         writedlm("data/smallmol/hpopt_rsm_$simid.text", out)
+        if save_folds
+            save("data/smallmol/folds_$simid.jld", "data", foldss)
+        end
     end
 end
 
@@ -181,7 +188,7 @@ e.g.:
  sim_id = replace(replace(string(now()), "-"=>""), ":"=>"")[1:end-4]
  main_eval_rsm(data, params; sim_id = sim_id)
 """
-function main_eval_rsm(data, hpopt_params; sim_id="")
+function main_eval_rsm(data, hpopt_params; sim_id="", folds=[])
     Random.seed!(603) # still set seed for folds
     # match each result with the corresponding dataset
     λ = 0.
@@ -194,7 +201,9 @@ function main_eval_rsm(data, hpopt_params; sim_id="")
         # load data:
         E = d["V"]
         F = rdist.(d["R"], d["req"], c=hp[6]); # req of H2  
-        folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
+        if isempty(folds)
+            folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
+        end
         display(folds)
         MAEs, RMSEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E, folds; n_basis=hp[7], ptr=hp[8], force=hp[5], λ = λ)
         println(mean(RMSEs))
