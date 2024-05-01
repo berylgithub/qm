@@ -133,7 +133,7 @@ function rosemi_fobj(R, E, req, folds; force=true, c=1, n_basis=4, ptr=0.5, λ =
 end
 
 
-function main_hpopt_rsm(data; i=100, simid="", save_folds=false)
+function main_hpopt_rsm(data; iters=100, simid="", save_folds=false)
     Random.seed!(603)
     #data = load("data/smallmol/hxoy_data_req.jld", "data") # load hxoy
     # do fitting for each dataset:
@@ -156,7 +156,7 @@ function main_hpopt_rsm(data; i=100, simid="", save_folds=false)
             push!(foldss, fd)
         end
         t = @elapsed begin
-            ho = @thyperopt for i=i, # hpspace = 2*3*10*9 = 540
+            ho = @thyperopt for i=iters, # hpspace = 2*3*10*9 = 540
                     sampler = RandomSampler(),
                     force=[false,true],
                     c=[1,2,3],

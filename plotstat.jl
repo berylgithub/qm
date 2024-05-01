@@ -871,9 +871,9 @@ function main_tb_hxoy_rerun()
     tb = Matrix{Any}(undef, length(rnew), 4*3) # row entries = [[ min, median, max] of RMSE of [ROSEMI, RATPOT1, RATPOT2, CHIPR] ]
     
     # statistics of rosemi:
-    mins = []; medians = []; maxs = []
+    mins = []; medians = []; maxs = []; means = []
     for r ∈ rnew
-        push!(mins, minimum(r["RMSE"])); push!(medians, median(r["RMSE"])); push!(maxs, maximum(r["RMSE"]))
+        push!(mins, minimum(r["RMSE"])); push!(medians, median(r["RMSE"])); push!(maxs, maximum(r["RMSE"])); push!(means, mean(r["RMSE"]));
     end
     tb[:,1] = mins; tb[:,2] = medians; tb[:,3] = maxs
     display(tb)
@@ -884,15 +884,17 @@ function main_tb_hxoy_rerun()
     slices = [s:s+4 for s in starts]
     itb = 4 # carry on from previous counter
     for k ∈ qkeys
-        mins = []; medians = []; maxs = []
+        mins = []; medians = []; maxs = []; means = []
         for s ∈ slices
             data = rold[k][s]
-            display(data)
-            push!(mins, minimum(data)); push!(medians, median(data)); push!(maxs, maximum(data))
+            #display(data)
+            push!(mins, minimum(data)); push!(medians, median(data)); push!(maxs, maximum(data)); push!(means, mean(data));
         end
         tb[:,itb] = mins; tb[:, itb+1] = medians; tb[:, itb+2] = maxs;
         itb += 3
-        display(tb)
+        #display(tb)
+        println(k)
+        println(means)
     end
     display(tb)
     # write to latextable:
