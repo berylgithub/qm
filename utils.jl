@@ -10,6 +10,8 @@ macro Name(arg)
     string(arg)
 end
 
+unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a))) # ~~cursed technique~~ reversal of zip()
+
 """
 transforms Integers to Binaries, mainly for faster slicing, given a vector with known length
 """
@@ -122,6 +124,30 @@ function latex_(data)
         s
     end
 end
+
+"""
+wrap numbers in latex in chemical format, e.g., H2 -> H₂
+ONLY supports single digit for now.........
+"""
+function latex_chemformat(s)
+    str = ""
+    for c ∈ s
+        if isdigit(c)
+            str*=raw"$_"*c*raw"$"
+        else
+            str*=c
+        end
+    end
+    return str
+end
+
+"""
+wrap string in \textbf{}
+"""
+function latex_bold(s)
+    return raw"\textbf{"*s*raw"}"
+end
+
 
 """
 === query functions ===

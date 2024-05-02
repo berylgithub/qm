@@ -907,13 +907,14 @@ function main_tb_hxoy_rerun()
         println(means)
     end
     display(tb)
+    Base.permutecols!!(tb, [1,5,2,6,3,7,4,8]) # swap posiitons to group the columns' category
+    display(tb)
     # find the winner between ROSEMI and CHIPR for each row:
     ws = [] # for each row 4 entries
     for i ∈ axes(tb, 1)
         w = []
-        for j ∈ 1:4 # 4 measurements
-            comp = [j,j+4]
-            display(tb[i,comp])
+        for j ∈ 1:2:8 # 4 measurements
+            comp = [j,j+1]
             imi = argmin(tb[i,comp])
             push!(w, comp[imi])
         end
@@ -922,33 +923,27 @@ function main_tb_hxoy_rerun()
     display(ws)
     # write to latextable:
     tb = convert_to_scientific(tb)
-    display(tb)
-    # vcat with molecule name:
-    mols = rold["mol"]
-    c = 1
-    m0 = mols[1]
-    for (i,m) in enumerate(mols[2:end])
-        if m == m0
-            c += 1
-            mols[i+1] = m*"\$^{$c}\$"
-        else
-            c = 1
-        end
-        m0 = m
+    for i ∈ axes(tb, 1)
+        tb[i,ws[i]] .= latex_bold.(tb[i,ws[i]])
     end
+    # edit molecule names:
+    molperm = reduce(vcat, permutedims.(split.(mols, "_"))) # split the molecule id
+    molstr, molid = (molperm[:,1], molperm[:,2])
+    ids = sortperm(molstr) # sort by molname
+    molstr = latex_chemformat.(molstr) # format chem
+    # sort and join the strings back:
+    molstr = molstr[ids]
+    molid = molid[ids]
+    mols = map((x,y)-> x*raw"$^{"*y*raw"}$", molstr, molid)
+    display(mols)
+    # permute rows of table:
+    tb = permutedims(tb)
+    Base.permutecols!!(tb, ids)
+    tb = permutedims(tb)
+    # join molname and table:
     tb = hcat(mols, tb)
     display(tb)
-    # split table into two (ROSEMI+CHIPR, RATOPTS):
-    tb1 = Matrix{Any}(undef, size(tb,1), 7)
-    tb1[:,1] = tb[:,1]
-    tb1[:, 2:end] = tb[:, [2,3,4,11,12,13]]
-    display(tb1)
-    tb2 = Matrix{Any}(undef, size(tb,1), 7)
-    tb2[:,1] = tb[:,1]
-    tb2[:, 2:end] = tb[:, 5:10]
-    display(tb2)
-    writelatextable(tb1, "result/tb1_hxoy_rerun.tex"; hline=false)
-    writelatextable(tb2, "result/tb2_hxoy_rerun.tex"; hline=false)
+    writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
 end
 
 function main_rosemi_hn()
