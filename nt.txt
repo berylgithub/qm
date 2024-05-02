@@ -801,3 +801,6 @@ ROSEMI trials (see booknote for more detgails), summary:
   - need to add temporary array for the non objective value returns.
   - need to save the folds for reproducebilioty
   - also, running result is different between VSC and PC, suspect: different random value
+
+02.05.2024:
+- ROSEMI wins in some measurements against CHIPR, now the question is, how much are the ones that lose, need to take the differences too probably

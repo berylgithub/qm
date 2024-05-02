@@ -105,7 +105,7 @@ converts floats of x integers and y decimals to scientific notation "x.ye-n"
 """
 function convert_to_scientific(data; n_decimals = 3)
     return map(data) do el
-        s = @sprintf "%.2e" el
+        s = @sprintf "%.3e" el
         s
     end
 end

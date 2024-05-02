@@ -859,44 +859,67 @@ function main_plot_fs()
     end
 end
 
+
+"""
+=====================
+ROSEMI data analysis:
+=====================
+"""
+
 """
 compare rosemi against ratpots and chipr
 """
 function main_tb_hxoy_rerun()
     rold = load("result/hxoy_5fold_result.jld", "data") # dict of list
-    rnew = load("result/hxoy_diatomic_rosemi_rerun.jld", "data") # list of dict
-    rnew = [x for x in rnew if x["mol"] != "OH-"]     #  SKIP "OH-" molecule data
+    rnew = vcat(load("result/hdrsm_20240502T122032.jld", "data"), load("result/hdrsm_singlet_H2_2.jld", "data")) #load("result/hxoy_diatomic_rosemi_rerun.jld", "data") # list of dict
 
     # output tb (no header, add in the end):
-    tb = Matrix{Any}(undef, length(rnew), 4*3) # row entries = [[ min, median, max] of RMSE of [ROSEMI, RATPOT1, RATPOT2, CHIPR] ]
+    tb = Matrix{Any}(undef, length(rnew), 2*4) # row entries = [[ min, median, mean, max] of RMSE of [ROSEMI, CHIPR, and maybe RATOPTS] ]
     
     # statistics of rosemi:
     mins = []; medians = []; maxs = []; means = []
     for r ∈ rnew
         push!(mins, minimum(r["RMSE"])); push!(medians, median(r["RMSE"])); push!(maxs, maximum(r["RMSE"])); push!(means, mean(r["RMSE"]));
     end
-    tb[:,1] = mins; tb[:,2] = medians; tb[:,3] = maxs
+    tb[:,1] = mins; tb[:,2] = medians; tb[:,3] = means; tb[:,4] = maxs
     display(tb)
     # stats of ratpots and chipr:
-    qkeys = ["ansatz_1_acc", "ansatz_2_acc", "chipr_acc"]
+    qkeys = ["chipr_acc"] #["ansatz_1_acc", "ansatz_2_acc", "chipr_acc"]
+    # find matching indices:
+    mols = map(d->d["mol"], rnew)
+    ids = map(mol -> findall(mol .== rold["mol"])[1], mols)
+    display(ids)
+    display(rold["mol"][ids])
+    slices = [5*(i-1)+1:5*(i-1)+5 for i ∈ ids]
+    display(slices)
     # bin each 5 indices to one set:
-    starts = collect(1:5:length(rold["fold"]))
-    slices = [s:s+4 for s in starts]
-    itb = 4 # carry on from previous counter
+    itb = 5
     for k ∈ qkeys
         mins = []; medians = []; maxs = []; means = []
         for s ∈ slices
             data = rold[k][s]
-            #display(data)
             push!(mins, minimum(data)); push!(medians, median(data)); push!(maxs, maximum(data)); push!(means, mean(data));
         end
-        tb[:,itb] = mins; tb[:, itb+1] = medians; tb[:, itb+2] = maxs;
-        itb += 3
+        tb[:,itb] = mins; tb[:, itb+1] = medians; tb[:, itb+2] = means; tb[:, itb+3] = maxs;
+        itb += 4
         #display(tb)
         println(k)
         println(means)
     end
     display(tb)
+    # find the winner between ROSEMI and CHIPR for each row:
+    ws = [] # for each row 4 entries
+    for i ∈ axes(tb, 1)
+        w = []
+        for j ∈ 1:4 # 4 measurements
+            comp = [j,j+4]
+            display(tb[i,comp])
+            imi = argmin(tb[i,comp])
+            push!(w, comp[imi])
+        end
+        push!(ws, w)
+    end
+    display(ws)
     # write to latextable:
     tb = convert_to_scientific(tb)
     display(tb)
