@@ -188,7 +188,7 @@ e.g.:
  sim_id = replace(replace(string(now()), "-"=>""), ":"=>"")[1:end-4]
  main_eval_rsm(data, params; sim_id = sim_id)
 """
-function main_eval_rsm(data, hpopt_params; sim_id="", folds=[])
+function main_eval_rsm(data, hpopt_params; sim_id="", foldss=[])
     Random.seed!(603) # still set seed for folds
     # match each result with the corresponding dataset
     λ = 0.
@@ -200,9 +200,16 @@ function main_eval_rsm(data, hpopt_params; sim_id="", folds=[])
         println([d["mol"], hp[5:end]])
         # load data:
         E = d["V"]
-        F = rdist.(d["R"], d["req"], c=hp[6]); # req of H2  
-        if isempty(folds)
+        F = rdist.(d["R"], d["req"], c=hp[6]);
+        folds = [] # reinitialization
+        if isempty(foldss)
             folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
+        else
+            for cfold in foldss
+                if cfold["mol"] == d["mol"]
+                    folds = cfold["folds"]
+                end
+            end
         end
         display(folds)
         MAEs, RMSEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E, folds; n_basis=hp[7], ptr=hp[8], force=hp[5], λ = λ)
@@ -214,4 +221,22 @@ function main_eval_rsm(data, hpopt_params; sim_id="", folds=[])
         push!(ld_res, d_res)
     end
     save("result/hdrsm_$sim_id.jld", "data", ld_res)
+end
+
+"""
+singlet eval only
+"""
+function main_single_eval_rsm(data, hp; sim_id="", folds=[], λ = 0.)
+    E = data["V"]
+    F = rdist.(data["R"], data["req"], c=hp[2])
+    if isempty(folds)
+        folds = shuffle.(collect(Kfold(length(E), 5)))
+    end
+    MAEs, RMSEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E, folds; n_basis=hp[3], ptr=hp[4], force=hp[1], λ = λ)
+    println(mean(RMSEs))
+    d_res = Dict()
+    d_res["MAE"] = MAEs; d_res["RMSE"] = RMSEs; d_res["RMSD"] = RMSDs; d_res["t_train"] = t_lss; d_res["t_test"] = t_preds;
+    d_res["mol"] = data["mol"];
+    display(d_res)
+    save("result/hdrsm_singlet_$sim_id.jld", "data", d_res)
 end
