@@ -804,3 +804,6 @@ ROSEMI trials (see booknote for more detgails), summary:
 
 02.05.2024:
 - ROSEMI wins in some measurements against CHIPR, now the question is, how much are the ones that lose, need to take the differences too probably
+
+03.05.2024:
+- see https://medium.com/analytics-vidhya/parallel-hyperparameter-tuning-in-julia-2eb17e756043 for @phyperopt
