@@ -851,7 +851,7 @@ kind of similar to main_obj
 hardcode the current best:
 [0, 0, 0, 0, 0, 0, 10, 10, 10, 0, 0, 50, 50, 3, 5, 0, 0, 5, 11, 2]
 """
-function min_main_obj(idtrains::Vector{Int}, E::Vector{Float64}, dataset, DFs, f; idtests_in=[])
+function min_main_obj(idtrains::Vector{Int}, E::Vector{Float64}, dataset, DFs, f; idtests_in=[], get_weights = false)
     idtests = setdiff(1:length(E), idtrains)
     if !isempty(idtests_in)
         idtests = idtests_in
@@ -867,7 +867,10 @@ function min_main_obj(idtrains::Vector{Int}, E::Vector{Float64}, dataset, DFs, f
     errors = E_pred - Et[idtests] # get errors
     MAE = mean(abs.(errors)) * 627.503 # in kcal/mol
     #writedlm("error_analysis.txt", [A*θ Et[idtests]])
-    return MAE 
+    if get_weights
+        return MAE, θ
+    else
+        return MAE 
 end
 
 """
@@ -941,8 +944,9 @@ function test_min_main_obj()
     idtrains = vec(readdlm("data/centers_30k_id57_201123.txt", Int)[1:100]) # try new centers that accounts 0ver 30k reservoir_size
     E = vec(readdlm("data/energies.txt"))
     f = load("data/CMBDF.jld", "data")
-    @time fobj = min_main_obj(idtrains, E, dataset, DFs, f)
+    @time fobj, θ = min_main_obj(idtrains, E, dataset, DFs, f; get_weights=true)
     println(fobj)
+    display(sorted(θ))
 end
 
 function test_filter_data()
