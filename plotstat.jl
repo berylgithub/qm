@@ -6,7 +6,7 @@ const jscatter = PlotlyJS.scatter
 const jsavefig = PlotlyJS.savefig
 
 
-using Graphs, MolecularGraph, Luxor # for visualization
+using Graphs, MolecularGraph, Luxor, Images # for visualization
 
 include("utils.jl")
 
@@ -1027,10 +1027,20 @@ end
 test plot images on some coordinates
 """
 function test_plot_img()
-    # display svg:
+    
+    # data:
     mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
-    @draw begin
-        mycoollogo = readsvg(drawsvg(mol))
-        placeimage(mycoollogo)
-    end
+    img = readsvg(drawsvg(mol))
+
+    # pretty much the format to convert SVG to PNG:
+    @png begin # @draw to draw the image on the display, @png to render .png instead
+        placeimage(img; centered=true)
+    end img.width img.height "testpng.png"
+
+    # manual drawing:
+    
+    
+    # plot using Luxor:
+    
+
 end

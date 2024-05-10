@@ -871,6 +871,7 @@ function min_main_obj(idtrains::Vector{Int}, E::Vector{Float64}, dataset, DFs, f
         return MAE, θ
     else
         return MAE 
+    end
 end
 
 """
