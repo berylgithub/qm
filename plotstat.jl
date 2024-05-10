@@ -6,6 +6,7 @@ const jscatter = PlotlyJS.scatter
 const jsavefig = PlotlyJS.savefig
 
 
+using Graphs, MolecularGraph, Luxor # for visualization
 
 include("utils.jl")
 
@@ -1019,4 +1020,17 @@ function main_eq_dist()
     end
     # save reselected data:
     save("data/smallmol/hxoy_data_req.jld", "data", data) 
+end
+
+    
+"""
+test plot images on some coordinates
+"""
+function test_plot_img()
+    # display svg:
+    mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
+    @draw begin
+        mycoollogo = readsvg(drawsvg(mol))
+        placeimage(mycoollogo)
+    end
 end
