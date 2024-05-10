@@ -1040,7 +1040,12 @@ function test_plot_img()
     # manual drawing:
     
     
-    # plot using Luxor:
-    
-
+    # basic drawing example using luxor:
+    Drawing(1920, 1080, "test.svg")
+    origin()
+    background("black")
+    sethue("red")
+    fontsize(50)
+    text("hello world")    
+    finish() 
 end
