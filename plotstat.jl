@@ -1046,6 +1046,23 @@ function test_plot_img()
     background("black")
     sethue("red")
     fontsize(50)
-    text("hello world")    
+    text("hello world")     
+
     finish() 
+
+    # draw grid example:
+
+    gridsize = (10, 10) # num of grids (row, col)
+    ptsize = (180, 180) # size of partition/cell (rsize, csize)
+    imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
+    Drawing(imgsize[1], imgsize[2], "test.svg")
+    background("white")
+    origin()
+    t = Table(gridsize, ptsize)
+    fontsize(20)
+    for (pt, n) in t
+        placeimage(img, pt; centered=true)
+        Luxor.text(string(n), pt + (0., 65.) , halign=:center, valign=:middle)
+    end
+    finish()
 end
