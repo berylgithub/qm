@@ -814,6 +814,24 @@ function test_dabat()
 end
 
 """
+extract all smiles excluding the excludedd ones and save to one file
+"""
+function main_extract_smiles()
+    exs = Int.(readdlm("data/exids.txt")[:])
+    path = "../../../Dataset/gdb9-14b/geometry/" 
+    files = readdir(path)
+    smiless = []
+    for f ∈ files
+        content = readdlm(path*f)
+        natom = content[1,1]
+        smiles = content[Int(natom)+4, 1]
+        push!(smiless, smiles)
+    end
+    smiless = smiless[setdiff(1:length(smiless),exs)]
+    return smiless
+end
+
+"""
 == Hybridization of dressed stuffs ==
 """
 
