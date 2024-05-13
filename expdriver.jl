@@ -950,6 +950,7 @@ function test_min_main_obj()
     @time fobj, θ = min_main_obj(idtrains, E, dataset, DFs, f; get_weights=true)
     println(fobj)
     display(sort(θ))
+    return θ
 end
 
 function test_filter_data()
