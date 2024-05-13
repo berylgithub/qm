@@ -1053,7 +1053,7 @@ function test_plot_img()
     # draw grid example:
 
     gridsize = (10, 10) # num of grids (row, col)
-    ptsize = (180, 180) # size of partition/cell (rsize, csize)
+    ptsize = (160, 160) # size of partition/cell (rsize, csize)
     imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
     Drawing(imgsize[1], imgsize[2], "test.svg")
     background("white")
@@ -1063,6 +1063,38 @@ function test_plot_img()
     for (pt, n) in t
         placeimage(img, pt; centered=true)
         Luxor.text(string(n), pt + (0., 65.) , halign=:center, valign=:middle)
+    end
+    finish()
+end
+
+
+"""
+main function to plot the 10x10 molgraphs sorted by \theta,
+and the PCA using molgraph
+!! as usual, preferrable to be pasted to terminal
+"""
+function main_plot_molgraph()
+    dataset = load("data/qm9_dataset.jld", "data")
+    idtrains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end])) # optimized training set
+    smiless = map(d->d["smiles"], dataset) # selected smiless from t
+    θ = vec(readdlm("data/theta_best.txt")) # best weights obtained
+    sid = reverse(sortperm(θ)) # descending sort
+    ss = smiless[idtrains][sid]
+
+    # Ryoiki Tenkai: DRAW
+    gridsize = (10, 10) # num of grids (row, col)
+    ptsize = (190, 190) # size of partition/cell (rsize, csize)
+    imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
+    Drawing(imgsize[1], imgsize[2], "test.svg")
+    background("white")
+    origin()
+    t = Table(gridsize, ptsize)
+    fontsize(20)
+    for (pt, i) in t
+        img = readsvg(drawsvg(smilestomol(ss[i])))
+        placeimage(img, pt; centered=true)
+        Luxor.text("#"*string(idtrains[sid][i]), pt + (0., 85.) , halign=:center, valign=:middle)
+        println([idtrains[sid][i], ss[i], θ[sid][i], i])
     end
     finish()
 end
