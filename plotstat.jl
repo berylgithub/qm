@@ -7,6 +7,7 @@ const jsavefig = PlotlyJS.savefig
 
 
 using Graphs, MolecularGraph, Luxor, Images # for visualization
+using Rotations, AngleBetweenVectors
 
 include("utils.jl")
 
@@ -722,14 +723,14 @@ function main_PCA_plot()
     tests = setdiff(1:length(E), trains)
     display(ev)
     # training set display:
-    p = scatter(K[tests,1], K[tests,2], markercolor=:blue, markersize = 3.5, labels = "test", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
-    scatter!(K[trains,1], K[trains,2], markershape=:utriangle, markercolor=:red, markersize = 6, labels = "train")
+    p = Plots.scatter(K[tests,1], K[tests,2], markercolor=:blue, markersize = 3.5, labels = "test", legend = :outertopleft, xlabel = "PC1", ylabel="PC2")
+    Plots.scatter!(K[trains,1], K[trains,2], markershape=:utriangle, markercolor=:red, markersize = 6, labels = "train")
     display(p)
     #savefig(p, "plot/deltaML/PCA_kernel_plot.png")
 
     ## finding pattern shenanigans:
     # display in label instead of marker:
-    p1 = scatter(K[:,1], K[:,2], xlimits = (-0.1, 1.2), ylimits = (-0.1, 1.2), markercolor=:blue, markersize = 3, labels = "molecule", legend = :outertopleft, xlabel = "PC1", ylabel="PC2", dpi=1000)
+    p1 = Plots.scatter(K[:,1], K[:,2], xlimits = (-0.1, 1.2), ylimits = (-0.1, 1.2), markercolor=:blue, markersize = 3, labels = "molecule", legend = :outertopleft, xlabel = "PC1", ylabel="PC2", dpi=1000)
     #annotate!(0.2, 0.1, text("A", 0.1, :red, :top))
     display(p1)
     Ktrain = K[trains,:]
@@ -745,12 +746,12 @@ function main_PCA_plot()
     f3 = Polynomials.fit(l3p[1], l3p[2])
     display([f1(0.395), f2(0.617)])
     x = 0:0.01:1
-    plot!(x, f1.(x), labels = "f1") # connects to p1 var
-    annotate!(l1p[1][1], l1p[2][1], text("f1", 0.1, 10, :bottom, :right))
-    plot!(x, f2.(x), labels = "f2")
-    annotate!(l2p[1][1], l2p[2][1], text("f2", 0.1, 10, :bottom, :right))
-    plot!(x, f3.(x), labels = "f3")
-    annotate!(l3p[1][1], l3p[2][1], text("f3", 0.1, 10, :bottom, :right))
+    Plots.plot!(x, f1.(x), labels = "f1") # connects to p1 var
+    annotate!(l1p[1][1], l1p[2][1], Plots.text("f1", 0.1, 10, :bottom, :right))
+    Plots.plot!(x, f2.(x), labels = "f2")
+    annotate!(l2p[1][1], l2p[2][1], Plots.text("f2", 0.1, 10, :bottom, :right))
+    Plots.plot!(x, f3.(x), labels = "f3")
+    annotate!(l3p[1][1], l3p[2][1], Plots.text("f3", 0.1, 10, :bottom, :right))
     # clustering of points to one of the lines:
     δy = 0.07
     abs_indices = trains ∪ tests 
@@ -771,12 +772,152 @@ function main_PCA_plot()
         sids = sortperm(K[li, 2])
         ls[i] = li[sids]
     end
-    scatter!(K[ls[1],1], K[ls[1],2], markershape=:dtriangle, markercolor=:red, markersize = 5, labels = "class f1")
-    scatter!(K[ls[2],1], K[ls[2],2], markershape=:utriangle, markercolor=:green, markersize = 5, labels = "class f2")
-    scatter!(K[ls[3],1], K[ls[3],2], markershape=:ltriangle, markercolor=:yellow, markersize = 5, labels = "class f3")
+    Plots.scatter!(K[ls[1],1], K[ls[1],2], markershape=:dtriangle, markercolor=:red, markersize = 5, labels = "class f1")
+    Plots.scatter!(K[ls[2],1], K[ls[2],2], markershape=:utriangle, markercolor=:green, markersize = 5, labels = "class f2")
+    Plots.scatter!(K[ls[3],1], K[ls[3],2], markershape=:ltriangle, markercolor=:yellow, markersize = 5, labels = "class f3")
     Plots.savefig(p1, "plot/deltaML/PCA_kernel_f1f2.png")
     display(p1)
     return ls # return the ids
+end
+
+
+"""
+rotate points THEN plot on 
+"""
+function main_rotate()
+    K = readdlm("result/deltaML/PCA_kernel_2.txt")
+    trains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end]))
+    # find angle α:
+    p0 = [0.6290795, 0.01130475] # center of rotation
+    p1 = [0., 0.5117841]
+    p2 = [0., p0[2]]
+    v1 = p1-p0
+    v2 = p2-p0
+    α = angle(v1, v2) # in radian
+    display(α)
+    # rotate all points of K:
+    R = RotMatrix{2}(α)
+    KR = (R*K')'
+    # rotate a bit more to the right:
+    p0 = [0.1833129, 0.4335298]; p1 = [0.09415505, 1.036599]; p2 = [p0[1], p1[2]]; 
+    α = angle(p2-p0, p1-p0)
+    R = RotMatrix{2}(-α)
+    KR = (R*KR')'
+    jp = jplot(jscatter(x=KR[trains,1], y=KR[trains,2], mode="markers"))
+    display(jp)
+    #Plots.scatter(KR[trains,1], KR[trains,2])
+    # auto bins by x with radius δ = 0.1:
+    Kt = KR[trains,:]
+    δ = 0.1
+    bounds = [floor(minimum(Kt[:,1])*10)/10, ceil(maximum(Kt[:,1])*10)/10] # first decimal roundings
+    binranges = collect(range(bounds[1],bounds[2],step=δ))
+    bins = Dict()
+    binx = Dict() # the 2d coordinates after transformation
+    biny = Dict()
+    for i ∈ eachindex(binranges)[1:end-1]
+        bins[i] = []; binx[i] = []; biny[i] = []; 
+    end
+    for j ∈ axes(Kt, 1)
+        x = Kt[j,1]
+        for i ∈ eachindex(binranges)[1:end-1]
+            if binranges[i] < x < binranges[i+1]
+                push!(bins[i], trains[j])
+                push!(binx[i], Kt[j,1])
+                push!(biny[i], Kt[j,2])
+            end
+        end
+    end
+    display(bins)
+    display(biny)
+    # sort each bin by y-axis:
+    for (k,v) ∈ biny
+        sid = sortperm(v)
+        biny[k] = v[sid]
+        binx[k] = binx[k][sid]
+        bins[k] = bins[k][sid]
+    end
+    display(bins)
+    display(biny)
+    display(binx)
+    # RYOIKI TENKAI: UNLIMITED DRAWING
+
+end
+
+
+"""
+test plot images on some coordinates
+"""
+function test_plot_img()
+    
+    # data:
+    mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
+    img = readsvg(drawsvg(mol))
+
+    # pretty much the format to convert SVG to PNG:
+    @png begin # @draw to draw the image on the display, @png to render .png instead
+        placeimage(img; centered=true)
+    end img.width img.height "testpng.png"
+
+    # manual drawing:
+    
+    
+    # basic drawing example using luxor:
+    Drawing(1920, 1080, "test.svg")
+    origin()
+    background("black")
+    sethue("red")
+    fontsize(50)
+    text("hello world")     
+
+    finish() 
+
+    # draw grid example:
+
+    gridsize = (10, 10) # num of grids (row, col)
+    ptsize = (160, 160) # size of partition/cell (rsize, csize)
+    imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
+    Drawing(imgsize[1], imgsize[2], "test.svg")
+    background("white")
+    origin()
+    t = Table(gridsize, ptsize)
+    fontsize(20)
+    for (pt, n) in t
+        placeimage(img, pt; centered=true)
+        Luxor.text(string(n), pt + (0., 65.) , halign=:center, valign=:middle)
+    end
+    finish()
+end
+
+
+"""
+main function to plot the 10x10 molgraphs sorted by \theta,
+and the PCA using molgraph
+!! as usual, preferrable to be pasted to terminal
+"""
+function main_plot_molgraph()
+    dataset = load("data/qm9_dataset.jld", "data")
+    idtrains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end])) # optimized training set
+    smiless = map(d->d["smiles"], dataset) # selected smiless from t
+    θ = vec(readdlm("data/theta_best.txt")) # best weights obtained
+    sid = reverse(sortperm(θ)) # descending sort
+    ss = smiless[idtrains][sid]
+
+    # Ryoiki Tenkai: DRAW
+    gridsize = (10, 10) # num of grids (row, col)
+    ptsize = (190, 190) # size of partition/cell (rsize, csize)
+    imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
+    Drawing(imgsize[1], imgsize[2], "molgraphs.svg")
+    background("white")
+    origin()
+    t = Table(gridsize, ptsize)
+    fontsize(25)
+    for (pt, i) in t
+        img = readsvg(drawsvg(smilestomol(ss[i])))
+        placeimage(img, pt; centered=true)
+        Luxor.text("#"*string(idtrains[sid][i]), pt + (0., 85.) , halign=:center, valign=:middle)
+        println([idtrains[sid][i], ss[i], θ[sid][i], i])
+    end
+    finish()
 end
 
 """
@@ -859,6 +1000,7 @@ function main_plot_fs()
         savefig(p, "plot/deltaML/hpopt_"*fts[i]*".png")
     end
 end
+
 
 
 """
@@ -1023,78 +1165,3 @@ function main_eq_dist()
 end
 
     
-"""
-test plot images on some coordinates
-"""
-function test_plot_img()
-    
-    # data:
-    mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
-    img = readsvg(drawsvg(mol))
-
-    # pretty much the format to convert SVG to PNG:
-    @png begin # @draw to draw the image on the display, @png to render .png instead
-        placeimage(img; centered=true)
-    end img.width img.height "testpng.png"
-
-    # manual drawing:
-    
-    
-    # basic drawing example using luxor:
-    Drawing(1920, 1080, "test.svg")
-    origin()
-    background("black")
-    sethue("red")
-    fontsize(50)
-    text("hello world")     
-
-    finish() 
-
-    # draw grid example:
-
-    gridsize = (10, 10) # num of grids (row, col)
-    ptsize = (160, 160) # size of partition/cell (rsize, csize)
-    imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
-    Drawing(imgsize[1], imgsize[2], "test.svg")
-    background("white")
-    origin()
-    t = Table(gridsize, ptsize)
-    fontsize(20)
-    for (pt, n) in t
-        placeimage(img, pt; centered=true)
-        Luxor.text(string(n), pt + (0., 65.) , halign=:center, valign=:middle)
-    end
-    finish()
-end
-
-
-"""
-main function to plot the 10x10 molgraphs sorted by \theta,
-and the PCA using molgraph
-!! as usual, preferrable to be pasted to terminal
-"""
-function main_plot_molgraph()
-    dataset = load("data/qm9_dataset.jld", "data")
-    idtrains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end])) # optimized training set
-    smiless = map(d->d["smiles"], dataset) # selected smiless from t
-    θ = vec(readdlm("data/theta_best.txt")) # best weights obtained
-    sid = reverse(sortperm(θ)) # descending sort
-    ss = smiless[idtrains][sid]
-
-    # Ryoiki Tenkai: DRAW
-    gridsize = (10, 10) # num of grids (row, col)
-    ptsize = (190, 190) # size of partition/cell (rsize, csize)
-    imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
-    Drawing(imgsize[1], imgsize[2], "molgraphs.svg")
-    background("white")
-    origin()
-    t = Table(gridsize, ptsize)
-    fontsize(25)
-    for (pt, i) in t
-        img = readsvg(drawsvg(smilestomol(ss[i])))
-        placeimage(img, pt; centered=true)
-        Luxor.text("#"*string(idtrains[sid][i]), pt + (0., 85.) , halign=:center, valign=:middle)
-        println([idtrains[sid][i], ss[i], θ[sid][i], i])
-    end
-    finish()
-end
