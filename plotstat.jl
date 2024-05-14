@@ -812,7 +812,7 @@ function main_rotate()
     bounds = [floor(minimum(Kt[:,1])*10)/10, ceil(maximum(Kt[:,1])*10)/10] # first decimal roundings
     binranges = collect(range(bounds[1],bounds[2],step=δ))
     bins = Dict()
-    binx = Dict() # the 2d coordinates after transformation
+    binx = Dict() 
     biny = Dict()
     for i ∈ eachindex(binranges)[1:end-1]
         bins[i] = []; binx[i] = []; biny[i] = []; 
@@ -838,8 +838,11 @@ function main_rotate()
     end
     display(bins)
     display(biny)
-    display(binx)
+    display(binx)    
+    # max height (max num of elem from all bins):
+    lens = [length(v) for (k,v) in bins]
     # RYOIKI TENKAI: UNLIMITED DRAWING
+
 
 end
 
@@ -848,44 +851,23 @@ end
 test plot images on some coordinates
 """
 function test_plot_img()
-    
-    # data:
-    mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
-    img = readsvg(drawsvg(mol))
-
-    # pretty much the format to convert SVG to PNG:
-    @png begin # @draw to draw the image on the display, @png to render .png instead
-        placeimage(img; centered=true)
-    end img.width img.height "testpng.png"
-
-    # manual drawing:
-    
-    
     # basic drawing example using luxor:
-    Drawing(1920, 1080, "test.svg")
+    Drawing(1000, 1000, "test.svg")
     origin()
-    background("black")
-    sethue("red")
-    fontsize(50)
-    text("hello world")     
-
-    finish() 
-
-    # draw grid example:
-
-    gridsize = (10, 10) # num of grids (row, col)
-    ptsize = (160, 160) # size of partition/cell (rsize, csize)
-    imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
-    Drawing(imgsize[1], imgsize[2], "test.svg")
     background("white")
-    origin()
-    t = Table(gridsize, ptsize)
-    fontsize(20)
-    for (pt, n) in t
-        placeimage(img, pt; centered=true)
-        Luxor.text(string(n), pt + (0., 65.) , halign=:center, valign=:middle)
-    end
+    majticks, minticks = tickline(Point(-350, 100), Point(350, 100),
+        major=9,
+        minor=4,
+        startnumber=1,
+        finishnumber=11,
+        log=false,
+        axis=true,
+        vertices=true)
+    Luxor.circle.(majticks, 5, action = :fill)
+    Luxor.box.(minticks, 1, 25, action = :fill)
+    display(majticks)
     finish()
+    preview()
 end
 
 
