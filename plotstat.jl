@@ -853,10 +853,10 @@ function main_rotate()
     display(Kt)
     display([minimum(Kt[:,1]), maximum(Kt[:,1])])
 
-    # copypasta this to the terminal repeatedly until image looks good
-    # need to also check the delta 
+    # copypasta this to the terminal repeatedly until image looks good:
+    # need to also check the delta for the molgraph "clusters" (see the paper for suggestions)
     # smiles MUST be loaded in the terminal: 
-    # > smiless = map(d->d["smiles"], dataset); tsmiless = smiless[trains]
+    # > dataset = load("data/qm9_dataset.jld", "data"); smiless = map(d->d["smiles"], dataset); tsmiless = smiless[trains]
     Drawing(2500, 2500, "pcagraph.svg")
     background("white")
     for (i,train) in enumerate(trains)
