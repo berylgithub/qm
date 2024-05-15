@@ -785,6 +785,7 @@ end
 rotate points THEN plot on 
 """
 function main_rotate()
+    # copy these to terminal, since 'dataset' is heavy to load
     K = readdlm("result/deltaML/PCA_kernel_2.txt")
     trains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end]))
     # find angle α:
@@ -808,9 +809,9 @@ function main_rotate()
     #Plots.scatter(KR[trains,1], KR[trains,2])
     # auto bins by x with radius δ = 0.1:
     Kt = KR[trains,:]
-    δ = 0.1
+    #δ = 0.1
     bounds = [floor(minimum(Kt[:,1])*10)/10, ceil(maximum(Kt[:,1])*10)/10] # first decimal roundings
-    binranges = collect(range(bounds[1],bounds[2],step=δ))
+    binranges = collect(range(bounds[1],bounds[2],step=0.1))
     bins = Dict()
     binx = Dict() 
     biny = Dict()
@@ -842,8 +843,31 @@ function main_rotate()
     # max height (max num of elem from all bins):
     lens = [length(v) for (k,v) in bins]
     # RYOIKI TENKAI: UNLIMITED DRAWING
+    # try by simply rescale the x,y into pixel sizes and using the absolute coordinates
+    boundx = [minimum(Kt[:,1]), maximum(Kt[:,1])]
+    boundy = [minimum(Kt[:,2]), maximum(Kt[:,2])]
+    display([boundx; boundy])
+    f_rescale(z,mi,ma;sc=1.,shift=0.) = sc*(z-mi)/(ma-mi) + shift # fn to rescale to larger values
+    Kt[:,1] = f_rescale.(Kt[:,1], boundx[1], boundx[2]; sc=2e3, shift=-1e3)
+    Kt[:,2] = f_rescale.(Kt[:,2], boundy[1], boundy[2]; sc=2e3, shift=-1e3)
+    display(Kt)
+    display([minimum(Kt[:,1]), maximum(Kt[:,1])])
 
-
+    # copypasta this to the terminal repeatedly until image looks good
+    # need to also check the delta 
+    # smiles MUST be loaded in the terminal: 
+    # > smiless = map(d->d["smiles"], dataset); tsmiless = smiless[trains]
+    Drawing(2500, 2500, "pcagraph.svg")
+    background("white")
+    for (i,train) in enumerate(trains)
+        origin()
+        Luxor.translate(Point(Kt[i,1],-Kt[i,2])) # flip y sign due to the coordinate system
+        @layer begin
+            Luxor.scale(1.0)
+            placeimage(readsvg(drawsvg(smilestomol(tsmiless[i]))), Luxor.O, centered=true)
+        end
+    end
+    finish()
 end
 
 
@@ -851,23 +875,35 @@ end
 test plot images on some coordinates
 """
 function test_plot_img()
+    mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
+    img = readsvg(drawsvg(mol))
     # basic drawing example using luxor:
     Drawing(1000, 1000, "test.svg")
     origin()
     background("white")
-    majticks, minticks = tickline(Point(-350, 100), Point(350, 100),
-        major=9,
-        minor=4,
-        startnumber=1,
-        finishnumber=11,
-        log=false,
-        axis=true,
-        vertices=true)
-    Luxor.circle.(majticks, 5, action = :fill)
-    Luxor.box.(minticks, 1, 25, action = :fill)
-    display(majticks)
+    setcolor("red")
+    Luxor.circle(Point(0,0), 5, action = :fill)
+    Luxor.circle(Point(-200,0), 5, action = :fill)
+    Luxor.circle(Point(-300,0), 5, action = :fill)
+    @layer begin
+        Luxor.scale(0.5)
+        placeimage(img, centered=true)
+    end
+    origin()
+    Luxor.translate(Point(-200,0))
+    @layer begin
+        Luxor.scale(2.0)
+        placeimage(img, Luxor.O, centered=true)
+    end
+    origin()
+    Luxor.translate(Point(-300,0))
+    @layer begin
+        Luxor.scale(0.5)
+        placeimage(img, Luxor.O, centered=true)
+    end
+
     finish()
-    preview()
+    #preview()
 end
 
 
