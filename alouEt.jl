@@ -1755,7 +1755,7 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains;
         end
         θ = Fb[idtrains, :]\ET[idtrains];
         Edb = Fb*θ
-        println("bond ", mean(abs.(ET[idtrains] - Edb[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edb[idtests]))]*627.503)
+        #println("bond ", mean(abs.(ET[idtrains] - Edb[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edb[idtests]))]*627.503)
         ET -= Edb
     end
     if sn
@@ -1765,7 +1765,7 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains;
         end
         θ = Fn[idtrains, :]\ET[idtrains];
         Edn = Fn*θ
-        println("angle ", mean(abs.(ET[idtrains] - Edn[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edn[idtests]))]*627.503)
+        #println("angle ", mean(abs.(ET[idtrains] - Edn[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edn[idtests]))]*627.503)
         ET -= Edn
     end
     if st
@@ -1775,7 +1775,7 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains;
         end
         θ = Ft[idtrains, :]\ET[idtrains];
         Edt = Ft*θ
-        println("torsion ", mean(abs.(ET[idtrains] - Edt[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edt[idtests]))]*627.503)
+        #println("torsion ", mean(abs.(ET[idtrains] - Edt[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edt[idtests]))]*627.503)
         ET -= Edt
     end
     return ET
