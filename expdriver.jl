@@ -938,6 +938,138 @@ function main_PCA_kernel(idtrains, E, dataset, DFs, f)
     
 end
 
+"""
+hpopt only for the kernel width (if applicable), based on the found minimum on other hyperparams:
+LOAD all in the terminal if not in VSC
+"""
+function main_hpopt_kernel(;sim_id="")
+    # preload data:
+    dataset = load("data/qm9_dataset.jld", "data")
+    E = readdlm("data/energies.txt")
+    numrow = length(E)
+    th = readdlm("data/tbhp_randvsid.txt") # optimal level 1 hyperparameters, run sequentially as this
+    # preload dressed features:
+    Fds_paths = ["atomref_features", "featuresmat_bonds_qm9_post", "featuresmat_angles_qm9_post", "featuresmat_torsion_qm9_post"]
+    Fds_hyb_path = "featuresmat_atomhybrid_qm9_post"
+    Fds_H_paths = ["atomref_features","featuresmat_bonds-H_qm9_post", "featuresmat_angles-H_qm9_post", "featuresmat_torsion-H_qm9_post"]
+    Fdss = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_paths)
+    Fds_hyb = load("data/"*Fds_hyb_path*".jld", "data")
+    Fds_Hs = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_H_paths)
+    # split data here:
+    Random.seed!(777)
+    n_ids = [100, 200, 500, 1000]; n_test = 100_000
+    # rand id:
+    idall = 1:numrow
+    idtests_rand = StatsBase.sample(idall, n_test, replace=false);
+    idrem = setdiff(idall, idtest)
+    max_n = n_ids[end]
+    max_idtrains = StatsBase.sample(idrem, max_n, replace=false)
+    idtrainss_rand = map(n_id -> max_idtrains[1:n_id], n_ids)
+    # selected id:
+    idtrainss_sel = vec(readdlm("data/centers_30k_id57.txt", Int))[1:1000] # 30k ids from usequence
+    idtrainss_sel = map(n_id -> idtrainss_sel[1:n_id], n_ids)
+    idrem = setdiff(idall, idtrainss_sel[end])
+    idtests_sel = StatsBase.sample(idrem, n_test, replace=false)
+    # warmup kernel:
+    main_kernels_warmup()
+    # write initialization:
+    outfile = "result/deltaML/tb_hpoptk_$sim_id.txt"
+    open(outfile, "w") do io
+        writedlm(io, "")
+    end
+    # hyperparam fitting:
+    iters = 3
+    fname = nothing; f = nothing
+    idtrainss = nothing; idtests = nothing; idtrains = nothing;
+    F_dresseds = nothing
+    for i ∈ axes(th, 1)
+        println(th[i,[1,3,4,6,7,8]])
+        Et = E # reset E target
+        # feature switch, col 8
+        if fname != th[i,8]
+            fname = th[i,8]
+            f = load("data/"*fname*".jld", "data")
+        end
+        # training set selection switch, col 1
+        if th[i,1] == "rand"
+            idtrainss = idtrainss_rand
+            idtests = idtests_rand
+        elseif th[i,1] == "sid57"
+            idtrainss = idtrainss_sel
+            idtests = idtests_sel
+        end
+        # ntrain switch, col 4
+        if th[i,4] == 100
+            idtrains = idtrainss[1]
+        elseif th[i,4] == 200
+            idtrains = idtrainss[2]
+        elseif th[i,4] == 500
+            idtrains = idtrainss[3]
+        elseif th[i,4] == 1000
+            idtrains = idtrainss[4]
+        end
+        # hda switch, col 3
+        if th[i,3]
+            F_dresseds = vcat([Fds_hyb], Fds_Hs[2:end])
+        else
+            F_dresseds = Fds_Hs
+        end
+        # dressed feature switch, col 6
+        sb = sn = st = false
+        if th[i,6] == "AB"
+            sb = true
+        elseif th[i,6] == "ABN"
+            sb = sn = true
+        elseif th[i,6] == "ABNT"
+            sb = sn = st = true
+        end
+        Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains; 
+                sb = sb, sn = sn, st = st)
+        # model switch, col 7
+        if th[i,7] == "GK"
+            atomtrains = map(d->d["atoms"], dataset[idtrains]); atomtests = map(d->d["atoms"], dataset[idtests])
+            t = @elapsed begin
+                ho = @thyperopt for i=iters, 
+                        sampler = RandomSampler(),
+                        σ = 1.:32.
+                    @show fobj = fobj_hpopt(Et, f, idtrains, idtests, atomtrains, atomtests; c=2*σ^2)
+                end
+            end
+            best_params, min_f = ho.minimizer, ho.minimum
+            σmin = best_params[1]
+            fobj = min_f
+            display(best_params)
+            display(min_f)
+            display(t)
+        elseif th[i,7] == "DPK" # skip, just return the current value
+            σmin = 0.
+            fobj = th[i,12]
+        end
+        # write output:
+        th[i,12] = fobj
+        open(outfile, "a") do io # writefile by batch
+            writedlm(io, permutedims(vcat(th[i,:], [σmin])))
+        end
+    end
+end
+
+"""
+objective function: computes the MAE(10k)
+    c = 2σ²
+"""
+function fobj_hpopt(E, f, idtrains, idtests, atomtrains, atomtests; c=2048., λ = 1e-8)
+    # compute kernel:
+    K = get_gaussian_kernel(f[idtrains], f[idtrains], atomtrains, atomtrains, c)    
+    # train:
+    K[diagind(K)] .+= λ
+    θ = K\E[idtrains] 
+    # predict:
+    K = get_gaussian_kernel(f[idtests], f[idtrains], atomtests, atomtrains, c)
+    Epred = K*θ
+    return mean(abs.(E[idtests] - Epred))*627.503
+end
+
+
 function test_min_main_obj()
     # ideally put this in terminal
     DFs = [load("data/atomref_features.jld", "data"), [], [], []]
