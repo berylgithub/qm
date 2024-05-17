@@ -961,7 +961,7 @@ function main_hpopt_kernel(;sim_id="", iters=32)
     # rand id:
     idall = 1:numrow
     idtests_rand = StatsBase.sample(idall, n_test, replace=false);
-    idrem = setdiff(idall, idtest)
+    idrem = setdiff(idall, idtests_rand)
     max_n = n_ids[end]
     max_idtrains = StatsBase.sample(idrem, max_n, replace=false)
     idtrainss_rand = map(n_id -> max_idtrains[1:n_id], n_ids)
