@@ -942,7 +942,7 @@ end
 hpopt only for the kernel width (if applicable), based on the found minimum on other hyperparams:
 LOAD all in the terminal if not in VSC
 """
-function main_hpopt_kernel(;sim_id="", iters=32)
+function main_hpopt_kernel(;sim_id="", iters=33)
     # preload data:
     dataset = load("data/qm9_dataset.jld", "data")
     E = readdlm("data/energies.txt")
@@ -1030,8 +1030,9 @@ function main_hpopt_kernel(;sim_id="", iters=32)
             t = @elapsed begin
                 ho = @hyperopt for i=iters, 
                         sampler = RandomSampler(),
-                        σ = 1.:32.
-                    @show fobj = fobj_hpopt(Et, f, idtrains, idtests, atomtrains, atomtests; c=2*σ^2)
+                        s = 1:32,
+                        dummy = 1 # need dummy var if only 1 var is optimized???
+                    @show fobj = fobj_hpopt(Et, f, idtrains, idtests, atomtrains, atomtests; c = float(2*s^2))
                 end
             end
             best_params, min_f = ho.minimizer, ho.minimum
