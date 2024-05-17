@@ -1028,18 +1028,18 @@ function main_hpopt_kernel(;sim_id="", iters=32)
         if th[i,7] == "GK"
             atomtrains = map(d->d["atoms"], dataset[idtrains]); atomtests = map(d->d["atoms"], dataset[idtests])
             t = @elapsed begin
-                ho = @thyperopt for i=iters, 
+                ho = @hyperopt for i=iters, 
                         sampler = RandomSampler(),
                         σ = 1.:32.
-                    fobj = fobj_hpopt(Et, f, idtrains, idtests, atomtrains, atomtests; c=2*σ^2)
+                    @show fobj = fobj_hpopt(Et, f, idtrains, idtests, atomtrains, atomtests; c=2*σ^2)
                 end
             end
             best_params, min_f = ho.minimizer, ho.minimum
             σmin = best_params[1]
             fobj = min_f
-            display(best_params)
-            display(min_f)
-            display(t)
+            println(best_params)
+            println(min_f)
+            println(t)
         elseif th[i,7] == "DPK" # skip, just return the current value
             σmin = 0.
             fobj = th[i,12]
