@@ -956,17 +956,17 @@ function main_hpopt_kernel(;sim_id="", iters=32)
     Fds_hyb = load("data/"*Fds_hyb_path*".jld", "data")
     Fds_Hs = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_H_paths)
     # split data here:
-    Random.seed!(603)
+    Random.seed!(777)
     n_ids = [100, 200, 500, 1000]; n_test = 100_000
     # rand id:
     idall = 1:numrow
     idtests_rand = StatsBase.sample(idall, n_test, replace=false);
     idrem = setdiff(idall, idtests_rand)
-    max_n = n_ids[end]
+    max_n = 30_000 # sample from 30k rather than 1k, seems this would reproduce the result for rand #n_ids[end]
     max_idtrains = StatsBase.sample(idrem, max_n, replace=false)
     idtrainss_rand = map(n_id -> max_idtrains[1:n_id], n_ids)
     # selected id:
-    idtrainss_sel = vec(readdlm("data/centers_30k_id57.txt", Int))[1:1000] # 30k ids from usequence
+    idtrainss_sel = vec(readdlm("data/centers_30k_id57.txt", Int)) # 30k ids from usequence
     idtrainss_sel = map(n_id -> idtrainss_sel[1:n_id], n_ids)
     idrem = setdiff(idall, idtrainss_sel[end])
     idtests_sel = StatsBase.sample(idrem, n_test, replace=false)
