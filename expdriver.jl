@@ -942,7 +942,7 @@ end
 hpopt only for the kernel width (if applicable), based on the found minimum on other hyperparams:
 LOAD all in the terminal if not in VSC
 """
-function main_hpopt_kernel(;sim_id="", iters=32)
+function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
     # preload data:
     dataset = load("data/qm9_dataset.jld", "data")
     E = readdlm("data/energies.txt")
@@ -960,6 +960,9 @@ function main_hpopt_kernel(;sim_id="", iters=32)
     n_ids = [100, 200, 500, 1000]; n_test = 100_000
     # rand id:
     idall = 1:numrow
+    for i ∈ 1:resets
+        dum = StatsBase.sample(idall, 100, replace=false) # dummy var to change sampling
+    end
     idtests_rand = StatsBase.sample(idall, n_test, replace=false);
     idrem = setdiff(idall, idtests_rand)
     max_n = 30_000 # sample from 30k rather than 1k, seems this would reproduce the result for rand #n_ids[end]
