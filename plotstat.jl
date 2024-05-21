@@ -6,7 +6,7 @@ const jscatter = PlotlyJS.scatter
 const jsavefig = PlotlyJS.savefig
 
 
-using Graphs, MolecularGraph, Luxor, Images, FFMPEG # for visualization
+using Graphs, MolecularGraph, Luxor, Images # for visualization
 using Rotations, AngleBetweenVectors
 
 include("utils.jl")
@@ -909,9 +909,10 @@ function main_plot_deltas()
     gr()
     p = Plots.plot([cos for i ∈ eachindex(yplots)], 1, xlims = (0,100), ylims = (-10, 10),
                     markershape = [:xcross :cross :rect :auto :auto], markersize=4,
-                    labels = permutedims([latexstring("E^{($i)}") for i ∈ eachindex(yplots)]),
-                    dpi = 500)
-    anim = Animation()
+                    labels = permutedims([latexstring("E^{($(i-1))}") for i ∈ eachindex(yplots)]),
+                    ylabel = latexstring("\\log(|E|)"),
+                    dpi = 500) # see the "cos" functions? they're dummy functions
+    anim = Animation() 
     for x = 1:100
         Plots.plot(push!(p, x, Float64[y[x] for y in yplots]))
         Plots.frame(anim)
