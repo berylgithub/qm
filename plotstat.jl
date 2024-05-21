@@ -6,7 +6,7 @@ const jscatter = PlotlyJS.scatter
 const jsavefig = PlotlyJS.savefig
 
 
-using Graphs, MolecularGraph, Luxor, Images # for visualization
+using Graphs, MolecularGraph, Luxor, Images, FFMPEG # for visualization
 using Rotations, AngleBetweenVectors
 
 include("utils.jl")
@@ -868,6 +868,58 @@ function main_rotate()
         end
     end
     finish()
+end
+
+"""
+!! terminal
+plot the delta Energy with anim??
+"""
+function main_plot_deltas()
+    include("alouEt.jl")
+    Random.seed!(603)
+    E = vec(readdlm("data/energies.txt"))
+    Fds_H_paths = ["atomref_features","featuresmat_bonds-H_qm9_post", "featuresmat_angles-H_qm9_post", "featuresmat_torsion-H_qm9_post"]
+    Fs = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_H_paths)
+    idtrains = vec(readdlm("data/centers_30k_id57.txt", Int))[1:100]
+    Eda = hp_baseline(E, Fs[1], Fs[2], Fs[3], Fs[4], idtrains; 
+            sb = false, sn = false, st = false, 
+            pb = false, pn = false, pt = false, 
+            npb = 5, npn = 5, npt = 5)
+    Edb = hp_baseline(E, Fs[1], Fs[2], Fs[3], Fs[4], idtrains; 
+        sb = true, sn = false, st = false, 
+        pb = false, pn = false, pt = false, 
+        npb = 5, npn = 5, npt = 5)
+    Edn = hp_baseline(E, Fs[1], Fs[2], Fs[3], Fs[4], idtrains; 
+        sb = true, sn = true, st = false, 
+        pb = false, pn = false, pt = false, 
+        npb = 5, npn = 5, npt = 5)
+    Edt = hp_baseline(E, Fs[1], Fs[2], Fs[3], Fs[4], idtrains; 
+        sb = true, sn = true, st = true, 
+        pb = false, pn = false, pt = false, 
+        npb = 5, npn = 5, npt = 5)
+    display([E Eda Edb Edn Edt])
+    # sort by magnitude of E:
+    yplots = [sort(abs.(E[idtrains])), sort(abs.(Eda[idtrains])), sort(abs.(Edb[idtrains])), sort(abs.(Edn[idtrains])), sort(abs.(Edt[idtrains]))]
+    yplots = [log.(y) for y in yplots]
+    p = Plots.plot(1:length(E[idtrains]), yplots,
+                        ylims = [-10,10]
+                        )
+    #Plots.savefig(p, "plot/deltaML/deltaE.png")
+    # try animate using Plots:
+    gr()
+    p = Plots.plot([cos for i ∈ eachindex(yplots)], 1, xlims = (0,100), ylims = (-10, 10),
+                    markershape = [:xcross :cross :rect :auto :auto], markersize=4,
+                    labels = permutedims([latexstring("E^{($i)}") for i ∈ eachindex(yplots)]),
+                    dpi = 500)
+    anim = Animation()
+    for x = 1:100
+        Plots.plot(push!(p, x, Float64[y[x] for y in yplots]))
+        Plots.frame(anim)
+    end
+    gifpath = "anime/Edelta.gif"
+    gif(anim, gifpath, fps=20)
+    # paaste this in powershell:
+    # ffmpeg -i "anime/Edelta.gif" -vsync 0 "anime/Edelta/%d.png" 
 end
 
 
