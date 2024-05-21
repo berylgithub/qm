@@ -956,7 +956,7 @@ function main_hpopt_kernel(;sim_id="", iters=32)
     Fds_hyb = load("data/"*Fds_hyb_path*".jld", "data")
     Fds_Hs = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_H_paths)
     # split data here:
-    Random.seed!(777)
+    Random.seed!(603)
     n_ids = [100, 200, 500, 1000]; n_test = 100_000
     # rand id:
     idall = 1:numrow
