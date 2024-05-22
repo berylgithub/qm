@@ -786,8 +786,8 @@ rotate points THEN plot on
 """
 function main_rotate()
     # copy these to terminal, since 'dataset' is heavy to load
-    K = readdlm("result/deltaML/PCA_kernel_2.txt")
-    trains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end]))
+    K = readdlm("result/deltaML/PCA_kernel_2.txt") # n x 2 matrix of Real
+    trains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end])) # m < n vector of Int
     # find angle α:
     p0 = [0.6290795, 0.01130475] # center of rotation
     p1 = [0., 0.5117841]
@@ -812,7 +812,7 @@ function main_rotate()
     #δ = 0.1
     bounds = [floor(minimum(Kt[:,1])*10)/10, ceil(maximum(Kt[:,1])*10)/10] # first decimal roundings
     binranges = collect(range(bounds[1],bounds[2],step=0.1))
-    bins = Dict()
+    bins = Dict() # relative index to Kt, can refer to idtrains[j ∈ bins]
     binx = Dict() 
     biny = Dict()
     for i ∈ eachindex(binranges)[1:end-1]
@@ -822,7 +822,7 @@ function main_rotate()
         x = Kt[j,1]
         for i ∈ eachindex(binranges)[1:end-1]
             if binranges[i] < x < binranges[i+1]
-                push!(bins[i], trains[j])
+                push!(bins[i], j)#trains[j])
                 push!(binx[i], Kt[j,1])
                 push!(biny[i], Kt[j,2])
             end
@@ -840,6 +840,8 @@ function main_rotate()
     display(bins)
     display(biny)
     display(binx)    
+    # [FOR LATER] find clusters within each bin: 
+
     # max height (max num of elem from all bins):
     lens = [length(v) for (k,v) in bins]
     # RYOIKI TENKAI: UNLIMITED DRAWING
@@ -857,7 +859,45 @@ function main_rotate()
     # need to also check the delta for the molgraph "clusters" (see the paper for suggestions)
     # smiles MUST be loaded in the terminal: 
     # > dataset = load("data/qm9_dataset.jld", "data"); smiless = map(d->d["smiles"], dataset); tsmiless = smiless[trains]
+    
+    # ! draw for each bin:
+    ## determine the uniform scaling for each bin, using c = (maxh - minh)/(sum(y) + (n-1)d), where the drawing LB need to be shifted to 0:
+    svgs = readsvg.(drawsvg.(smilestomol.(tsmiless))) # preload all of the svg imagees
+    hs = map(x -> x.height, svgs)
+    dgap = 20.0 # distance gap in pixel unit
+    miny = minimum(Kt[:,2])
+    absminy = abs(miny) # for shifting the drawing by this magnitude so that the minimum is on 0 
+    maxhs = [] # drawing upperbound that corresponds to each bin
+    cs = [] # scaling coefficients for each bin
+    for (i,kv) in enumerate(bins)
+        id_maxh = bins[i][end] # get the id that corresponds to the image in the last index (the highest image)
+        id_minh = bins[i][1] # minimum y of the bin
+        maxh = Kt[id_maxh, 2] + hs[id_maxh]/2 # drawing upperbound of the bin
+        minh = Kt[id_minh, 2] - hs[id_minh]/2 # drawing lowerbound of the bin
+        c = (maxh - minh)/(sum(hs[bins[i]]) + (length(bins[i])-1)*dgap)
+        push!(maxhs, maxh); push!(cs, c)
+        println([i, minh, maxh, c, length(bins[i])])
+    end
+    # test placement on bin2:
+    i = 4
+    bin = bins[i]; c = cs[i]
+    n = length(bin)
+    ps = zeros(n) # point locations
+    ps[1] = Kt[bin[1],2] + c*(hs[bin[1]]/2)
+    for i ∈ 2:n
+        ps[i] = ps[i-1] + c*(hs[bin[i-1]]/2 + hs[bin[i]]/2 + dgap)
+    end
+    display(ps)
+    for (i,kv) in enumerate(bins)
+        for j ∈ bins[i] # for each j in Kt index
+
+        end
+    end
     Drawing(2500, 2500, "pcagraph.svg")
+    background("white")
+
+    # ! draw for each molecule indices (regardless of bins):
+    #= Drawing(2500, 2500, "pcagraph.svg")
     background("white")
     for (i,train) in enumerate(trains)
         origin()
@@ -867,60 +907,7 @@ function main_rotate()
             placeimage(readsvg(drawsvg(smilestomol(tsmiless[i]))), Luxor.O, centered=true)
         end
     end
-    finish()
-end
-
-"""
-!! terminal
-plot the delta Energy with anim??
-"""
-function main_plot_deltas()
-    include("alouEt.jl")
-    Random.seed!(603)
-    E = vec(readdlm("data/energies.txt"))
-    Fds_H_paths = ["atomref_features","featuresmat_bonds-H_qm9_post", "featuresmat_angles-H_qm9_post", "featuresmat_torsion-H_qm9_post"]
-    Fs = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_H_paths)
-    idtrains = vec(readdlm("data/centers_30k_id57.txt", Int))[1:100]
-    Eda = hp_baseline(E, Fs[1], Fs[2], Fs[3], Fs[4], idtrains; 
-            sb = false, sn = false, st = false, 
-            pb = false, pn = false, pt = false, 
-            npb = 5, npn = 5, npt = 5)
-    Edb = hp_baseline(E, Fs[1], Fs[2], Fs[3], Fs[4], idtrains; 
-        sb = true, sn = false, st = false, 
-        pb = false, pn = false, pt = false, 
-        npb = 5, npn = 5, npt = 5)
-    Edn = hp_baseline(E, Fs[1], Fs[2], Fs[3], Fs[4], idtrains; 
-        sb = true, sn = true, st = false, 
-        pb = false, pn = false, pt = false, 
-        npb = 5, npn = 5, npt = 5)
-    Edt = hp_baseline(E, Fs[1], Fs[2], Fs[3], Fs[4], idtrains; 
-        sb = true, sn = true, st = true, 
-        pb = false, pn = false, pt = false, 
-        npb = 5, npn = 5, npt = 5)
-    display([E Eda Edb Edn Edt])
-    # sort by magnitude of E:
-    yplots = [sort(abs.(E[idtrains])), sort(abs.(Eda[idtrains])), sort(abs.(Edb[idtrains])), sort(abs.(Edn[idtrains])), sort(abs.(Edt[idtrains]))]
-    yplots = [log.(y) for y in yplots]
-    p = Plots.plot(1:length(E[idtrains]), yplots,
-                        ylims = [-10,10]
-                        )
-    #Plots.savefig(p, "plot/deltaML/deltaE.png")
-    # try animate using Plots:
-    gr()
-    p = Plots.plot([cos for i ∈ eachindex(yplots)], 1, xlims = (0,100), ylims = (-10, 10),
-                    markershape = [:xcross :cross :rect :auto :auto], markersize=4,
-                    labels = permutedims([latexstring("E^{($(i-1))}") for i ∈ eachindex(yplots)]),
-                    ylabel = latexstring("\\log(|E|)"),
-                    dpi = 500) # see the "cos" functions? they're dummy functions
-    anim = Animation() 
-    for x = 1:100
-        Plots.plot(push!(p, x, Float64[y[x] for y in yplots]))
-        Plots.frame(anim)
-    end
-    gifpath = "anime/Edelta.gif"
-    gif(anim, gifpath, fps=20)
-    # paaste this in powershell:
-    # ffmpeg -i "anime/Edelta.gif" -vsync 0 "anime/Edelta/%d.png" 
+    finish() =#
 end
 
 
