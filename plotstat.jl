@@ -878,23 +878,33 @@ function main_rotate()
         push!(maxhs, maxh); push!(cs, c)
         println([i, minh, maxh, c, length(bins[i])])
     end
-    # test placement on bin2:
-    i = 4
-    bin = bins[i]; c = cs[i]
-    n = length(bin)
-    ps = zeros(n) # point locations
-    ps[1] = Kt[bin[1],2] + c*(hs[bin[1]]/2)
-    for i ∈ 2:n
-        ps[i] = ps[i-1] + c*(hs[bin[i-1]]/2 + hs[bin[i]]/2 + dgap)
-    end
-    display(ps)
+    # placement on bins: (can be combined with the previous loop actually)
+    pss = []
     for (i,kv) in enumerate(bins)
-        for j ∈ bins[i] # for each j in Kt index
-
+        bin = bins[i]; c = cs[i]
+        n = length(bin)
+        ps = zeros(n) # point locations
+        ps[1] = Kt[bin[1],2] + c*(hs[bin[1]]/2)
+        for i ∈ 2:n
+            ps[i] = ps[i-1] + c*(hs[bin[i-1]]/2 + hs[bin[i]]/2 + dgap) 
+        end
+        push!(pss, ps)
+    end
+    # RYOIKI TENKAI: UNLIMITED DRAWING 📢 📢 🔥 🔥 🔥 🔥 🔥 🔥
+    Drawing(2500, 2500, "pcagraph_scaled.svg")
+    background("white")
+    for (i,kv) in enumerate(bins)
+        bin = bins[i]
+        for (k,j) ∈ enumerate(bin) # for each j in bin
+            origin()
+            Luxor.translate(Point(Kt[j,1], -pss[i][k])) # flip y sign as usual
+            @layer begin
+                Luxor.scale(cs[i])
+                placeimage(svgs[j], Luxor.O, centered=true)
+            end
         end
     end
-    Drawing(2500, 2500, "pcagraph.svg")
-    background("white")
+    finish()
 
     # ! draw for each molecule indices (regardless of bins):
     #= Drawing(2500, 2500, "pcagraph.svg")
