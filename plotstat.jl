@@ -864,29 +864,31 @@ function main_rotate()
     ## determine the uniform scaling for each bin, using c = (maxh - minh)/(sum(y) + (n-1)d), where the drawing LB need to be shifted to 0:
     svgs = readsvg.(drawsvg.(smilestomol.(tsmiless))) # preload all of the svg imagees
     hs = map(x -> x.height, svgs)
-    dgap = 20.0 # distance gap in pixel unit
+    dgap = 0.0 # distance gap in pixel unit
     miny = minimum(Kt[:,2])
     absminy = abs(miny) # for shifting the drawing by this magnitude so that the minimum is on 0 
     maxhs = [] # drawing upperbound that corresponds to each bin
-    cs = [] # scaling coefficients for each bin
+    cs = [] # scaling coefficients for each bin !! can also experiment by manually editing the c in cs
+    c_scale = 0.8 # 0 < s_c ≤ 1, the smaller then the image will be much closer
     for (i,kv) in enumerate(bins)
         id_maxh = bins[i][end] # get the id that corresponds to the image in the last index (the highest image)
         id_minh = bins[i][1] # minimum y of the bin
         maxh = Kt[id_maxh, 2] + hs[id_maxh]/2 # drawing upperbound of the bin
         minh = Kt[id_minh, 2] - hs[id_minh]/2 # drawing lowerbound of the bin
-        c = (maxh - minh)/(sum(hs[bins[i]]) + (length(bins[i])-1)*dgap)
+        c = (maxh - minh)/(c_scale*sum(hs[bins[i]]) + (length(bins[i])-1)*dgap)
         push!(maxhs, maxh); push!(cs, c)
         println([i, minh, maxh, c, length(bins[i])])
     end
-    # placement on bins: (can be combined with the previous loop actually)
+    # coordinate placement of bins: (can be combined with the previous loop actually) 🤓
     pss = []
+    c_overlap = 2.5 # c0 ≤ 2 means no overlap between images, c0 > 2 means there are overlaps
     for (i,kv) in enumerate(bins)
         bin = bins[i]; c = cs[i]
         n = length(bin)
         ps = zeros(n) # point locations
-        ps[1] = Kt[bin[1],2] + c*(hs[bin[1]]/2)
+        ps[1] = Kt[bin[1],2] + c*(hs[bin[1]]/c_overlap)
         for i ∈ 2:n
-            ps[i] = ps[i-1] + c*(hs[bin[i-1]]/2 + hs[bin[i]]/2 + dgap) 
+            ps[i] = ps[i-1] + c*(hs[bin[i-1]]/c_overlap + hs[bin[i]]/c_overlap + dgap) 
         end
         push!(pss, ps)
     end
@@ -904,7 +906,20 @@ function main_rotate()
             end
         end
     end
+    # add "axes lines" and texts manually
+    sethue("black")
+    origin()
+    Luxor.arrow(Point(-1150, 1100), Point(1150, 1100); linewidth = 5, arrowheadlength = 20) # -1150, 1100
+    Luxor.arrow(Point(-1100, 1150), Point(-1100, -1150); linewidth = 5, arrowheadlength = 20)
+    fontsize(70)
+    Luxor.text(("PC1 ordering"), Point(0,1200)) # x axis marker
+    Luxor.text(("PC2 ordering"), Point(-1170,0), angle=-π/2) # y axis marker
     finish()
+
+    # superpose the original train PCA plot on top left: 
+
+
+    # CT MAXIMUM OUTPUT: ANIMATE! 
 
     # ! draw for each molecule indices (regardless of bins):
     #= Drawing(2500, 2500, "pcagraph.svg")
