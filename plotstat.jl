@@ -806,6 +806,8 @@ function main_rotate()
     KR = (R*KR')'
     jp = jplot(jscatter(x=KR[trains,1], y=KR[trains,2], mode="markers"))
     display(jp)
+    pp = Plots.scatter(KR[trains,1], KR[trains,2], xlabel="PC1", ylabel="PC2", markershape=:utriangle, markercolor=:red, legend=false, fmt = :svg)
+    Plots.savefig(pp, "plot/deltaML/PCA_train.svg")
     #Plots.scatter(KR[trains,1], KR[trains,2])
     # auto bins by x with radius δ = 0.1:
     Kt = KR[trains,:]
@@ -907,16 +909,19 @@ function main_rotate()
     # add "axes lines" and texts manually
     sethue("black")
     origin()
-    Luxor.arrow(Point(-1150, 1100), Point(1150, 1100); linewidth = 5, arrowheadlength = 20) # -1150, 1100
-    Luxor.arrow(Point(-1100, 1150), Point(-1100, -1150); linewidth = 5, arrowheadlength = 20)
+    Luxor.arrow(Point(-1150, 1100), Point(1150, 1100); linewidth = 5, arrowheadlength = 20) # x axis
+    Luxor.arrow(Point(-1100, 1150), Point(-1100, -1150); linewidth = 5, arrowheadlength = 20) # y axis
     fontsize(70)
-    Luxor.text(("PC1 ordering"), Point(0,1200)) # x axis marker
-    Luxor.text(("PC2 ordering"), Point(-1170,0), angle=-π/2) # y axis marker
-    finish()
-
+    Luxor.text(("PC1 order"), Point(0,1200)) # x axis marker
+    Luxor.text(("PC2 order"), Point(-1170,0), angle=-π/2) # y axis marker
     # superpose the original train PCA plot on top left: 
-
-
+    ori_PCA = readsvg("plot/deltaML/PCA_train.svg")
+    Luxor.translate(Point(-1075, -1150))
+    @layer begin
+        Luxor.scale(1.5)
+        placeimage(ori_PCA, Luxor.O, centered=false)
+    end
+    finish()
     # CT MAXIMUM OUTPUT: ANIMATE! 
 
     # ! draw for each molecule indices (regardless of bins):
@@ -973,7 +978,7 @@ function main_plot_deltas()
     p = Plots.plot([cos for i ∈ eachindex(yplots)], 1, xlims = (0,100), ylims = (-10, 10),
                     markershape = [:xcross :cross :rect :auto :auto], markersize=4,
                     labels = permutedims([latexstring("E^{($i)}") for i ∈ eachindex(yplots)]),
-                    dpi = 500)
+                    dpi = 200)
     anim = Animation()
     for x = 1:100
         Plots.plot(push!(p, x, Float64[y[x] for y in yplots]))
