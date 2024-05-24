@@ -1020,7 +1020,6 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
     idtrainss = nothing; idtests = nothing; idtrains = nothing;
     F_dresseds = nothing
     # for now replace "DPK" with "GK" so that all of them are optimized:
-    th[:,7] .= "GK"
     for i ∈ axes(th, 1)
         println(th[i,[1,3,4,6,7,8]])
         Et = E # reset E target
@@ -1075,23 +1074,27 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
                         sampler = LHSampler(),
                         s = 1:iters,
                         dummy = zeros(iters) # need dummy var if only 1 var is optimized???
-                    @show fobj = fobj_hpopt(Et, f, idtrains, idtests, atomtrains, atomtests; c = float(2*s^2))
+                    @show fobj = fobj_gaussian_kernel(Et, f, idtrains, idtests, atomtrains, atomtests; c = float(2*s^2))
                 end
             end
             best_params, min_f = ho.minimizer, ho.minimum
             σmin = best_params[1]
             fobj = min_f
+            mean_t = t/iters
             println(best_params)
             println(min_f)
-            println(t)
-        elseif th[i,7] == "DPK" # skip, just return the current value
+            println([t, mean_t])
+        elseif th[i,7] == "DPK" 
             σmin = 0.
-            fobj = th[i,12]
+            t = @elapsed begin
+                fobj = fobj_linear_kernel(Et, f, idtrains, idtests, atomtrains, atomtests) 
+            end
+            mean_t = t
         end
         # write output:
         th[i,12] = fobj
         open(outfile, "a") do io # writefile by batch
-            writedlm(io, permutedims(vcat(th[i,:], [σmin, t])))
+            writedlm(io, permutedims(vcat(th[i,:], [σmin, mean_t])))
         end
     end
 end
@@ -1100,7 +1103,7 @@ end
 objective function: computes the MAE(10k)
     c = 2σ²
 """
-function fobj_hpopt(E, f, idtrains, idtests, atomtrains, atomtests; c=2048., λ = 1e-8)
+function fobj_gaussian_kernel(E, f, idtrains, idtests, atomtrains, atomtests; c=2048., λ = 1e-8)
     # compute kernel:
     K = get_gaussian_kernel(f[idtrains], f[idtrains], atomtrains, atomtrains, c)    
     # train:
@@ -1108,6 +1111,16 @@ function fobj_hpopt(E, f, idtrains, idtests, atomtrains, atomtests; c=2048., λ 
     θ = K\E[idtrains] 
     # predict:
     K = get_gaussian_kernel(f[idtests], f[idtrains], atomtests, atomtrains, c)
+    Epred = K*θ
+    return mean(abs.(E[idtests] - Epred))*627.503
+end
+
+function fobj_linear_kernel(E, f, idtrains, idtests, atomtrains, atomtests; λ = 1e-8)
+    K = get_repker_atom(f[idtrains], f[idtrains], atomtrains, atomtrains)
+    # train:
+    K[diagind(K)] .+= λ
+    θ = K\E[idtrains] 
+    K = get_repker_atom(f[idtests], f[idtrains], atomtests, atomtrains)
     Epred = K*θ
     return mean(abs.(E[idtests] - Epred))*627.503
 end
