@@ -987,11 +987,27 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
     max_n = 30_000 # sample from 30k rather than 1k, seems this would reproduce the result for rand #n_ids[end]
     max_idtrains = StatsBase.sample(idrem, max_n, replace=false)
     idtrainss_rand = map(n_id -> max_idtrains[1:n_id], n_ids)
-    # selected id:
-    idtrainss_sel = vec(readdlm("data/centers_30k_id57.txt", Int)) # 30k ids from usequence
+    # determine trainsets based on selected id: # !!! for now manual setting
+    cpaths = ["data/centers_ACSF_51_1000_20240524T151707.txt","data/centers_FCHL19_1000_20240524T151707.txt","data/centers_SOAP_1000_20240524T151707.txt", "data/centers_CMBDF_1000.txt"]
+    fnames = ["ACSF_51", "FCHL19", "SOAP", "CMBDF"]
+    useq_ids = Dict()
+    for (i,pth) in enumerate(cpaths)
+        idtrainss_sel = vec(readdlm(pth, Int))
+        idtrainss_sel = map(n_id -> idtrainss_sel[1:n_id], n_ids)
+        idrem = setdiff(idall, idtrainss_sel[end])
+        idtests_sel = StatsBase.sample(idrem, n_test, replace=false)
+
+        useq_id = Dict()
+        useq_id["train"] = idtrainss_sel
+        useq_id["test"] = idtests_sel
+        useq_ids[fnames[i]] = useq_id
+    end
+    
+    #= idtrainss_sel = vec(readdlm("data/centers_30k_id57.txt", Int)) # 30k ids from usequence
     idtrainss_sel = map(n_id -> idtrainss_sel[1:n_id], n_ids)
     idrem = setdiff(idall, idtrainss_sel[end])
-    idtests_sel = StatsBase.sample(idrem, n_test, replace=false)
+    idtests_sel = StatsBase.sample(idrem, n_test, replace=false) =#
+
     # warmup kernel:
     main_kernels_warmup()
     # write initialization:
@@ -1003,6 +1019,8 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
     fname = nothing; f = nothing
     idtrainss = nothing; idtests = nothing; idtrains = nothing;
     F_dresseds = nothing
+    # for now replace "DPK" with "GK" so that all of them are optimized:
+    th[:,7] .= "GK"
     for i ∈ axes(th, 1)
         println(th[i,[1,3,4,6,7,8]])
         Et = E # reset E target
@@ -1011,6 +1029,9 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
             fname = th[i,8]
             f = load("data/"*fname*".jld", "data")
         end
+        # training set selection based on feature:
+        idtrainss_sel = useq_ids[fname]["train"]
+        idtests_sel = useq_ids[fname]["test"]
         # training set selection switch, col 1
         if th[i,1] == "rand"
             idtrainss = idtrainss_rand
@@ -1070,7 +1091,7 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
         # write output:
         th[i,12] = fobj
         open(outfile, "a") do io # writefile by batch
-            writedlm(io, permutedims(vcat(th[i,:], [σmin])))
+            writedlm(io, permutedims(vcat(th[i,:], [σmin, t])))
         end
     end
 end
