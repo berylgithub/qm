@@ -853,7 +853,7 @@ function main_generate_trainset(fnames, ntrain; reservoir_size = 500, sim_id="")
     for fname ∈ fnames
         f = load("data/$(fname).jld", "data")
         nrow = length(f)
-        ncol = maximum(length.(f)) # maxnumatom * num atomfeature
+        ncol = maximum(length.(f))
         F = zeros(Float64, nrow, ncol)
         for i ∈ 1:nrow
             F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
