@@ -846,6 +846,25 @@ function main_generate_30k()
 end
 
 """
+similar to above, but more general
+"""
+function main_generate_trainset(fnames, ntrain; reservoir_size = 500, sim_id="")
+    Random.seed!(777)
+    for fname ∈ fnames
+        f = load("data/$(fname).jld", "data")
+        nrow = length(f)
+        ncol = maximum(length.(f))*size(f[1],2) # maxnumatom * num atomfeature
+        F = zeros(Float64, nrow, ncol)
+        for i ∈ 1:nrow
+            F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
+        end
+        centers = set_cluster(F, ntrain; universe_size = 1000, num_center_sets = 1, reservoir_size=reservoir_size)[1]
+        writedlm("data/centers_$(fname)_$(ntrain)_$(sim_id)", centers)
+    end
+end
+
+
+"""
 test reproduce MAE with fixed hyperparameters H from the best one (minimal simulation),
 kind of similar to main_obj
 hardcode the current best:
