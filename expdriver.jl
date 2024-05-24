@@ -853,13 +853,13 @@ function main_generate_trainset(fnames, ntrain; reservoir_size = 500, sim_id="")
     for fname ∈ fnames
         f = load("data/$(fname).jld", "data")
         nrow = length(f)
-        ncol = maximum(length.(f))*size(f[1],2) # maxnumatom * num atomfeature
+        ncol = maximum(length.(f)) # maxnumatom * num atomfeature
         F = zeros(Float64, nrow, ncol)
         for i ∈ 1:nrow
             F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
         end
         centers = set_cluster(F, ntrain; universe_size = 1000, num_center_sets = 1, reservoir_size=reservoir_size)[1]
-        writedlm("data/centers_$(fname)_$(ntrain)_$(sim_id)", centers)
+        writedlm("data/centers_$(fname)_$(ntrain)_$(sim_id).txt", centers)
     end
 end
 
