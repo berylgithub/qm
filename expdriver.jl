@@ -1067,8 +1067,8 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
         Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains; 
                 sb = sb, sn = sn, st = st)
         # model switch, col 7
+        atomtrains = map(d->d["atoms"], dataset[idtrains]); atomtests = map(d->d["atoms"], dataset[idtests])
         if th[i,7] == "GK"
-            atomtrains = map(d->d["atoms"], dataset[idtrains]); atomtests = map(d->d["atoms"], dataset[idtests])
             t = @elapsed begin
                 ho = @hyperopt for i=iters, 
                         sampler = LHSampler(),
