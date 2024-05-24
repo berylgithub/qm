@@ -991,39 +991,28 @@ function main_plot_deltas()
 end
 
 
-"""
-test plot images on some coordinates
-"""
-function test_plot_img()
-    mol = smilestomol("CC(=O)OC1=CC=CC=C1C(=O)O")
-    img = readsvg(drawsvg(mol))
-    # basic drawing example using luxor:
-    Drawing(1000, 1000, "test.svg")
-    origin()
-    background("white")
-    setcolor("red")
-    Luxor.circle(Point(0,0), 5, action = :fill)
-    Luxor.circle(Point(-200,0), 5, action = :fill)
-    Luxor.circle(Point(-300,0), 5, action = :fill)
-    @layer begin
-        Luxor.scale(0.5)
-        placeimage(img, centered=true)
-    end
-    origin()
-    Luxor.translate(Point(-200,0))
-    @layer begin
-        Luxor.scale(2.0)
-        placeimage(img, Luxor.O, centered=true)
-    end
-    origin()
-    Luxor.translate(Point(-300,0))
-    @layer begin
-        Luxor.scale(0.5)
-        placeimage(img, Luxor.O, centered=true)
-    end
-
-    finish()
-    #preview()
+function main_plot_hpoptk()
+    tb = readdlm("result/deltaML/tb_hpoptk.txt")
+    xticks = tb[1:4, 4]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
+    stids = 1:4:size(tb,1)
+    ys = [[tb[i:i+3,12]] for i ∈ stids]; 
+    yticks = [2.0^i for i ∈ 0:3]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    labels = permutedims([tb[i,1]*", "*tb[i,8] for i ∈ stids])
+    p = Plots.plot(xticks, ys,
+            yticks = (yticks, ytformat),
+            xticks = (xticks, xtformat), 
+            xaxis = :log, yaxis = :log,
+            linestyle = [:dash :dash :dash :dash :solid :solid :solid :solid],
+            markershape = [:circle :rect :utriangle :diamond :circle :rect :utriangle :diamond], 
+            markercolor = [:black :green :blue :purple :black :green :blue :purple],
+            linecolor = [:black :green :blue :purple :black :green :blue :purple],
+            markersize = (ones(8)*6)',
+            labels = labels, xlabel = "Ntrain", ylabel = "MAE (kcal/mol)",
+            title = "Random vs Usequence", legend = :outertopright,
+            dpi = 1000
+        )
+    display(p)
+    Plots.savefig(p, "plot/deltaML/fig_RandVFPS_1k.png")
 end
 
 
