@@ -848,15 +848,22 @@ end
 """
 similar to above, but more general
 """
-function main_generate_trainset(fnames, ntrain; reservoir_size = 500, sim_id="")
+function main_generate_trainset(fnames, ntrain; reservoir_size = 500, mode="flatten", sim_id="")
+    dataset = load("data/qm9_dataset.jld", "data")
     Random.seed!(777)
     for fname ∈ fnames
         f = load("data/$(fname).jld", "data")
         nrow = length(f)
         ncol = maximum(length.(f))
         F = zeros(Float64, nrow, ncol)
-        for i ∈ 1:nrow
-            F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
+        if mode == "flatten"
+            for i ∈ 1:nrow
+                F[i,eachindex(f[i])] = vec(transpose(f[i])) # flatten
+            end
+        elseif mode == "bag"
+            F = bag_atom_feature(dataset, f)
+        elseif mode == "sum"
+            F = extract_mol_features(f, dataset) # exclude natoms heuristics
         end
         centers = set_cluster(F, ntrain; universe_size = 1000, num_center_sets = 1, reservoir_size=reservoir_size)[1]
         writedlm("data/centers_$(fname)_$(ntrain)_$(sim_id).txt", centers)
