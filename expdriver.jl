@@ -995,7 +995,7 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
     max_idtrains = StatsBase.sample(idrem, max_n, replace=false)
     idtrainss_rand = map(n_id -> max_idtrains[1:n_id], n_ids)
     # determine trainsets based on selected id: # !!! for now manual setting
-    cpaths = ["data/centers_ACSF_51_1000_20240524T151707.txt","data/centers_FCHL19_1000_20240524T151707.txt","data/centers_SOAP_1000_20240524T151707.txt", "data/centers_CMBDF_1000.txt"]
+    cpaths = ["data/centers_ACSF_51_1000_20240527T095931.txt","data/centers_FCHL19_1000_20240527T095931.txt","data/centers_SOAP_1000_20240527T095931.txt", "data/centers_CMBDF_1000.txt"]
     fnames = ["ACSF_51", "FCHL19", "SOAP", "CMBDF"]
     useq_ids = Dict()
     for (i,pth) in enumerate(cpaths)
