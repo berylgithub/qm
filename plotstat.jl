@@ -858,7 +858,7 @@ function main_rotate()
     # copypasta this to the terminal repeatedly until image looks good:
     # need to also check the delta for the molgraph "clusters" (see the paper for suggestions)
     # smiles MUST be loaded in the terminal: 
-    # > dataset = load("data/qm9_dataset.jld", "data"); smiless = map(d->d["smiles"], dataset); tsmiless = smiless[trains]
+    dset = load("data/qm9_dataset.jld", "data"); smiless = map(d->d["smiles"], dset); tsmiless = smiless[trains]
     
     # ! draw for each bin:
     ## determine the uniform scaling for each bin, using c = (maxh - minh)/(sum(y) + (n-1)d), where the drawing LB need to be shifted to 0:
@@ -893,17 +893,22 @@ function main_rotate()
         push!(pss, ps)
     end
     # RYOIKI TENKAI: UNLIMITED DRAWING 📢 📢 🔥 🔥 🔥 🔥 🔥 🔥
+    # for convenicne:
+    function placemyimage(im, coor, scaling)
+        origin()
+        Luxor.translate(coor) # flip y sign as usual
+        @layer begin
+            Luxor.scale(scaling)
+            placeimage(im, Luxor.O, centered=true)
+        end
+    end
+
     Drawing(2500, 2500, "pcagraph_scaled.svg")
     background("white")
     for (i,kv) in enumerate(bins)
         bin = bins[i]
         for (k,j) ∈ enumerate(bin) # for each j in bin
-            origin()
-            Luxor.translate(Point(Kt[j,1], -pss[i][k])) # flip y sign as usual
-            @layer begin
-                Luxor.scale(cs[i])
-                placeimage(svgs[j], Luxor.O, centered=true)
-            end
+            placemyimage(svgs[j], Point(Kt[j,1], -pss[i][k]), cs[i])
         end
     end
     # add "axes lines" and texts manually
@@ -922,7 +927,34 @@ function main_rotate()
         placeimage(ori_PCA, Luxor.O, centered=false)
     end
     finish()
-    # CT MAXIMUM OUTPUT: ANIMATE! 
+
+    # CT MAXIMUM OUTPUT: ANIMATE! :
+
+    
+
+    anime = Movie(2500, 2500, "anime_pcagraph_scaled")
+    # tthis is the BACKGROUND of tthe animatoion
+    function backdrop(scene, framenumber)
+        background("white")
+        sethue("black")
+        origin()
+        Luxor.arrow(Point(-1150, 1100), Point(1150, 1100); linewidth = 5, arrowheadlength = 20) # x axis
+        Luxor.arrow(Point(-1100, 1150), Point(-1100, -1150); linewidth = 5, arrowheadlength = 20) # y axis
+        fontsize(70)
+        Luxor.text(("PC1 order"), Point(0,1200)) # x axis marker
+        Luxor.text(("PC2 order"), Point(-1170,0), angle=-π/2) # y axis marker
+        # superpose the original train PCA plot on top left: 
+        ori_PCA = readsvg("plot/deltaML/PCA_train.svg")
+        Luxor.translate(Point(-1075, -1150))
+        @layer begin
+            Luxor.scale(1.5)
+            placeimage(ori_PCA, Luxor.O, centered=false)
+        end
+    end
+
+    Luxor.animate(anime,
+                [Scene(anime,backdrop,1:60)]
+                )
 
     # ! draw for each molecule indices (regardless of bins):
     #= Drawing(2500, 2500, "pcagraph.svg")
@@ -992,11 +1024,12 @@ end
 
 
 function main_plot_hpoptk()
-    tb = readdlm("result/deltaML/tb_hpoptk.txt")
+    tb = readdlm("result/deltaML/tb_hpoptk_20240527T102359.txt")
+    tb[17:end,1] .= "useq"
     xticks = tb[1:4, 4]; xtformat = string.(map(x -> @sprintf("%.0f",x), xticks))
     stids = 1:4:size(tb,1)
     ys = [[tb[i:i+3,12]] for i ∈ stids]; 
-    yticks = [2.0^i for i ∈ 0:3]; ytformat = map(x -> @sprintf("%.0f",x), yticks)
+    yticks = vcat(12,[2.0^i for i ∈ 0:3]); ytformat = map(x -> @sprintf("%.0f",x), yticks)
     labels = permutedims([tb[i,1]*", "*tb[i,8] for i ∈ stids])
     p = Plots.plot(xticks, ys,
             yticks = (yticks, ytformat),
@@ -1008,7 +1041,7 @@ function main_plot_hpoptk()
             linecolor = [:black :green :blue :purple :black :green :blue :purple],
             markersize = (ones(8)*6)',
             labels = labels, xlabel = "Ntrain", ylabel = "MAE (kcal/mol)",
-            title = "Random vs Usequence", legend = :outertopright,
+            title = "100k test molecules", legend = :outertopright,
             dpi = 1000
         )
     display(p)
@@ -1022,9 +1055,9 @@ and the PCA using molgraph
 !! as usual, preferrable to be pasted to terminal
 """
 function main_plot_molgraph()
-    dataset = load("data/qm9_dataset.jld", "data")
+    dset = load("data/qm9_dataset.jld", "data")
     idtrains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end])) # optimized training set
-    smiless = map(d->d["smiles"], dataset) # selected smiless from t
+    smiless = map(d->d["smiles"], dset) # selected smiless from t
     θ = vec(readdlm("data/theta_best.txt")) # best weights obtained
     sid = reverse(sortperm(θ)) # descending sort
     ss = smiless[idtrains][sid]
@@ -1291,4 +1324,48 @@ function main_eq_dist()
     save("data/smallmol/hxoy_data_req.jld", "data", data) 
 end
 
-    
+
+Drawing(1000,1000,"test.svg")
+Luxor.translate(Point(0,0))
+fontsize(300)
+textpath("s", O, halign=:center, valign=:middle)
+s = storepath()
+drawpath(s, action=:stroke)
+
+sethue("purple")
+setline(10)
+setopacity(0.5)
+pt = drawpath(s, 0.5, action=:stroke) # return final pt
+
+setcolor("red")
+Luxor.circle(pt, 5, :fill)
+finish()
+preview()
+
+
+demo = Movie(400, 400, "test")
+
+function backdrop(scene, framenumber)
+    background("black")
+end
+
+function frame(scene, framenumber)
+    sethue(Colors.HSV(framenumber, 1, 1))
+    eased_n = scene.easingfunction(framenumber, 0, 1, scene.framerange.stop)
+    Luxor.circle(polar(100, -π/2 - (eased_n * 2π)), 80, :fill)
+    Luxor.text(string("frame $framenumber of $(scene.framerange.stop)"),
+        Point(O.x, O.y-190),
+        halign=:center)
+    Luxor.text(scene.opts,
+        boxbottomcenter(BoundingBox()),
+        halign=:center,
+        valign=:bottom)
+end
+
+Luxor.animate(demo, [
+    Scene(demo, backdrop, 0:359),
+    Scene(demo, frame, 0:359,
+        easingfunction=easeinoutcubic,
+        optarg="made with Julia")
+    ],
+    creategif=true)
