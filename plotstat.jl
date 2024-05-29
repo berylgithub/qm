@@ -892,7 +892,7 @@ function main_rotate()
         end
         push!(pss, ps)
     end
-    # RYOIKI TENKAI: UNLIMITED DRAWING 📢 📢 🔥 🔥 🔥 🔥 🔥 🔥
+    # RYOIKI TENKAI: INFINITE DRAWING 📢 📢 🔥 🔥 🔥 🔥 🔥 🔥
     # for convenicne:
     function placemyimage(im, coor, scaling)
         origin()
@@ -911,6 +911,7 @@ function main_rotate()
             placemyimage(svgs[j], Point(Kt[j,1], -pss[i][k]), cs[i])
         end
     end
+
     # add "axes lines" and texts manually
     sethue("black")
     origin()
@@ -929,10 +930,9 @@ function main_rotate()
     finish()
 
     # CT MAXIMUM OUTPUT: ANIMATE! :
-
-    
-
-    anime = Movie(2500, 2500, "anime_pcagraph_scaled")
+    info = (bins, svgs, Kt, pss, cs) # put important data here
+    nfr = length(bins)
+    anime = Movie(2500, 2500, "anime_pcagraph_scaled", 1:nfr)
     # tthis is the BACKGROUND of tthe animatoion
     function backdrop(scene, framenumber)
         background("white")
@@ -953,14 +953,28 @@ function main_rotate()
     end
 
     # here is the foreground anime
-    function generate_frames()
-        
+    # info contains the precomputed (images, coordinates, scalings)
+    function mappa(scene, iframe, info)
+        bins, svgs, Kt, pss, cs = info # unpack data
+        # place images:
+        for i ∈ 1:iframe
+            bin = bins[i] # bins isa Dict(), i corresponds to bins' keys
+            for (k,j) ∈ enumerate(bin) # bin isa vector, j corresponds to the row index in Kt
+                placemyimage(svgs[j], Point(Kt[j,1], -pss[i][k]), cs[i])
+            end
+        end
     end
 
     Luxor.animate(anime,
-            [Scene(anime,backdrop,1:60)],
+            [
+                Scene(anime,backdrop,1:nfr),
+                Scene(anime,(sc,fr) -> mappa(sc,fr,info),1:nfr)
+            ],
             creategif=true,
-                )
+            framerate = 2,
+            tempdirectory = "anime/molgraph",
+            pathname = "anime/molgraph_JJK.gif"
+        )
 
     # ! draw for each molecule indices (regardless of bins):
     #= Drawing(2500, 2500, "pcagraph.svg")
