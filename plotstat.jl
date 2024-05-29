@@ -1023,33 +1023,29 @@ function main_anime_ending()
             pathname = "anime/JJK_ED.gif"
         )
 end
-Drawing(1000, 1000, "test.svg")
-background("white")
-Luxor.fontsize(75)
-Luxor.fontface("Noto Sans JP")
-# data:
-rates = [0.75, 0.5, 0.25]
-ys = [500, 700, 900]
-sentences = ["Thank You", "Terima Kasih", "ありがとうございます"]
-# generate paths:
-pats = []
-for (i,s) ∈ enumerate(sentences)
-    Luxor.textpath(sentences[i], Point(500, ys[i]), halign=:center, valign=:middle)
-    pat = Luxor.storepath()
-    Luxor.drawpath(pat, action=:stroke)
-    push!(pats, pat)
-end
 
-Luxor.sethue("purple")
-Luxor.setline(10)
-Luxor.setopacity(0.5)
-pts = []
-# generate partial paths:
-for (i,s) ∈ enumerate(sentences)
-    Luxor.drawpath(pats[i], rates[i], action=:stroke)
+"""
+writes text like main_spiral_text
+"""
+function main_spiral_text()
+    strs = readdlm("anime/refforanime.txt", '\n') # the strings
+    strs = replace.(strs, "        \\item" => " ")
+    Drawing(1000, 1000, "anime/naruto.svg")
+    sethue("royalblue4") # hide
+    fontsize(7)
+    fontface("Menlo")
+    textstring = join(names(Base), " ")
+    textcurve(join(strs, "---"),
+        -π/2,
+        350, 0, 0,
+        spiral_in_out_shift = -8.0,
+        letter_spacing = 0,
+        spiral_ring_step = 0)
+    fontsize(35)
+    fontface("Avenir-Black")
+    textcentered("References", 0, 0)
+    finish()
 end
-finish()
-preview()
 
 """
 !! terminal
