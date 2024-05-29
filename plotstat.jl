@@ -992,17 +992,19 @@ end
 
 function main_anime_ending()
     nfr = 45
-    anime = Movie(1000, 1000, "JJK_ending", 1:nfr)
+    anime = Movie(1000, 700, "JJK_ending", 1:nfr)
     function backdrop_ed(scene, frame)
         background("white")
     end
     function anime_ed(scene, frame, nfr)
+        Luxor.setline(5)
         Luxor.fontsize(75)
         Luxor.fontface("Noto Sans JP")
         # data:
         rates = [0.75, 0.5, 0.25]
-        ys = [500, 700, 900] .- 500
+        ys = [500, 700, 900] .- 800
         sentences = ["Thank You", "Terima Kasih", "ありがとうございます"]
+        
         # generate paths:
         pats = []
         for (i,s) ∈ enumerate(sentences)
@@ -1011,6 +1013,16 @@ function main_anime_ending()
             Luxor.drawpath(pat, frame/nfr, action=:stroke)
             push!(pats, pat)
         end
+        Luxor.fontsize(20)
+        Luxor.text(("Special thanks:"), Point(-490, 240))
+        Luxor.fontsize(40)
+        Luxor.textpath("Luxor.jl", Point(-250, 230), halign=:center, valign=:middle)
+        sl = Luxor.storepath()
+        Luxor.drawpath(sl, action=:stroke)
+        Luxor.sethue("red")
+        Luxor.setline(10)
+        Luxor.setopacity(0.5)
+        Luxor.drawpath(sl, frame/nfr,action=:stroke)
     end
     Luxor.animate(anime,
             [
