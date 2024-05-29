@@ -990,29 +990,64 @@ function main_rotate()
     finish() =#
 end
 
-
+function main_anime_ending()
+    nfr = 45
+    anime = Movie(1000, 1000, "JJK_ending", 1:nfr)
+    function backdrop_ed(scene, frame)
+        background("white")
+    end
+    function anime_ed(scene, frame, nfr)
+        Luxor.fontsize(75)
+        Luxor.fontface("Noto Sans JP")
+        # data:
+        rates = [0.75, 0.5, 0.25]
+        ys = [500, 700, 900] .- 500
+        sentences = ["Thank You", "Terima Kasih", "ありがとうございます"]
+        # generate paths:
+        pats = []
+        for (i,s) ∈ enumerate(sentences)
+            Luxor.textpath(sentences[i], Point(0, ys[i]), halign=:center, valign=:middle)
+            pat = Luxor.storepath()
+            Luxor.drawpath(pat, frame/nfr, action=:stroke)
+            push!(pats, pat)
+        end
+    end
+    Luxor.animate(anime,
+            [
+                Scene(anime,backdrop_ed,1:nfr),
+                Scene(anime,(sc,fr) -> anime_ed(sc,fr,nfr),1:nfr)
+            ],
+            creategif=true,
+            framerate = 60,
+            tempdirectory = "anime/jjk_ed",
+            pathname = "anime/JJK_ED.gif"
+        )
+end
 Drawing(1000, 1000, "test.svg")
+background("white")
 Luxor.fontsize(75)
 Luxor.fontface("Noto Sans JP")
-Luxor.text(("ありがとうございます"), Point(0,600))
-# first sentence:
-Luxor.textpath("Thank you", Point(500,500), halign=:center, valign=:middle)
-s1 = Luxor.storepath()
-Luxor.drawpath(s1, action=:stroke)
-
-# 2nd sentence:
-Luxor.textpath("Terima Kasih", Point(500,800), halign=:center, valign=:middle)
-s2 = Luxor.storepath()
-Luxor.drawpath(s2, action=:stroke)
+# data:
+rates = [0.75, 0.5, 0.25]
+ys = [500, 700, 900]
+sentences = ["Thank You", "Terima Kasih", "ありがとうございます"]
+# generate paths:
+pats = []
+for (i,s) ∈ enumerate(sentences)
+    Luxor.textpath(sentences[i], Point(500, ys[i]), halign=:center, valign=:middle)
+    pat = Luxor.storepath()
+    Luxor.drawpath(pat, action=:stroke)
+    push!(pats, pat)
+end
 
 Luxor.sethue("purple")
 Luxor.setline(10)
 Luxor.setopacity(0.5)
-pt1 = Luxor.drawpath(s1, 0.75, action=:stroke) # return final pt
-pt2 = Luxor.drawpath(s2, 0.5, action=:stroke)
-Luxor.setcolor("red")
-Luxor.circle(pt1, 5, :fill)
-Luxor.circle(pt2, 5, :fill)
+pts = []
+# generate partial paths:
+for (i,s) ∈ enumerate(sentences)
+    Luxor.drawpath(pats[i], rates[i], action=:stroke)
+end
 finish()
 preview()
 
