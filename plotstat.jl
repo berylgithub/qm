@@ -952,8 +952,14 @@ function main_rotate()
         end
     end
 
+    # here is the foreground anime
+    function generate_frames()
+        
+    end
+
     Luxor.animate(anime,
-                [Scene(anime,backdrop,1:60)]
+            [Scene(anime,backdrop,1:60)],
+            creategif=true,
                 )
 
     # ! draw for each molecule indices (regardless of bins):
