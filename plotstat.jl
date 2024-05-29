@@ -1042,21 +1042,22 @@ writes text like main_spiral_text
 function main_spiral_text()
     strs = readdlm("anime/refforanime.txt", '\n') # the strings
     strs = replace.(strs, "        \\item" => " ")
-    Drawing(1000, 1000, "anime/naruto.svg")
+    Drawing(900, 900, "anime/naruto.svg")
+    background("white")
     sethue("royalblue4") # hide
-    fontsize(7)
+    fontsize(17)
     fontface("Menlo")
-    textstring = join(names(Base), " ")
     textcurve(join(strs, "---"),
-        -π/2,
-        350, 0, 0,
-        spiral_in_out_shift = -8.0,
+        -π,
+        350, 450, 450,
+        spiral_in_out_shift = -15.0,
         letter_spacing = 0,
-        spiral_ring_step = 0)
+        spiral_ring_step = -1)
     fontsize(35)
     fontface("Avenir-Black")
-    textcentered("References", 0, 0)
+    textcentered("References", 450, 450)
     finish()
+    preview()
 end
 
 """
