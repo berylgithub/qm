@@ -990,6 +990,32 @@ function main_rotate()
     finish() =#
 end
 
+
+Drawing(1000, 1000, "test.svg")
+Luxor.fontsize(75)
+Luxor.fontface("Noto Sans JP")
+Luxor.text(("ありがとうございます"), Point(0,600))
+# first sentence:
+Luxor.textpath("Thank you", Point(500,500), halign=:center, valign=:middle)
+s1 = Luxor.storepath()
+Luxor.drawpath(s1, action=:stroke)
+
+# 2nd sentence:
+Luxor.textpath("Terima Kasih", Point(500,800), halign=:center, valign=:middle)
+s2 = Luxor.storepath()
+Luxor.drawpath(s2, action=:stroke)
+
+Luxor.sethue("purple")
+Luxor.setline(10)
+Luxor.setopacity(0.5)
+pt1 = Luxor.drawpath(s1, 0.75, action=:stroke) # return final pt
+pt2 = Luxor.drawpath(s2, 0.5, action=:stroke)
+Luxor.setcolor("red")
+Luxor.circle(pt1, 5, :fill)
+Luxor.circle(pt2, 5, :fill)
+finish()
+preview()
+
 """
 !! terminal
 plot the delta Energy with anim??
