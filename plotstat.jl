@@ -1099,7 +1099,8 @@ function main_plot_deltas()
     gr()
     p = Plots.plot([cos for i ∈ eachindex(yplots)], 1, xlims = (0,100), ylims = (-10, 10),
                     markershape = [:xcross :cross :rect :auto :auto], markersize=4,
-                    labels = permutedims([latexstring("E^{($i)}") for i ∈ eachindex(yplots)]),
+                    labels = permutedims([latexstring("E^{($(i-1))}") for i ∈ eachindex(yplots)]),
+                    ylabel = latexstring("\\log(|E|)"),
                     dpi = 200)
     anim = Animation()
     for x = 1:100
@@ -1107,7 +1108,7 @@ function main_plot_deltas()
         Plots.frame(anim)
     end
     gifpath = "anime/Edelta.gif"
-    gif(anim, gifpath, fps=20)
+    gif(anim, gifpath, fps=30)
     # paaste this in powershell:
     # ffmpeg -i "anime/Edelta.gif" -vsync 0 "anime/Edelta/%d.png" 
 end
@@ -1413,49 +1414,3 @@ function main_eq_dist()
     # save reselected data:
     save("data/smallmol/hxoy_data_req.jld", "data", data) 
 end
-
-
-Drawing(1000,1000,"test.svg")
-Luxor.translate(Point(0,0))
-fontsize(300)
-textpath("s", O, halign=:center, valign=:middle)
-s = storepath()
-drawpath(s, action=:stroke)
-
-sethue("purple")
-setline(10)
-setopacity(0.5)
-pt = drawpath(s, 0.5, action=:stroke) # return final pt
-
-setcolor("red")
-Luxor.circle(pt, 5, :fill)
-finish()
-preview()
-
-
-demo = Movie(400, 400, "test")
-
-function backdrop(scene, framenumber)
-    background("black")
-end
-
-function frame(scene, framenumber)
-    sethue(Colors.HSV(framenumber, 1, 1))
-    eased_n = scene.easingfunction(framenumber, 0, 1, scene.framerange.stop)
-    Luxor.circle(polar(100, -π/2 - (eased_n * 2π)), 80, :fill)
-    Luxor.text(string("frame $framenumber of $(scene.framerange.stop)"),
-        Point(O.x, O.y-190),
-        halign=:center)
-    Luxor.text(scene.opts,
-        boxbottomcenter(BoundingBox()),
-        halign=:center,
-        valign=:bottom)
-end
-
-Luxor.animate(demo, [
-    Scene(demo, backdrop, 0:359),
-    Scene(demo, frame, 0:359,
-        easingfunction=easeinoutcubic,
-        optarg="made with Julia")
-    ],
-    creategif=true)
