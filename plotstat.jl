@@ -8,6 +8,7 @@ const jsavefig = PlotlyJS.savefig
 
 using Graphs, MolecularGraph, Luxor, Images # for visualization
 using Rotations, AngleBetweenVectors
+using MathTeXEngine
 
 include("utils.jl")
 
@@ -781,6 +782,17 @@ function main_PCA_plot()
 end
 
 
+
+# for convenicne:
+function placemyimage(im, coor, scaling; centered=true)
+    origin()
+    Luxor.translate(coor) # flip y sign as usual
+    @layer begin
+        Luxor.scale(scaling)
+        placeimage(im, Luxor.O, centered=centered)
+    end
+end
+
 """
 rotate points THEN plot on 
 """
@@ -893,15 +905,7 @@ function main_rotate()
         push!(pss, ps)
     end
     # RYOIKI TENKAI: INFINITE DRAWING 📢 📢 🔥 🔥 🔥 🔥 🔥 🔥
-    # for convenicne:
-    function placemyimage(im, coor, scaling)
-        origin()
-        Luxor.translate(coor) # flip y sign as usual
-        @layer begin
-            Luxor.scale(scaling)
-            placeimage(im, Luxor.O, centered=true)
-        end
-    end
+    
 
     Drawing(2500, 2500, "pcagraph_scaled.svg")
     background("white")
@@ -1153,20 +1157,31 @@ function main_plot_molgraph()
     sid = reverse(sortperm(θ)) # descending sort
     ss = smiless[idtrains][sid]
 
+    # compute atomization energies:
+    include("alouEt.jl")
+    E = readdlm("data/energies.txt")
+    F_dresseds = [load("data/featuresmat_atomhybrid_qm9_post.jld", "data"), [], [], []]
+    Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains)*627.509 # in kcal/mol
+    str_Et = clean_float(Et)
+    str_θ = format_string_float.(3, θ) # try 3 decimals
     # Ryoiki Tenkai: DRAW
     gridsize = (10, 10) # num of grids (row, col)
-    ptsize = (190, 190) # size of partition/cell (rsize, csize)
-    imgsize = (ptsize[2]*gridsize[2], ptsize[1]*gridsize[1]) # total size of image (csize, rsize)
-    Drawing(imgsize[1], imgsize[2], "molgraphs.svg")
+    ptsize = (130, 180) # size of partition/cell (w, h)
+    imgsize = (ptsize[1]*gridsize[1], ptsize[2]*gridsize[2]) # total size of image (csize, rsize)
+    Drawing(imgsize[1], imgsize[2], "molgraphs2.svg")
     background("white")
     origin()
     t = Table(gridsize, ptsize)
-    fontsize(25)
+    fontsize(15)
+    fontface("Times-Roman")
     for (pt, i) in t
         img = readsvg(drawsvg(smilestomol(ss[i])))
-        placeimage(img, pt; centered=true)
-        Luxor.text("#"*string(idtrains[sid][i]), pt + (0., 85.) , halign=:center, valign=:middle)
-        println([idtrains[sid][i], ss[i], θ[sid][i], i])
+        placemyimage(img, pt - (0., 30.), .7; centered=true)
+        origin()        
+        Luxor.text("#"*string(idtrains[sid][i]), pt + (0., 28.) , halign=:center, valign=:middle) # mol label
+        Luxor.text(latexstring("E^{(DA)} = $(str_Et[idtrains][sid][i])"), pt + (0., 46.) , halign=:center, valign=:middle) # atomization energy
+        Luxor.text(latexstring("w = $(str_θ[sid][i])"), pt + (0., 64.) , halign=:center, valign=:middle) # atomization energy
+        println([idtrains[sid][i], ss[i], θ[sid][i], i]) #$(str_Et[idtrains][sid][i])
     end
     finish()
 end
