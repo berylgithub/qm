@@ -1160,7 +1160,7 @@ function main_plot_molgraph()
     # compute atomization energies:
     include("alouEt.jl")
     E = readdlm("data/energies.txt")
-    F_dresseds = [load("data/featuresmat_atomhybrid_qm9_post.jld", "data"), [], [], []]
+    F_dresseds = [load("data/atomref_features.jld", "data"), [], [], []]
     Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains)*627.509 # in kcal/mol
     str_Et = clean_float(Et)
     str_θ = format_string_float.(3, θ) # try 3 decimals
@@ -1184,6 +1184,20 @@ function main_plot_molgraph()
         println([idtrains[sid][i], ss[i], θ[sid][i], i]) #$(str_Et[idtrains][sid][i])
     end
     finish()
+end
+
+"""
+plot the histogram of atomization 100 mol vs QM9 dataset
+"""
+function main_plot_histograms()
+    E = readdlm("data/energies.txt")
+    idtrains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end]))
+    F_dresseds = [load("data/atomref_features.jld", "data"), [], [], []]
+    Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains)*627.509 # in kcal/mol
+    b_range = range(-100, 140, length=51) # minimum and maximum from inspecting the data manually
+    h = Plots.histogram(Et, label="130k QM9 molecules", bins=b_range, normalize=:probability, color=:yellow, xlabel=latexstring("E^{(DA)}"), ylabel=L"$P (E^{(DA)} )$", la=0.5, lw=0.5, dpi=1000)
+    Plots.stephist!(Et[idtrains], label="100 selected molecules", bins=b_range, normalize=:probability, color=:blue, lw=2)
+    Plots.savefig(h, "plot/deltaML/hist_Eatom.svg")
 end
 
 """
