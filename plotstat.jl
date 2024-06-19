@@ -1161,7 +1161,8 @@ function main_plot_molgraph()
     include("alouEt.jl")
     E = readdlm("data/energies.txt")
     F_dresseds = [load("data/atomref_features.jld", "data"), [], [], []]
-    Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains)*627.509 # in kcal/mol
+    ΔE, Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains; get_eatom=true) # in kcal/mol
+    Et *= 627.509
     str_Et = clean_float(Et)
     str_θ = format_string_float.(3, θ) # try 3 decimals
     # Ryoiki Tenkai: DRAW
@@ -1179,7 +1180,7 @@ function main_plot_molgraph()
         placemyimage(img, pt - (0., 30.), .7; centered=true)
         origin()        
         Luxor.text("#"*string(idtrains[sid][i]), pt + (0., 28.) , halign=:center, valign=:middle) # mol label
-        Luxor.text(latexstring("E^{(DA)} = $(str_Et[idtrains][sid][i])"), pt + (0., 46.) , halign=:center, valign=:middle) # atomization energy
+        Luxor.text(latexstring("E = $(str_Et[idtrains][sid][i])"), pt + (0., 46.) , halign=:center, valign=:middle) # atomization energy
         Luxor.text(latexstring("w = $(str_θ[sid][i])"), pt + (0., 64.) , halign=:center, valign=:middle) # atomization energy
         println([idtrains[sid][i], ss[i], θ[sid][i], i]) #$(str_Et[idtrains][sid][i])
     end
@@ -1193,10 +1194,11 @@ function main_plot_histograms()
     E = readdlm("data/energies.txt")
     idtrains = Int.(vec(readdlm("data/tsopt/opt_tracker_freeze.txt")[2:end]))
     F_dresseds = [load("data/atomref_features.jld", "data"), [], [], []]
-    Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains)*627.509 # in kcal/mol
-    b_range = range(-100, 140, length=51) # minimum and maximum from inspecting the data manually
-    h = Plots.histogram(Et, label="130k QM9 molecules", bins=b_range, normalize=:probability, color=:yellow, xlabel=latexstring("E^{(DA)}"), ylabel=L"$P (E^{(DA)} )$", la=0.5, lw=0.5, dpi=1000)
-    Plots.stephist!(Et[idtrains], label="100 selected molecules", bins=b_range, normalize=:probability, color=:blue, lw=2)
+    ΔE, Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains) # in kcal/mol
+    Et *= 627.509
+    b_range = range(minimum(Et) - 100., maximum(Et) - 100., length=51) # minimum and maximum from inspecting the data manually
+    h = Plots.histogram(Et, label="130k QM9 molecules", bins=b_range, normalize=:probability, color=:green, xlabel=latexstring("E^{(DA)}"), ylabel=L"$P (E^{(DA)} )$", la=0.5, lw=0.5, dpi=1000)
+    Plots.stephist!(Et[idtrains], label="100 selected molecules", bins=b_range, normalize=:probability, color=:red, lw=2)
     Plots.savefig(h, "plot/deltaML/hist_Eatom.svg")
 end
 
