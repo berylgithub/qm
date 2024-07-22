@@ -1132,7 +1132,7 @@ function main_plot_hpoptk()
             linecolor = [:black :green :blue :purple :black :green :blue :purple],
             markersize = (ones(8)*6)',
             labels = labels, xlabel = "Ntrain", ylabel = "MAE (kcal/mol)",
-            title = "100k test molecules", legend = :outertopright,
+            title = "Random vs Usequence", legend = :outertopright,
             dpi = 1000
         )
     display(p)
