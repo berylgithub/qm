@@ -651,4 +651,55 @@ function rosemi_ex()
     display([MAE/627.503, t_ls, t_pred])
 end
 
+"""
+for last chapter's experiment:
+"""
 
+"""
+computes exp(-||u-v||^2_2/c)
+u and v are vectors; c is a scalar
+"""
+function kernel_fun_1(u, v, c)
+    s = (u - v).^2 # here s is a vector
+    return exp(-sum(s)/c)
+end
+
+function kernel_fun_2(u, v, c)
+    s = 0. # here s is a scalar
+    for i ∈ eachindex(u)
+        s += (u[i]-v[i])^2
+    end
+    return exp(-s/c)
+end
+
+"""
+U and V are matrices with row size equal to the size of lU and lV respectively,
+and uniform column sizes.
+lU and lV are lists of booleans.
+"""
+function kernel_atom(U, V, lU, lV, c)
+    s = 0.
+    for i ∈ eachindex(lU)
+        for j ∈ eachindex(lV)
+            if lU[i] == lV[j] # equivalent to the Kronecker delta using if 
+                d = kernel_fun_2(@view(U[i, :]), @view(V[j, :]), c)
+                s += d
+            end 
+        end
+    end
+    return s
+end
+
+u = rand(100)
+v = rand(100)
+c = 1024.
+@btime kernel_fun_1(u, v, c)
+@btime kernel_fun_2(u, v, c)
+
+Random.seed!(777)
+lU = rand(Bool, 100); lV = rand(Bool, 100)
+rowsizes = length.([lU, lV])
+U = rand(rowsizes[1], 200)
+V = rand(rowsizes[2], 200)
+
+@btime kernel_atom(U, V, lU, lV, c)
