@@ -673,9 +673,9 @@ function kernel_fun_2(u, v, c)
 end
 
 """
-U and V are matrices with row size equal to the size of lU and lV respectively,
+U and V are real matrices with row size equal to the size of lU and lV respectively,
 and uniform column sizes.
-lU and lV are lists of booleans.
+lU and lV are vectors of booleans.
 """
 function kernel_atom(U, V, lU, lV, c)
     s = 0.
@@ -690,16 +690,45 @@ function kernel_atom(U, V, lU, lV, c)
     return s
 end
 
-u = rand(100)
-v = rand(100)
-c = 1024.
-@btime kernel_fun_1(u, v, c)
-@btime kernel_fun_2(u, v, c)
+"""
+Computes kernel K (a matrix) from Gaussian function entries, given:
+Us and Vs are lists of real matrices,
+lUs and lVs are lists of boolean vectors, 
+"""
+function gaussian_kernel(Us, Vs, lUs, lVs, c; threading=true)
+    if threading
+        rowids = eachindex(lUs); colids = eachindex(lVs)
+        iterids = Iterators.product(rowids, colids)
+        K = ThreadsX.map((tuple_id) -> kernel_atom(Us[tuple_id[1]], Vs[tuple_id[2]], lUs[tuple_id[1]], lVs[tuple_id[2]], c), iterids)
+    else
+        nm1 = length(lUs); nm2 = length(lVs)
+        K = zeros(nm1, nm2)
+        for j ∈ eachindex(lVs) # col
+            for i ∈ eachindex(lUs) # row
+                K[i, j] = kernel_atom(Us[i], Vs[j], lUs[i], lVs[j], c)
+            end
+        end
+    end
+    return K
+end
 
-Random.seed!(777)
-lU = rand(Bool, 100); lV = rand(Bool, 100)
-rowsizes = length.([lU, lV])
-U = rand(rowsizes[1], 200)
-V = rand(rowsizes[2], 200)
+function main_last_chapter()
+    u = rand(100)
+    v = rand(100)
+    c = 1024.
+    @btime kernel_fun_1(u, v, c)
+    @btime kernel_fun_2(u, v, c)
 
-@btime kernel_atom(U, V, lU, lV, c)
+    Random.seed!(777)
+    lU = rand(Bool, 100); lV = rand(Bool, 100)
+    rowsizes = length.([lU, lV])
+    U = rand(rowsizes[1], 200)
+    V = rand(rowsizes[2], 200)
+    @btime kernel_atom(U, V, lU, lV, c)
+
+    Us = [rand(rowsizes[1], 200) for i ∈ 1:100] # list of real matrices
+    Vs = [rand(rowsizes[2], 200) for i ∈ 1:100] # list of real matrices
+    lUs = [rand(Bool, 100) for i ∈ 1:100] # list of boolean vectors
+    lVs = [rand(Bool, 100) for i ∈ 1:100] # list of boolean vectors
+    @btime gaussian_kernel(Us, Vs, lUs, lVs, c; threading=false)
+end
