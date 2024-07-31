@@ -748,7 +748,10 @@ function dummyAx(A,x)
 end
 
 """
-computes sum of residuals: ∑ᵢ(∑ⱼKᵢⱼθⱼ - Eᵢ)²
+computes sum of residuals: ∑ᵢ(∑ⱼKᵢⱼθⱼ - Eᵢ)², given:
+K, a real matrix of data
+θ, a real vector of coefficients
+E, a real vector of target labels
 """
 function dummy_fobj(K,θ,E)
     res = 0.
@@ -771,6 +774,5 @@ function main_last_AD()
     init_θ = rand(100) # initial guess of coefficients
     optimize(θ->dummy_fobj(K,θ,E), init_θ, BFGS()) # with finite difference
     optimize(θ->dummy_fobj(K,θ,E), g!, init_θ, BFGS()) # with Reverse AD
-    #dummy_fobj(K,θ,E) # check result
 end
 
