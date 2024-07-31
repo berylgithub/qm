@@ -732,3 +732,45 @@ function main_last_chapter()
     lVs = [rand(Bool, 100) for i ∈ 1:100] # list of boolean vectors
     @btime gaussian_kernel(Us, Vs, lUs, lVs, c; threading=false)
 end
+
+
+"""
+autodiff examples
+"""
+
+using Optim, ReverseDiff
+
+"""
+f:R^n ↦ R
+"""
+function dummyAx(A,x)
+    return sum(A*x)
+end
+
+"""
+computes sum of residuals: ∑ᵢ(∑ⱼKᵢⱼθⱼ - Eᵢ)²
+"""
+function dummy_fobj(K,θ,E)
+    res = 0.
+    for i ∈ eachindex(E)
+        res += (K[i,:]'*θ - E[i])^2
+    end
+    return res
+end
+
+""" 
+Reverse AD w.r.t θ
+"""
+g!(∇f, θ) = ReverseDiff.gradient!(∇f, θ->dummy_fobj(K, θ, E), θ) 
+
+
+function main_last_AD()
+    Random.seed!(777)
+    K = rand(100,100) # data matrix
+    E = rand(100) # target vector
+    init_θ = rand(100) # initial guess of coefficients
+    optimize(θ->dummy_fobj(K,θ,E), init_θ, BFGS()) # with finite difference
+    optimize(θ->dummy_fobj(K,θ,E), g!, init_θ, BFGS()) # with Reverse AD
+    #dummy_fobj(K,θ,E) # check result
+end
+
