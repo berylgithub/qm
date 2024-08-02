@@ -5,6 +5,8 @@ all kinds of utility functions
 using LaTeXStrings, Printf, DelimitedFiles, JLD
 using DataStructures
 
+import Printf: Format, format # for string formatting
+
 # get variable name
 macro Name(arg)
     string(arg)
@@ -100,6 +102,16 @@ function clean_float(data)
         end
         s
     end
+end
+
+# more advanced string of float formatting, nwo can accept arbitrary decimal size
+function format_string_float(n,x; scientific=false)
+    if scientific
+        FF = Format("%.$(n)e")
+    else
+        FF = Format("%.$(n)f")
+    end
+    format(FF, x)
 end
 
 """

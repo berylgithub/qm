@@ -651,4 +651,128 @@ function rosemi_ex()
     display([MAE/627.503, t_ls, t_pred])
 end
 
+"""
+for last chapter's experiment:
+"""
+
+"""
+computes exp(-||u-v||^2_2/c)
+u and v are vectors; c is a scalar
+"""
+function kernel_fun_1(u, v, c)
+    s = (u - v).^2 # here s is a vector
+    return exp(-sum(s)/c)
+end
+
+function kernel_fun_2(u, v, c)
+    s = 0. # here s is a scalar
+    for i ∈ eachindex(u)
+        s += (u[i]-v[i])^2
+    end
+    return exp(-s/c)
+end
+
+"""
+U and V are real matrices with row size equal to the size of lU and lV respectively,
+and uniform column sizes.
+lU and lV are vectors of booleans.
+"""
+function kernel_atom(U, V, lU, lV, c)
+    s = 0.
+    for i ∈ eachindex(lU)
+        for j ∈ eachindex(lV)
+            if lU[i] == lV[j] # equivalent to the Kronecker delta using if 
+                d = kernel_fun_2(@view(U[i, :]), @view(V[j, :]), c)
+                s += d
+            end 
+        end
+    end
+    return s
+end
+
+"""
+Computes kernel K (a matrix) from Gaussian function entries, given:
+Us and Vs are lists of real matrices,
+lUs and lVs are lists of boolean vectors, 
+"""
+function gaussian_kernel(Us, Vs, lUs, lVs, c; threading=true)
+    if threading
+        rowids = eachindex(lUs); colids = eachindex(lVs)
+        iterids = Iterators.product(rowids, colids)
+        K = ThreadsX.map((tuple_id) -> kernel_atom(Us[tuple_id[1]], Vs[tuple_id[2]], lUs[tuple_id[1]], lVs[tuple_id[2]], c), iterids)
+    else
+        nm1 = length(lUs); nm2 = length(lVs)
+        K = zeros(nm1, nm2)
+        for j ∈ eachindex(lVs) # col
+            for i ∈ eachindex(lUs) # row
+                K[i, j] = kernel_atom(Us[i], Vs[j], lUs[i], lVs[j], c)
+            end
+        end
+    end
+    return K
+end
+
+function main_last_chapter()
+    u = rand(100)
+    v = rand(100)
+    c = 1024.
+    @btime kernel_fun_1(u, v, c)
+    @btime kernel_fun_2(u, v, c)
+
+    Random.seed!(777)
+    lU = rand(Bool, 100); lV = rand(Bool, 100)
+    rowsizes = length.([lU, lV])
+    U = rand(rowsizes[1], 200)
+    V = rand(rowsizes[2], 200)
+    @btime kernel_atom(U, V, lU, lV, c)
+
+    Us = [rand(rowsizes[1], 200) for i ∈ 1:100] # list of real matrices
+    Vs = [rand(rowsizes[2], 200) for i ∈ 1:100] # list of real matrices
+    lUs = [rand(Bool, 100) for i ∈ 1:100] # list of boolean vectors
+    lVs = [rand(Bool, 100) for i ∈ 1:100] # list of boolean vectors
+    @btime gaussian_kernel(Us, Vs, lUs, lVs, c; threading=false)
+end
+
+
+"""
+autodiff examples
+"""
+
+using Optim, ReverseDiff
+
+"""
+f:R^n ↦ R
+"""
+function dummyAx(A,x)
+    return sum(A*x)
+end
+
+"""
+computes sum of residuals: ∑ᵢ(∑ⱼKᵢⱼθⱼ - Eᵢ)², given:
+K, a real matrix of data
+θ, a real vector of coefficients
+E, a real vector of target labels
+"""
+function dummy_fobj(K,θ,E)
+    res = 0.
+    for i ∈ eachindex(E)
+        res += (K[i,:]'*θ - E[i])^2
+    end
+    return res
+end
+
+""" 
+Reverse AD w.r.t θ
+"""
+g!(∇f, θ) = ReverseDiff.gradient!(∇f, θ->dummy_fobj(K, θ, E), θ) 
+
+
+function main_last_AD()
+    Random.seed!(777)
+    K = rand(100,100) # data matrix
+    E = rand(100) # target vector
+    init_θ = rand(100) # initial guess of coefficients
+    optimize(θ->dummy_fobj(K,θ,E), init_θ, BFGS()) # with finite difference
+    optimize(θ->dummy_fobj(K,θ,E), g!, init_θ, BFGS()) # with Reverse AD
+end
 

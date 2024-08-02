@@ -1741,7 +1741,8 @@ baseline fitting, this is used for main hyperopt
 function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains; 
                     sb = false, sn = false, st = false, 
                     pb = false, pn = false, pt = false, 
-                    npb = 5, npn = 5, npt = 5)
+                    npb = 5, npn = 5, npt = 5,
+                    get_eatom = false)
     # fit DA as default:
     θ = Fa[idtrains, :]\E[idtrains];
     Eda = Fa*θ
@@ -1778,7 +1779,12 @@ function hp_baseline(E, Fa, Fb, Fn, Ft, idtrains;
         #println("torsion ", mean(abs.(ET[idtrains] - Edt[idtrains]))*627.503)#, mean(abs.(ET[idtests] - Edt[idtests]))]*627.503)
         ET -= Edt
     end
-    return ET
+    #display(θ)
+    if get_eatom
+        return ET, Eda
+    else
+        return ET
+    end
 end
 
 
