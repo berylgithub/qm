@@ -1,6 +1,6 @@
 using DelimitedFiles, LaTeXStrings, Printf, Statistics
 using Plots
-using PlotlyJS, Polynomials
+using PlotlyJS 
 const jplot = PlotlyJS.plot
 const jscatter = PlotlyJS.scatter
 const jsavefig = PlotlyJS.savefig
@@ -8,6 +8,7 @@ const jsavefig = PlotlyJS.savefig
 
 using Graphs, MolecularGraph, Luxor, Images # for visualization
 using Rotations, AngleBetweenVectors
+#using Polynomials
 using MathTeXEngine
 
 include("utils.jl")
