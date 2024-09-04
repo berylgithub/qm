@@ -848,9 +848,10 @@ end
 """
 similar to above, but more general
 """
-function main_generate_trainset(fnames, ntrain; reservoir_size = 500, mode="flatten", sim_id="")
+function main_generate_trainset(fnames, ntrain; reservoir_size = 500, mode="flatten", sim_id="", return_data=false)
     dataset = load("data/qm9_dataset.jld", "data")
     Random.seed!(777)
+    datas = []
     for fname ∈ fnames
         f = load("data/$(fname).jld", "data")
         nrow = length(f)
@@ -867,6 +868,12 @@ function main_generate_trainset(fnames, ntrain; reservoir_size = 500, mode="flat
         end
         centers = set_cluster(F, ntrain; universe_size = 1000, num_center_sets = 1, reservoir_size=reservoir_size)[1]
         writedlm("data/centers_$(fname)_$(ntrain)_$(sim_id).txt", centers)
+        if return_data
+            push!(datas, centers)
+        end
+    end
+    if return_data
+        return datas
     end
 end
 
@@ -1104,6 +1111,45 @@ function main_hpopt_kernel(;sim_id="", iters=32, resets=1)
             writedlm(io, permutedims(vcat(th[i,:], [σmin, mean_t])))
         end
     end
+end
+
+"""
+run specific hpopt, only for selected feature and trainingdata
+"""
+function main_hpopt_kernel_2(fname; use_usequence=false, ntrain = 100, sim_id="", iters=32)
+    outfile = "result/deltaML/tb_hpoptk2_$sim_id.txt"
+    dataset = load("data/qm9_dataset.jld", "data")
+    E = readdlm("data/energies.txt")
+    numrow = length(E)
+    f = load("data/"*fname*".jld", "data")
+    # set test data:
+    Random.seed!(777)
+    idall = 1:numrow
+    if use_usequence
+        idtrains = main_generate_trainset([fname], ntrain; reservoir_size = 500, mode="flatten", sim_id="innercall", return_data=true)[1] #
+    else
+        idtrains = StatsBase.sample(1:numrow, ntrain, replace=false)
+    end
+    idtests = setdiff(idall, idtrains)
+    # compute dressed energy:
+    Fds_H_paths = ["atomref_features","featuresmat_bonds-H_qm9_post", "featuresmat_angles-H_qm9_post", "featuresmat_torsion-H_qm9_post"]
+    F_dresseds = map(Fd_path -> load("data/"*Fd_path*".jld", "data"), Fds_H_paths)
+    sb = sn = st = false
+    Et = hp_baseline(E, F_dresseds[1], F_dresseds[2], F_dresseds[3], F_dresseds[4], idtrains; 
+                sb = sb, sn = sn, st = st)
+    atomtrains = map(d->d["atoms"], dataset[idtrains]); atomtests = map(d->d["atoms"], dataset[idtests])
+    t = @elapsed begin
+        ho = @hyperopt for i=iters, 
+                sampler = LHSampler(),
+                s = 1:iters,
+                dummy = zeros(iters) # need dummy var if only 1 var is optimized???
+            @show fobj = fobj_gaussian_kernel(Et, f, idtrains, idtests, atomtrains, atomtests; c = float(2*s^2))
+        end
+    end
+    best_params, min_f = ho.minimizer, ho.minimum
+    σmin = best_params[1]
+    println([min_f, σmin, t/iters])
+    writedlm(outfile, permutedims([min_f, σmin, t/iters]))
 end
 
 """
