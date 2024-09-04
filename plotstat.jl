@@ -1296,6 +1296,7 @@ ROSEMI data analysis:
 compare rosemi against ratpots and chipr
 """
 function main_tb_hxoy_rerun()
+    dset = load("dataset/smallmol/hxoy_data_req.jld")
     rold = load("result/hxoy_5fold_result.jld", "data") # dict of list
     rnew = vcat(load("result/hdrsm_20240502T122032.jld", "data"), load("result/hdrsm_singlet_H2_2.jld", "data")) #load("result/hxoy_diatomic_rosemi_rerun.jld", "data") # list of dict
 
@@ -1353,6 +1354,7 @@ function main_tb_hxoy_rerun()
         tb[i,ws[i]] .= latex_bold.(tb[i,ws[i]])
     end
     # edit molecule names:
+    display(mols)
     molperm = reduce(vcat, permutedims.(split.(mols, "_"))) # split the molecule id
     molstr, molid = (molperm[:,1], molperm[:,2])
     ids = sortperm(molstr) # sort by molname
@@ -1369,7 +1371,7 @@ function main_tb_hxoy_rerun()
     # join molname and table:
     tb = hcat(mols, tb)
     display(tb)
-    writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
+    #writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
 end
 
 function main_rosemi_hn()
