@@ -1296,7 +1296,7 @@ ROSEMI data analysis:
 compare rosemi against ratpots and chipr
 """
 function main_tb_hxoy_rerun()
-    dset = load("dataset/smallmol/hxoy_data_req.jld")
+    dset = load("data/smallmol/hxoy_data_req.jld", "data")
     rold = load("result/hxoy_5fold_result.jld", "data") # dict of list
     rnew = vcat(load("result/hdrsm_20240502T122032.jld", "data"), load("result/hdrsm_singlet_H2_2.jld", "data")) #load("result/hxoy_diatomic_rosemi_rerun.jld", "data") # list of dict
 
@@ -1309,16 +1309,16 @@ function main_tb_hxoy_rerun()
         push!(mins, minimum(r["RMSE"])); push!(medians, median(r["RMSE"])); push!(maxs, maximum(r["RMSE"])); push!(means, mean(r["RMSE"]));
     end
     tb[:,1] = mins; tb[:,2] = medians; tb[:,3] = means; tb[:,4] = maxs
-    display(tb)
+    #display(tb)
     # stats of ratpots and chipr:
     qkeys = ["chipr_acc"] #["ansatz_1_acc", "ansatz_2_acc", "chipr_acc"]
     # find matching indices:
     mols = map(d->d["mol"], rnew)
     ids = map(mol -> findall(mol .== rold["mol"])[1], mols)
-    display(ids)
-    display(rold["mol"][ids])
+    #display(ids)
+    #display(rold["mol"][ids])
     slices = [5*(i-1)+1:5*(i-1)+5 for i ∈ ids]
-    display(slices)
+    #display(slices)
     # bin each 5 indices to one set:
     itb = 5
     for k ∈ qkeys
@@ -1333,9 +1333,9 @@ function main_tb_hxoy_rerun()
         println(k)
         println(means)
     end
-    display(tb)
+    #display(tb)
     Base.permutecols!!(tb, [1,5,2,6,3,7,4,8]) # swap posiitons to group the columns' category
-    display(tb)
+    #display(tb)
     # find the winner between ROSEMI and CHIPR for each row:
     ws = [] # for each row 4 entries
     for i ∈ axes(tb, 1)
@@ -1347,31 +1347,48 @@ function main_tb_hxoy_rerun()
         end
         push!(ws, w)
     end
-    display(ws)
+    #display(ws)
     # write to latextable:
-    tb = convert_to_scientific(tb)
+    tb = format_string_float.(1,tb; scientific=true)
     for i ∈ axes(tb, 1)
         tb[i,ws[i]] .= latex_bold.(tb[i,ws[i]])
     end
+    # get the indices of each molecule relative to the dataset:
+    dset_ids = []
+    for mol ∈ mols
+        for j ∈ eachindex(dset)
+            if mol == dset[j]["mol"]
+                push!(dset_ids, j)
+                break
+            end
+        end
+    end
     # edit molecule names:
-    display(mols)
+    display([mols dset_ids])
     molperm = reduce(vcat, permutedims.(split.(mols, "_"))) # split the molecule id
     molstr, molid = (molperm[:,1], molperm[:,2])
     ids = sortperm(molstr) # sort by molname
     molstr = latex_chemformat.(molstr) # format chem
+    display(molstr)
     # sort and join the strings back:
     molstr = molstr[ids]
     molid = molid[ids]
-    mols = map((x,y)-> x*raw"$^{"*y*raw"}$", molstr, molid)
-    display(mols)
+    mol_dsetids = dset_ids[ids]
+    molstates = map(x->x["state"], dset[mol_dsetids])
+    mol_ndatas = map(x->length(x["V"]), dset[mol_dsetids])
+    molstr = map((m,n) -> m*" "*n, molstr, molstates) # join mol string with its state 
+    display([molstr mol_ndatas])
+    #mols = map((x,y)-> x*raw"$^{"*y*raw"}$", molstr, molid)
+    #display(mols)
     # permute rows of table:
     tb = permutedims(tb)
     Base.permutecols!!(tb, ids)
     tb = permutedims(tb)
-    # join molname and table:
-    tb = hcat(mols, tb)
+    # join molname, ndata, and table:
+    tb = hcat(mol_ndatas, tb)
+    tb = hcat(molstr, tb)
     display(tb)
-    #writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
+    writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
 end
 
 function main_rosemi_hn()
