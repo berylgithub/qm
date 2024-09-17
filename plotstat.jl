@@ -1369,14 +1369,13 @@ function main_tb_hxoy_rerun()
     molstr, molid = (molperm[:,1], molperm[:,2])
     ids = sortperm(molstr) # sort by molname
     molstr = latex_chemformat.(molstr) # format chem
-    display(molstr)
     # sort and join the strings back:
     molstr = molstr[ids]
     molid = molid[ids]
     mol_dsetids = dset_ids[ids]
     molstates = map(x->x["state"], dset[mol_dsetids])
     mol_ndatas = map(x->length(x["V"]), dset[mol_dsetids])
-    molstr = map((m,n) -> m*" "*n, molstr, molstates) # join mol string with its state 
+    molstr = map((l,m,n) -> "("*string(l)*") "*m*" "*n, eachindex(molstr), molstr, molstates) # join mol string with its state 
     display([molstr mol_ndatas])
     #mols = map((x,y)-> x*raw"$^{"*y*raw"}$", molstr, molid)
     #display(mols)
@@ -1389,6 +1388,45 @@ function main_tb_hxoy_rerun()
     tb = hcat(molstr, tb)
     display(tb)
     writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
+end
+
+"""
+display hyperparameter optimization table of pair hxoy data (pretty much similar with the above function)
+"""
+function main_tb_hxoy_hpopt()
+    dset = load("data/smallmol/hxoy_data_req.jld", "data")
+    tb = readdlm("data/smallmol/hpopt_rsm_hxoy_20240501T185604.text", '\t')
+    mols = tb[:,1]
+    # get the indices of each molecule relative to the dataset:
+    dset_ids = []
+    for mol ∈ mols
+        for j ∈ eachindex(dset)
+            if mol == dset[j]["mol"]
+                push!(dset_ids, j)
+                break
+            end
+        end
+    end
+    molperm = reduce(vcat, permutedims.(split.(mols, "_"))) # split the molecule id
+    molstr, molid = (molperm[:,1], molperm[:,2])
+    ids = sortperm(molstr) # sort by molname
+    molstr = latex_chemformat.(molstr) # format chem
+    # sort and join the strings back:
+    molstr = molstr[ids]
+    molid = molid[ids]
+    mol_dsetids = dset_ids[ids]
+    molstates = map(x->x["state"], dset[mol_dsetids])
+    molstr = map((l,m,n) -> "("*string(l)*") "*m*" "*n, vcat(1, 3:length(molstr)+1), molstr, molstates) # exclude the 2nd H2 (was not hyperopt'd)
+    tb = tb[:,3:end]
+    tb[1:end, 1] .= format_string_float.(1,tb[1:end, 1]; scientific=true)
+    tb[1:end, 2] .= format_string_float.(1,tb[1:end, 2]; scientific=false)
+    tb[1:end, end] .= format_string_float.(1,tb[1:end, end]; scientific=false)
+    tb = permutedims(tb)
+    Base.permutecols!!(tb, ids)
+    tb = permutedims(tb)
+    tb = hcat(molstr, tb)
+    display(tb)
+    writelatextable(tb, "result/tb_hxoy_hpopt.tex"; hline=false)
 end
 
 function main_rosemi_hn()
