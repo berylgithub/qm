@@ -1,0 +1,25 @@
+---
+title: "A julia engine notebook"
+engine: julia
+format: revealjs
+---
+
+## Parametric Plots
+
+Plot function pair (x(u), y(u)). 
+See @fig-parametric for an example.
+```{julia}
+using Plots
+
+plot(sin, 
+     x->sin(2x), 
+     0, 
+     2π, 
+     leg=false, 
+     fill=(0,:lavender))
+```
+
+## Interactive Julia slide test?!:
+```{julia}
+VERSION
+```
