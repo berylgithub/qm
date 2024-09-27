@@ -7,7 +7,6 @@ format: revealjs
 ## Parametric Plots
 
 Plot function pair (x(u), y(u)). 
-See @fig-parametric for an example.
 ```{julia}
 using Plots
 
@@ -21,5 +20,16 @@ plot(sin,
 
 ## Interactive Julia slide test?!:
 ```{julia}
-VERSION
+function xsqr(x)
+     return x^2
+end
+
+viewof x = Inputs.range(
+  [0., 10.], 
+  {value: 2., step: 0.1, label: "Choose x:"}
+)
+```
+```{julia}
+xv = @bind x # macro doesnt work
+xsqr(xv)
 ```
