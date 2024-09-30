@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="../../../etc/reveal.js/dist/reset.css">
+		<link rel="stylesheet" href="../../../etc/reveal.js/dist/reveal.css">
+		<link rel="stylesheet" href="../../../etc/reveal.js/dist/theme/black.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="../../../etc/reveal.js/plugin/highlight/monokai.css">
+	</head>
+	<style>
+		/* Custom CSS to create two columns */
+		.two-columns {
+		display: flex;
+		justify-content: space-between;
+		}
+
+		.two-columns .left-column {
+		width: 48%; /* 48% for the left column */
+		padding-right: 10px;
+		border-right: 1px solid #ddd;
+		}
+
+		.two-columns .right-column {
+		width: 48%; /* 48% for the right column */
+		padding-left: 10px;
+		}
+
+		/* Ensure images scale properly */
+		.two-columns img {
+		max-width: 100%;
+		height: auto;
+		}
+	</style>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>Slide 1</section>
+				<section>Slide 2</section>
+				<section>
+					<div class="two-columns">
+						<!-- Left Column: Math Formulas -->
+						<div class="left-column">
+						  <h3>Math Formulas</h3>
+						  <p>Here is an example of a formula:</p>
+						  <p>\[ E = mc^2 \]</p>
+						  <p>Another one:</p>
+						  <p>\[
+							\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+						  \]</p>
+						</div>
+						
+						<!-- Right Column: Plot -->
+						<div class="right-column">
+						  <h3>Plot</h3>
+						  <!-- Replace this image with an actual plot or embed the plot -->
+						  <img src="../plot/benchmark_RATPOTs.png" alt="Plot">
+						</div>
+					  </div>
+				</section>
+			</div>
+		</div>
+
+		<script src="../../../etc/reveal.js/dist/reveal.js"></script>
+		<script src="../../../etc/reveal.js/plugin/notes/notes.js"></script>
+		<script src="../../../etc/reveal.js/plugin/markdown/markdown.js"></script>
+		<script src="../../../etc/reveal.js/plugin/highlight/highlight.js"></script>
+		<script src="../../../etc/reveal.js/plugin/math/math.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealMath.KaTeX ]
+			});
+		</script>
+	</body>
+</html>

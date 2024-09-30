@@ -1,0 +1,35 @@
+---
+title: "A julia engine notebook"
+engine: julia
+format: revealjs
+---
+
+## Parametric Plots
+
+Plot function pair (x(u), y(u)). 
+```{julia}
+using Plots
+
+plot(sin, 
+     x->sin(2x), 
+     0, 
+     2π, 
+     leg=false, 
+     fill=(0,:lavender))
+```
+
+## Interactive Julia slide test?!:
+```{julia}
+function xsqr(x)
+     return x^2
+end
+
+viewof x = Inputs.range(
+  [0., 10.], 
+  {value: 2., step: 0.1, label: "Choose x:"}
+)
+```
+```{julia}
+xv = @bind x # macro doesnt work
+xsqr(xv)
+```
