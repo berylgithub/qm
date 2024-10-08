@@ -1,0 +1,30 @@
+/* Custom CSS to create two columns */
+.two-columns {
+    display: flex;
+    justify-content: space-between;
+}
+
+.two-columns .left-column {
+    width: 48%; /* 48% for the left column */
+    padding-right: 10px;
+    border-right: 1px solid #ddd;
+}
+
+.two-columns .right-column {
+    width: 48%; /* 48% for the right column */
+    padding-left: 10px;
+}
+
+/* Ensure images scale properly */
+.two-columns img {
+    max-width: 100%;
+    height: auto;
+}
+
+/*bg images*/
+.bgimg {
+    background-image: url('../images/divbg.png');
+}
+.bgcolor {
+    background-color:#ffe000;
+}
