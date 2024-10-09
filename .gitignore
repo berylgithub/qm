@@ -36,3 +36,4 @@ VRDFON/*
 *.jld
 *.fdb_latexmk
 *.fls
+slides/test.quarto_ipynb
