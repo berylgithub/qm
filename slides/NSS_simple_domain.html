@@ -17,13 +17,19 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>
-					<div class="bgcolor">
-						<h3 style="color:blue; font-family:'Brush Script MT',cursive;"><strong>Machine learning</strong> for <br> chemical data</h3>
+				<section data-background-image="assets/images/vecteezy_molecules.jpg" data-background-opacity=0.75>
+					<div class = "text-pad">
+						<div class="bgcolor">
+							<h3 style="color:blue; font-family:'Comic Sans MS',cursive;"><strong>Machine learning</strong> for <br> chemical data</h3>
+						</div>
+						<p style="font-family: 'Comic Sans MS', cursive; font-size: 0.7em;"> <a href="https://berylgithub.github.io/cv/"> Beryl Ramadhian Aribowo </a> </p>
+						<p style="font-family: 'Comic Sans MS', cursive; font-size: 0.7em;">Faculty of Mathematics, University of Vienna, Vienna, Austria</p>
 					</div>
-					<p style="font-family: 'Brush Script MT', cursive; font-size: 0.7em;"> <a href="https://berylgithub.github.io/cv/"> Beryl Ramadhian Aribowo </a> </p>
-					<p style="font-family: 'Brush Script MT', cursive; font-size: 0.7em;">Faculty of Mathematics, University of Vienna, Vienna, Austria</p>
-					<footer> aoisfios </footer>
+					<div class="logo-container">
+						<img src="assets/images/logo_vgsco.png" alt="VGSCO logo">
+						<img src="assets/images/logo_julia.png" alt="Julia logo">
+						<img src="assets/images/logo_uniwien.png" alt="Uni Wien logo">
+					</div>
 				</section>
 				<section>Pair potential energy surfaces</section> <!-- -->
 				<section>Bonding potential energy surfaces</section>
@@ -64,6 +70,7 @@
 			// - https://revealjs.com/config/
 			Reveal.initialize({
 				hash: true,
+				slideNumber: "h/v",
 
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealMath.KaTeX ]

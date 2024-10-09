@@ -28,3 +28,27 @@
 .bgcolor {
     background-color:#ffe000;
 }
+
+/* logos at the bottom*/
+  
+.text-pad {
+    position:relative;
+    text-align: center;
+    bottom: -150px;
+    z-index: 1
+  }
+
+.logo-container {
+    position: absolute;
+    bottom: -400px; /* Distance from the bottom of the slide */
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    gap: 500px; /* Space between the logos */
+}
+
+.logo-container img {
+    width: auto; /* Set a fixed width for the logos */
+    height: 60px; /* Keep aspect ratio */
+}
