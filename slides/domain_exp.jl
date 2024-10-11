@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 9f839db3-97eb-4a5d-af96-2b8bc2eb29c6
-using Plots
+using Plots, LaTeXStrings
 
 # ╔═╡ 47fa878d-a483-40a4-9e64-de6bdf82e1dd
 # slider+text
@@ -36,18 +36,32 @@ begin
 	end
 end
 
-# ╔═╡ d0dcec2d-4767-4cd6-891a-b6950bd7b20f
-md"Input: $(@bind x MySlider(0:0.01:3.14, 3.14/2))"
+# ╔═╡ 58304c92-822f-48d3-961f-e49f75ded1e3
+md"""
+ϵ: $(@bind ϵ MySlider(0.01:0.01:5., 3.14/2))\
+σ: $(@bind σ MySlider(0.01:0.01:5., 3.14/2))
+"""
 
-# ╔═╡ 76c719f6-7210-4daa-b585-dd934e5ab3fb
-plot(sin, 0, 2π*x)
+# ╔═╡ d4f49eae-acba-4853-b9b9-44b7aca3041a
+begin
+	function VLJ(r, ϵ, σ)
+		term6 = (σ/r)^6
+		term12 = term6^2
+		return 4ϵ*(term12 - term6)
+	end
+	R = 0.02:0.01:5
+	plot(R, VLJ.(R, ϵ, σ), xlim = [0., 5], ylim=[-5, 5], 
+		xlabel="\$r\$", ylabel="\$V\$", legend=false, linewidth = 3)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [compat]
+LaTeXStrings = "~1.3.1"
 Plots = "~1.40.8"
 """
 
@@ -57,7 +71,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.4"
 manifest_format = "2.0"
-project_hash = "cd0152cf4ca63e41e1e8e7cfd4831fc9f5ed5873"
+project_hash = "d17a2f7c65a75f8738de2bdd26a7f77dde57bc5e"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -1141,7 +1155,7 @@ version = "1.4.1+1"
 # ╔═╡ Cell order:
 # ╠═9f839db3-97eb-4a5d-af96-2b8bc2eb29c6
 # ╠═47fa878d-a483-40a4-9e64-de6bdf82e1dd
-# ╠═76c719f6-7210-4daa-b585-dd934e5ab3fb
-# ╠═d0dcec2d-4767-4cd6-891a-b6950bd7b20f
+# ╠═58304c92-822f-48d3-961f-e49f75ded1e3
+# ╠═d4f49eae-acba-4853-b9b9-44b7aca3041a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
