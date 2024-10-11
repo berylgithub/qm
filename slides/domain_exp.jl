@@ -17,13 +17,27 @@ end
 # ╔═╡ 9f839db3-97eb-4a5d-af96-2b8bc2eb29c6
 using Plots
 
-# ╔═╡ 108479d4-3e4e-49e7-b3e6-161d4b5417ae
+# ╔═╡ 47fa878d-a483-40a4-9e64-de6bdf82e1dd
+# slider+text
 begin
-	x_slider = @bind x html"<input type=range id=length name=wavelength min=0 max=3.14 step=0.1>"
-	md"""
-	Wave length: $(x_slider)
-	"""
+	struct MySlider 
+	    range::AbstractRange
+	    default::Number
+	end
+	function Base.show(io::IO, ::MIME"text/html", slider::MySlider)
+	    print(io, """
+			<input type="range" 
+			min="$(first(slider.range))" 
+			step="$(step(slider.range))"
+			max="$(last(slider.range))" 
+			value="$(slider.default)"
+			oninput="this.nextElementSibling.value=this.value">
+			<output>$(slider.default)</output>""")
+	end
 end
+
+# ╔═╡ d0dcec2d-4767-4cd6-891a-b6950bd7b20f
+md"Input: $(@bind x MySlider(0:0.01:3.14, 3.14/2))"
 
 # ╔═╡ 76c719f6-7210-4daa-b585-dd934e5ab3fb
 plot(sin, 0, 2π*x)
@@ -1126,7 +1140,8 @@ version = "1.4.1+1"
 
 # ╔═╡ Cell order:
 # ╠═9f839db3-97eb-4a5d-af96-2b8bc2eb29c6
+# ╠═47fa878d-a483-40a4-9e64-de6bdf82e1dd
 # ╠═76c719f6-7210-4daa-b585-dd934e5ab3fb
-# ╠═108479d4-3e4e-49e7-b3e6-161d4b5417ae
+# ╠═d0dcec2d-4767-4cd6-891a-b6950bd7b20f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

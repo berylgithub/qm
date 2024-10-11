@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> <!-- dont forget: Pluto.run(require_secret_for_open_links=false, require_secret_for_access=false) -->
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
@@ -48,11 +48,13 @@
 					</section>
 					<section>
 						<h4>test iframe with Pluto</h4>
-						<div style="position:relative; left:450px; top:30px;">
-							<iframe src=
-								"http://localhost:1234/edit?id=cbf191c0-8704-11ef-0eea-7de8ee17ccd2"
-								style="width: 100%; height: 600px; transform: scale(1.0);">
-							</iframe>
+						<div style="position:relative; right:500px; top:30px;">
+							\[
+								V_\text{LJ}(\epsilon, \textcolor{red}{\sigma}) = 4\epsilon \Big[\Big(\frac{\sigma}{r}\Big)^{12} - \Big(\frac{\sigma}{r}\Big)^6\Big]
+							\]
+						</div>
+						<div style="position:relative; left:450px; top:-250px;">
+							<iframe id="demo_pp" style="width: 100%; height: 600px; transform: scale(1.0);"> <!-- Pluto.run(require_secret_for_open_links=false, require_secret_for_access=false) --> </iframe>
 						</div>
 					</section>
 				</section> 
@@ -82,7 +84,11 @@
 				</section>
 			</div>
 		</div>
+		<script> /* links for demos */
+			let pluto_link_pp = "http://localhost:1236/edit?id=569b8002-87b0-11ef-2b14-fbaff6eb651c"; /* for pair potential demo*/
+			document.getElementById("demo_pp").src = pluto_link_pp;
 
+		</script>
 		<script src="../../../etc/reveal.js/dist/reveal.js"></script>
 		<script src="../../../etc/reveal.js/plugin/notes/notes.js"></script>
 		<script src="../../../etc/reveal.js/plugin/markdown/markdown.js"></script>
