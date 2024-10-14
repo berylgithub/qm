@@ -46,7 +46,7 @@ md"""
 begin
 	function VLJ(r; ϵ=2., σ=2.)
 		term6 = (σ/r)^6
-		term12 = term6^2
+		term12 = term6*term6
 		return 4ϵ*(term12 - term6)
 	end
 	R = collect(LinRange(0.01, 5., 10_000))
