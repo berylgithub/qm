@@ -51,8 +51,17 @@ begin
 	end
 	R = collect(LinRange(0.01, 5., 10_000))
 	plot(R, VLJ.(R, ϵ=ϵ, σ=σ), xlim = [0., 5], ylim=[-5, 5], 
-		xlabel="\$r\$", ylabel="\$V\$", legend=false, linewidth = 3)
+		xlabel="\$r\$", ylabel="\$V\$", legend=false, linewidth = 4)
+	plot!([0,5], [0, 0], linestyle=:dashdot) # assymptot
+	plot!([0,σ], [0, 0], linewidth=2) # σ line
+	annotate!(σ-0.25, 0.5, "\$σ\$") # σ label
+	min_r = 1.122462048309373*σ # distance of minimum energy
+	plot!([min_r,min_r], [0, -ϵ], linewidth=2) # ϵ line
+	annotate!(min_r, -ϵ-0.3, "\$ϵ\$") # σ label
 end
+
+# ╔═╡ 6b79eb73-057b-43c5-84cd-1ebf34f65d35
+2^(1/6)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1157,5 +1166,6 @@ version = "1.4.1+1"
 # ╠═47fa878d-a483-40a4-9e64-de6bdf82e1dd
 # ╠═58304c92-822f-48d3-961f-e49f75ded1e3
 # ╠═d0fedcff-68c0-4d98-8cf8-760a852b2b0e
+# ╠═6b79eb73-057b-43c5-84cd-1ebf34f65d35
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

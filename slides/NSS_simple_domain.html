@@ -1,4 +1,4 @@
-<!doctype html> <!-- dont forget: Pluto.run(require_secret_for_open_links=false, require_secret_for_access=false) -->
+<!doctype html> <!-- dont forget: change the Pluto link at the script below, and 'Pluto.run(require_secret_for_open_links=false, require_secret_for_access=false)' from Julia cmd -->
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
@@ -56,9 +56,9 @@
 					</section>
 					<section>
 						<h4 style="font-family:'Comic Sans MS',cursive;">Example: <span style="color:blue; ">Lennard-Jones potential</span></h4>
-						<div style="position:relative; right:450px; top:30px; font-size: 35px;">
+						<div style="position:relative; right:350px; top:30px; font-size: 35px;">
 							\[
-								V_\text{LJ}(\epsilon, \textcolor{red}{\sigma}) = 4\epsilon \Big[\Big(\frac{\sigma}{r}\Big)^{12} - \Big(\frac{\sigma}{r}\Big)^6\Big]
+								V_\text{LJ}(\textcolor{red} \epsilon, \textcolor{red}{\sigma}) = 4 \textcolor{red}\epsilon \Big[\Big(\frac{\textcolor{red} \sigma}{\textcolor{blue} r}\Big)^{12} - \Big(\frac{\textcolor{red} \sigma}{\textcolor{blue} r}\Big)^6\Big]
 							\]
 						</div>
 						<div style="position:relative; left:450px; top:-100px;">
@@ -92,10 +92,9 @@
 				</section>
 			</div>
 		</div>
-		<script> /* links for demos */
-			let pluto_link_pp = "http://localhost:1236/edit?id=569b8002-87b0-11ef-2b14-fbaff6eb651c"; /* for pair potential demo*/
+		<script> /* load links for demos */
+			let pluto_link_pp = "http://localhost:1234/edit?id=227a7c40-8a3f-11ef-20aa-9b4c36314b02"; /* for pair potential demo*/
 			document.getElementById("demo_pp").src = pluto_link_pp;
-
 		</script>
 		<script src="../../../etc/reveal.js/dist/reveal.js"></script>
 		<script src="../../../etc/reveal.js/plugin/notes/notes.js"></script>
@@ -109,6 +108,9 @@
 			Reveal.initialize({
 				hash: true,
 				slideNumber: "h/v",
+				//  resoultiuon:
+				//width: 1920,
+  				//height: 1080,
 
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealMath.KaTeX ]
