@@ -42,15 +42,15 @@ md"""
 σ: $(@bind σ MySlider(0.01:0.01:5., 3.14/2))
 """
 
-# ╔═╡ d4f49eae-acba-4853-b9b9-44b7aca3041a
+# ╔═╡ d0fedcff-68c0-4d98-8cf8-760a852b2b0e
 begin
-	function VLJ(r, ϵ, σ)
+	function VLJ(r; ϵ=2., σ=2.)
 		term6 = (σ/r)^6
 		term12 = term6^2
 		return 4ϵ*(term12 - term6)
 	end
-	R = 0.02:0.01:5
-	plot(R, VLJ.(R, ϵ, σ), xlim = [0., 5], ylim=[-5, 5], 
+	R = collect(LinRange(0.01, 5., 10_000))
+	plot(R, VLJ.(R, ϵ=ϵ, σ=σ), xlim = [0., 5], ylim=[-5, 5], 
 		xlabel="\$r\$", ylabel="\$V\$", legend=false, linewidth = 3)
 end
 
@@ -71,7 +71,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.4"
 manifest_format = "2.0"
-project_hash = "d17a2f7c65a75f8738de2bdd26a7f77dde57bc5e"
+project_hash = "d3888f15c1823a7967337ce193faaf52481f0f1a"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -1156,6 +1156,6 @@ version = "1.4.1+1"
 # ╠═9f839db3-97eb-4a5d-af96-2b8bc2eb29c6
 # ╠═47fa878d-a483-40a4-9e64-de6bdf82e1dd
 # ╠═58304c92-822f-48d3-961f-e49f75ded1e3
-# ╠═d4f49eae-acba-4853-b9b9-44b7aca3041a
+# ╠═d0fedcff-68c0-4d98-8cf8-760a852b2b0e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
