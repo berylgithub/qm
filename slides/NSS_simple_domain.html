@@ -17,7 +17,7 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section data-background-image="assets/images/vecteezy_molecules.jpg" data-background-opacity=0.75>
+				<section data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.45>
 					<div class = "text-pad">
 						<div class="bgcolor">
 							<h3 style="color:blue; font-family:'Comic Sans MS',cursive;"><strong>Machine learning</strong> for <br> chemical data</h3>
@@ -31,19 +31,44 @@
 						<img src="assets/images/logo_uniwien.png" alt="Uni Wien logo">
 					</div>
 				</section>
-				<section> <!-- Preliminary chapter: explains data, features, and fitting-->
-					<section>
-						<h3>Preliminary</h3>
+				<section id="sections" style="font-family:'Comic Sans MS',cursive; font-size: 35px;" data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.45>
+					<h3 style="color:blue; font-family:'Comic Sans MS',cursive;">Sections</h3>
+					<div>
+						<ol>
+							<li>
+								<a href="#/preliminary">Preliminary: general processes</a>
+							</li>
+							<li>
+								Pair potential energy surface
+							</li>
+							<li>
+								Global potential energy surface for small molecules
+							</li>
+							<li>
+								Robust Shepard model for interpolation
+							</li>
+							<li>
+								Learning quantum chemistry by minimal supervision
+							</li>
+						</ol>
+					</div>
+				</section>
+				<!-- ======== Preliminary chapter: explains data, features, and fitting ================ -->
+				<section> 
+					<section id="preliminary" data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.45>
+						<h3 style="color:blue; font-family:'Comic Sans MS',cursive;">Preliminary</h3>
 					</section>
 					<section>
-						Process flow
+						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Process flow</h4>
+						<img src="assets/images/process_flow.svg" alt="Process flow of chemical ML">
 					</section>
 					<section>
-						Data
+						<h4>Data</h4>
 					</section>
 				</section>
-				<section data-background-image="assets/images/vecteezy_molecules.jpg" data-background-opacity=0.75> <!-- Pair pot chapter-->
-					<section>
+				<!-- ========== Pair pot chapter ================ -->
+				<section data-background-image="assets/images/vecteezy_molecules.jpg" data-background-opacity=0.75 > 
+					<section id = "ppes">
 						<h3>Pair potential energy surfaces</h3>
 					</section>
 					<section>
@@ -55,7 +80,7 @@
 						<script src="swd_draw.js"></script>
 					</section>
 					<section>
-						<h4 style="font-family:'Comic Sans MS',cursive;">Example: <span style="color:blue; ">Lennard-Jones potential</span></h4>
+						<h4 style="font-family:'Comic Sans MS',cursive;">Example: <span style="color:green; ">Lennard-Jones potential</span></h4>
 						<div style="position:relative; right:400px; top:30px;">
 							<img src="assets/images/pp.png" alt="Two atoms illustration" style="width: 10vw; min-width: 330px;">
 						</div>
@@ -118,6 +143,7 @@
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealMath.KaTeX ]
 			});
+			Reveal.toggleOverview(true);
 		</script>
 	</body>
 </html>
