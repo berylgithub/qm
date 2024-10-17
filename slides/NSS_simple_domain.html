@@ -112,8 +112,49 @@
 						</div>
 					</section>
 					<section style="font-family:'Comic Sans MS'">
-						<h4 style="color:green;">Fitting</h4>
-
+						<h4 style="color:green; font-family:'Comic Sans MS'">Fitting</h4>
+						<div class="two-columns">
+							<div class="left-column" style="font-family:'Comic Sans MS'; font-size: 20px" >
+								<h6 style="font-family:'Comic Sans MS'"><u>Model</u></h6>
+								<ul>
+									<li>
+										General form: $\textcolor{green} E_m \approx V(\textcolor{blue} x_m, \textcolor{red} \theta)$ 
+										<br> for molecule $m$.
+									</li>
+									<li>
+										Linear system: $\textcolor{blue} A \textcolor{red} \theta = \textcolor{green} E$, 
+										<br>where $ \textcolor{blue} A \in \mathbb{R}^{n_\text{data} \times n_\text{feature}}$
+									</li>
+									<li>
+										Kernel function: $\textcolor{blue} K_{ij} = k( \textcolor{blue} x_i, \textcolor{blue} x_j)$,
+										<br> $k: \textcolor{blue}{\mathcal{X}} \times \textcolor{blue}{\mathcal{X}} \mapsto \mathbb{R}$
+									</li>
+									<li>
+										Neural networks: $z_i = \sigma_i(\textcolor{red} W_iz_{i-1} + \textcolor{red} b_i)$,
+										<br> for $i=1,2,..n_\text{layer}; $ where $\textcolor{red} W_l$ and $\textcolor{red} b_l$ are weight matrix and bias vector of $l$th layer respectively,
+										$\sigma_l$ is elementwise non-linear activation function, and $ \textcolor{blue}{z_0} \in \textcolor{blue}{\mathcal{X}}$.
+									</li>
+								</ul>
+							</div>
+							<div class="right-column" style="font-family:'Comic Sans MS'; font-size: 20px">
+								<h6 style="font-family:'Comic Sans MS'"><u>Optimization</u></h6>
+								<ul>
+									<li>
+										General problem: $\min_{\rtheta} c(V, \textcolor{blue}{\mathcal{X}}, \rtheta, \textcolor{green}E)$
+									</li>
+									<li>
+										Least squares: $\min_{\rtheta} \frac{1}{|M|}\sum_{m \in M} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)$
+									</li>
+									<li>
+										Solvers for linear systems:
+										<br> Gaussian elimination, CGLS.
+									</li>
+									<li>
+										Solvers for nonlinear systems: LM, BFGS, SGD.
+									</li>
+								</ul>
+							</div>
+						</div>
 					</section>
 				</section>
 				<!-- ========== Pair pot chapter ================ -->
@@ -189,7 +230,12 @@
 				//  resoultiuon:
 				//width: 1920,
   				//height: 1080,
-
+				katex: {
+					macros:{
+						'\\rtheta' : '\\textcolor{red}{\\theta}',
+						'\\gE': '\\textcolor{green}{E}'
+					}
+				},
 				// Learn about plugins: https://revealjs.com/plugins/
 				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes, RevealMath.KaTeX ]
 			});
