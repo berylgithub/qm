@@ -62,9 +62,58 @@
 						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Process flow</h4>
 						<img src="assets/images/process_flow.svg" alt="Process flow of chemical ML">
 					</section>
-					<section>
+					<section style="font-family:'Comic Sans MS'">
 						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Data</h4>
+						<div style="position:relative; left:-100px; text-align: left; font-size: 30px;">
+							<p>Molecular data:</p>
+							<ul>
+								<li>
+									Atomic coordinates $\textcolor{blue} X \in \mathbb{R}^{n_\text{atom} \times 3}$
+								</li>
+								<li>
+									List of atoms' type, e.g., $[\text{C, H, O, O, ...}]$
+								</li>
+								<li>
+									Target property (in this case, energy) $\textcolor{green}E \in \mathbb{R}$
+								</li>
+							</ul>
+							<p>Additional data:</p>
+							<ul>
+								<li>
+									Nuclear charge $Z_i \in \mathbb{Z}^+$ of atom $i$
+								</li>
+								<li>
+									Connection information in SMILES string format
+								</li>
+							</ul>
+						</div>
 						<img src="assets/images/data_file4.svg" alt="Molecular file example">
+					</section>
+					<section style="font-family:'Comic Sans MS'">
+						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Feature extraction</h4>
+						<div style="position:relative; left:-100px; width:70%; text-align: left; font-size: 25px;">
+							<ul>
+								<li>
+									Graph features: <span style="color:rgb(68, 68, 255)">dressed atom</span>, <span style="color:rgb(0, 0, 255)">dressed bond</span>, <span style="color:rgb(0, 0, 173)">dressed angle</span>, ...
+								</li>
+								<li>
+									$n$-body features: <span style="color:rgb(0, 0, 255)">distance</span>, <span style="color:rgb(0, 0, 173)">angular</span>, <span style="color:rgb(0, 0, 81)">dihedral</span>, ...
+								</li>
+								<li>
+									Feature selection: principal component analysis (PCA)
+								</li>
+								<li>
+									Main properties: invariant to <span style="color:blue">translation</span>, <span style="color:blue">rotation</span> and <span style="color:blue">permutation</span> (of atoms with same type)
+								</li>
+								<li>
+									Typically encoded in a matrix $\textcolor{blue} F^m \in \mathbb{R}^{n^m_\text{atom} \times n_\text{feature}}$ or a vector $\textcolor{blue} f_{m:} \in \mathbb{R}^{n_\text{feature}}$ for molecule $m$.  
+								</li>
+							</ul>
+						</div>
+					</section>
+					<section style="font-family:'Comic Sans MS'">
+						<h4 style="color:green;">Fitting</h4>
+
 					</section>
 				</section>
 				<!-- ========== Pair pot chapter ================ -->
