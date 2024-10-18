@@ -10,8 +10,6 @@
 		<link rel="stylesheet" href="../../../etc/reveal.js/dist/reveal.css">
 		<link rel="stylesheet" href="../../../etc/reveal.js/dist/theme/simple.css">
 		<link rel="stylesheet" href="shd_styles.css">
-
-		<!-- Theme used for syntax highlighted code -->
 		<link rel="stylesheet" href="../../../etc/reveal.js/plugin/highlight/monokai.css">
 	</head>
 	<body>
@@ -39,7 +37,7 @@
 								<a href="#/preliminary">Preliminary: general processes</a>
 							</li>
 							<li>
-								Pair potential energy surface
+								<a href="#/ppes">Pair potential energy surface</a>
 							</li>
 							<li>
 								Global potential energy surface for small molecules
@@ -143,7 +141,7 @@
 										General problem: $\min_{\rtheta} c(V, \textcolor{blue}{\mathcal{X}}, \rtheta, \textcolor{green}E)$
 									</li>
 									<li>
-										Least squares: $\min_{\rtheta} \frac{1}{|M|}\sum_{m \in M} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)$
+										Least squares: $\min_{\rtheta} \frac{1}{|M_\text{train}|}\sum_{m \in M_\text{train}} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)^2$
 									</li>
 									<li>
 										Solvers for linear systems:
@@ -156,13 +154,35 @@
 							</div>
 						</div>
 					</section>
+					<section>
+						<h4 style="color:green; font-family:'Comic Sans MS'">Evaluation</h4>
+						<div style="font-family:'Comic Sans MS'; font-size: 30px">
+							<ul>
+								<li>
+									Evaluation of test data (out of sample data).
+								</li>
+								<li>
+									MAE: $\frac{1}{|M_\text{test}|}\sum_{m \in M_\text{test}}|V(\textcolor{blue}{x}_m, \rtheta) - \gE|$
+								</li>
+								<li>
+									RMSE: $\sqrt{\frac{1}{|M_\text{test}|} \sum_{m \in M_\text{test}} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)^2}$
+								</li>
+								<li>
+									K-fold cross validation
+								</li>
+								<li>
+									Automatic evaluation by <strong>Hyperparameter tuning</strong>
+								</li>
+							</ul>
+						</div>
+					</section>
 				</section>
 				<!-- ========== Pair pot chapter ================ -->
-				<section data-background-image="assets/images/vecteezy_molecules.jpg" data-background-opacity=0.75 > 
-					<section id = "ppes">
-						<h3>Pair potential energy surfaces</h3>
+				<section> 
+					<section id = "ppes" data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.45>
+						<h3 style="color:blue; font-family:'Comic Sans MS',cursive;">Pair potential energy surface</h3>
 					</section>
-					<section>
+					<section data-visibility="hidden">
 						<h3>Lennard-Jones potential</h3>
 						<div class="slidecontainer">
 							<input type="range" min="1" max="100" value="50" class="slider" id="myRange" oninput="slider_out()">
@@ -171,7 +191,34 @@
 						<script src="swd_draw.js"></script>
 					</section>
 					<section>
-						<h4 style="font-family:'Comic Sans MS',cursive;">Example: <span style="color:green; ">Lennard-Jones potential</span></h4>
+						<h4 style="color:green; font-family:'Comic Sans MS'">Basic examples</h4>
+						<div style="position:relative; right:350px;">
+							<img src="assets/images/pp.png" alt="Two atoms illustration" style="width: 10vw; min-width: 200px;">
+						</div>
+						<div style="position:relative; left:-300px; font-size: 30px">
+							\[
+								V(\rtheta, \textcolor{blue} r) = \frac{{\rtheta}_1}{\textcolor{blue} r^{12}} - \frac{{\rtheta}_2}{\textcolor{blue} r^{6}}
+							\]
+							\[
+								V(\rtheta, \textcolor{blue} r) = \frac{{\rtheta}_0 + {\rtheta}_1\textcolor{blue} r + .. + {\rtheta}_n\textcolor{blue} r^n}{{\rtheta}_0 + {\rtheta}_1\textcolor{blue} r + .. + {\rtheta}_{n+6}\textcolor{blue} r^{n+6}}
+							\]
+						</div>
+						<div style="position:relative; left:-200px; font-size: 30px">
+							<ul>
+								<li>
+									Repulsive term $\approx {\color{blue}\mathcal{O}(r^{-12})}$ (LJ), or ${\color{blue}\mathcal{O}(r^{-1})}$ (Quantum theory).
+								</li>
+								<li>
+									Attractive term $\approx {\color{blue}\mathcal{O}(r^{-6})}$ (Van der Waals & Quantum theory).
+								</li>
+							</ul>
+						</div>
+						<div style="position:relative; right:-150px; top:-500px">
+							<img src="assets/images/pp.png" alt="Two atoms illustration" style="width: 10vw; min-width: 200px;">
+						</div>
+					</section>
+					<section>
+						<h4 style="font-family:'Comic Sans MS',cursive;">Demo: <span style="color:green; ">Lennard-Jones potential</span></h4>
 						<div style="position:relative; right:400px; top:30px;">
 							<img src="assets/images/pp.png" alt="Two atoms illustration" style="width: 10vw; min-width: 330px;">
 						</div>
