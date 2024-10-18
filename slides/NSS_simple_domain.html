@@ -141,7 +141,8 @@
 										General problem: $\min_{\rtheta} c(V, \textcolor{blue}{\mathcal{X}}, \rtheta, \textcolor{green}E)$
 									</li>
 									<li>
-										Least squares: $\min_{\rtheta} \frac{1}{|M_\text{train}|}\sum_{m \in M_\text{train}} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)^2$
+										Least squares objective function:
+										<br> $\min_{\rtheta} \sum_{m \in M_\text{train}} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)^2$
 									</li>
 									<li>
 										Solvers for linear systems:
@@ -231,6 +232,48 @@
 							<iframe id="demo_pp" style="width: 100%; height: 600px; transform: scale(1.0);"> <!-- Pluto.run(require_secret_for_open_links=false, require_secret_for_access=false) --> </iframe>
 						</div>
 					</section>
+					<section style="font-family:'Comic Sans MS'">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Proposed pair potentials</h4>
+						<div id="ratpot1" style="position:relative; left:-150px; width:700px; border-width:2px; border-style: dotted; border-color: red; font-size: 25px;">
+							<p style="color:red">RATPOT1</p>
+							\[
+								\begin{align*}
+									\cgreen V &= \cred{c}_0 + P/S, \\
+									P &= \cblue{Z_iZ_j}\left(\frac{1}{\cblue{r}}+ \cred{c}_1 \cblue{r}\right)+\cred{c}_2+\cred{c}_3 \cblue{r}^2+ ...+\cred{c}_{2m-1}\cblue{r}^{2m-2}, \\
+									Q &= 1+(\cred{c}_{2m}+\cred{c}_{2m+1} \cblue{r} +...+\cred{c}_{3m} \cblue{r}^m)\cblue{r}, \\
+									S &= 1+\cred{c}_1 (\cblue{r} Q)^2.
+								\end{align*}
+							\]
+						</div>
+						<div id="ratpot2" style="position:relative; left:-150px; width:600px; border-width:2px; border-style: dotted; border-color: green; font-size: 23px;">
+							<p style="color:green">RATPOT2</p>
+							\[
+								\begin{align*}
+									\cgreen V &= \cred{c}_0+P/Q, \\
+									P &= \cred{c}_1\prod_{i=1}^m ((\cblue{r}-\cred{a}_i)^2+\cred{b}_i \cblue{r}), \\
+									Q &= \cblue{r}(\cblue{r}+\cred{d}_1)\prod_{i=2}^{m+3}((\cblue{r}-\cred{c}_i)^2+\cred{d}_i \cblue{r}).
+								\end{align*}
+							\]
+						</div>
+						<div id="chipr" style="position:relative; left:540px; top:-400px; width:560px; border-width:2px; border-style: dotted; border-color: blue; font-size: 23px;">
+							<p style="color:blue">CHIPR</p>
+							\[
+								\begin{align*}
+									\cgreen{V} &= \frac{\cblue{Z_iZ_j}}{\cblue{r}^{\cred{\omega}}}\sum_{k=1}^M \cred{C}_ky_k, \\
+									y_k &= \sum_{p=1}^m \cred{c}_{p}\text{ sech}^{\cred{\eta}_{p}}(\cred{\gamma}_{p}(\left[\cblue{r} - \cred{\zeta\beta}^{p-1}\right])).
+								\end{align*}
+							\]
+						</div>
+					</section>
+					<section>
+						<h4 style="color:green; font-family:'Comic Sans MS'">Pair potential benchmark</h4>
+						<div style="position:relative; left:-325px;"> 
+							<img src="assets/plots/pairpot_benchmark.png" style="width: 10vw; min-width: 630px;">
+						</div>
+						<div style="position:relative; left:325px; top:-530px; font-size: 20px;">
+							<img src="assets/plots/pairpot_benchmark_OH+.png" style="width: 10vw; min-width: 630px;">
+						</div>
+					</section>
 				</section> 
 				<section>Bonding potential energy surfaces</section>
 				<section>Robust Shepard model for interpolation (ROSEMI) </section>
@@ -280,7 +323,10 @@
 				katex: {
 					macros:{
 						'\\rtheta' : '\\textcolor{red}{\\theta}',
-						'\\gE': '\\textcolor{green}{E}'
+						'\\gE': '\\textcolor{green}{E}',
+						'\\cred':'\\textcolor{red}{#1}',
+						'\\cgreen':'\\textcolor{green}{#1}',
+						'\\cblue':'\\textcolor{blue}{#1}'
 					}
 				},
 				// Learn about plugins: https://revealjs.com/plugins/
