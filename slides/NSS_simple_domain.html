@@ -123,7 +123,7 @@
 									Main properties: invariant to <span style="color:blue">translation</span>, <span style="color:blue">rotation</span> and <span style="color:blue">permutation</span> (of atoms with same type)
 								</li>
 								<li>
-									Typically encoded in a matrix $\textcolor{blue} F^m \in \mathbb{R}^{n^m_\text{atom} \times n_\text{feature}}$ or a vector $\textcolor{blue} f_{m:} \in \mathbb{R}^{n_\text{feature}}$ for molecule $m$.  
+									Typically encoded in a matrix $\textcolor{blue} F^m \in \mathbb{R}^{n^m_\text{atom} \times n_\text{feature}}$ or a vector $\textcolor{blue} f_{m:} \in \mathbb{R}^{n_\text{feature}}$ for molecule $m$  
 								</li>
 							</ul>
 						</div>
@@ -149,7 +149,7 @@
 									<li>
 										Neural networks: $z_i = \sigma_i(\textcolor{red} W_iz_{i-1} + \textcolor{red} b_i)$,
 										<br> for $i=1,2,..n_\text{layer}; $ where $\textcolor{red} W_l$ and $\textcolor{red} b_l$ are weight matrix and bias vector of $l$th layer respectively,
-										$\sigma_l$ is elementwise non-linear activation function, and $ \textcolor{blue}{z_0} \in \textcolor{blue}{\mathcal{X}}$.
+										$\sigma_l$ is elementwise non-linear activation function, and $ \textcolor{blue}{z_0} \in \textcolor{blue}{\mathcal{X}}$
 									</li>
 								</ul>
 							</div>
@@ -165,10 +165,10 @@
 									</li>
 									<li>
 										Solvers for linear systems:
-										<br> Gaussian elimination, CGLS.
+										<br> Gaussian elimination, CGLS
 									</li>
 									<li>
-										Solvers for nonlinear systems: LM, BFGS, SGD.
+										Solvers for nonlinear systems: LM, BFGS, SGD
 									</li>
 								</ul>
 							</div>
@@ -336,17 +336,17 @@
 					</section>
 					<section style="font-family:'Comic Sans MS'">
 						<h4 style="color:green; font-family:'Comic Sans MS'">Primitive features</h4>
-						<div id="ratpot1" style="position:absolute; left:-150px; width:450px; border-width:2px; border-style: dotted; border-color: blue; font-size: 16px;">
+						<div id="bondf" style="position:absolute; left:-150px; width:450px; border-width:2px; border-style: dotted; border-color: blue; font-size: 16px;">
 							<p><u>Bonding functions</u>:</p>
 							\[
-								t := t(r) = \left(\frac{r^2 - {\color{red}\underline{r}}^2}{{\color{red}\overline{r}}^2 - r^2}\right)^{\cred{e}}
+								t := t(\cblue r) = \left(\frac{\cblue r^2 - {\color{red}\underline{r}}^2}{{\color{red}\overline{r}}^2 - \cblue r^2}\right)^{\cred{e}},
 							\]
 							\[
-								s := s(r) =
+								s := s(\cblue r) =
 								\begin{cases}
-									1 & r < {\color{red}\underline{r}} \\
-									\frac{t_0}{t + t_0} & {\color{red}\underline{r}} \leq r \leq {\color{red}\overline{r}}, \\
-									0 & {\color{red}\overline{r}} < r
+									1 & \cblue r < {\color{red}\underline{r}} \\
+									\frac{t_0}{t + t_0} & {\color{red}\underline{r}} \leq \cblue r \leq {\color{red}\overline{r}}, \\
+									0 & {\color{red}\overline{r}} < \cblue r
 								\end{cases}
 							\]
 							\[
@@ -357,27 +357,121 @@
 							\]
 							<img src="assets/plots/bonding_functions.png" style="width: 10vw; min-width: 400px;" alt="Bonding function plot">
 						</div>
-						<div id="ratpot1" style="position:absolute; left:310px; width:fit-content; height:600px; border-width:2px; border-style: dotted; border-color: red; font-size: 16px;" >
-							<p><u>Bump functions</u>:</p>
+						<div id="bumpf" style="position:absolute; left:310px; width:800px; height:600px; border-width:2px; border-style: dotted; border-color: red; font-size: 16px;" >
+							<div style="margin-left:-350px;">
+								<p><u>Bump functions</u>:</p>
+								<ul>
+									<li>
+										$\rho := \cblue r/{\color{red}\hat r_{ij}}, ~ q := \frac{\color{red}{N}}{1+\rho} \in (0, N]$
+									</li>
+									<li>
+										$h_k := h_k(q) = [1 - (q - k)^2]^3_+$
+									</li>
+									<li>
+										$w := w(q) = \sum_k h_k$
+									</li>
+								</ul>
+								<div>
+									<p>Primitive features := (bumps, wavelets):</p>
+									\[
+										{\color{blue}z}_{ij} := (h_k/w, (q-k)h_k/w).
+									\]
+								</div>
+								<img src="assets/plots/BUMP_k=5.png" style="width: 10vw; min-width: 400px;" alt="Bonding function plot">
+								<img src="assets/plots/BUMP_hw_N=7.png" style="position:absolute; right:20px; top:-0px; width: 10vw; min-width: 350px;" alt="Bonding function plot">
+								<img src="assets/plots/wavelets_qhw_N=7.png" style="position:absolute; right:20px; top:300px; width: 10vw; min-width: 350px;" alt="Bonding function plot">
+							</div>
+						</div>
+					</section>
+					<section style="font-family:'Comic Sans MS'">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Advanced features</h4>
+						<h6 style= "font-family:'Comic Sans MS'; font-size: 19px;" ><b>For atom $i$:</b></h6>
+						<div id="refpp" style="position:absolute; left:-150px; width:fit-content; padding:20px; border-width:2px; border-style: dotted; border-color: blue; font-size: 20px; text-align: left;">
+							<p><u>Reference pair potential</u>:</p>
+							\[
+								{\color{blue}U}[i] := \sum_{j \neq i}V_{ij}.
+							\]
+							<p>Choices of pair potentials:</p>
+							<ol>
+								<li> 
+									Nonlinear pair-pot (<span style="color: blue;">cheap, least accurate</span>):
+									\[
+										V_{ij} := V(\cblue r) = 
+										\begin{cases}
+											\infty & \text{ if } \cblue r \leq {\color{red}r_h} \\
+											-{\color{red}C}({\color{red}r_C}^2 - \cblue r^2)^{\color{red}g}\frac{\cblue r^2 - {\color{red}r_0}^2}{\cblue r^2 - {\color{red}r_h}^2} & \text{ if } {\color{red}r_h} < \cblue r \leq {\color{red}r_C} \\
+											0 & \text{ else}
+										\end{cases}
+									\]
+								</li>
+								<li>
+									RATPOT$_{1,2,..}$ (<span style="color: blue;">most expensive, most accurate</span>)
+								</li>
+								<li>
+									Bump functions (<span style="color: blue;">middle ground</span>)
+								</li>
+							</ol>						
+						</div>
+						<div id="coordvec" style="position:absolute; left:500px; width:500px; padding:20px; border-width:2px; border-style: dotted; border-color: red; font-size: 17px; text-align: left;">
+							<p><u>Coordination vectors</u>:</p>
+							\[
+								{\color{blue}Y}_{\color{red}d}[i] := \sum_{j\neq i}{\color{blue}b}_{ij{\color{red}d}},
+							\]
 							<ul>
 								<li>
-									$\rho := r/{\color{red}\hat r_{ij}}, ~ q := \frac{\color{red}{N}}{1+\rho} \in (0, N]$
+									$\cblue Y_1[i]$ is approximately proportional to coordination number of atom $i$. 
 								</li>
 								<li>
-									$h_k := h_k(q) = [1 - (q - k)^2]^3_+$
-								</li>
-								<li>
-									$w := w(q) = \sum_k h_k$
+									For $\cred d>1$, $\cblue Y_{\cred d}[i]$ measures the partial bonding.
 								</li>
 							</ul>
-							<div>
-								<p>Primitive features := (bumps, wavelets):</p>
-								\[
-									{\color{blue}z}_{ij} := (h_k/w, (q-k)h_k/w).
-								\]
-							</div>
-							<img src="assets/plots/BUMP_hw_N=7.png" style="width: 10vw; min-width: 400px;" alt="Bonding function plot">
 						</div>
+						<div id="grammat" style="position:absolute; top:380px; left:500px; width:500px; padding:20px; border-width:2px; border-style: dotted; border-color: green; font-size: 17px; text-align: left;">
+							<p><u>Gram matrices</u>:</p>
+							\[
+								{\color{blue}G}[i]_{{\color{red}d}_1{\color{red}d}_2} := r_{{\color{red}d}_1}[i] \cdot r_{{\color{red}d}_2}[i],
+							\]
+							where
+							\[
+								r_{\color{red}d}[i] := \sum_{j \neq i} {\color{blue}b}_{ij{\color{red}d}}(\cblue x_j - \cblue x_i) \in \mathbb{R}^3.
+							\]
+							The Gram matrices contain implicit information of <span style="color:blue">bond angles</span> and <span style="color:blue">torsion angles</span>.
+						</div>
+					</section>
+					<section style="font-family:'Comic Sans MS'">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Bonding potential model</h4>
+						<div style="text-align: left; font-size: 18px;">
+							<ul>
+								<li>
+									Basis functions:
+									\[
+										{\color{blue}\Phi := (U, Y_1, UY_1, Y_1^2,Y_2,G_{11},...,Y_1^5,...,G_{23})}.
+									\]
+								</li>
+								<li>
+									Atom $i$ energy contribution:
+									\[
+										\epsilon_0[i] = A[i] - \sqrt{B[i] + C[i]},
+									\]
+									where $A$ is of the form
+									\[
+										A[i] = \frac{\sum\limits_k {\color{red}\theta}_k {\color{blue}\Phi}_k[i]}{1 + \left(\sum\limits_k {\color{red}\theta'}_k {\color{blue}\Phi}_k[i] \right)^2},
+									\]
+									and $B,C$ are of the form
+									\[
+										T_0[i]  = \frac{\left(\sum\limits_k {\color{red}\theta}_k {\color{blue}\Phi}_k[i]\right)^2}{1 + \left(\sum\limits_k {\color{red}\theta'}_k {\color{blue}\Phi}_k[i] \right)^2}.
+									\]
+									<b>Potential energy</b> at a given conformation:
+									\[
+									\cgreen V = \sum_i \epsilon_0[i].
+									\]
+								</li>
+							</ul>
+							<img src=""> 
+						</div>
+					</section>
+					<section>
+						<h4 style="color:green; font-family:'Comic Sans MS'">Automatic differentiation (AD)!</h4>
 					</section>
 				</section>
 				<section>Robust Shepard model for interpolation (ROSEMI) </section>
