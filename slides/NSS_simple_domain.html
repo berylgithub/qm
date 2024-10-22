@@ -40,7 +40,7 @@
 								<a href="#/ppes">Pair potential energy surface</a>
 							</li>
 							<li>
-								Global potential energy surface for small molecules
+								<a href="#/bpes">Global potential energy surface for small molecules</a>
 							</li>
 							<li>
 								Robust Shepard model for interpolation
@@ -54,7 +54,26 @@
 				<!-- ======== Preliminary chapter: explains data, features, and fitting ================ -->
 				<section> 
 					<section id="preliminary" data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.45>
-						<h3 style="color:blue; font-family:'Comic Sans MS',cursive;">Preliminary</h3>
+						<h3 style="color:blue; font-family:'Comic Sans MS',cursive; ">Preliminary</h3>
+						<div style="font-family:'Comic Sans MS',cursive; font-size: 35px;">
+							<ul>
+								<li>
+									Process flow
+								</li>
+								<li>
+									Molecular data
+								</li>
+								<li>
+									Feature extraction
+								</li>
+								<li>
+									Fitting: modelling and optimization
+								</li>
+								<li>
+									Evaluation
+								</li>
+							</ul>
+						</div>
 					</section>
 					<section>
 						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Process flow</h4>
@@ -182,6 +201,22 @@
 				<section> 
 					<section id = "ppes" data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.45>
 						<h3 style="color:blue; font-family:'Comic Sans MS',cursive;">Pair potential energy surface</h3>
+						<div style="font-family:'Comic Sans MS',cursive; font-size: 35px;">
+							<ul>
+								<li>
+									Pair potential basics
+								</li>
+								<li>
+									Demo example: Lennard-Jones potential
+								</li>
+								<li>
+									Ansatz for benchmark
+								</li>
+								<li>
+									Benchmark results
+								</li>
+							</ul>
+						</div>
 					</section>
 					<section data-visibility="hidden">
 						<h3>Lennard-Jones potential</h3>
@@ -275,7 +310,76 @@
 						</div>
 					</section>
 				</section> 
-				<section>Bonding potential energy surfaces</section>
+				<!-- ========== Bonding potential ch. ================ -->
+				<section>
+					<section id = "bpes" data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.45>
+						<h3 style="color:blue; font-family:'Comic Sans MS',cursive;">Bonding potential energy surface</h3>
+						<div style="font-family:'Comic Sans MS',cursive; font-size: 35px;">
+							<ul>
+								<li>
+									Primitive features
+								</li>
+								<li>
+									Advanced features
+								</li>
+								<li>
+									Bonding potential model
+								</li>
+								<li>
+									Useful tool: automatic differentiation (AD)
+								</li>
+								<li>
+									Benchmark results
+								</li>
+							</ul>
+						</div>
+					</section>
+					<section style="font-family:'Comic Sans MS'">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Primitive features</h4>
+						<div id="ratpot1" style="position:absolute; left:-150px; width:450px; border-width:2px; border-style: dotted; border-color: blue; font-size: 16px;">
+							<p><u>Bonding functions</u>:</p>
+							\[
+								t := t(r) = \left(\frac{r^2 - {\color{red}\underline{r}}^2}{{\color{red}\overline{r}}^2 - r^2}\right)^{\cred{e}}
+							\]
+							\[
+								s := s(r) =
+								\begin{cases}
+									1 & r < {\color{red}\underline{r}} \\
+									\frac{t_0}{t + t_0} & {\color{red}\underline{r}} \leq r \leq {\color{red}\overline{r}}, \\
+									0 & {\color{red}\overline{r}} < r
+								\end{cases}
+							\]
+							\[
+								p_1(s) := s, ~ p_{\color{red}d}(s):= s(1-s)T_{{\color{red}d}-2}(1-2s) \text{ for } {\color{red}d} > 1,
+							\]
+							\[
+								{\color{blue}b}_{ij{\color{red}d}} := p_{\color{red}d}(s)\text{ for }{\color{red}d}=1,2,...
+							\]
+							<img src="assets/plots/bonding_functions.png" style="width: 10vw; min-width: 400px;" alt="Bonding function plot">
+						</div>
+						<div id="ratpot1" style="position:absolute; left:310px; width:fit-content; height:600px; border-width:2px; border-style: dotted; border-color: red; font-size: 16px;" >
+							<p><u>Bump functions</u>:</p>
+							<ul>
+								<li>
+									$\rho := r/{\color{red}\hat r_{ij}}, ~ q := \frac{\color{red}{N}}{1+\rho} \in (0, N]$
+								</li>
+								<li>
+									$h_k := h_k(q) = [1 - (q - k)^2]^3_+$
+								</li>
+								<li>
+									$w := w(q) = \sum_k h_k$
+								</li>
+							</ul>
+							<div>
+								<p>Primitive features := (bumps, wavelets):</p>
+								\[
+									{\color{blue}z}_{ij} := (h_k/w, (q-k)h_k/w).
+								\]
+							</div>
+							<img src="assets/plots/BUMP_hw_N=7.png" style="width: 10vw; min-width: 400px;" alt="Bonding function plot">
+						</div>
+					</section>
+				</section>
 				<section>Robust Shepard model for interpolation (ROSEMI) </section>
 				<section>Learning quantum chemistry with minimal supervision</section>
 				<section>
