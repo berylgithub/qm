@@ -58,7 +58,10 @@
 						<div style="font-family:'Comic Sans MS',cursive; font-size: 35px;">
 							<ul>
 								<li>
-									Single-line-summary
+									One-line-summary
+								</li>
+								<li>
+									Motivation
 								</li>
 								<li>
 									Process flow
@@ -83,22 +86,33 @@
 						<img src="assets/images/matheq.drawio.svg" alt="Single line summary">
 					</section>
 					<section>
+						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Motivation</h4>
+						
+						<img src="assets/images/acc_plot.png" alt="Methods accuracy" style="position:relative; top:-70px">
+						<div style="position: relative; top:-70px; font-family:'Comic Sans MS',cursive; font-size: 20px;">
+							Adapted from Lilienfeld (2018).	
+						</div>
+						
+					</section>
+					<section>
 						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Process flow</h4>
 						<img src="assets/images/process_flow.svg" alt="Process flow of chemical ML">
 					</section>
 					<section style="font-family:'Comic Sans MS'">
 						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Data</h4>
-						<div style="position:relative; left:-100px; text-align: left; font-size: 30px;">
+						<div style="position:relative; left:-100px; text-align: left; font-size: 25px;">
 							<p>Molecular data:</p>
 							<ul>
 								<li>
-									Atomic coordinates $\textcolor{blue} X \in \mathbb{R}^{n_\text{atom} \times 3}$
+									Atomic coordinates $\textcolor{blue} X \in \mathbb{R}^{n_\text{atom} \times 3}$ 
+									<br>(units: <span style="color:blueviolet">1 Angstrom = 1.89 Bohr</span>)
 								</li>
 								<li>
 									List of atoms' type, e.g., $[\text{C, H, O, O, ...}]$
 								</li>
 								<li>
-									Target property (in this case, energy) $\textcolor{green}E \in \mathbb{R}$
+									Target property (in this case, energy) $\textcolor{green}E \in \mathbb{R}$ 
+									<br>(units: <span style="color:blueviolet">1 Hartree = 27.2 eV = 627.5 kcal/mol</span>)
 								</li>
 							</ul>
 							<p>Additional data:</p>
@@ -459,7 +473,7 @@
 								<li>
 									Atom $i$ energy contribution:
 									\[
-										\epsilon_0[i] = A[i] - \sqrt{B[i] + C[i]},
+										\epsilon[i] = A[i] - \sqrt{B[i] + C[i]},
 									\]
 									where $A$ is of the form
 									\[
@@ -467,19 +481,149 @@
 									\]
 									and $B,C$ are of the form
 									\[
-										T_0[i]  = \frac{\left(\sum\limits_k {\color{red}\theta}_k {\color{blue}\Phi}_k[i]\right)^2}{1 + \left(\sum\limits_k {\color{red}\theta'}_k {\color{blue}\Phi}_k[i] \right)^2}.
+										T[i]  = \frac{\left(\sum\limits_k {\color{red}\theta}_k {\color{blue}\Phi}_k[i]\right)^2}{1 + \left(\sum\limits_k {\color{red}\theta'}_k {\color{blue}\Phi}_k[i] \right)^2}.
 									\]
 									<b>Potential energy</b> at a given conformation:
 									\[
-									\cgreen V = \sum_i \epsilon_0[i].
+									\cgreen V = \sum_i \epsilon[i].
 									\]
 								</li>
 							</ul>
 							<img src=""> 
 						</div>
 					</section>
-					<section>
+					<section style="font-family:'Comic Sans MS'">
 						<h4 style="color:green; font-family:'Comic Sans MS'">Automatic differentiation (AD)!</h4>
+						<div style="position: absolute; left:-150px; text-align: left; font-size: 15px; padding:20px; width:400px; border-width:2px; border-style: dotted; border-color: blue;">
+							<ul>
+								<li>
+									Three well known classes of differentiation: <b>symbolic</b> differentiation, <b>finite</b> difference, <span style="color:red"><b>automatic</b></span> differentiation
+								</li>
+								<li>
+									<b>Finite</b> difference:
+									<ul>
+										<li>
+											(+) Generic, easiest to implement
+										</li>
+										<li>
+											(-) Inaccurate (approximate), slow, <b>commits cardinal sins of numerical computation</b>: 
+											“<em>thou shalt not add small numbers to big numbers</em>”, and 
+											“<em>thou shalt not subtract numbers which are approximately equal</em>”.
+										</li>
+									</ul>
+								</li>
+								<li>
+									<b>Symbolic</b> differentiation:
+									<ul>
+										<li>
+											(+) Accurate (exact)
+										</li>
+										<li>
+											(-) Not generic, cumbersome to implement (expression complexity grows rapidly by addition of new variables).
+										</li>
+									</ul>
+								</li>
+								<li>
+									<b><span style="color:red">Automatic differentiation (AD)</span></b>: computes the derivative of a function by "reading" the function's algorithm. 
+									Modes: <span style="color:red">forward AD</span>, <span style="color:red">reverse AD</span>.
+									<ul>
+										<li>
+											(+) Accurate (exact), fast, generic.
+										</li>
+										<li>
+											(-) ?
+										</li>
+									</ul>
+								</li>
+							</ul>
+						</div>
+						<div style="position: absolute; left:300px; text-align: left; font-size: 15px; padding:20px; width:400px;">
+							<ul>
+								<li>
+									Function: $f(x) = \cblue{(x_1 + x_2)(x_1 + 1)}, ~~ f([\cblue{2,1}]) = 9$
+								</li>
+								<li>
+									Gradient: $g(x) := \Big[\cgreen{\frac{\partial f}{\partial x_1}, \frac{\partial f}{\partial x_2}}\Big]^T $ 
+									<br>$= [2x_1 + x_2 + 1, ~ x_1 + 1]^T, ~~ g([2,1]) = [\cgreen{6, 3}]^T.$
+								</li>
+								<li>
+									Forward sweep:
+									\[
+										\begin{split}
+											\cred{v_1} &:= x_1 + x_2 = 3, \\
+											\cred{v_2} &:= x_1 + 1 = 3, \\
+											\cred{v_3} &:= \cred{v_1v_2} = 9, \\
+											f &:= \cred{v_3} = 9.
+										\end{split}
+									\]
+								</li>
+								<li>
+									Backward sweep:
+									\[
+										\begin{split}
+											\frac{\partial f}{\partial x_1} &= 
+											\frac{\partial f}{\partial v_3} 
+											\frac{\partial v_3}{\partial v_1}
+											\frac{\partial v_1}{\partial x_1} +
+											\frac{\partial f}{\partial v_3} 
+											\frac{\partial v_3}{\partial v_2}
+											\frac{\partial v_2}{\partial x_1}, \\
+											\cgreen{\frac{\partial f}{\partial x_1}} &= 
+											1 \cdot \cred{v_2} \cdot x_2 + 1 \cdot \cred{v_1} \cdot 1 = \cgreen 6. 
+										\end{split}
+									\]
+									\[
+										\begin{split}
+											\frac{\partial f}{\partial x_2} &=
+											\frac{\partial f}{\partial v_3}
+											\frac{\partial v_3}{\partial v_1}
+											\frac{\partial v_1}{\partial x_2},\\
+											\cgreen{\frac{\partial f}{\partial x_2}} &= 1 \cdot \cred{v_2} \cdot 1 = \cgreen 3. 
+										\end{split}
+									\]
+								</li>
+							</ul>
+							<img src="assets/images/reverse_AD.svg" style="position:absolute; width: 10vw; min-width: 400px; " alt="reverse AD example"> 
+						</div>
+					</section>
+					<section style="font-family:'Comic Sans MS'">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Global potential benchmark</h4>
+						<div style="font-size: 25px; margin-right:auto; width:fit-content; height:fit-content; border-width:2px; padding:20px; border-style: dotted; border-color: blue;">
+							Current best obtained RMSE (in Hartree)
+							<div>
+								<img src="assets/images/bondpot_benchmark.png" style="width: 10vw; min-width: 400px; " alt="Global potential benchmark"> 
+							</div>
+							<div style="position: absolute; top: 75px; left:550px; width: fit-content; border-width:2px; padding:20px; border-style: dotted; border-color: red;">
+								<p>BondPOT optimization timing:</p>
+								<ul>
+									<li>
+										Finite differences: 523.82s
+									</li>
+									<li>
+										Reverse AD: <span style="color:red"><b>129.02s</b></span>
+									</li>
+								</ul>
+							</div>
+						</div>
+						<div style="text-align: left; font-size: 25px; padding:20px"> 
+							<ul>
+								<li>
+									Uses least squares objective function
+								</li>
+								<li>
+									Uses Levenberg–Marquardt algorithm from <span style="color:blueviolet">LsqFit.jl</span>
+								</li>
+								<li>
+									Uses multistart for the optimization routine
+								</li>
+								<li>
+									Data split <span style="color:blue"> train:test = 80% : 20% </span>
+								</li>
+								<li>
+									Benchmark against <span style="color:blue">CHIPR</span>
+								</li>
+							</ul>
+						</div>
 					</section>
 				</section>
 				<section>Robust Shepard model for interpolation (ROSEMI) </section>
