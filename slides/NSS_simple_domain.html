@@ -642,7 +642,7 @@
 									Model definition
 								</li>
 								<li>
-									Solving the model
+									Optimizing the model
 								</li>
 								<li>
 									Benchmark results
@@ -714,7 +714,7 @@
 							</ul>
 					</section>
 					<section style="font-family:'Comic Sans MS',cursive;">
-						<h4 style="color:green; font-family:'Comic Sans MS'">Solving the model</h4>
+						<h4 style="color:green; font-family:'Comic Sans MS'">Optimizing the model</h4>
 						<div style="position: absolute; left:-150px; text-align: left; font-size: 15px; padding:15px; width: 600px; border-width:2px; border-style: dotted; border-color: blue;">
 							Interpolation <b>deviation</b> when data point $j$ is removed from $K$:
 							\[
@@ -735,37 +735,59 @@
 							</li>
 							Linear system form:
 							\[
-									\Delta_{jK}(w_m, \theta) = \sum_{kl} A_{jm, kl} \theta_{kl} - b_{jm} 
-									= (A\theta - b)_{jm}
+									\Delta_{jK}(\cblue w_m, \rtheta) = \sum_{kl} \cblue A_{jm, kl} \rtheta_{kl} - \cgreen b_{jm} 
+									= (\cblue A\rtheta - \cgreen b)_{jm}
 							\]
 							where
 							<div>
 								<ul>
 									<li>
 										\[
-											A_{jm, kl} = \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)}
+											\cblue A_{jm, kl} = \frac{\phi_{kl}(\cblue w_m)(1 - \gamma_k(\cblue w_m) \delta_{jk})}{\gamma_k(\cblue w_m) \alpha_j(\cblue w_m)}
 										\]
 									</li>
 									<li>
 										\[
-											b_{jm} = \Big(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\Big)/\alpha_j(w_m)
+											\cgreen b_{jm} = \Big(\cgreen E_j - \sum_k\frac{\cgreen E_k}{\gamma_k(\cblue w_m)}\Big)/\alpha_j(\cblue w_m)
 										\]
 									</li>
 									<li>
 										\[
-											\gamma_k(w) := D_k(w)S_K(w), ~ \alpha_j(w) := \gamma_j(w)-1
+											\gamma_k(\cblue w) := D_k(\cblue w)S_K(w), ~ \alpha_j(\cblue w) := \gamma_j(\cblue w)-1
 										\]
 									</li>
 								</ul>
 							</div> 
 						</div>
-						<div style="position: absolute; left:500px; text-align: left; font-size: 14px; padding:15px; width: 600px; border-width:2px; border-style: dotted; border-color: red;">
+						<div style="position: absolute; left:500px; text-align: left; font-size: 20px; padding:15px; width: 500px; border-width:2px; border-style: dotted; border-color: red;">
 							Objective function:
 							\[
-								f_{\text{obj}}(\theta) := |K| \sum_m \text{RMSD}_K(w_m, \theta)^2 = \|A \theta - b\|_2^2.
+								f_{\text{obj}}(\rtheta) := |K| \sum_m \text{RMSD}_K(\cblue w_m, \rtheta)^2 = \|\cblue A \rtheta - \cgreen b\|_2^2.
 							\]
-
+							Memory efficient optimization with conjugate gradient for least squares (CGLS):
+							\[
+								\rtheta \leftarrow \text{CGLS}(\cblue Au, \cblue A^Tv, \cgreen b).
+							\]
+							The matrix-vector products:
+							<div>
+								<ul>
+									<li>
+										\[
+											\cblue Au = \sum_{kl} \frac{\cblue \phi_{m, kl} u_{kl} (1-\gamma_{m k}\delta_{jk})}{\gamma_{mk}\alpha_{mj}}
+										\]
+									</li>
+									<li>
+										\[
+											\cblue A^T v = \sum_{jm} \frac{\cblue \phi_{m, kl} v_{jm} (1-\gamma_{m k}\delta_{jk})}{\gamma_{mk}\alpha_{mj}}
+										\]
+									</li>
+								</ul>
+							</div>
 						</div>
+					</section>
+					<section>
+						<h4 style="color:green; font-family:'Comic Sans MS'">Benchmark results</h4>
+
 					</section>
 				</section>
 				<section>Learning equilibrium geometries with minimal supervision</section>
