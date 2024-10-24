@@ -46,7 +46,7 @@
 								Robust Shepard model for interpolation
 							</li>
 							<li>
-								Learning quantum chemistry by minimal supervision
+								Learning equilibrium geometries by minimal supervision
 							</li>
 						</ol>
 					</div>
@@ -290,7 +290,7 @@
 						</div>
 					</section>
 					<section style="font-family:'Comic Sans MS'">
-						<h4 style="color:green; font-family:'Comic Sans MS'">Proposed pair potentials</h4>
+						<h4 style="color:green; font-family:'Comic Sans MS'">Ansatz for benchmark</h4>
 						<div id="ratpot1" style="position:relative; left:-150px; width:700px; border-width:2px; border-style: dotted; border-color: red; font-size: 25px;">
 							<p style="color:red">RATPOT1</p>
 							\[
@@ -348,7 +348,7 @@
 									Bonding potential model
 								</li>
 								<li>
-									Useful tool: automatic differentiation (AD)
+									Useful tool: automatic differentiation
 								</li>
 								<li>
 									Benchmark results
@@ -493,7 +493,7 @@
 						</div>
 					</section>
 					<section style="font-family:'Comic Sans MS'">
-						<h4 style="color:green; font-family:'Comic Sans MS'">Automatic differentiation (AD)!</h4>
+						<h4 style="color:green; font-family:'Comic Sans MS'">Automatic differentiation!</h4>
 						<div style="position: absolute; left:-150px; text-align: left; font-size: 15px; padding:20px; width:400px; border-width:2px; border-style: dotted; border-color: blue;">
 							<ul>
 								<li>
@@ -626,8 +626,59 @@
 						</div>
 					</section>
 				</section>
-				<section>Robust Shepard model for interpolation (ROSEMI) </section>
-				<section>Learning quantum chemistry with minimal supervision</section>
+				<!-- ========== ROSEMI ================ -->
+				<section> 
+					<section id = "rosemi" data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.45>
+						<h3 style="color:blue; font-family:'Comic Sans MS',cursive; font-size: 45px;">Robust Shepard model for interpolation (ROSEMI)</h3>
+						<div style="font-family:'Comic Sans MS',cursive; font-size: 35px;">
+							<ul>
+								<li>
+									Model definition
+								</li>
+								<li>
+									Solving the model
+								</li>
+								<li>
+									Benchmark results
+								</li>
+							</ul>
+						</div>
+					</section>
+					<section style="font-family:'Comic Sans MS',cursive;">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Model definition</h4>
+						<div style="position: absolute; left:-150px; text-align: left; font-size: 20px; padding:20px; width: 600px; border-width:2px; border-style: dotted; border-color: blue;">
+							Improvement of the Shepard model (D. Shepard (1968), R. Franke (1982)), 
+							<br> <b>Robust Shepard model</b> for interpolation (<b>ROSEMI</b>):
+							\[
+								V_K(\cblue{w}):=R_K(\cblue{w})/S_K(\cblue{w}) ~~~ \text{ for } \cblue{w} \in \mathbb{R}^m \setminus \{\cblue{w}_k\mid k\in K \},
+							\]
+							where
+							<div>
+								<ul>
+									<li>
+										$R_K(\cblue{w}) :=\sum_{k\in K} \frac{V_k(\cblue{w})}{D_k(\cblue{w})}$
+									</li>
+									<li>
+										$S_K(\cblue{w}):=\sum_{k\in K} \frac{1}{D_k(\cblue{w})}$
+									</li>
+									<li>
+										$D_k(\cblue{w}) = \|\cblue{w}-\cblue{w}_k\|_2^2$
+									</li>
+								</ul>
+							</div>
+							<br>
+							Extending $V_K$:
+							\[
+								V_K(\cblue w):=
+								\begin{cases}
+									V_k(\cblue w_k)      & \text{if } \cblue w=\cblue w_k \text{ with } k\in K, \\
+									R_K(\cblue w)/S_K(\cblue w) & \text{otherwise}.
+								\end{cases}
+							\]
+						</div>
+					</section>
+				</section>
+				<section>Learning equilibrium geometries with minimal supervision</section>
 				<section>
 					<div class="two-columns">
 						<!-- Left Column: Math Formulas -->
