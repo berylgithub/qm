@@ -197,16 +197,22 @@
 					</section>
 					<section>
 						<h4 style="color:green; font-family:'Comic Sans MS'">Evaluation</h4>
-						<div style="font-family:'Comic Sans MS'; font-size: 30px">
+						<div style="position: absolute; left:-150px; font-family:'Comic Sans MS'; font-size: 30px">
 							<ul>
 								<li>
 									Evaluation of test data (out of sample data).
 								</li>
 								<li>
-									MAE: $\frac{1}{|M_\text{test}|}\sum_{m \in M_\text{test}}|V(\textcolor{blue}{x}_m, \rtheta) - \gE|$
+									MAE: 
+									\[
+										\text{MAE} = \frac{1}{|M_\text{test}|}\sum_{m \in M_\text{test}}|V(\textcolor{blue}{x}_m, \rtheta) - \gE|
+									\]
 								</li>
 								<li>
-									RMSE: $\sqrt{\frac{1}{|M_\text{test}|} \sum_{m \in M_\text{test}} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)^2}$
+									RMSE: 
+									\[
+										\text{RMSE} = \sqrt{\frac{1}{|M_\text{test}|} \sum_{m \in M_\text{test}} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)^2}
+									\]
 								</li>
 								<li>
 									K-fold cross validation
@@ -675,6 +681,90 @@
 									R_K(\cblue w)/S_K(\cblue w) & \text{otherwise}.
 								\end{cases}
 							\]
+						</div>
+						<div style="position: absolute; left: 500px; text-align: left; font-size: 17px; padding:20px; width: 570px; border-width:2px; border-style: dotted; border-color: red;">
+							Interpolation condition:
+							\[
+								V_k(\cblue w_k)= \cgreen E_k.
+							\]
+							Ansatz based on the interpolation condition:
+							<ul>
+								<li>
+									non specific condition:
+									\[
+										V_k(\cblue w)= \cgreen E_k+\sum_b \cred \theta_{kb}\Big( \phi_b(w) - \phi_b(\cblue w_k) \Big)
+									\]
+								</li>
+								<li>
+									with force condition (equilibrium geometry):
+									\[
+										V_k(\cblue w)= \cgreen E_k+\sum_b \cred \theta_{kb}\phi_{kb}(\cblue w),
+									\]
+									where
+									<ul>
+										<li>
+											$\phi_{kb}(\cblue w):=\phi_b(\cblue w)-\phi_b(\cblue w_k)-\phi_b'(\cblue w_k)(\cblue w-\cblue w_k)$ 
+											<br>$\text{for } k\in K,~b\in B$
+										</li>
+										<li>
+											$\phi_b'(\cblue w)=\frac{d\phi_b}{dw} \in \mathbb{R}^{1\times m}$
+										</li>
+									</ul>
+								</li>
+							</ul>
+					</section>
+					<section style="font-family:'Comic Sans MS',cursive;">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Solving the model</h4>
+						<div style="position: absolute; left:-150px; text-align: left; font-size: 15px; padding:15px; width: 600px; border-width:2px; border-style: dotted; border-color: blue;">
+							Interpolation <b>deviation</b> when data point $j$ is removed from $K$:
+							\[
+								\Delta_{jK}(\cblue{w}, \cred{\theta}):=\frac{V_K(\cblue{w}, \cred{\theta})-V_j(\cblue{w}, \cred{\theta})}{D_j(\cblue{w})S_K(\cblue{w})-1}.
+							\]
+							Error measurements:
+							<li>
+								Mean absolute deviation:
+								\[
+									\text{MAD}_K(\cblue{w}, \cred{\theta}) := \frac{1}{|K|}\sum_{j\in K}|\Delta_{jK}(\cblue{w}, \cred{\theta})|.
+								\]
+							</li>
+							<li>
+								Root mean squared deviation:
+								\[
+									\text{RMSD}_K(\cblue{w}, \cred{\theta}) := \sqrt{\frac{1}{|K|}\sum_{j\in K}\Delta_{jK}(\cblue{w}, \cred{\theta})^2}.
+								\]
+							</li>
+							Linear system form:
+							\[
+									\Delta_{jK}(w_m, \theta) = \sum_{kl} A_{jm, kl} \theta_{kl} - b_{jm} 
+									= (A\theta - b)_{jm}
+							\]
+							where
+							<div>
+								<ul>
+									<li>
+										\[
+											A_{jm, kl} = \frac{\phi_{kl}(w_m)(1 - \gamma_k(w_m) \delta_{jk})}{\gamma_k(w_m) \alpha_j(w_m)}
+										\]
+									</li>
+									<li>
+										\[
+											b_{jm} = \Big(E_j - \sum_k\frac{E_k}{\gamma_k(w_m)}\Big)/\alpha_j(w_m)
+										\]
+									</li>
+									<li>
+										\[
+											\gamma_k(w) := D_k(w)S_K(w), ~ \alpha_j(w) := \gamma_j(w)-1
+										\]
+									</li>
+								</ul>
+							</div> 
+						</div>
+						<div style="position: absolute; left:500px; text-align: left; font-size: 14px; padding:15px; width: 600px; border-width:2px; border-style: dotted; border-color: red;">
+							Objective function:
+							\[
+								f_{\text{obj}}(\theta) := |K| \sum_m \text{RMSD}_K(w_m, \theta)^2 = \|A \theta - b\|_2^2.
+							\]
+
 						</div>
 					</section>
 				</section>
