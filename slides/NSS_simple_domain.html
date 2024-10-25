@@ -43,7 +43,7 @@
 								<a href="#/bpes">Global potential energy surface for small molecules</a>
 							</li>
 							<li>
-								Robust Shepard model for interpolation
+								<a href="#/rosemi">Robust Shepard model for interpolation</a>
 							</li>
 							<li>
 								Learning equilibrium geometries by minimal supervision
@@ -144,7 +144,7 @@
 									Main properties: invariant to <span style="color:blue">translation</span>, <span style="color:blue">rotation</span> and <span style="color:blue">permutation</span> (of atoms with same type)
 								</li>
 								<li>
-									Typically encoded in a matrix $\textcolor{blue} F^m \in \mathbb{R}^{n^m_\text{atom} \times n_\text{feature}}$ or a vector $\textcolor{blue} f_{m:} \in \mathbb{R}^{n_\text{feature}}$ for molecule $m$  
+									Typically encoded in a matrix $\textcolor{blue} \Phi^m \in \mathbb{R}^{n^m_\text{atom} \times n_\text{feature}}$ or a vector $\textcolor{blue} \phi_{m:} \in \mathbb{R}^{n_\text{feature}}$ for molecule $m$  
 								</li>
 							</ul>
 						</div>
@@ -544,13 +544,14 @@
 							</ul>
 						</div>
 						<div style="position: absolute; left:300px; text-align: left; font-size: 15px; padding:20px; width:400px;">
+							<u>Reverse mode AD illustration</u>:
 							<ul>
 								<li>
 									Function: $f(x) = \cblue{(x_1 + x_2)(x_1 + 1)}, ~~ f([\cblue{2,1}]) = 9$
 								</li>
 								<li>
 									Gradient: $g(x) := \Big[\cgreen{\frac{\partial f}{\partial x_1}, \frac{\partial f}{\partial x_2}}\Big]^T $ 
-									<br>$= [2x_1 + x_2 + 1, ~ x_1 + 1]^T, ~~ g([2,1]) = [\cgreen{6, 3}]^T.$
+									<br>$= [2x_1 + x_2 + 1, ~ x_1 + 1]^T, ~~ g([\cblue{2,1}]) = [\cgreen{6, 3}]^T.$
 								</li>
 								<li>
 									Forward sweep:
@@ -630,6 +631,7 @@
 								</li>
 							</ul>
 						</div>
+						<img src="assets/images/logo_julia.png" style="position:absolute; top:550px; left:800px; width:100px;">
 					</section>
 				</section>
 				<!-- ========== ROSEMI ================ -->
@@ -764,7 +766,7 @@
 							\[
 								f_{\text{obj}}(\rtheta) := |K| \sum_m \text{RMSD}_K(\cblue w_m, \rtheta)^2 = \|\cblue A \rtheta - \cgreen b\|_2^2.
 							\]
-							Memory efficient optimization with conjugate gradient for least squares (CGLS):
+							Memory efficient optimization with conjugate gradient for least squares (<b>CGLS</b>):
 							\[
 								\rtheta \leftarrow \text{CGLS}(\cblue Au, \cblue A^Tv, \cgreen b).
 							\]
@@ -785,9 +787,50 @@
 							</div>
 						</div>
 					</section>
-					<section>
+					<section style="font-family:'Comic Sans MS',cursive;">
 						<h4 style="color:green; font-family:'Comic Sans MS'">Benchmark results</h4>
-
+						<div style="position: absolute; left:-150px; font-size: 25px; padding:15px; width: 700px; border-width:2px; border-style: dotted; border-color: blue;">
+							<u><span style="color: blue;">Pair potential benchmark</span></u>
+							<div style="text-align: left; font-size: 20px;">
+								<ul>
+									<li>
+										Error measure using <b>test RMSE</b> (in Hartree unit)
+									</li>
+									<li>
+										Uses <span style="color:blue">5-fold</span> cross validation for train-test split
+									</li>
+									<li>
+										Uses <span style="color:blueviolet">CGLS</span> from <span style="color:blueviolet">Krylov.jl</span> for training
+									</li>
+									<li>
+										Uses <span style="color:blueviolet">LHSampler</span> from <span style="color:blueviolet">Hyperopt.jl</span> for hyperparameter optimization
+									</li>
+									<li>
+										Total optimization timing ranges from 200s-2000s (depending on dataset size)
+									</li>
+								</ul>
+								<img src="assets/images/rosemi_pairpot_benchmark.png">
+							</div>
+						</div>
+						<div style="position: absolute; left:600px; font-size: 25px; padding:15px; width: 450px; border-width:2px; border-style: dotted; border-color: red;">
+							<u><span style="color: red;">QM9 benchmark</span></u>
+							<div style="text-align: left; font-size: 15px;">
+								<ul>
+									<li>
+										Error measure using <b>test MAE</b> (in kcal/mol unit)
+									</li>
+									<li>
+										Uses <span style="color:blue"><b>100</b></span> out of <b>130k</b> molecules for training, while the rest are for testing (<b>QM9 challenge!</b>)
+									</li>
+									<li>
+										$t_s$ is CPU time for solving, $t_p$ is CPU time for prediction
+									</li>
+								</ul>
+								<img src="assets/images/rosemi_qm9_benchmark.png">
+							</div>
+						</div>
+						<img src="assets/images/logo_julia.png" style="position:absolute; top:500px; left:800px; width:100px;">
+						<img src="assets/images/logo_vsc.jpg" style="position:absolute; top:600px; left:800px; width:100px; height:100px">
 					</section>
 				</section>
 				<section>Learning equilibrium geometries with minimal supervision</section>
