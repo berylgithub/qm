@@ -874,7 +874,7 @@
 					<section style="font-family:'Comic Sans MS',cursive;">
 						<h4 style="color:green; font-family:'Comic Sans MS'">Molecular selection (cont.)</h4>
 						<div style="font-size: 25px;">
-							<u>How to do the selection</u>
+							How to do the selection?
 						</div>
 						<div style="position: absolute; left:-150px; font-size: 17px; width: 600px; border-width:2px; border-style: dotted; border-color: blue;">
 							Farthest point sampling
@@ -884,6 +884,68 @@
 							Usequence
 							<img src="assets/images/gifs/useq.gif">
 						</div>
+						<img src="assets/images/logo_julia.png" style="position:absolute; left:800px; top:540px; width:75px;">
+					</section>
+					<section style="font-family:'Comic Sans MS',cursive;">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Delta machine learning ($\Delta$ML)</h4>
+						<div style="position: absolute; left:-150px; font-size: 17px; width: 600px; border-width:2px; border-style: dotted; border-color: blue;">
+							Dressed [atom, bond, angle, torsion]
+							<img src="assets/images/smilestomatrix.png">
+						</div>
+						<div style="position: absolute; left:500px; padding: 5px; font-size: 17px; width: 600px; border-width:2px; border-style: dotted; border-color: red;">
+							$E^{(k+1)} = E^{(k)} - \cgreen{\textbf{ML}}^{(k)}(\cred \theta^{(k)}, \cblue X^{(k)}), ~~ E^{(0)} := E$
+							<img src="assets/images/gifs/edelta.gif">
+						</div>
+					</section>
+					<section style="font-family:'Comic Sans MS',cursive;">
+						<h4 style="color:green; font-family:'Comic Sans MS'">Intermediate benchmarks</h4>
+						<div style="position: absolute; left:-150px; padding: 10px; font-size: 17px; width: 450px; border-width:2px; border-style: dotted; border-color: blue;">
+							<u>Fitting with only dressed features</u>
+							<img src="assets/plots/fig_base.png">
+							<div style="font-size: 15px;">
+								<ul>
+									<li>
+										Fitting using only dressed atom, bond, angle and torsion 
+										<br>(<span style="color:blue">A, AB, ABN, ABNT</span>)
+									</li>
+									<li>
+										Model in linear system $\cgreen E = \cblue X \cred \theta$
+									</li>
+									<li>
+										Molecules selected by random (<span style="color:blueviolet">rand</span>) and usequence (<span style="color:blueviolet">sid57</span>) 
+									</li>
+								</ul>
+							</div>
+						</div>
+						<div style="position: absolute; left:350px; padding: 10px; font-size: 17px; width: 700px; border-width:2px; border-style: dotted; border-color: red;">
+							<u>Fitting with higher resolution features</u>
+							<img src="assets/plots/fig_RandVFPS_1k.png" style="position: relative; left:-120px; width:450px;">
+							<div style="font-size: 13px;">
+								<ul>
+									<li>
+										Fitting with dressed features and higher resolution features such as <span style="color:blue">ACSF, FCHL, SOAP,</span> and <span style="color:blue">CMBDF</span>
+									</li>
+									<li>
+										Model in linear system $\cgreen E = \cblue A \cred \theta$
+									<li>
+										Atomic level of features $\cblue X$: 
+										<br>$\cblue A_{ij} := \sum_l k(\cblue X^i_l, \cblue X^j_l)$ for molecules $i$, $j$, and atom type $l$
+									</li>
+									<li>
+										Kernels for a pair of features $\cblue u,\cblue v \in \mathbb{R}^m$:
+										<ul>
+											<li>
+												Gaussian: $k(\cblue{u,v};\cred \sigma) = \exp{\Big(\frac{-\|\cblue u-\cblue v\|_2^2}{2\cred\sigma^2}\Big)}.$
+											</li>
+											<li>
+												Linear: $k(\cblue{u,v}) = \cblue u^T \cblue v$
+											</li>
+										</ul>
+									</li>
+								</ul>
+							</div>
+						</div>
+						<img src="assets/images/stats.svg" style="position:relative; top: 50px; left:475px; width:200px;">
 					</section>
 				</section>
 				<!----------- Summary of the thesis -------------->
