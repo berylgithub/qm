@@ -1,0 +1,6 @@
+# images to video then the next line is video to gif, somehow this gives the (current) best quality of gif
+
+ffmpeg -f image2 -framerate 1 -i %10d.png -crf 0 video.avi
+ffmpeg -i video.avi out.gif
+
+
