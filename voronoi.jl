@@ -460,7 +460,7 @@ function usequence_anime(F::Matrix{Float64}, N::Int; rep=true, plt = nothing, co
 
     u, s = [zeros(M) for _ ∈ 1:2]           # initialize 2 empty vectors
     for k ∈ 1:N
-        scatter!(z[1,:], z[2,:], markersize=3., markerstrokewidth=1., markershape = :dtriangle, markercolor = :blue)
+        scatter!(z[1,:], z[2,:], markersize=3., markerstrokewidth=1., markershape = :dtriangle, markercolor = :blue, dpi=500)
         # pick a vector from the reservoir
         idc = nothing
         if k == 1 
@@ -472,17 +472,17 @@ function usequence_anime(F::Matrix{Float64}, N::Int; rep=true, plt = nothing, co
         end
         x[:, k] = z[:,j] # update points
         push!(chosen_labels, abs_lb[j]) # and add to label
-        scatter!([z[1,j]], [z[2,j]], markersize = 5., markerstrokewidth = 2., markershape = :x, markercolor = :red)
+        scatter!([z[1,j]], [z[2,j]], markersize = 5., markerstrokewidth = 2., markershape = :x, markercolor = :red, dpi=500)
         # update the reservoir, instead of rand, pick randomly from available set of integers:
         new_j = sample(unused_labels, 1)[1] # random sample
         zj = F[:, new_j]
         if rep
             z[:, j] = zj
             abs_lb[j] = new_j
-            scatter!([zj[1]], [zj[2]], markersize=5., markerstrokewidth=2., markershape = :circle, markercolor = :green)
+            scatter!([zj[1]], [zj[2]], markersize=5., markerstrokewidth=2., markershape = :circle, markercolor = :green, dpi=500)
         end
         display(plt)
-        savefig(plt, "plot/anime/useq_"*string(counter)*".png")
+        savefig(plt, "anime/molselect/useq_"*string(counter)*".png")
         counter += 1
         #deleteat!(init_labels, findfirst(el -> el == new_j, init_labels)) # remove new_j from ids
         # update minimum squared distance vector 
@@ -707,34 +707,34 @@ function main_anime()
     F = Matrix(transpose(hcat(x,y)))
     p = 7e-3
     F .+= rand(Uniform(-p, p), size(F))
-    s1 = scatter(F[1,:], F[2,:], markersize=1., legends=nothing)
+    s1 = scatter(F[1,:], F[2,:], markersize=1., legends=nothing, dpi=500)
     ids_fps, mean_point = eldar_cluster(F, ns, distance="default", mode="fmd")
     display(ids_fps)
     display(mean_point)
     
     # !! change to high res in the final! (dpi ≥ 300)
-    #= # FPS plot:
-    scatter!([mean_point[1]], [mean_point[2]], markersize = 7., markerstrokewidth = 3., markershape = :x, markercolor = :blue)
-    savefig(s1, "plot/anime/fps_center.png")
+    # FPS plot:
+    scatter!([mean_point[1]], [mean_point[2]], markersize = 7., markerstrokewidth = 3., markershape = :x, markercolor = :blue, dpi=500)
+    savefig(s1, "anime/molselect/fps_center.png")
     display(s1)
     # animate:
     for (i,id) ∈ enumerate(ids_fps)
-        scatter!([F[1,id]], [F[2,id]], markersize = 4., markerstrokewidth = 2., markershape = :x, markercolor = :red)
-        savefig(s1, "plot/anime/fps_"*string(i)*".png")
-    end =#
+        scatter!([F[1,id]], [F[2,id]], markersize = 4., markerstrokewidth = 2., markershape = :x, markercolor = :red, dpi=500)
+        savefig(s1, "anime/molselect/fps_"*string(i)*".png")
+    end
 
     # usequence plot:
     idss_useq = []
     c = 1
     for i ∈ 1:2
-        p = scatter(F[1,:], F[2,:], markersize=1., legends=nothing)
+        p = scatter(F[1,:], F[2,:], markersize=1., legends=nothing, dpi=500)
         display(p)
-        savefig(p, "plot/anime/useq_"*string(c)*".png")
+        savefig(p, "anime/molselect/useq_"*string(c)*".png")
         c += 1
         _, ids_useq, c = usequence_anime(F, ns; plt = p, counter = c, reservoir_size = 100) # need to capture the reservoir for each iteration to see the animation
         push!(idss_useq, ids_useq)
         display(ids_useq)
-        #scatter!(F[1,ids_useq], F[2,ids_useq], markersize = 4., markerstrokewidth = 2., markershape = :x, markercolor = :red)
+        scatter!(F[1,ids_useq], F[2,ids_useq], markersize = 4., markerstrokewidth = 2., markershape = :x, markercolor = :red, dpi=500)
         #display(p)
     end
 end
