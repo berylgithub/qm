@@ -694,7 +694,7 @@
 								<li>
 									non specific condition:
 									\[
-										V_k(\cblue w)= \cgreen E_k+\sum_b \cred \theta_{kb}\Big( \phi_b(w) - \phi_b(\cblue w_k) \Big)
+										V_k(\cblue w)= \cgreen E_k+\sum_b \cred \theta_{kb}\Big( \phi_b(\cblue w) - \phi_b(\cblue w_k) \Big)
 									\]
 								</li>
 								<li>
@@ -709,7 +709,7 @@
 											<br>$\text{for } k\in K,~b\in B$
 										</li>
 										<li>
-											$\phi_b'(\cblue w)=\frac{d\phi_b}{dw} \in \mathbb{R}^{1\times m}$
+											$\phi_b'(\cblue w)=\frac{d\phi_b}{d \cblue w} \in \mathbb{R}^{1\times m}$
 										</li>
 									</ul>
 								</li>
@@ -966,6 +966,7 @@
 								<img src="assets/images/hyperparam_tuning_table.png" style="position: relative; left: 180px; top:-320px; width:350px;">
 							</div>
 							<img src="assets/plots/hpopt_CMBDF.png" style="position: absolute; top: 365px; left: 50px; width:370px;">
+							<img src="assets/images/logo_vsc.jpg" style="position: absolute; top: 420px; left: 600px; width: 50px;">
 						</div>
 						<div style="position: absolute; left:575px; padding: 10px; font-size: 17px; width: 500px; height: 600px; border-width:2px; border-style: dotted; border-color: red;">
 							<u>Training sets</u>
@@ -988,18 +989,26 @@
 							</div>
 								<img src="assets/images/tabusearch.svg" style="position: absolute; top: 250px; left: 10px; width:500px;">
 							<div style="position: absolute; top: 500px">
-								Current QM9 challenge record: <b><span style="color: green;">3.25 kcal/mol</span></b>
+								<mark>Current QM9 challenge record</mark>: <b><span style="color: green;">3.25 kcal/mol</span></b>
 							</div>
 							
 						</div>
 					</section>
 					<section style="font-family:'Comic Sans MS',cursive;">
 						<h4 style="color:green; font-family:'Comic Sans MS'">X-AI</h4>
-						<div style="position: absolute; left:-150px; padding: 10px; font-size: 17px; width: 450px; border-width:2px; border-style: dotted; border-color: blue;">
-							2 plots (see qm_slides), table (from book)
+						<div style="position: absolute; left: -170px;">
+							<div style="font-size: 20px;">
+								<u>PCA of current best model</u>
+							</div>
+							<img src="assets/plots/PCA_kernel_plot.png" style="width: 300px;">
+							<img src="assets/plots/PCA_kernel_f1f2.png" style="width: 300px;">
+							<div style="font-size: 15px;">
+								Frequency of <span style="color: green;">n_atom</span> (molecule size) in $i$th cluster
+							</div>
+							<img src="assets/images/xai_table.png" style="width: 200px;">
 						</div>
-						<div style="position: absolute; left:350px; padding: 10px; font-size: 17px; width: 700px; border-width:2px; border-style: dotted; border-color: red;">
-							molgraph gif
+						<div>
+							<img src="assets/images/gifs/molgraph.gif" style="position: relative; left: 300px; width: 600px;">
 						</div>
 					</section>
 				</section>
