@@ -830,7 +830,7 @@
 							</div>
 						</div>
 						<img src="assets/images/logo_julia.png" style="position:absolute; top:500px; left:800px; width:100px;">
-						<img src="assets/images/logo_vsc.jpg" style="position:absolute; top:600px; left:800px; width:100px; height:100px">
+						<img src="assets/images/logo_vsc.jpg" style="position:absolute; top:580px; left:800px; width:75px;">
 					</section>
 				</section>
 				<!-- ========== QM9 Challenge ================ -->
@@ -929,31 +929,68 @@
 										Model in linear system $\cgreen E = \cblue A \cred \theta$
 									<li>
 										Atomic level of features $\cblue X$: 
-										<br>$\cblue A_{ij} := \sum_l k(\cblue X^i_l, \cblue X^j_l)$ for molecules $i$, $j$, and atom type $l$
+										$\cblue A_{ij} := \sum_l k(\cblue X^i_l, \cblue X^j_l)$ for molecules $i$, $j$, and atom type $l$
 									</li>
 									<li>
 										Kernels for a pair of features $\cblue u,\cblue v \in \mathbb{R}^m$:
 										<ul>
 											<li>
-												Gaussian: $k(\cblue{u,v};\cred \sigma) = \exp{\Big(\frac{-\|\cblue u-\cblue v\|_2^2}{2\cred\sigma^2}\Big)}.$
+												Gaussian kernel (GK): $k(\cblue{u,v};\cred \sigma) = \exp{\Big(\frac{-\|\cblue u-\cblue v\|_2^2}{2\cred\sigma^2}\Big)}$
 											</li>
 											<li>
-												Linear: $k(\cblue{u,v}) = \cblue u^T \cblue v$
+												Linear kernel (LK): $k(\cblue{u,v}) = \cblue u^T \cblue v$
 											</li>
 										</ul>
 									</li>
+									<li>
+										Hypertuned for <span style="color:red">$\Delta$level</span> = {A, AB, ABN, ABNT}, <span style="color:red">models</span> = {GK, LK}, and $\cred \sigma = \{1,2,..32\} $
+									</li>
+									<li>
+										<span style="color:green">1 kcal/mol</span> reached with <span style="color:blue">3750</span> training molecules
+									</li>
 								</ul>
 							</div>
+							<img src="assets/images/logo_julia.png" style="position:absolute; left:-200px; top:480px; width:75px;">
+							<img src="assets/images/logo_vsc.jpg" style="position:absolute; left:-200px; top:540px; width:75px;">
 						</div>
 						<img src="assets/images/stats.svg" style="position:relative; top: 50px; left:475px; width:200px;">
 					</section>
 					<section style="font-family:'Comic Sans MS',cursive;">
 						<h4 style="color:green; font-family:'Comic Sans MS'">Optimizing hyperparameters and training set</h4>
-						<div style="position: absolute; left:-150px; padding: 10px; font-size: 17px; width: 450px; border-width:2px; border-style: dotted; border-color: blue;">
+						<div style="position: absolute; left:-150px; padding: 5px; font-size: 17px; width: 700px; border-width:2px; border-style: dotted; border-color: blue;">
 							<u>Hyperparameters</u>
+							<div>
+								<img src="assets/images/tuning.svg" style="position: relative; left: -175px; width:350px;">
+							</div>
+							<div>
+								<img src="assets/images/hyperparam_tuning_table.png" style="position: relative; left: 180px; top:-320px; width:350px;">
+							</div>
+							<img src="assets/plots/hpopt_CMBDF.png" style="position: absolute; top: 365px; left: 50px; width:370px;">
 						</div>
-						<div style="position: absolute; left:350px; padding: 10px; font-size: 17px; width: 700px; border-width:2px; border-style: dotted; border-color: red;">
-							<u>Training set</u>
+						<div style="position: absolute; left:575px; padding: 10px; font-size: 17px; width: 500px; height: 600px; border-width:2px; border-style: dotted; border-color: red;">
+							<u>Training sets</u>
+							<div style="font-size: 12px; text-align: left;">
+								By combinatorics, $\cred x$ as binary vector that chooses molecules:
+								\[
+									\begin{split}
+										\min ~ &f(\cred x)     \\
+										\text{s.t.} ~ &c(\cred x) = 0
+									\end{split}
+								\]
+								\[
+									\begin{split}
+										f(\cred x) &= \frac{1}{N_\text{test}}\sum_{k} \Big|\Big[D(\neg \cred x)KD(\cred x)\Big(D(\cred x)KD(\cred x) \Big)^{-1} \Big(D(\cred x)E\Big)\Big]_k - \Big[D(\neg \cred x)E\Big]_k\Big|, \\
+										c(\cred x) &= \sum_i \cred x_i - 100, ~~\cred  x_i \in \{0,1\}, ~~ i \in [1,2,...N_{QM9}], \\
+										D(\cred x) &\in \{0,1\}^{N_{QM9} \times N_{QM9}}, ~~ D(\cred x)_{ii} := \cred x_i, \\
+            							K &:= K(\cblue H), ~~ \cblue H := \text{fixed--current--best hyperparameters}.
+									\end{split}
+								\]
+							</div>
+								<img src="assets/images/tabusearch.svg" style="position: absolute; top: 250px; left: 10px; width:500px;">
+							<div style="position: absolute; top: 500px">
+								Current QM9 challenge record: <b><span style="color: green;">3.25 kcal/mol</span></b>
+							</div>
+							
 						</div>
 					</section>
 					<section style="font-family:'Comic Sans MS',cursive;">
