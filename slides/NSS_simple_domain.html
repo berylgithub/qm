@@ -495,7 +495,7 @@
 									\]
 								</li>
 							</ul>
-							<img src=""> 
+							<img src="assets/images/bondpot.svg" style="position: absolute; left: 500px; width: 250px;"> 
 						</div>
 					</section>
 					<section style="font-family:'Comic Sans MS'">
@@ -980,10 +980,10 @@
 								\]
 								\[
 									\begin{split}
-										f(\cred x) &= \frac{1}{N_\text{test}}\sum_{k} \Big|\Big[D(\neg \cred x)KD(\cred x)\Big(D(\cred x)KD(\cred x) \Big)^{-1} \Big(D(\cred x)E\Big)\Big]_k - \Big[D(\neg \cred x)E\Big]_k\Big|, \\
+										f(\cred x) &= \frac{1}{N_\text{test}}\sum_{k} \Big|\Big[D(\neg \cred x)AD(\cred x)\Big(D(\cred x)AD(\cred x) \Big)^{-1} \Big(D(\cred x)E\Big)\Big]_k - \Big[D(\neg \cred x)E\Big]_k\Big|, \\
 										c(\cred x) &= \sum_i \cred x_i - 100, ~~\cred  x_i \in \{0,1\}, ~~ i \in [1,2,...N_{QM9}], \\
 										D(\cred x) &\in \{0,1\}^{N_{QM9} \times N_{QM9}}, ~~ D(\cred x)_{ii} := \cred x_i, \\
-            							K &:= K(\cblue H), ~~ \cblue H := \text{fixed--current--best hyperparameters}.
+            							A &:= A(\cblue H), ~~ \cblue H := \text{fixed--current--best hyperparameters}.
 									\end{split}
 								\]
 							</div>
