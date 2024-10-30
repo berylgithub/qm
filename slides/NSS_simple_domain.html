@@ -118,14 +118,15 @@
 							<p>Additional data:</p>
 							<ul>
 								<li>
-									Nuclear charge $Z_i \in \mathbb{Z}^+$ of atom $i$
+									Nuclear charge $\cblue Z_i \in \mathbb{Z}^+$ of atom $i$
 								</li>
 								<li>
-									Connection information in SMILES string format
+									Connection information in <span style="color: blue;">SMILES</span> string format
 								</li>
 							</ul>
 						</div>
 						<img src="assets/images/data_file4.svg" alt="Molecular file example">
+						<img src="assets/images/CH2O.svg" style="position: absolute; top:35px; left:550px;" alt="CH2O molecule">
 					</section>
 					<section style="font-family:'Comic Sans MS'">
 						<h4 style="color:green; font-family:'Comic Sans MS',cursive;">Feature extraction</h4>
@@ -148,6 +149,7 @@
 								</li>
 							</ul>
 						</div>
+						<img src="assets/images/nbody.svg" style="position: absolute; top:100px; left: 700px; width: 300px;" alt="n-body features">
 					</section>
 					<section style="font-family:'Comic Sans MS'">
 						<h4 style="color:green; font-family:'Comic Sans MS'">Fitting</h4>
@@ -192,24 +194,26 @@
 										Solvers for nonlinear systems: LM, BFGS, SGD
 									</li>
 								</ul>
+								<img src="assets/images/acsf07_nn.png" style="position: absolute; top:300px; left:500px; width:300px" alt="NN ACSF">
+								<p style="font-size: 15px; position: absolute; top:580px;">Neural network from ACSF by Behler (2007)</p>
 							</div>
 						</div>
 					</section>
 					<section>
 						<h4 style="color:green; font-family:'Comic Sans MS'">Evaluation</h4>
-						<div style="position: absolute; left:-150px; font-family:'Comic Sans MS'; font-size: 25px">
+						<div style="position: absolute; left:-150px; font-family:'Comic Sans MS'; font-size: 23px">
 							<ul>
 								<li>
-									Evaluation of test data (out of sample data).
+									Evaluation using prediction error of test data (out of sample data)
 								</li>
 								<li>
-									MAE: 
+									Mean absolute error: 
 									\[
 										\text{MAE} = \frac{1}{|M_\text{test}|}\sum_{m \in M_\text{test}}|V(\textcolor{blue}{x}_m, \rtheta) - \gE|
 									\]
 								</li>
 								<li>
-									RMSE: 
+									Root mean squared error: 
 									\[
 										\text{RMSE} = \sqrt{\frac{1}{|M_\text{test}|} \sum_{m \in M_\text{test}} \Big(V(\textcolor{blue}{x}_m, \rtheta) - \gE_m\Big)^2}
 									\]
@@ -222,6 +226,7 @@
 								</li>
 							</ul>
 						</div>
+						<img src="assets/images/kfold.svg" style="position: relative; width: 400px; left: 350px;">
 					</section>
 				</section>
 				<!-- ========== Pair pot chapter ================ -->
@@ -319,7 +324,7 @@
 							\]
 						</div>
 						<div id="chipr" style="position:relative; left:540px; top:-400px; width:560px; border-width:2px; border-style: dotted; border-color: blue; font-size: 23px;">
-							<p style="color:blue">CHIPR</p>
+							<p><span style="color:blue">CHIPR</span> (Varandas et al, 2021)</p>
 							\[
 								\begin{align*}
 									\cgreen{V} &= \frac{\cblue{Z_iZ_j}}{\cblue{r}^{\cred{\omega}}}\sum_{k=1}^M \cred{C}_ky_k, \\
@@ -1016,7 +1021,7 @@
 				<section>
 					<section id = "summary" data-background-image="assets/images/bg_sakura.gif" data-background-opacity=0.3></section>
 					<h3 style="color:blue; font-family:'Comic Sans MS',cursive; font-size: 45px;">Summary of the thesis...</h3>
-					<div style="font-size: 30px;">
+					<div style="font-size: 30px; font-family:'Comic Sans MS',cursive;">
 						<ul>
 							<li>
 								Main goal of the thesis: <span style="color:red">fitting</span> functions that predicts <span style="color:green">energies</span> of <span style="color:blue">chemical systems</span>, $\cgreen E \approx f(\cblue x, \cred \theta)$.
