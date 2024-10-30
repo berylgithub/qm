@@ -898,7 +898,7 @@
 							<img src="assets/images/smilestomatrix.png">
 						</div>
 						<div style="position: absolute; left:500px; padding: 5px; font-size: 17px; width: 600px; border-width:2px; border-style: dotted; border-color: red;">
-							$E^{(k+1)} = E^{(k)} - \cgreen{\textbf{ML}}^{(k)}(\cred \theta^{(k)}, \cblue X^{(k)}), ~~ E^{(0)} := E$
+							$E^{(k+1)} = E^{(k)} - \cgreen{\textbf{ML}}^{(k)}(\cred \theta^{(k)}, \cblue A^{(k)}), ~~ E^{(0)} := E$
 							<img src="assets/images/gifs/edelta.gif">
 						</div>
 					</section>
@@ -914,7 +914,7 @@
 										<br>(<span style="color:blue">A, AB, ABN, ABNT</span>)
 									</li>
 									<li>
-										Model in linear system $\cgreen E = \cblue X \cred \theta$
+										Model in linear system $\cgreen E = \cblue A \cred \theta$
 									</li>
 									<li>
 										Molecules selected by random (<span style="color:blueviolet">rand</span>) and usequence (<span style="color:blueviolet">sid57</span>) 
@@ -1063,6 +1063,7 @@
 				//width: 1920,
   				//height: 1080,
 				katex: {
+					local: '../../../etc/node_modules/katex',
 					macros:{
 						'\\rtheta' : '\\textcolor{red}{\\theta}',
 						'\\gE': '\\textcolor{green}{E}',
