@@ -997,10 +997,10 @@ end
 
 function main_anime_ending()
     nfr = 45
-    anime = Movie(1000, 700, "JJK_ending", 1:nfr)
+    anime = Movie(1000, 650, "JJK_ending", 1:nfr)
     function backdrop_ed(scene, frame)
         background(0,0,0,0)
-        #setopacity(0.35)
+        #setopacity(1)
     end
     function anime_ed(scene, frame, nfr)
         Luxor.setline(5)
