@@ -999,16 +999,17 @@ function main_anime_ending()
     nfr = 45
     anime = Movie(1000, 700, "JJK_ending", 1:nfr)
     function backdrop_ed(scene, frame)
-        background("white")
+        background(0,0,0,0)
+        #setopacity(0.35)
     end
     function anime_ed(scene, frame, nfr)
         Luxor.setline(5)
-        Luxor.fontsize(75)
+        Luxor.fontsize(55)
         Luxor.fontface("Noto Sans JP")
         # data:
         rates = [0.75, 0.5, 0.25]
-        ys = [500, 700, 900] .- 800
-        sentences = ["Thank You", "Terima Kasih", "ありがとうございます"]
+        ys = [500, 625, 750, 875] .- 800
+        sentences = ["Thank you", "Terima kasih", "ありがとうございます", "Danke schön"]
         
         # generate paths:
         pats = []
@@ -1019,12 +1020,24 @@ function main_anime_ending()
             push!(pats, pat)
         end
         Luxor.fontsize(20)
-        Luxor.text(("Special thanks:"), Point(-490, 240))
+        Luxor.text(("Special credits for slides:"), Point(-490, 240))
+        # Luxor.jl:
         Luxor.fontsize(40)
-        Luxor.textpath("Luxor.jl", Point(-250, 230), halign=:center, valign=:middle)
+        Luxor.textpath("Luxor.jl", Point(-120, 230), halign=:center, valign=:middle)
         sl = Luxor.storepath()
         Luxor.drawpath(sl, action=:stroke)
         Luxor.sethue("red")
+        Luxor.setline(10)
+        Luxor.setopacity(0.5)
+        Luxor.drawpath(sl, frame/nfr,action=:stroke)
+        # Reveal.js:
+        Luxor.setline(5)
+        Luxor.setopacity(1)
+        Luxor.setcolor("black")
+        Luxor.textpath("Reveal.js", Point(100, 230), halign=:center, valign=:middle)
+        sl = Luxor.storepath()
+        Luxor.drawpath(sl, action=:stroke)
+        Luxor.sethue("green")
         Luxor.setline(10)
         Luxor.setopacity(0.5)
         Luxor.drawpath(sl, frame/nfr,action=:stroke)
