@@ -1407,10 +1407,23 @@ function main_tb_hxoy_rerun()
     ratios = zeros(axes(tb, 1), length(inds)) # each row is one dataset, each column is one measurement category
     display([tb[:,inds[1]] tb[:, inds[1]+1] tb[:,inds[1]] ./ tb[:, inds[1]+1]])
     for i in axes(ratios, 2)
-        ratios[:,i] .= tb[:,inds[i]+1] ./ tb[:,inds[i]]
+        ratios[:,i] .= tb[:,inds[i]] ./ tb[:,inds[i]+1]
     end
     display(ratios)
-    Plots.plot(axes(ratios, 1), [ratios[:,i] for i in axes(ratios, 2)])
+    p = Plots.plot(axes(ratios, 1), [ratios[:,i] for i in axes(ratios, 2)], 
+                yaxis=:log10, 
+                yticks=([minimum(ratios), 1e-3, 0.1, 1, 10, maximum(ratios)], [5.4e-6, 1e-3, 0.1, 1, 10, round(maximum(ratios), digits=1)]),
+                xticks=(axes(ratios, 1), molstr), xrot=40,
+                ylabel = "Ratio of ROSEMI/CHIPR RMSEs",
+                labels = ["min" "median" "mean" "max"],
+                legend = :bottomright,
+                linestyle = [:dash :dash :solid :solid],
+                markershape = [:circle :rect :utriangle :diamond], 
+                markercolor = [:black :green :blue :purple],
+                linecolor = [:black :green :blue :purple],
+                dpi=1000, xtickfontsize=7
+            )
+    Plots.savefig(p, "plot/ROSEMIvCHIPR.svg")
 end
 
 """
