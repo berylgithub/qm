@@ -1361,11 +1361,12 @@ function main_tb_hxoy_rerun()
         push!(ws, w)
     end
     #display(ws)
-    # write to latextable:
-    tb = format_string_float.(1,tb; scientific=true)
+    # write to latextable: !!! DISABLE (comment out) when generating plot
+    display(tb)
+    #= tb = format_string_float.(1,tb; scientific=true)
     for i ∈ axes(tb, 1)
         tb[i,ws[i]] .= latex_bold.(tb[i,ws[i]])
-    end
+    end =#
     # get the indices of each molecule relative to the dataset:
     dset_ids = []
     for mol ∈ mols
@@ -1377,7 +1378,7 @@ function main_tb_hxoy_rerun()
         end
     end
     # edit molecule names:
-    display([mols dset_ids])
+    #display([mols dset_ids])
     molperm = reduce(vcat, permutedims.(split.(mols, "_"))) # split the molecule id
     molstr, molid = (molperm[:,1], molperm[:,2])
     ids = sortperm(molstr) # sort by molname
@@ -1389,7 +1390,7 @@ function main_tb_hxoy_rerun()
     molstates = map(x->x["state"], dset[mol_dsetids])
     mol_ndatas = map(x->length(x["V"]), dset[mol_dsetids])
     molstr = map((l,m,n) -> "("*string(l)*") "*m*" "*n, eachindex(molstr), molstr, molstates) # join mol string with its state 
-    display([molstr mol_ndatas])
+    #display([molstr mol_ndatas])
     #mols = map((x,y)-> x*raw"$^{"*y*raw"}$", molstr, molid)
     #display(mols)
     # permute rows of table:
@@ -1401,6 +1402,15 @@ function main_tb_hxoy_rerun()
     tb = hcat(molstr, tb)
     display(tb)
     writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
+    # Ratio plot:
+    inds = collect(3:2:9) # correspond to each measurement category
+    ratios = zeros(axes(tb, 1), length(inds)) # each row is one dataset, each column is one measurement category
+    display([tb[:,inds[1]] tb[:, inds[1]+1] tb[:,inds[1]] ./ tb[:, inds[1]+1]])
+    for i in axes(ratios, 2)
+        ratios[:,i] .= tb[:,inds[i]+1] ./ tb[:,inds[i]]
+    end
+    display(ratios)
+    Plots.plot(axes(ratios, 1), [ratios[:,i] for i in axes(ratios, 2)])
 end
 
 """
