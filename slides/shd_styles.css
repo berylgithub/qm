@@ -95,3 +95,8 @@
     margin-left: -100px;
     padding-left: 0;
 }
+
+/*RevealJS slide number size*/
+.reveal .slide-number {
+    font-size: 20pt;
+    color: #ffffff; }
