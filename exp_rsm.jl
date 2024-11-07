@@ -187,12 +187,16 @@ end
 
 
 """
+!! for earlier ver, the hyperparameters are in index 5:8, current ver: 5:7 (true/false removed, shift -1 index)
 batch run using params obtained from hpopt
 e.g.:
  params = readdlm("data/smallmol/hpopt_hxoy_rsm.text", '\t')
  data = load("data/smallmol/hxoy_data_req.jld", "data")
  sim_id = replace(replace(string(now()), "-"=>""), ":"=>"")[1:end-4]
  main_eval_rsm(data, params; sim_id = sim_id)
+
+example script in vsc:
+ main_eval_rsm(load("data/smallmol/hxoy_data_req.jld", "data")[setdiff(1:15, 10)], readdlm("data/smallmol/hpopt_rsm_hxoy_20241107T124925.text", '\t'); sim_id=strnow, foldss=load("data/smallmol/folds_hxoy_20241107T124925.jld", "data"))
 """
 function main_eval_rsm(data, hpopt_params; sim_id="", foldss=[])
     Random.seed!(603) # still set seed for folds
@@ -206,7 +210,7 @@ function main_eval_rsm(data, hpopt_params; sim_id="", foldss=[])
         println([d["mol"], hp[5:end]])
         # load data:
         E = d["V"]
-        F = rdist.(d["R"], d["req"], c=hp[6]);
+        F = rdist.(d["R"], d["req"], c=hp[5]);
         folds = [] # reinitialization
         if isempty(foldss)
             folds = shuffle.(collect(Kfold(length(d["V"]), 5))) # do 5-folds here
@@ -218,7 +222,8 @@ function main_eval_rsm(data, hpopt_params; sim_id="", foldss=[])
             end
         end
         display(folds)
-        MAEs, RMSEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E, folds; n_basis=hp[7], ptr=hp[8], force=hp[5], λ = λ)
+        println(hp[5:7])
+        MAEs, RMSEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E, folds; n_basis=hp[6], ptr=hp[7], force=false, λ = λ)
         println(mean(RMSEs))
         # result storage:
         d_res = Dict()
@@ -231,14 +236,17 @@ end
 
 """
 singlet eval only
+
+example script in VSC:
+ main_single_eval_rsm(load("data/smallmol/hxoy_data_req.jld", "data")[10], readdlm("data/smallmol/hpopt_rsm_hxoy_20241107T124925.text", '\t')[9,:]; sim_id="H2_2_0711")
 """
 function main_single_eval_rsm(data, hp; sim_id="", folds=[], λ = 0.)
     E = data["V"]
-    F = rdist.(data["R"], data["req"], c=hp[2])
+    F = rdist.(data["R"], data["req"], c=hp[5])
     if isempty(folds)
         folds = shuffle.(collect(Kfold(length(E), 5)))
     end
-    MAEs, RMSEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E, folds; n_basis=hp[3], ptr=hp[4], force=hp[1], λ = λ)
+    MAEs, RMSEs, RMSDs, t_lss, t_preds = rosemi_fitter(F, E, folds; n_basis=hp[6], ptr=hp[7], force=false, λ = λ)
     println(mean(RMSEs))
     d_res = Dict()
     d_res["MAE"] = MAEs; d_res["RMSE"] = RMSEs; d_res["RMSD"] = RMSDs; d_res["t_train"] = t_lss; d_res["t_test"] = t_preds;
