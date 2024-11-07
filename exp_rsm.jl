@@ -133,6 +133,12 @@ function rosemi_fobj(R, E, req, folds; force=true, c=1, n_basis=4, ptr=0.5, λ =
 end
 
 
+"""
+call this by calling:
+
+strnow = replace(replace(string(now()), "-"=>""), ":"=>"")[1:end-4] # current datetime in string format
+main_hpopt_rsm(load("data/smallmol/hxoy_data_req.jld", "data")[setdiff(1:15, 10)]; iters=540, simid="hxoy_"*strnow, save_folds=true)
+"""
 function main_hpopt_rsm(data; iters=100, simid="", save_folds=false)
     Random.seed!(603)
     #data = load("data/smallmol/hxoy_data_req.jld", "data") # load hxoy
@@ -158,11 +164,11 @@ function main_hpopt_rsm(data; iters=100, simid="", save_folds=false)
         t = @elapsed begin
             ho = @thyperopt for i=iters, # hpspace = 2*3*10*9 = 540
                     sampler = RandomSampler(),
-                    force=[false,true],
+                    #force=[false,true],
                     c=[1,2,3],
                     n_basis = collect(1:10),
                     ptr = LinRange(0.1, 0.9, 9)
-                fobj = rosemi_fobj(d["R"], d["V"], req, folds; force=force, c=c, n_basis=n_basis, ptr=ptr, λ = λ)
+                fobj = rosemi_fobj(d["R"], d["V"], req, folds; force=false, c=c, n_basis=n_basis, ptr=ptr, λ = λ)
             end
         end    
         best_params, min_f = ho.minimizer, ho.minimum

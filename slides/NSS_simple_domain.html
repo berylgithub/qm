@@ -172,7 +172,7 @@
 									</li>
 									<li>
 										Neural networks: $z_i = \sigma_i(\textcolor{red} W_iz_{i-1} + \textcolor{red} b_i)$,
-										<br> for $i=1,2,..n_\text{layer}; $ where $\textcolor{red} W_l$ and $\textcolor{red} b_l$ are weight matrix and bias vector of $l$th layer respectively,
+										<br> for $i=1,2,...,n_\text{layer}; $ where $\textcolor{red} W_l$ and $\textcolor{red} b_l$ are weight matrix and bias vector of $l$th layer respectively,
 										$\sigma_l$ is elementwise non-linear activation function, and $ \textcolor{blue}{z_0} \in \textcolor{blue}{\mathcal{X}}$
 									</li>
 								</ul>
@@ -949,7 +949,7 @@
 										</ul>
 									</li>
 									<li>
-										Hypertuned for <span style="color:red">$\Delta$level</span> = {A, AB, ABN, ABNT}, <span style="color:red">models</span> = {GK, LK}, and $\cred \sigma = \{1,2,..32\} $
+										Hypertuned for <span style="color:red">$\Delta$level</span> = {A, AB, ABN, ABNT}, <span style="color:red">models</span> = {GK, LK}, and $\cred \sigma = \{1,2,...,32\} $
 									</li>
 									<li>
 										<span style="color:green">1 kcal/mol</span> reached with <span style="color:blue">3750</span> training molecules
@@ -987,7 +987,7 @@
 								\[
 									\begin{split}
 										f(\cred x) &= \frac{1}{N_\text{test}}\sum_{k} \Big|\Big[D(\neg \cred x)AD(\cred x)\Big(D(\cred x)AD(\cred x) \Big)^{-1} \Big(D(\cred x)E\Big)\Big]_k - \Big[D(\neg \cred x)E\Big]_k\Big|, \\
-										c(\cred x) &= \sum_i \cred x_i - 100, ~~\cred  x_i \in \{0,1\}, ~~ i \in [1,2,...N_{QM9}], \\
+										c(\cred x) &= \sum_i \cred x_i - 100, ~~\cred  x_i \in \{0,1\}, ~~ i \in [1,2,...,N_{QM9}], \\
 										D(\cred x) &\in \{0,1\}^{N_{QM9} \times N_{QM9}}, ~~ D(\cred x)_{ii} := \cred x_i, \\
             							A &:= A(\cblue H), ~~ \cblue H := \text{fixed--current--best hyperparameters}.
 									\end{split}
