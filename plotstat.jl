@@ -1307,11 +1307,14 @@ ROSEMI data analysis:
 
 """
 compare rosemi against ratpots and chipr
+
+data pre 07/11/2024: rnew = vcat(load("result/hdrsm_20240502T122032.jld", "data"), load("result/hdrsm_singlet_H2_2.jld", "data"))
+post: 
 """
 function main_tb_hxoy_rerun()
     dset = load("data/smallmol/hxoy_data_req.jld", "data")
     rold = load("result/hxoy_5fold_result.jld", "data") # dict of list
-    rnew = vcat(load("result/hdrsm_20240502T122032.jld", "data"), load("result/hdrsm_singlet_H2_2.jld", "data")) #load("result/hxoy_diatomic_rosemi_rerun.jld", "data") # list of dict
+    rnew = vcat(load("result/hdrsm_20241107T124925.jld", "data"), load("result/hdrsm_singlet_H2_2_0711.jld", "data")) #load("result/hxoy_diatomic_rosemi_rerun.jld", "data") # list of dict
 
     # output tb (no header, add in the end):
     tb = Matrix{Any}(undef, length(rnew), 2*4) # row entries = [[ min, median, mean, max] of RMSE of [ROSEMI, CHIPR, and maybe RATOPTS] ]
@@ -1402,6 +1405,7 @@ function main_tb_hxoy_rerun()
     tb = hcat(molstr, tb)
     display(tb)
     writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
+    ##########################
     # Ratio plot:
     inds = collect(3:2:9) # correspond to each measurement category
     ratios = zeros(axes(tb, 1), length(inds)) # each row is one dataset, each column is one measurement category
