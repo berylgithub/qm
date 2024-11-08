@@ -1364,12 +1364,12 @@ function main_tb_hxoy_rerun()
         push!(ws, w)
     end
     #display(ws)
-    # write to latextable: !!! DISABLE (comment out) when generating plot
+    # write to latextable: !!! DISABLE (comment out) when generating plot:
     display(tb)
-    #= tb = format_string_float.(1,tb; scientific=true)
+    tb = format_string_float.(1,tb; scientific=true)
     for i ∈ axes(tb, 1)
         tb[i,ws[i]] .= latex_bold.(tb[i,ws[i]])
-    end =#
+    end
     # get the indices of each molecule relative to the dataset:
     dset_ids = []
     for mol ∈ mols
@@ -1404,10 +1404,10 @@ function main_tb_hxoy_rerun()
     tb = hcat(mol_ndatas, tb)
     tb = hcat(molstr, tb)
     display(tb)
-    writelatextable(tb, "result/tb1_hxoy_rerun.tex"; hline=false)
+    writelatextable(tb, "result/tb1_hxoy_rerun_0711.tex"; hline=false)
     ##########################
     # Ratio plot:
-    inds = collect(3:2:9) # correspond to each measurement category
+    #= inds = collect(3:2:9) # correspond to each measurement category
     ratios = zeros(axes(tb, 1), length(inds)) # each row is one dataset, each column is one measurement category
     display([tb[:,inds[1]] tb[:, inds[1]+1] tb[:,inds[1]] ./ tb[:, inds[1]+1]])
     for i in axes(ratios, 2)
@@ -1427,15 +1427,16 @@ function main_tb_hxoy_rerun()
                 linecolor = [:black :green :blue :purple],
                 dpi=1000, xtickfontsize=7
             )
-    Plots.savefig(p, "plot/ROSEMIvCHIPR.svg")
+    Plots.savefig(p, "plot/ROSEMIvCHIPR.svg") =#
 end
 
 """
 display hyperparameter optimization table of pair hxoy data (pretty much similar with the above function)
+usage of table exaample: tb = readdlm("data/smallmol/hpopt_rsm_hxoy_20240501T185604.text", '\t')
 """
 function main_tb_hxoy_hpopt()
     dset = load("data/smallmol/hxoy_data_req.jld", "data")
-    tb = readdlm("data/smallmol/hpopt_rsm_hxoy_20240501T185604.text", '\t')
+    tb = readdlm("data/smallmol/hpopt_rsm_hxoy_20241107T124925.text", '\t')
     mols = tb[:,1]
     # get the indices of each molecule relative to the dataset:
     dset_ids = []
@@ -1466,7 +1467,7 @@ function main_tb_hxoy_hpopt()
     tb = permutedims(tb)
     tb = hcat(molstr, tb)
     display(tb)
-    writelatextable(tb, "result/tb_hxoy_hpopt.tex"; hline=false)
+    writelatextable(tb, "result/tb_hxoy_hpopt_0711.tex"; hline=false)
 end
 
 function main_rosemi_hn()
