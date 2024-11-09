@@ -1403,8 +1403,8 @@ function main_tb_hxoy_rerun()
     # join molname, ndata, and table:
     tb = hcat(mol_ndatas, tb)
     tb = hcat(molstr, tb)
-    display(tb)
-    writelatextable(tb, "result/tb1_hxoy_rerun_0711.tex"; hline=false)
+    display(tb[:, vcat(1,2,7:end)]) # without min and median: (1,2,7:end)
+    writelatextable(tb[:, vcat(1,2,7:end)], "result/tb1_hxoy_rerun_0711.tex"; hline=false)
     ##########################
     # Ratio plot:
     #= inds = collect(3:2:9) # correspond to each measurement category
