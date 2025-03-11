@@ -13,6 +13,23 @@ using MathTeXEngine
 
 include("utils.jl")
 
+"""
+Notes
+[1]
+    if plot goes outside of margin, example:
+    ""
+    using Measures
+
+    plot(...., margin=10mm)
+    ""
+[2]
+    changing figure size example:
+    ""
+    plot(..., size = (...,...))
+    ""
+"""
+
+
 function plot_mae()
     molnames = readdir("result")[2:end]
     count = 1
